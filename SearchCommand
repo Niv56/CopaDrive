@@ -1,0 +1,8 @@
+#include "ICommand.h"
+//this class responsiblty over search command  
+class AddCommand : public ICommand{
+    public:
+        void execute(){
+            //
+        }
+};
