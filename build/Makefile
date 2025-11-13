@@ -535,6 +535,19 @@ ContinuousSubmit/fast:
 .PHONY : ContinuousSubmit/fast
 
 #=============================================================================
+# Target rules for targets named ConsoleApp
+
+# Build rule for target.
+ConsoleApp: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 ConsoleApp
+.PHONY : ConsoleApp
+
+# fast build rule for target.
+ConsoleApp/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\ConsoleApp.dir\build.make CMakeFiles/ConsoleApp.dir/build
+.PHONY : ConsoleApp/fast
+
+#=============================================================================
 # Target rules for targets named gmock
 
 # Build rule for target.
@@ -599,18 +612,29 @@ CopaDriveLib/fast:
 	$(MAKE) $(MAKESILENT) -f src\CMakeFiles\CopaDriveLib.dir\build.make src/CMakeFiles/CopaDriveLib.dir/build
 .PHONY : CopaDriveLib/fast
 
-#=============================================================================
-# Target rules for targets named runTests
+app/main.obj: app/main.cpp.obj
+.PHONY : app/main.obj
 
-# Build rule for target.
-runTests: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 runTests
-.PHONY : runTests
+# target to build an object file
+app/main.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\ConsoleApp.dir\build.make CMakeFiles/ConsoleApp.dir/app/main.cpp.obj
+.PHONY : app/main.cpp.obj
 
-# fast build rule for target.
-runTests/fast:
-	$(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/build
-.PHONY : runTests/fast
+app/main.i: app/main.cpp.i
+.PHONY : app/main.i
+
+# target to preprocess a source file
+app/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\ConsoleApp.dir\build.make CMakeFiles/ConsoleApp.dir/app/main.cpp.i
+.PHONY : app/main.cpp.i
+
+app/main.s: app/main.cpp.s
+.PHONY : app/main.s
+
+# target to generate assembly for a file
+app/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\ConsoleApp.dir\build.make CMakeFiles/ConsoleApp.dir/app/main.cpp.s
+.PHONY : app/main.cpp.s
 
 # Help Target
 help:
@@ -653,12 +677,15 @@ help:
 	@echo ... NightlySubmit
 	@echo ... NightlyTest
 	@echo ... NightlyUpdate
+	@echo ... ConsoleApp
 	@echo ... CopaDriveLib
 	@echo ... gmock
 	@echo ... gmock_main
 	@echo ... gtest
 	@echo ... gtest_main
-	@echo ... runTests
+	@echo ... app/main.obj
+	@echo ... app/main.i
+	@echo ... app/main.s
 .PHONY : help
 
 

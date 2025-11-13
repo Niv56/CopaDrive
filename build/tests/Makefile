@@ -170,68 +170,6 @@ depend:
 	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
-# Convenience name for target.
-tests/CMakeFiles/runTests.dir/rule:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 tests/CMakeFiles/runTests.dir/rule
-.PHONY : tests/CMakeFiles/runTests.dir/rule
-
-# Convenience name for target.
-runTests: tests/CMakeFiles/runTests.dir/rule
-.PHONY : runTests
-
-# fast build rule for target.
-runTests/fast:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/build
-.PHONY : runTests/fast
-
-ConsoleMenu_test.obj: ConsoleMenu_test.cpp.obj
-.PHONY : ConsoleMenu_test.obj
-
-# target to build an object file
-ConsoleMenu_test.cpp.obj:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/ConsoleMenu_test.cpp.obj
-.PHONY : ConsoleMenu_test.cpp.obj
-
-ConsoleMenu_test.i: ConsoleMenu_test.cpp.i
-.PHONY : ConsoleMenu_test.i
-
-# target to preprocess a source file
-ConsoleMenu_test.cpp.i:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/ConsoleMenu_test.cpp.i
-.PHONY : ConsoleMenu_test.cpp.i
-
-ConsoleMenu_test.s: ConsoleMenu_test.cpp.s
-.PHONY : ConsoleMenu_test.s
-
-# target to generate assembly for a file
-ConsoleMenu_test.cpp.s:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/ConsoleMenu_test.cpp.s
-.PHONY : ConsoleMenu_test.cpp.s
-
-sample_test.obj: sample_test.cpp.obj
-.PHONY : sample_test.obj
-
-# target to build an object file
-sample_test.cpp.obj:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/sample_test.cpp.obj
-.PHONY : sample_test.cpp.obj
-
-sample_test.i: sample_test.cpp.i
-.PHONY : sample_test.i
-
-# target to preprocess a source file
-sample_test.cpp.i:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/sample_test.cpp.i
-.PHONY : sample_test.cpp.i
-
-sample_test.s: sample_test.cpp.s
-.PHONY : sample_test.s
-
-# target to generate assembly for a file
-sample_test.cpp.s:
-	cd /d C:\Users\niv20\ONEDRI~1\2EDYEA~1\ADVANC~1\COPADR~1\build && $(MAKE) $(MAKESILENT) -f tests\CMakeFiles\runTests.dir\build.make tests/CMakeFiles/runTests.dir/sample_test.cpp.s
-.PHONY : sample_test.cpp.s
-
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -245,13 +183,6 @@ help:
 	@echo ... list_install_components
 	@echo ... rebuild_cache
 	@echo ... test
-	@echo ... runTests
-	@echo ... ConsoleMenu_test.obj
-	@echo ... ConsoleMenu_test.i
-	@echo ... ConsoleMenu_test.s
-	@echo ... sample_test.obj
-	@echo ... sample_test.i
-	@echo ... sample_test.s
 .PHONY : help
 
 

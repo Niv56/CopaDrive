@@ -26,6 +26,7 @@ C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced syste
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/ContinuousCoverage.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/ContinuousMemCheck.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/ContinuousSubmit.dir
+C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/ConsoleApp.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/test.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/edit_cache.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/CMakeFiles/rebuild_cache.dir
@@ -66,7 +67,6 @@ C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced syste
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/src/CMakeFiles/install.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/src/CMakeFiles/install/local.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/src/CMakeFiles/install/strip.dir
-C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/CMakeFiles/runTests.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/CMakeFiles/test.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/CMakeFiles/edit_cache.dir
 C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/CMakeFiles/rebuild_cache.dir

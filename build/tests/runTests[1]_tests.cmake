@@ -1,3 +1,0 @@
-add_test([=[AdditionTest.PositiveNumbers]=]  [==[C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/runTests.exe]==] [==[--gtest_filter=AdditionTest.PositiveNumbers]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[AdditionTest.PositiveNumbers]=]  PROPERTIES DEF_SOURCE_LINE [==[C:\Users\niv20\OneDrive - Bar-Ilan University - Students\2ed year\Advanced system programming\CopaDrive\tests\sample_test.cpp:4]==] WORKING_DIRECTORY [==[C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests]==] SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set(  runTests_TESTS AdditionTest.PositiveNumbers)

@@ -13,7 +13,7 @@ class ConsoleMenu : public IMenu{
     private:
         std :: string readInput();
 
-        bool validInput(std::string command);
+        bool validInput(std :: vector <std :: string> command);
         
         std::vector <std::string> splitCommand(std :: string command);
 };
