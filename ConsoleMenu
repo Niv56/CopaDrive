@@ -1,7 +1,0 @@
-#include "IMenu.h"
-class ConsoleMenu: public IMenu{
-    int nextCommand(){
-        //implementation
-        return 0;
-    }
-};
