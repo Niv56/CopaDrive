@@ -1,0 +1,17 @@
+{
+  "tests": 1,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "AdditionTest",
+      "tests": 1,
+      "testsuite": [
+        {
+          "name": "PositiveNumbers",
+          "file": "C:\\Users\\niv20\\OneDrive - Bar-Ilan University - Students\\2ed year\\Advanced system programming\\CopaDrive\\tests\\sample_test.cpp",
+          "line": 4
+        }
+      ]
+    }
+  ]
+}

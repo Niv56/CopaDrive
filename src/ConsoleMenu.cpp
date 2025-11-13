@@ -14,7 +14,7 @@
     //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){
 
-        return "";
+        std :: string  command << cin << endl;
     }
 
     //this method checks if the user input is correct according the format Coomand [filename] contant.

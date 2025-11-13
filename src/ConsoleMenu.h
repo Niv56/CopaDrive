@@ -15,6 +15,6 @@ class ConsoleMenu : public IMenu{
 
         bool validInput(std::string command);
         
-        std::vector <std::string> splitCommand(std :: string command){};
+        std::vector <std::string> splitCommand(std :: string command);
 };
 #endif
