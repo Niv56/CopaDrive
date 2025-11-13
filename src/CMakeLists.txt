@@ -6,3 +6,7 @@ add_library(CopaDriveLib ${SRC_FILES})
 
 # Expose include path to dependents (tests, future CLI, etc.)
 target_include_directories(CopaDriveLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+
+add_executable(Playground src/Playground.cpp)
+target_link_libraries(Playground PRIVATE CopaDriveLib)

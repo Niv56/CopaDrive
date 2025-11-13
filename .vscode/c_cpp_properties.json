@@ -1,27 +1,15 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/src",
-                "${workspaceFolder}/tests",
-                "${workspaceFolder}/build/_deps/googletest-src/googletest/include",
-                "${workspaceFolder}/**",
-                
-                "C:/msys64/mingw64/include",
-                "C:/msys64/mingw64/include/c++/15.2.0",
-                "C:/msys64/mingw64/include/c++/15.2.0/x86_64-w64-mingw32",
-                "C:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.2.0/include"
+                "${workspaceFolder}/**"
             ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
-            "cStandard": "c11",
-            "cppStandard": "c++20",
-            "intelliSenseMode": "windows-gcc-x64"
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

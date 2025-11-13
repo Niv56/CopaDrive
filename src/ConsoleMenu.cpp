@@ -4,17 +4,17 @@
 
     //this method takes the command, and return vector with each part of the command.
     std :: vector<std :: string> ConsoleMenu :: nextCommand(){
-       
-        //implementation
-        
+        std :: string command = readInput();
         return {} ;
     }
 
 
     //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){
-
-        std :: string  command << cin << endl;
+        std :: string  command;
+        std ::getline(std :: cin,command);
+        std :: cout << command;
+        return command;
     }
 
     //this method checks if the user input is correct according the format Coomand [filename] contant.
