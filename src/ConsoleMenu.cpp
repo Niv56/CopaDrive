@@ -7,10 +7,14 @@
     //this method takes the command, and return vector with each part of the command.
     std :: vector<std :: string> ConsoleMenu :: nextCommand(){
         std :: string command = readInput();
-        std :: vector <std :: string> parts = splitCommand(command); 
-        return parts ;
+        std :: vector <std :: string> parts = splitCommand(command);
+        if(validInput(parts)) 
+            return parts ;
+            else
+            return {};
     }
 
+    
 
     //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){
