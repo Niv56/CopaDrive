@@ -1,6 +1,16 @@
-#add_executable(runTests main_test.cpp)
+# tests/CMakeLists.txt
 
-#target_link_libraries(runTests PRIVATE gtest_main gtest CopaDriveLib)
+add_executable(runTests
+    sample_test.cpp
+    RLECompressor_test.cpp
+)
 
-#include(GoogleTest)
-#gtest_discover_tests(runTests)
+target_link_libraries(runTests
+    PRIVATE
+        gtest_main
+        gtest
+        CopaDriveLib
+)
+
+include(GoogleTest)
+gtest_discover_tests(runTests)
