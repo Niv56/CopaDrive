@@ -1,8 +1,0 @@
-#include "ICommand.h"
-//this class responsiblty get add command  
-class AddCommand : public ICommand{
-    public:
-        void execute(){
-            //
-        }
-};

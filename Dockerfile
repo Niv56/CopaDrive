@@ -25,4 +25,4 @@ RUN cmake .. && make
 CMD ["./ConsoleApp"]
 
 # run the tests
-# CMD ["./tests/runTests"]
+CMD ["./tests/runTests"]
