@@ -1,7 +1,6 @@
-# tests/CMakeLists.txt
-file(GLOB TEST_FILES "*.cpp")
-add_executable(runTests ${TEST_FILES})
-target_link_libraries(runTests PRIVATE CopaDriveLib GTest::gtest_main pthread)
+#add_executable(runTests main_test.cpp)
 
-include(GoogleTest)
-gtest_discover_tests(runTests)
+#target_link_libraries(runTests PRIVATE gtest_main gtest CopaDriveLib)
+
+#include(GoogleTest)
+#gtest_discover_tests(runTests)

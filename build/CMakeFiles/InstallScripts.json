@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/cmake_install.cmake",
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/_deps/googletest-build/cmake_install.cmake",
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/_deps/googletest-build/googlemock/cmake_install.cmake",
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/_deps/googletest-build/googletest/cmake_install.cmake",
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/src/cmake_install.cmake",
+		"C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
