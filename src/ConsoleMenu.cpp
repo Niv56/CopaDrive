@@ -14,6 +14,7 @@
             return {};
     }
 
+    
 
     //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){

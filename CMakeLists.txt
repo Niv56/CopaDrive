@@ -22,6 +22,8 @@ FetchContent_MakeAvailable(googletest)
 # Build library code and tests
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(app)
+
 
 add_executable(ConsoleApp app/main.cpp)
 target_link_libraries(ConsoleApp PRIVATE CopaDriveLib)
