@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libCopaDriveLib.a CMakeFiles/CopaDriveLib.dir/ConsoleMenu.cpp.obj CMakeFiles/CopaDriveLib.dir/placeholder.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libCopaDriveLib.a

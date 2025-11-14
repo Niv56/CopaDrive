@@ -1,5 +1,0 @@
-if(EXISTS "C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/runTests[1]_tests.cmake")
-  include("C:/Users/niv20/OneDrive - Bar-Ilan University - Students/2ed year/Advanced system programming/CopaDrive/build/tests/runTests[1]_tests.cmake")
-else()
-  add_test(runTests_NOT_BUILT runTests_NOT_BUILT)
-endif()
