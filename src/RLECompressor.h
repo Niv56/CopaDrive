@@ -7,10 +7,10 @@
 class RLECompressor : public ICompressor {
 public:
     // Run-Length Encoding with safe format: <count>:<char_hex>;
-    std::string compress(const std::string& input) override;
+    std::string compress(const std::string& input)const override;
 
     // Reverse of compress
-    std::string decompress(const std::string& input) override;
+    std::string decompress(const std::string& input)const override;
 };
 
 #endif

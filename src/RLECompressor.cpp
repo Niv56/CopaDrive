@@ -23,7 +23,7 @@ static unsigned char fromHex(const string& s, size_t pos) {
 }
 
 // Encode: aaabb -> 3:61;2:62;
-string RLECompressor::compress(const string& input) {
+string RLECompressor::compress(const string& input) const {
     if (input.empty()) {
         return "";
     }
@@ -59,7 +59,7 @@ string RLECompressor::compress(const string& input) {
 }
 
 // Decode: 3:61;2:62; -> aaabb
-string RLECompressor::decompress(const string& input) {
+string RLECompressor::decompress(const string& input) const {
     string result;
     size_t i = 0;
 

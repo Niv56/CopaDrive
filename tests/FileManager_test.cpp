@@ -21,17 +21,18 @@ TEST(SaveAndLoadFiles, Test1){
 TEST(loadFiles, Test2){
     RLECompressor rle;
     FileManager fm(rle);
-    fm.saveFile("hello.txt2" , "");
-    EXPECT_EQ(fm.loadFile("hello.txt2"),"");
+    fm.saveFile("hello.txt2" , "1235431");
+    EXPECT_EQ(fm.loadFile("hello.txt2"),"1235431");
 }
-  
+
+
 TEST(loadFiles, Test3){
     RLECompressor rle;
     FileManager fm(rle);
     fm.saveFile("hello.txt3" , " ");
     EXPECT_EQ(fm.loadFile("hello.txt3")," ");
 }
-
+ 
 TEST(loadFiles, Test4){
      RLECompressor rle;
     FileManager fm(rle);
