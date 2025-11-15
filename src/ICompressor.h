@@ -6,10 +6,10 @@
 class ICompressor {
 public:
     // Compress raw text into compressed form
-    virtual std::string compress(const std::string& input) = 0;
+    virtual std::string compress(const std::string& input) const = 0;
 
     // Restore original text from compressed form
-    virtual std::string decompress(const std::string& input) = 0;
+    virtual std::string decompress(const std::string& input) const = 0;
 
     virtual ~ICompressor() = default;
 };

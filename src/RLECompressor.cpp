@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 // Encode: "aaabb" -> "3a2b", "ab" -> "1a1b"
-std::string RLECompressor::compress(const std::string& input) {
+std::string RLECompressor::compress(const std::string& input) const {
     if (input.empty()) {
         return "";
     }
@@ -33,7 +33,7 @@ std::string RLECompressor::compress(const std::string& input) {
 }
 
 // Decode: "3a2b" -> "aaabb"
-std::string RLECompressor::decompress(const std::string& input) {
+std::string RLECompressor::decompress(const std::string& input) const {
     std::string result;
     std::string countStr;
 
