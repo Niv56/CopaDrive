@@ -1,3 +1,4 @@
+// GetCommand.h
 #ifndef GETCOMMAND_H
 #define GETCOMMAND_H
 
@@ -5,7 +6,9 @@
 
 class GetCommand : public ICommand {
 public:
-    void execute() override;
+    // Command format: ["get", fileName]
+    void execute(const std::vector<std::string>& comand,
+                 FileManager& fm) override;
 };
 
 #endif

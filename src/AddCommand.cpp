@@ -1,17 +1,36 @@
 // AddCommand.cpp
 #include "AddCommand.h"
+#include "FileManager.h"
 
-void FileManager :: saveFile(const std :: string& filename, const std :: string& content){
-        //copress the data 
-        std :: string compressed = m_compressor.compress(content);
-        //create the fullpath
-        std:: string fullPath = environmentVariable +"/"+ filename;
+#include <filesystem>
+#include <fstream>
 
-        std::filesystem::create_directories(environmentVariable);
+void AddCommand::execute(const std::vector<std::string>& comand,
+                         FileManager& fm) {
+    if (comand.size() < 3) {
+        return;
+    }
 
-        //create new file and set the path.
-        std :: ofstream MyFile(fullPath);
-        //add the compressed content;
-        MyFile << compressed;
-        MyFile.close();
- }
+    const std::string& fileName = comand[1];
+    const std::string& content  = comand[2];
+
+    if (fileName.empty()) {
+        return;
+    }
+
+    const std::string& basePath      = fm.getEnvironment();
+    const ICompressor& compressor    = fm.getCompressor();
+
+    std::string compressed = compressor.compress(content);
+    std::string fullPath   = basePath + "/" + fileName;
+
+    std::filesystem::create_directories(basePath);
+
+    std::ofstream myFile(fullPath);
+    if (!myFile.is_open()) {
+        return;
+    }
+
+    myFile << compressed;
+    myFile.close();
+}

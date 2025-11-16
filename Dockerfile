@@ -24,11 +24,6 @@ RUN mkdir -p build
 WORKDIR /usr/src/mytest/build
 RUN cmake .. && make
 
-
-########################################
-# CMD options — switch by commenting/uncommenting
-########################################
-
 #Run main.cpp
 CMD ["./ConsoleApp"]
 

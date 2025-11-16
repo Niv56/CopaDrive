@@ -102,4 +102,3 @@ TEST(RLECompressorTest, WeirdInputsRoundTrip) {
             << "Round-trip failed for input: '" << original << "'";
     }
 }
-
