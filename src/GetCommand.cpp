@@ -6,8 +6,8 @@
 #include <fstream>
 #include <iostream>
 
-void GetCommand::execute(const std::vector<std::string>& comand,
-                         FileManager& fm) {
+void GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+
     if (comand.size() < 2) {
         return;
     }

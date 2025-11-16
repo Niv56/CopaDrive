@@ -2,6 +2,7 @@
 #include "AddCommand.h"
 #include "GetCommand.h"
 #include "SearchCommand.h"
+#include <iostream>
 
 App::App(ICompressor* compressor, IMenu* menu)
     : m_fileManager(*compressor),
@@ -14,19 +15,19 @@ App::App(ICompressor* compressor, IMenu* menu)
 
 void App::run() {
     while (true) {
-        std::vector<std::string> comand = m_menu->nextCommand();
+        std::vector<std::string> command = m_menu->nextCommand();
 
-        if (comand.empty()) {
+        if (command.empty()) {
             continue;
         }
 
-        std::string cmdName = comand[0]; // "add"/"get"/"search"
+        std::string cmdName = command[0]; // "add"/"get"/"search"
 
         auto it = m_commands.find(cmdName);
         if (it == m_commands.end()) {
             continue; // unknown command
         }
 
-        it->second->execute(comand, m_fileManager);
+        it->second->execute(command, m_fileManager);
     }
 }
