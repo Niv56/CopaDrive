@@ -15,7 +15,6 @@
     }
 
     
-
     //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){
         std :: string  command;
@@ -71,6 +70,14 @@
         if (command[0] == 'a' || command[0] == 'A') {  
             if (parts.size() == 2) {
             parts.push_back("");
+            }
+        }
+
+         //in case the command is get join 2 parts of the contant to 1 part.
+        if (command[0] == 'g' || command[0] == 'G') {  
+            if (parts.size() == 3 ) {
+            parts[1] = parts[1] + " " + parts[2];
+            parts.pop_back();
             }
         }
 

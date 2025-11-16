@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-class IMenu{ public:
+class IMenu{ 
+    public:
     virtual std::vector <std::string> nextCommand() = 0;   
 };
 #endif
