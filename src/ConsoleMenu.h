@@ -10,7 +10,6 @@ class ConsoleMenu : public IMenu{
     public:
         std::vector <std::string> nextCommand();
 
-    private:
         std :: string readInput();
 
         bool validInput(std :: vector <std :: string> command);
