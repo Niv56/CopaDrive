@@ -7,16 +7,18 @@
 #include "ICompressor.h"
 
 #include <map>
+#include <string>
+#include <vector>
 
-class App{
-    private:
-        FileManager m_fileManager;
-        IMenu* m_menu;
-        std :: map <std :: string , ICommand*> m_commands;
+class App {
+private:
+    FileManager m_fileManager;
+    IMenu*      m_menu;
+    std::map<std::string, ICommand*> m_commands;
 
-    public:
-        App(ICompressor* compressor, IMenu* menu);
-        void run();
-
+public:
+    App(ICompressor* compressor, IMenu* menu);
+    void run();
 };
+
 #endif

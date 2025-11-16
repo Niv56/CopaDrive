@@ -1,18 +1,25 @@
+// FileManager.cpp
 #include "FileManager.h"
-#include "ICompressor.h"
-#include <cstdlib>
-#include <fstream>
-#include <filesystem>
+#include <cstdlib>   
+#include <stdexcept>   
 
-//constructor
-    FileManager :: FileManager (const ICompressor& compressor): m_compressor(compressor)
-    {
-        //get an environment variable path
-        const char* environment = std :: getenv ("PATH_DIR");
-        //check if the getnec succeed
-        if(environment == nullptr){
-            throw std :: runtime_error ("The getenv method failed");
-        }
-        //set the path
-        this->environmentVariable = environment;
+FileManager::FileManager(const ICompressor& compressor)
+    : environmentVariable(),
+      m_compressor(compressor) {
+
+    const char* environment = std::getenv("PATH_DIR");
+
+    if (environment == nullptr) {
+        throw std::runtime_error("The getenv method failed");
     }
+
+    this->environmentVariable = environment;
+}
+
+const std::string& FileManager::getEnvironment() const {
+    return environmentVariable;
+}
+
+const ICompressor& FileManager::getCompressor() const {
+    return m_compressor;
+}

@@ -1,27 +1,37 @@
+// GetCommand.cpp
 #include "GetCommand.h"
+#include "FileManager.h"
 
-     std :: string FileManager :: loadFile (const std :: string& filename){
-          //create the fullpath
-        std :: string fullPath = environmentVariable +"/"+ filename;
-        std :: ifstream MyFile;
-        //open the file
-        MyFile.open(fullPath);
-        //variable to wirte down the data from the file.
-        std :: string content = "";
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
-        //check if the file opmed
-        if(MyFile.is_open()){
-            std :: string nextLine;
-            //every loop fet one line from the file.
-            while (std::getline(MyFile,nextLine))
-            {   
-                content += nextLine;   
-            }
-            //decompress the data
-            content = m_compressor.decompress(content);
-            MyFile.close();
-        }
-       else 
-            return ""; 
-        return content;
-     }
+void GetCommand::execute(const std::vector<std::string>& comand,
+                         FileManager& fm) {
+    if (comand.size() < 2) {
+        return;
+    }
+
+    const std::string& fileName = comand[1];
+
+    const std::string& basePath      = fm.getEnvironment();
+    const ICompressor& compressor    = fm.getCompressor();
+
+    std::string fullPath = basePath + "/" + fileName;
+
+    std::ifstream myFile(fullPath);
+    if (!myFile.is_open()) {
+        return;
+    }
+
+    std::string compressed;
+    std::string nextLine;
+    while (std::getline(myFile, nextLine)) {
+        compressed += nextLine;
+    }
+    myFile.close();
+
+    std::string content = compressor.decompress(compressed);
+
+    std::cout << content << std::endl;
+}

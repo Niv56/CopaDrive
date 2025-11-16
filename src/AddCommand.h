@@ -4,10 +4,11 @@
 
 #include "ICommand.h"
 
-// this class responsibility: handle 'add' command
 class AddCommand : public ICommand {
 public:
-    void execute() override;
+    // Command format: ["add", fileName, content]
+    void execute(const std::vector<std::string>& comand,
+                 FileManager& fm) override;
 };
 
 #endif
