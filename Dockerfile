@@ -26,6 +26,3 @@ RUN cmake .. && make
 
 #Run main.cpp
 CMD ["./ConsoleApp"]
-
-# run the tests
-CMD ["./tests/runTests"]

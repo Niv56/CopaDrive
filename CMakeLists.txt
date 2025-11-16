@@ -27,4 +27,3 @@ add_subdirectory(tests)
 
 add_executable(ConsoleApp src/main.cpp)
 target_link_libraries(ConsoleApp PRIVATE CopaDriveLib)
-
