@@ -4,7 +4,6 @@
 #include <sstream>
 #include <cctype>
 
-    //this method takes the command, and return vector with each part of the command.
     std :: vector<std :: string> ConsoleMenu :: nextCommand(){
 
         std :: string command = readInput();
@@ -16,65 +15,62 @@
     }
 
     
-    //this method recives from the user command.
     std :: string ConsoleMenu :: readInput(){
         std :: string  command;
         std ::getline(std :: cin,command);
         return command;
     }
 
-    //this method split the command to vector according the command.
      std::vector<std::string> ConsoleMenu ::  splitCommand(std ::string command){
-       //create new vector
+
         std :: vector<std::string> parts;
 
+        // Create a string stream to parse the command using formatted extraction
         std :: istringstream iss (command);
 
+        // Extract the command name.
         std :: string first;
         if(!(iss>>first)){
-            // in case there is no command 
             return parts;
         }
-        //add new part to the end of the vector.
         parts.push_back(first);
-        
+    
+        // Extract the first argument.
         std :: string second;
         if(!(iss>> second)){
-            // in case there is no command 
             return parts;
         }
-        //add new part to the end of the vector.
         parts.push_back(second);
 
-        //save the end of the sentence
+        // Extract everything left in the stream as the trailing argument.
         std :: string end;
         std :: getline (iss, end);
     
-        //erase the ' ' befor the end part.
+        // Clean up leading whitespace produced by getline().
         if (!end.empty() && end[0] == ' ') {
             end.erase(0, 1); 
             }
         
-        //add the last part to the vector.
+        // Add the trailing argument (if any) to the vector.
         if (!end.empty()) {
             parts.push_back(end);
             }
 
-            //in case the command is search join 2 parts of the contant to 1 part.
+            // For 'search' command, merge the 2 last argument into a single argument.
         if (command[0] == 's' || command[0] == 'S') {  
             if (parts.size() == 3 ) {
             parts[1] = parts[1] + " " + parts[2];
             parts.pop_back();
             }
         }
-            //in case the command is add amd the user insert an empty file contant.
+            // For 'add' command, if only the filename is provifed, insert an empty file content.
         if (command[0] == 'a' || command[0] == 'A') {  
             if (parts.size() == 2) {
             parts.push_back("");
             }
         }
 
-         //in case the command is get join 2 parts of the contant to 1 part.
+         // For 'get' command, merge the 2 last argument into a single argument.
         if (command[0] == 'g' || command[0] == 'G') {  
             if (parts.size() == 3 ) {
             parts[1] = parts[1] + " " + parts[2];
@@ -85,17 +81,18 @@
         return parts;
     }
 
-    //this method checks if the user input is correct according the format Coomand [filename] contant.
     bool ConsoleMenu :: validInput(std :: vector <std :: string> command) {
-       //base case
+       
+        // Base case
         if(command.empty()) return false;
         if(command.size() == 1) return false;
-         //switch to lowercase
+         
+        // Switch to lowercase
         for(char &c :command[0]){
             c = std :: tolower(c);
         }
 
-        //vladition for add command
+        // 'add' expects exactly: add <filename> <content>
         if(command[0] == "add"){
             if(command.size() == 3){
                 return true;
@@ -104,7 +101,8 @@
                 return false;
         }
 
-         if(command[0] == "get"){
+        // 'get' expects exactly: get <filename> 
+        if(command[0] == "get"){
             if(command.size() == 2){
                 return true;
             }
@@ -112,7 +110,8 @@
                 return false;
         }
 
-             if(command[0] == "search"){
+        // 'search' expects exactly: search <content>
+        if(command[0] == "search"){
             if(command.size() == 2){
                 return true;
             }

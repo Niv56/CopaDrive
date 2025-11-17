@@ -8,12 +8,15 @@ App::App(ICompressor* compressor, IMenu* menu)
     : m_fileManager(*compressor),
       m_menu(menu) {
 
+    //Map command name to thier command object
     m_commands["add"]    = new AddCommand();
     m_commands["get"]    = new GetCommand();
     m_commands["search"] = new SearchCommand();
 }
 
+
 void App::run() {
+    
     while (true) {
         std::vector<std::string> command = m_menu->nextCommand();
 
@@ -23,9 +26,10 @@ void App::run() {
 
         std::string cmdName = command[0]; // "add"/"get"/"search"
 
+        // Skip unknown commands
         auto it = m_commands.find(cmdName);
         if (it == m_commands.end()) {
-            continue; // unknown command
+            continue; 
         }
 
         it->second->execute(command, m_fileManager);

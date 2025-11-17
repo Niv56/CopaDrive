@@ -13,11 +13,16 @@
 class App {
 private:
     FileManager m_fileManager;
-    IMenu*      m_menu;
+    // Defines the user interface for reading commands
+    IMenu* m_menu;
+    //maps command names to their ICommand handlers
     std::map<std::string, ICommand*> m_commands;
 
 public:
+
+    //  Initialize the App with given menu and compressor components.
     App(ICompressor* compressor, IMenu* menu);
+    // Main application loop: read, validate, and execute user commands
     void run();
 };
 
