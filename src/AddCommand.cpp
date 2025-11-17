@@ -2,11 +2,12 @@
 #include "AddCommand.h"
 #include "FileManager.h"
 
+#include <iostream>
 #include <filesystem>
 #include <fstream>
 
-void AddCommand::execute(const std::vector<std::string>& comand,
-                         FileManager& fm) {
+void AddCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+        
     if (comand.size() < 3) {
         return;
     }

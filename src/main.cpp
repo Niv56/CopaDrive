@@ -1,6 +1,7 @@
 #include "App.h"
 #include "RLECompressor.h"
 #include "ConsoleMenu.h"
+#include <iostream>
 
 int main() {
     ICompressor* comp = new RLECompressor();
