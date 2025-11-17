@@ -7,8 +7,7 @@
 #include <iostream>
 
 void GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
-    
-    // Not enough arguments for 'get'
+
     if (comand.size() < 2) {
         return;
     }

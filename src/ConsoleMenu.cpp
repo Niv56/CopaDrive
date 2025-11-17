@@ -5,6 +5,7 @@
 #include <cctype>
 
     std :: vector<std :: string> ConsoleMenu :: nextCommand(){
+
         std :: string command = readInput();
         std :: vector <std :: string> parts = splitCommand(command);
         if(validInput(parts)) 
