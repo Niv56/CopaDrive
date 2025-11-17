@@ -4,7 +4,6 @@
 #include <sstream>
 #include <cctype>
 
-    // Read the raw user input and divide it into command name and arguments.
     std :: vector<std :: string> ConsoleMenu :: nextCommand(){
         std :: string command = readInput();
         std :: vector <std :: string> parts = splitCommand(command);
@@ -15,14 +14,12 @@
     }
 
     
-    // Retrieve the raw input line from the user
     std :: string ConsoleMenu :: readInput(){
         std :: string  command;
         std ::getline(std :: cin,command);
         return command;
     }
 
-    // Split the raw command string into a command name and its arguments
      std::vector<std::string> ConsoleMenu ::  splitCommand(std ::string command){
 
         std :: vector<std::string> parts;
@@ -83,7 +80,6 @@
         return parts;
     }
 
-    // Validate that the user input matches the expected command format
     bool ConsoleMenu :: validInput(std :: vector <std :: string> command) {
        
         // Base case

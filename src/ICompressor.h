@@ -3,6 +3,8 @@
 
 #include <string>
 
+// Compressor interface: defines the compress() and decompress() operations
+// that all compressor types must implement.
 class ICompressor {
 public:
     // Compress raw text into compressed form

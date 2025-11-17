@@ -3,7 +3,6 @@
 #include "GetCommand.h"
 #include "SearchCommand.h"
 
-//  Initialize the App with given menu and compressor components.
 App::App(ICompressor* compressor, IMenu* menu)
     : m_fileManager(*compressor),
       m_menu(menu) {
