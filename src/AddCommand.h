@@ -6,9 +6,8 @@
 
 class AddCommand : public ICommand {
 public:
-    // Command format: ["add", fileName, content]
-    void execute(const std::vector<std::string>& comand,
-                 FileManager& fm) override;
-};
+    // Command format: [ add , fileName, content]
+    void execute(const std::vector<std::string>& comand, FileManager& fm) override;
+    };
 
 #endif

@@ -3,12 +3,14 @@
 #include <cstdlib>   
 #include <stdexcept>   
 
-FileManager::FileManager(const ICompressor& compressor)
-    : environmentVariable(),
+// Initialize the Filemanager with the provided compressor
+FileManager::FileManager(const ICompressor& compressor): environmentVariable(),
       m_compressor(compressor) {
 
+    // Retrive the directory path from the "PATH_DIR" enviroment variable.
     const char* environment = std::getenv("PATH_DIR");
-
+    
+    // If PATH_DIR is not defined, fail with an error
     if (environment == nullptr) {
         throw std::runtime_error("The getenv method failed");
     }

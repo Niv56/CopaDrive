@@ -10,8 +10,7 @@ class ICommand {
 public:
     virtual ~ICommand() = default;
 
-    virtual void execute(const std::vector<std::string>& comand,
-                         FileManager& fm) = 0;
+    virtual void execute(const std::vector<std::string>& comand, FileManager& fm) = 0;
 };
 
 #endif
