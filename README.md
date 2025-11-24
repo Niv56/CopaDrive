@@ -13,6 +13,9 @@ docker run -it -v "%cd%/storage:/usr/src/mytest/storage" copadrive
 Linux / macOS:
 docker run -it -v "$(pwd)/storage:/usr/src/mytest/storage" copadrive
 
+# Running Tests with Docker
+docker run --rm -it copadrive ./tests/runTests
+
 
 
 # About the Application
@@ -29,7 +32,7 @@ The application runs inside a Docker container.
 
 # Run Examples
 
-### Docker Build & Run (basic)
+### Docker Build & Run
 
 ![Docker Build & Run](Images/1.png)
 
@@ -37,6 +40,10 @@ The application runs inside a Docker container.
 
 ![Docker Persistence](Images/2.png)
 
-### JIRA / Project Overview
+### Docker Run With Persistence
 
 ![JIRA Overview](Images/3.png)
+
+### Running Tests with Docker
+
+ ![JIRA Overview](Images/4.png)
