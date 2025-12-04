@@ -9,14 +9,14 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        // שימוש בפונקציה החדשה שבדקנו בטסטים
+        // Port validation
         int port = ServerUtils::parsePort(argv[1]);
 
         TCPServer server(port);
         server.start();
     } 
     catch (const std::exception& e) {
-        // זה תופס גם שגיאות פורט (מהפונקציה) וגם שגיאות סוקט (מהשרת)
+        // Handles port and socket exceptions
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
