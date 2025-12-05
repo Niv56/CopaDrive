@@ -1,7 +1,7 @@
 // tests/AddCommand_test.cpp
 #include <gtest/gtest.h>
 
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
 

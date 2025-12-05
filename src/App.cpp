@@ -1,5 +1,5 @@
 #include "App.h"
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "GetCommand.h"
 #include "SearchCommand.h"
 #include "DeleteCommand.h"
@@ -11,7 +11,7 @@ App::App(ICompressor* compressor, IIOHandler* io)
       m_io(io) {
 
     //Map command name to thier command object
-    m_commands["post"]    = new AddCommand();
+    m_commands["post"]    = new PostCommand();
     m_commands["get"]    = new GetCommand();
     m_commands["search"] = new SearchCommand();
     m_commands["delete"]   = new DeleteCommand();
