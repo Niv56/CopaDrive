@@ -10,6 +10,7 @@ add_executable(runTests
     AddCommand_test.cpp
     SearchCommand_test.cpp
     GetCommand_test.cpp
+    DeleteCommand_test.cpp
 
     # REMOVE THIS — old FileManager tests no longer valid:
     # FileManager_test.cpp
