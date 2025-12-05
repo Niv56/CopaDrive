@@ -7,7 +7,7 @@ add_executable(runTests
     ConsoleMenu_test.cpp
 
     # New tests for command-based architecture
-    AddCommand_test.cpp
+    PostCommand_test.cpp
     SearchCommand_test.cpp
     GetCommand_test.cpp
     DeleteCommand_test.cpp

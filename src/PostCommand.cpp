@@ -1,12 +1,12 @@
 // AddCommand.cpp
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "FileManager.h"
 
 #include <iostream>
 #include <filesystem>
 #include <fstream>
 
-void AddCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+void PostCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
         
     if (comand.size() < 3) {
         return;
