@@ -1,8 +1,10 @@
 #include "TCPServer.h"
+#include "ClientSession.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
 #include <unistd.h>
+#include <thread>
 
 using namespace std;
 
@@ -33,7 +35,32 @@ void TCPServer::start() {
         throw runtime_error("Error listening to socket");
     }
 
-    cout << "Server initialized successfully. Listening on port " << _port << endl;
+    cout << "Server is listening on port " << _port << "..." << endl;
+
+    // Main Accept Loop
+    while (true) {
+        struct sockaddr_in client_addr;
+        socklen_t client_len = sizeof(client_addr);
+
+        // Awaits new client (Blocked)
+        int client_socket = accept(_server_socket, (struct sockaddr*)&client_addr, &client_len);
+        
+        if (client_socket < 0) {
+            perror("Error accepting client");
+            continue;
+        }
+
+        cout << "New client connected! Socket ID: " << client_socket << endl;
+
+        // Using lambda function we create a new thread for client session
+        std::thread clientThread([client_socket] () {
+            ClientSession session(client_socket);
+            session.run();
+        });
+
+        // Release the Thread to run independently (Detach)
+        clientThread.detach();
+    }
 }
 
 TCPServer::~TCPServer() {

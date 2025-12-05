@@ -14,11 +14,11 @@ public:
     // Constructor for port
     TCPServer(int port);
     
-    // For binding and listening
-    void start();
-
     // Destructor for closing the scoket
     ~TCPServer();
+    
+    // For binding and listening
+    void start();
 };
 
 #endif

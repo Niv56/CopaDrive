@@ -2,23 +2,31 @@
 #include "AddCommand.h"
 #include "GetCommand.h"
 #include "SearchCommand.h"
+#include "CommandParser.h"
 #include <iostream>
 
-App::App(ICompressor* compressor, IMenu* menu)
+App::App(ICompressor* compressor, IIOHandler* io)
     : m_fileManager(*compressor),
-      m_menu(menu) {
+      m_io(io) {
 
     //Map command name to thier command object
     m_commands["add"]    = new AddCommand();
     m_commands["get"]    = new GetCommand();
     m_commands["search"] = new SearchCommand();
+    m_commands["post"]   = new AddCommand();
 }
 
 
 void App::run() {
     
     while (true) {
-        std::vector<std::string> command = m_menu->nextCommand();
+         std::string input = m_io->read();
+
+         if (input.empty()) {
+            break; 
+        }
+
+        std::vector<std::string> command = CommandParser::parse(input);
 
         if (command.empty()) {
             continue;

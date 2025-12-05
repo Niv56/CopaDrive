@@ -4,6 +4,11 @@ FROM gcc:latest
 # Install CMake
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
+# Install Threads
+RUN apt-get update && \
+    apt-get install -y libpthread-stubs0-dev netcat-openbsd telnet && \
+    apt-get clean
+
 # Copy the whole project into the container
 COPY . /usr/src/mytest
 WORKDIR /usr/src/mytest
@@ -25,4 +30,5 @@ WORKDIR /usr/src/mytest/build
 RUN cmake .. && make
 
 #Run main.cpp
-CMD ["./ConsoleApp"]
+ENTRYPOINT ["./ConsoleApp"]
+CMD ["5555"]
