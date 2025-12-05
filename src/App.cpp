@@ -2,6 +2,7 @@
 #include "AddCommand.h"
 #include "GetCommand.h"
 #include "SearchCommand.h"
+#include "DeleteCommand.h"
 #include "CommandParser.h"
 #include <iostream>
 
@@ -10,10 +11,10 @@ App::App(ICompressor* compressor, IIOHandler* io)
       m_io(io) {
 
     //Map command name to thier command object
-    m_commands["add"]    = new AddCommand();
+    m_commands["post"]    = new AddCommand();
     m_commands["get"]    = new GetCommand();
     m_commands["search"] = new SearchCommand();
-    m_commands["post"]   = new AddCommand();
+    m_commands["delete"]   = new DeleteCommand();
 }
 
 
@@ -32,7 +33,7 @@ void App::run() {
             continue;
         }
 
-        std::string cmdName = command[0]; // "add"/"get"/"search"
+        std::string cmdName = command[0]; // "post"/"get"/"search"/"delete"
 
         // Skip unknown commands
         auto it = m_commands.find(cmdName);
