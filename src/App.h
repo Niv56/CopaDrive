@@ -2,7 +2,7 @@
 #define APP_H
 
 #include "ICommand.h"
-#include "IMenu.h"
+#include "IIOHandler.h"
 #include "FileManager.h"
 #include "ICompressor.h"
 
@@ -14,14 +14,14 @@ class App {
 private:
     FileManager m_fileManager;
     // Defines the user interface for reading commands
-    IMenu* m_menu;
+    IIOHandler* m_io;
     //maps command names to their ICommand handlers
     std::map<std::string, ICommand*> m_commands;
 
 public:
 
     //  Initialize the App with given menu and compressor components.
-    App(ICompressor* compressor, IMenu* menu);
+    App(ICompressor* compressor, IIOHandler* io);
     // Main application loop: read, validate, and execute user commands
     void run();
 };

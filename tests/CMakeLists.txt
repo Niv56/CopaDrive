@@ -13,6 +13,9 @@ add_executable(runTests
 
     # REMOVE THIS — old FileManager tests no longer valid:
     # FileManager_test.cpp
+
+    # New test for server validation
+    ServerInitTests.cpp
 )
 
 # Link GoogleTest + main library
