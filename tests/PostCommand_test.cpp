@@ -1,4 +1,4 @@
-// tests/AddCommand_test.cpp
+// tests/PostCommand_test.cpp
 #include <gtest/gtest.h>
 
 #include "PostCommand.h"
@@ -18,15 +18,15 @@ static void setPathDirEnv(const std::string& dir) {
 #endif
 }
 
-// Test fixture for AddCommand-related tests
-class AddCommandTest : public ::testing::Test {
+// Test fixture for PostCommand-related tests
+class PostCommandTest : public ::testing::Test {
 protected:
     std::string testDir;
 
     void SetUp() override {
         // Create a temporary directory for the test files
         testDir = (std::filesystem::temp_directory_path()
-                   / "copadrive_add_tests").string();
+                   / "copadrive_post_tests").string();
         std::filesystem::create_directories(testDir);
 
         // Make FileManager use this temporary directory
@@ -39,15 +39,15 @@ protected:
     }
 };
 
-// should add a file successfully
-TEST_F(AddCommandTest, ShouldAddFileSuccessfully) {
+// should post a file successfully
+TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
     RLECompressor compressor;
     FileManager fm(compressor);
 
-    AddCommand cmd;
+    PostCommand cmd;
 
-    // Command format: ["add", fileName, content]
-    std::vector<std::string> comand = {"add", "hello.txt", "hello world"};
+    // Command format: ["post", fileName, content]
+    std::vector<std::string> comand = {"post", "hello.txt", "hello world"};
 
     cmd.execute(comand, fm);
 
@@ -72,15 +72,15 @@ TEST_F(AddCommandTest, ShouldAddFileSuccessfully) {
     EXPECT_EQ(decompressed, "hello world");
 }
 
-// should not add an unnamed file
-TEST_F(AddCommandTest, ShouldNotAddUnnamedFile) {
+// should not post an unnamed file
+TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
     RLECompressor compressor;
     FileManager fm(compressor);
 
-    AddCommand cmd;
+    PostCommand cmd;
 
     // Empty file name
-    std::vector<std::string> comand = {"add", "", "some content"};
+    std::vector<std::string> comand = {"post", "", "some content"};
     cmd.execute(comand, fm);
 
     // Check that no files were created in the test directory

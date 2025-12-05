@@ -1,7 +1,7 @@
 // tests/SearchCommand_test.cpp
 #include <gtest/gtest.h>
 
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "SearchCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
@@ -42,13 +42,13 @@ TEST_F(SearchCommandTest, ShouldFindMatchingFiles) {
     RLECompressor compressor;
     FileManager fm(compressor);
 
-    AddCommand addCmd;
+    PostCommand PostCmd;
     SearchCommand searchCmd;
 
     // Prepare some files
-    addCmd.execute({"add", "file1.txt", "hello world"}, fm);
-    addCmd.execute({"add", "file2.txt", "another text"}, fm);
-    addCmd.execute({"add", "file3.txt", "worldwide hello"}, fm);
+    PostCmd.execute({"post", "file1.txt", "hello world"}, fm);
+    PostCmd.execute({"post", "file2.txt", "another text"}, fm);
+    PostCmd.execute({"post", "file3.txt", "worldwide hello"}, fm);
 
     // Capture std::cout
     std::stringstream buffer;
@@ -74,10 +74,10 @@ TEST_F(SearchCommandTest, ShouldPrintNothingIfNoMatch) {
     RLECompressor compressor;
     FileManager fm(compressor);
 
-    AddCommand addCmd;
+    PostCommand PostCmdCmd;
     SearchCommand searchCmd;
 
-    addCmd.execute({"add", "file1.txt", "hello world"}, fm);
+    PostCmdCmd.execute({"Post", "file1.txt", "hello world"}, fm);
 
     // Capture std::cout
     std::stringstream buffer;

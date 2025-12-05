@@ -1,7 +1,7 @@
 // tests/GetCommand_test.cpp
 #include <gtest/gtest.h>
 
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "GetCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
@@ -42,11 +42,11 @@ TEST_F(GetCommandTest, ShouldPrintFileContent) {
     RLECompressor compressor;
     FileManager fm(compressor);
 
-    AddCommand addCmd;
+    PostCommand PostCmd;
     GetCommand getCmd;
 
-    // Create a file via AddCommand
-    addCmd.execute({"add", "note.txt", "this is a note"}, fm);
+    // Create a file via PostCommand
+    PostCmd.execute({"Post", "note.txt", "this is a note"}, fm);
 
     // Capture std::cout
     std::stringstream buffer;
