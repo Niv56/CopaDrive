@@ -3,12 +3,13 @@
 #define DELETECOMMAND_H
 
 #include "ICommand.h"
+#include "CommandResult.h"
 
 class DeleteCommand : public ICommand{
 
 public:
 
-    void execute(const std::vector<std::string>& comand, FileManager& fm) override;
+    CommandResult execute(const std::vector<std::string>& comand, FileManager& fm) override;
 };
 
 #endif

@@ -1,15 +1,16 @@
 // GetCommand.cpp
 #include "GetCommand.h"
 #include "FileManager.h"
+#include "CommandResult.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
-void GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+CommandResult GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
 
-    if (comand.size() < 2) {
-        return;
+    if (comand.size() != 2) {
+        return CommandResult(StatusCode::BAD_REQUEST,"");
     }
 
     // Extract filename for clearer name. 
@@ -25,7 +26,7 @@ void GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm
     std::ifstream myFile(fullPath);
     // In case the fail opening failed. 
     if (!myFile.is_open()) {
-        return;
+        return CommandResult(StatusCode::NOT_FOUND,"");
     }
 
     std::string compressed;
@@ -40,5 +41,6 @@ void GetCommand::execute(const std::vector<std::string>& comand, FileManager& fm
     std::string content = compressor.decompress(compressed);
 
     // Print the content to the screen.
-    std::cout << content << std::endl;
+    //std::cout << content << std::endl;
+    return CommandResult(StatusCode::OK, content);
 }
