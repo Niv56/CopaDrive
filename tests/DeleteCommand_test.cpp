@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "DeleteCommand.h"
-#include "AddCommand.h"
+#include "PostCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
 
