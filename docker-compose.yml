@@ -1,21 +1,45 @@
-version: '3.9'
-
+version: "3.9"
 services:
-  server:
-    build: . 
-    container_name: copadrive_server
-    ports: 
-      - "5555:5555"
-    environment:
-      - PATH_DIR=/user/src/mytest/storage
-    command: ["5555"]
 
+  # Pass port to ConsoleApp
+  server:
+    build: .
+    container_name: copadrive_server
+    ports:
+      - "5555:5555"                   
+    environment:
+      - PATH_DIR=/usr/src/mytest/storage
+    command: ["5555"]                 
+
+  # Run unit tests
   test:
     build: .
     container_name: copadrive_test
     working_dir: /usr/src/mytest/build
     environment:
       - PATH_DIR=/usr/src/mytest/storage
-    entrypoint: ["ctest", "--output-on-failure"]
+    entrypoint: ["ctest", "--output-on-failure"]  
 
+  # C++ client image
+  cpp-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client.cpp
+    container_name: copadrive_client_cpp
+    stdin_open: true                  
+    tty: true                       
+    depends_on:
+      - server                           
+    command: ["server", "5555"]     
 
+    # Python client image     
+  python-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client.python 
+    container_name: copadrive_client_python
+    stdin_open: true
+    tty: true
+    depends_on:
+      - server
+    command: ["server", "5555"]            
