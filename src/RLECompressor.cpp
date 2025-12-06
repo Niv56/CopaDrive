@@ -1,5 +1,4 @@
 #include "RLECompressor.h"
-
 #include <sstream>   // std::ostringstream
 #include <iomanip>   // std::hex, std::setw, std::setfill, std::uppercase
 #include <cctype>    // std::isdigit
