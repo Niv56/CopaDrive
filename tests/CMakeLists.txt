@@ -18,6 +18,7 @@ add_executable(runTests
 
     # New test for server validation
     ServerInitTests.cpp
+    StressTest.cpp
 )
 
 # Link GoogleTest + main library
