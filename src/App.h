@@ -12,7 +12,7 @@
 
 class App {
 private:
-    FileManager m_fileManager;
+    FileManager& m_fileManager;
     // Defines the user interface for reading commands
     IIOHandler* m_io;
     //maps command names to their ICommand handlers
@@ -21,7 +21,7 @@ private:
 public:
 
     //  Initialize the App with given menu and compressor components.
-    App(ICompressor* compressor, IIOHandler* io);
+    App(IIOHandler* io, FileManager& FileManager);
     // Main application loop: read, validate, and execute user commands
     void run();
 };

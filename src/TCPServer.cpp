@@ -1,5 +1,7 @@
 #include "TCPServer.h"
 #include "ClientSession.h"
+#include "RLECompressor.h"
+#include "FileManager.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
@@ -8,7 +10,11 @@
 
 using namespace std;
 
-TCPServer::TCPServer(int port) : _port(port), _server_socket(0) {
+TCPServer::TCPServer(int port) 
+: _port(port), 
+_server_socket(0), 
+m_compressor(), 
+m_fm(m_compressor) {
 }
 
 void TCPServer::start() {
@@ -53,8 +59,8 @@ void TCPServer::start() {
         cout << "New client connected! Socket ID: " << client_socket << endl;
 
         // Using lambda function we create a new thread for client session
-        std::thread clientThread([client_socket] () {
-            ClientSession session(client_socket);
+        std::thread clientThread([client_socket , this] () {
+            ClientSession session(client_socket , this ->m_fm);
             session.run();
         });
 

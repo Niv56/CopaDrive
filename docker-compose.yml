@@ -1,7 +1,6 @@
-version: "3.9"
 services:
 
-  # Pass port to ConsoleApp
+  # Run port to ConsoleApp
   server:
     build: .
     container_name: copadrive_server
