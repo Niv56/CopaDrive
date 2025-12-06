@@ -1,8 +1,6 @@
-// DeleteCommand.cpp
 #include "DeleteCommand.h"
 #include "FileManager.h"
 #include "CommandResult.h"
-
 #include <iostream>
 #include <filesystem>
 

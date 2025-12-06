@@ -1,9 +1,8 @@
-// CommandResult.cpp
 #include "CommandResult.h"
 #include <sstream>
 
 // Initialization of the static StatusMessage map
-const std::map<StatusCode, std::string> CommandResult::StatusMassege = {
+const std::map<StatusCode, std::string> CommandResult::StatusMessage = {
     {StatusCode::CREATED,"Created"},
     {StatusCode::NO_CONTENT,"No Content"},
     {StatusCode::OK,"Ok"},
@@ -16,8 +15,8 @@ std::string CommandResult::format(const CommandResult& result) {
     std::stringstream response;
 
     // Build the status response
-    auto it = StatusMassege.find(result.status);
-    if (it == StatusMassege.end()) {
+    auto it = StatusMessage.find(result.status);
+    if (it == StatusMessage.end()) {
         response << 500 << " " << "Internal Server Error";
     } else {
         response << static_cast<int>(result.status) << " " << it->second;

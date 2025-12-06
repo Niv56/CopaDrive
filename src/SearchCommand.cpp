@@ -1,11 +1,19 @@
-// SearchCommand.cpp
 #include "SearchCommand.h"
 #include "FileManager.h"
 #include "CommandResult.h"
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <cctype>
+
+// --- Helper Function: Case-Insensitive Conversion ---
+std::string toLowerCase(const std::string& str) {
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+    return lowerStr;
+}
 
 CommandResult SearchCommand::execute(const std::vector<std::string> &comand, FileManager &fm)
 {
@@ -18,6 +26,9 @@ CommandResult SearchCommand::execute(const std::vector<std::string> &comand, Fil
 
     // Extract filename for clearer name.
     const std::string &textToSearch = comand[1];
+
+    // Convert search term to lowercase once
+    std::string textToSearchLower = toLowerCase(textToSearch);
 
     const std::string &basePath = fm.getEnvironment();
     const ICompressor &compressor = fm.getCompressor();
@@ -58,9 +69,13 @@ CommandResult SearchCommand::execute(const std::vector<std::string> &comand, Fil
             // Expand the compressed data back to original text
             std::string contentDecompressed = compressor.decompress(compressed);
 
-            // Check if the file content contains the search term
-            if (contentDecompressed.find(textToSearch) != std::string::npos ||
-                fileName.find(textToSearch) != std::string::npos)
+            // Convert content and filename to lowercase for comparison
+            std::string contentLower = toLowerCase(contentDecompressed);
+            std::string fileNameLower = toLowerCase(fileName);
+
+            // Check if the file content contains the search term (using lowercase versions)
+            if (contentLower.find(textToSearchLower) != std::string::npos ||
+                fileNameLower.find(textToSearchLower) != std::string::npos)
             {
                 filesName.push_back(fileName);
             }

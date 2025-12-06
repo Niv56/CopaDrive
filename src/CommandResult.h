@@ -1,4 +1,3 @@
-//CommandResult.h
 #ifndef COMMAND_RESULT_H
 #define COMMAND_RESULT_H
 
@@ -25,7 +24,7 @@ struct CommandResult
     // Constructor 
     CommandResult(StatusCode s, const std::string& b) : status(s), body(b) {}
 
-    static const std::map<StatusCode, std::string> StatusMassege;
+    static const std::map<StatusCode, std::string> StatusMessage;
 
     // Convert from CommandResult into string to able pass the info to the client.
     static std::string format (const CommandResult& result);

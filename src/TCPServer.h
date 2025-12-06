@@ -4,7 +4,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
 #include "FileManager.h"
 #include "RLECompressor.h"
 
