@@ -13,7 +13,8 @@
 #include <iostream>
 
 // Helper: set PATH_DIR env var for tests
-static void setPathDirEnv_Search(const std::string& dir) {
+static void setPathDirEnv_Search(const std::string &dir)
+{
 #ifdef _WIN32
     _putenv_s("PATH_DIR", dir.c_str());
 #else
@@ -21,24 +22,27 @@ static void setPathDirEnv_Search(const std::string& dir) {
 #endif
 }
 
-class SearchCommandTest : public ::testing::Test {
+class SearchCommandTest : public ::testing::Test
+{
 protected:
     std::string testDir;
 
-    void SetUp() override {
-        testDir = (std::filesystem::temp_directory_path()
-                   / "copadrive_search_tests").string();
+    void SetUp() override
+    {
+        testDir = (std::filesystem::temp_directory_path() / "copadrive_search_tests").string();
         std::filesystem::create_directories(testDir);
         setPathDirEnv_Search(testDir);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         std::filesystem::remove_all(testDir);
     }
 };
 
 // should find files that contain the searched text
-TEST_F(SearchCommandTest, ShouldFindMatchingFiles) {
+TEST_F(SearchCommandTest, ShouldFindMatchingFiles)
+{
     RLECompressor compressor;
     FileManager fm(compressor);
 
@@ -50,17 +54,12 @@ TEST_F(SearchCommandTest, ShouldFindMatchingFiles) {
     PostCmd.execute({"post", "file2.txt", "another text"}, fm);
     PostCmd.execute({"post", "file3.txt", "worldwide hello"}, fm);
 
-    // Capture std::cout
-    std::stringstream buffer;
-    std::streambuf* oldBuf = std::cout.rdbuf(buffer.rdbuf());
-
     // Search for "world"
-    searchCmd.execute({"search", "world"}, fm);
+    CommandResult result = searchCmd.execute({"search", "world"}, fm);
 
-    // Restore std::cout
-    std::cout.rdbuf(oldBuf);
+    EXPECT_EQ(StatusCode::OK, result.status);
 
-    std::string output = buffer.str();
+    std::string output = result.body;
 
     // We expect file1 and file3 in the output (order not guaranteed)
     EXPECT_NE(output.find("file1.txt"), std::string::npos);
@@ -70,7 +69,8 @@ TEST_F(SearchCommandTest, ShouldFindMatchingFiles) {
 }
 
 // should print nothing when no match found
-TEST_F(SearchCommandTest, ShouldPrintNothingIfNoMatch) {
+TEST_F(SearchCommandTest, ShouldPrintNothingIfNoMatch)
+{
     RLECompressor compressor;
     FileManager fm(compressor);
 
@@ -79,15 +79,9 @@ TEST_F(SearchCommandTest, ShouldPrintNothingIfNoMatch) {
 
     PostCmdCmd.execute({"Post", "file1.txt", "hello world"}, fm);
 
-    // Capture std::cout
-    std::stringstream buffer;
-    std::streambuf* oldBuf = std::cout.rdbuf(buffer.rdbuf());
-
     // Search for something that doesn't exist
-    searchCmd.execute({"search", "xxx"}, fm);
+    CommandResult result = searchCmd.execute({"search", "xxx"}, fm);
 
-    std::cout.rdbuf(oldBuf);
-
-    std::string output = buffer.str();
-    EXPECT_TRUE(output.empty());
+    EXPECT_EQ(StatusCode::NOT_FOUND, result.status);
+    EXPECT_TRUE(result.body.empty());
 }

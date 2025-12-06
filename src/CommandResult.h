@@ -22,6 +22,9 @@ struct CommandResult
     // The body of the data (for get and search).
     std::string body;
 
+    // Constructor 
+    CommandResult(StatusCode s, const std::string& b) : status(s), body(b) {}
+
     static const std::map<StatusCode, std::string> StatusMassege;
 
     // Convert from CommandResult into string to able pass the info to the client.

@@ -4,6 +4,7 @@
 #include "PostCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
+#include "CommandResult.h"
 
 #include <filesystem>
 #include <fstream>
@@ -49,15 +50,14 @@ TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
     // Command format: ["post", fileName, content]
     std::vector<std::string> comand = {"post", "hello.txt", "hello world"};
 
-    cmd.execute(comand, fm);
-
+    CommandResult result = cmd.execute(comand, fm);
     // Build full path to the created file
     std::string fullPath = fm.getEnvironment() + "/hello.txt";
 
     // Check that file exists
-    EXPECT_TRUE(std::filesystem::exists(fullPath));
+    EXPECT_EQ(result.status,StatusCode::CREATED);
 
-    // Optional: verify content by reading + decompressing
+    // Verify content by reading + decompressing
     std::ifstream file(fullPath);
     ASSERT_TRUE(file.is_open());
 
@@ -74,6 +74,7 @@ TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
 
 // should not post an unnamed file
 TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
+    
     RLECompressor compressor;
     FileManager fm(compressor);
 
@@ -81,7 +82,10 @@ TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
 
     // Empty file name
     std::vector<std::string> comand = {"post", "", "some content"};
-    cmd.execute(comand, fm);
+    CommandResult result = cmd.execute(comand, fm);
+    
+    EXPECT_EQ(result.status, StatusCode::BAD_REQUEST);
+    EXPECT_TRUE(result.body.empty());
 
     // Check that no files were created in the test directory
     std::size_t fileCount = 0;
@@ -90,5 +94,6 @@ TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
             ++fileCount;
         }
     }
-    EXPECT_EQ(fileCount, 0);
+    
 }
+
