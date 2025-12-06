@@ -1,0 +1,13 @@
+# Dockerfile.client.python - Python client image
+
+# Use a lightweight Python image
+FROM python:3.11-slim
+
+# Working directory inside the container
+WORKDIR /usr/src/client
+
+# Copy the Python client script
+COPY src/python_client.py .
+
+# Set the Python client as the default executable
+ENTRYPOINT ["python", "python_client.py"]
