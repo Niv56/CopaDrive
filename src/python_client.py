@@ -58,12 +58,28 @@ def main():
             except Exception:
                 break
 
-            # Receive exactly one response line
-            response = recv_line(sock)
-            if response is None:
+            # 1. Status line
+            status = recv_line(sock)
+            if status is None:
                 break
 
-            print(response.decode("utf-8"), flush=True)
+            status_text = status.decode("utf-8")
+            print(status_text)
+
+            if not status_text.startswith("200 "):
+                continue
+
+            # 2. blank line
+            blank = recv_line(sock)
+            if blank is None:
+                break
+
+            # 3. body line
+            body = recv_line(sock)
+            if body is None:
+                break
+
+            print(body.decode("utf-8"), flush=True)
 
     finally:
         sock.close()

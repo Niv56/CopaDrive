@@ -1,11 +1,12 @@
-#include <iostream>     // console input/output
-#include <string>       // std::string
-#include <cstring>      // std::memset
+#include <iostream>
+#include <string>
+#include <cstring>
 
-// Networking (POSIX sockets)
-#include <sys/socket.h> // socket(), send(), recv()
-#include <netinet/in.h> // sockaddr_in, htons()
-#include <arpa/inet.h>  // inet_pton()
+// Networking
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>      // getaddrinfo, freeaddrinfo
 #include <unistd.h>     // close()
 
 // Send entire buffer over TCP
@@ -37,31 +38,43 @@ static bool recvLine(int sock, std::string& out) {
 }
 
 int main(int argc, char* argv[]) {
-    // Validate args: expect <ip> <port>
-    if (argc != 3) return 1;
+    // Expect: <host> <port>   e.g.  "server 5555"
+    if (argc != 3) {
+        return 1;
+    }
 
-    std::string serverIp = argv[1];
+    std::string serverHost = argv[1];
     int port = 0;
 
-    // Parse port
-    try { port = std::stoi(argv[2]); }
-    catch (...) { return 1; }
+    try {
+        port = std::stoi(argv[2]);
+    } catch (...) {
+        return 1;
+    }
     if (port < 1 || port > 65535) return 1;
 
     // Create TCP socket
     int sock = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) return 1;
 
-    // Prepare server address
-    sockaddr_in serverAddr{};
-    std::memset(&serverAddr, 0, sizeof(serverAddr));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(port);
+    // Resolve hostname (e.g. "server") to IPv4 address
+    struct addrinfo hints{};
+    std::memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;      // IPv4
+    hints.ai_socktype = SOCK_STREAM;  // TCP
 
-    if (::inet_pton(AF_INET, serverIp.c_str(), &serverAddr.sin_addr) <= 0) {
+    struct addrinfo* res = nullptr;
+    int rc = ::getaddrinfo(serverHost.c_str(), nullptr, &hints, &res);
+    if (rc != 0 || !res) {
         ::close(sock);
         return 1;
     }
+
+    sockaddr_in serverAddr{};
+    std::memcpy(&serverAddr, res->ai_addr, sizeof(sockaddr_in));
+    serverAddr.sin_port = htons(port);
+
+    ::freeaddrinfo(res);
 
     // Connect to server
     if (::connect(sock, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
@@ -81,11 +94,28 @@ int main(int argc, char* argv[]) {
 
         if (!sendAll(sock, line)) break;
 
-        std::string response;
-        if (!recvLine(sock, response)) break;
+        // 1. Read status line (e.g. "200 Ok", "201 Created", "404 Not Found")
+        std::string statusLine;
+        if (!recvLine(sock, statusLine)) break;
 
-        // Client prints ONLY server output
-        std::cout << response << std::endl;
+        std::cout << statusLine << std::endl;
+
+        // If not 200, no body is expected
+        if (statusLine.rfind("200 ", 0) != 0) {
+            continue;
+        }
+
+        // 2. Read blank line (separator)
+        std::string blank;
+        if (!recvLine(sock, blank)) break;
+
+        // 3. Read body line (content / file list)
+        std::string body;
+        if (!recvLine(sock, body)) break;
+
+        if (!body.empty()) {
+            std::cout << body << std::endl;
+        }
     }
 
     ::close(sock);
