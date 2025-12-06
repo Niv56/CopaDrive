@@ -5,6 +5,7 @@
 #include "GetCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
+#include "CommandResult.h"
 
 #include <filesystem>
 #include <fstream>
@@ -45,24 +46,27 @@ TEST_F(GetCommandTest, ShouldPrintFileContent) {
     PostCommand PostCmd;
     GetCommand getCmd;
 
+    std::string content = "this is a note"
+
     // Create a file via PostCommand
-    PostCmd.execute({"Post", "note.txt", "this is a note"}, fm);
+     PostCmd.execute({"Post", "note.txt", content}, fm);
 
     // Capture std::cout
     std::stringstream buffer;
     std::streambuf* oldBuf = std::cout.rdbuf(buffer.rdbuf());
 
     // Run get command
-    getCmd.execute({"get", "note.txt"}, fm);
+    CommandResult result = getCmd.execute({"get", "note.txt"}, fm);
 
-    std::cout.rdbuf(oldBuf);
+    
+    EXPECT_EQ(result.status, StatusCode::OK);
+    
+    EXPECT_EQ(result.body, testContent);
+    
 
-    std::string output = buffer.str();
-    // GetCommand prints content + std::endl
-    EXPECT_NE(output.find("this is a note"), std::string::npos);
 }
 
-// should do nothing if file does not exist
+// should return 404 not found if file does not exist
 TEST_F(GetCommandTest, ShouldDoNothingIfFileMissing) {
     RLECompressor compressor;
     FileManager fm(compressor);
@@ -70,14 +74,12 @@ TEST_F(GetCommandTest, ShouldDoNothingIfFileMissing) {
     GetCommand getCmd;
 
     // Capture std::cout
-    std::stringstream buffer;
     std::streambuf* oldBuf = std::cout.rdbuf(buffer.rdbuf());
 
     // Try to get non-existing file
-    getCmd.execute({"get", "missing.txt"}, fm);
+    CommandResult result = getCmd.execute({"get", "missing.txt"}, fm);
 
-    std::cout.rdbuf(oldBuf);
-
-    std::string output = buffer.str();
-    EXPECT_TRUE(output.empty());
-}
+    EXPECT_EQ(result.status, StatusCode::NOT_FOUND);
+    
+    EXPECT_TRUE(result.body.empty());
+   }

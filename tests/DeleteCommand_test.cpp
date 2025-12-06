@@ -4,6 +4,7 @@
 #include "PostCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
+#include "CommandResult.h"
 
 
 #include <iostream>
@@ -51,9 +52,10 @@ TEST_F(DeleteCommandTest, ShouldDeleteFileSuccessfully){
     file.close();
 
     EXPECT_TRUE(std::filesystem::exists(fullPath));
-
-    cmd.execute(comand,fm);
+   
+    CommandResult result = cmd.execute(comand,fm);
  
+    EXPECT_EQ(result.status,StatusCode::NO_CONTENT);
     EXPECT_FALSE(std::filesystem::exists(fullPath));
 }
 
@@ -68,8 +70,10 @@ TEST_F(DeleteCommandTest, ShouldNotCrashWhenFileDoesNotExist){
 
     EXPECT_FALSE(std::filesystem::exists(fullPath));
 
-    cmd.execute(comand,fm);
- 
+    CommandResult result = cmd.execute(comand,fm);
+     
+    EXPECT_EQ(result.status,StatusCode::NOT_FOUND);
+
     EXPECT_FALSE(std::filesystem::exists(fullPath));
 }
 

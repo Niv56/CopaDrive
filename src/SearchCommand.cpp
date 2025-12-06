@@ -7,28 +7,33 @@
 #include <fstream>
 #include <iostream>
 
-CommandResult SearchCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
-    
+CommandResult SearchCommand::execute(const std::vector<std::string> &comand, FileManager &fm)
+{
+
     // Not enough arguments for 'search'
-    if (comand.size() != 2) {
-        return CommandResult(StatusCode::BAD_REQUEST,"");
+    if (comand.size() != 2)
+    {
+        return CommandResult(StatusCode::BAD_REQUEST, "");
     }
 
-    // Extract filename for clearer name. 
-    const std::string& textToSearch = comand[1];
+    // Extract filename for clearer name.
+    const std::string &textToSearch = comand[1];
 
-    const std::string& basePath = fm.getEnvironment();
-    const ICompressor& compressor = fm.getCompressor();
+    const std::string &basePath = fm.getEnvironment();
+    const ICompressor &compressor = fm.getCompressor();
 
     // List of files matching the search term
     std::vector<std::string> filesName;
 
-    try {
+    try
+    {
         // Iterate over all files in the storage directory
-        for (const auto& entry :std::filesystem::directory_iterator(basePath)) {
-            
+        for (const auto &entry : std::filesystem::directory_iterator(basePath))
+        {
+
             // Ignore non-file entries
-            if (!entry.is_regular_file()) {
+            if (!entry.is_regular_file())
+            {
                 continue;
             }
 
@@ -37,38 +42,51 @@ CommandResult SearchCommand::execute(const std::vector<std::string>& comand, Fil
 
             // If file can't be opened, ignore it
             std::ifstream myFile(fullPath);
-            if (!myFile.is_open()) {
-                return CommandResult(StatusCode::INTERNAL_SERVER_ERROR,"");
+            if (!myFile.is_open())
+            {
+                return CommandResult(StatusCode::INTERNAL_SERVER_ERROR, "");
             }
 
             std::string compressed;
             std::string nextLine;
             // Read compressed file content line by line
-            while (std::getline(myFile, nextLine)) {
+            while (std::getline(myFile, nextLine))
+            {
                 compressed += nextLine;
             }
             myFile.close();
             // Expand the compressed data back to original text
             std::string contentDecompressed = compressor.decompress(compressed);
-          
+
             // Check if the file content contains the search term
             if (contentDecompressed.find(textToSearch) != std::string::npos ||
-                fileName.find(textToSearch) != std::string::npos) 
+                fileName.find(textToSearch) != std::string::npos)
             {
-                    filesName.push_back(fileName);
+                filesName.push_back(fileName);
             }
         }
-    } catch (const std::filesystem::filesystem_error& e) {
-            return CommandResult(StatusCode::INTERNAL_SERVER_ERROR,"");
     }
-  
+    catch (const std::filesystem::filesystem_error &e)
+    {
+        return CommandResult(StatusCode::INTERNAL_SERVER_ERROR, "");
+    }
+
     std::string files = "";
-    // Print all matching filenames
-    for (const auto& name : filesName) {
-       if(!files.empty()){
-            files+= "\n";
-       }
-       files+= name;
+    // Insert all matching filenames into string
+    for (const auto &name : filesName)
+    {
+        if (!files.empty())
+        {
+            files += "\n";
+        }
+        files += name;
     }
-    return CommandResult(StatusCode::OK, files);
+    if (files.empty())
+    {
+        return CommandResult(StatusCode::NOT_FOUND, files);
+    }
+    else
+    {
+        return CommandResult(StatusCode::OK, files);
+    }
 }
