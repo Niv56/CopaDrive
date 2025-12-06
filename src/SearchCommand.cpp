@@ -1,16 +1,17 @@
 // SearchCommand.cpp
 #include "SearchCommand.h"
 #include "FileManager.h"
+#include "CommandResult.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
-void SearchCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+CommandResult SearchCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
     
     // Not enough arguments for 'search'
-    if (comand.size() < 2) {
-        return;
+    if (comand.size() != 2) {
+        return CommandResult(StatusCode::BAD_REQUEST,"");
     }
 
     // Extract filename for clearer name. 
@@ -37,7 +38,7 @@ void SearchCommand::execute(const std::vector<std::string>& comand, FileManager&
             // If file can't be opened, ignore it
             std::ifstream myFile(fullPath);
             if (!myFile.is_open()) {
-                continue;
+                return CommandResult(StatusCode::INTERNAL_SERVER_ERROR,"");
             }
 
             std::string compressed;
@@ -51,15 +52,23 @@ void SearchCommand::execute(const std::vector<std::string>& comand, FileManager&
             std::string contentDecompressed = compressor.decompress(compressed);
           
             // Check if the file content contains the search term
-            if (contentDecompressed.find(textToSearch) != std::string::npos) {
-                filesName.push_back(fileName);
+            if (contentDecompressed.find(textToSearch) != std::string::npos ||
+                fileName.find(textToSearch) != std::string::npos) 
+            {
+                    filesName.push_back(fileName);
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
+            return CommandResult(StatusCode::INTERNAL_SERVER_ERROR,"");
     }
   
+    std::string files = "";
     // Print all matching filenames
     for (const auto& name : filesName) {
-        std::cout << name << std::endl;
+       if(!files.empty()){
+            files+= "\n";
+       }
+       files+= name;
     }
+    return CommandResult(StatusCode::OK, files);
 }

@@ -4,6 +4,8 @@
 #include "SearchCommand.h"
 #include "DeleteCommand.h"
 #include "CommandParser.h"
+#include "CommandResult.h"
+
 #include <iostream>
 
 App::App(ICompressor* compressor, IIOHandler* io)
@@ -23,24 +25,23 @@ void App::run() {
     while (true) {
          std::string input = m_io->read();
 
-         if (input.empty()) {
-            break; 
+          if (input.empty()) {
+            break; }
+
+         // Set defult case for commands (unknoen command - bad request)
+         CommandResult result =CommandResult(StatusCode::BAD_REQUEST,"");
+         
+         std::vector<std::string> command = CommandParser::parse(input);
+
+        if (!command.empty()) {
+
+            std::string cmdName = command[0]; // "post"/"get"/"search"/"delete"
+            auto it = m_commands.find(cmdName);
+            
+            if (it != m_commands.end()) {
+                result = it->second->execute(command, m_fileManager);
+            } 
+          m_io->write(CommandResult::format(result));
         }
-
-        std::vector<std::string> command = CommandParser::parse(input);
-
-        if (command.empty()) {
-            continue;
-        }
-
-        std::string cmdName = command[0]; // "post"/"get"/"search"/"delete"
-
-        // Skip unknown commands
-        auto it = m_commands.find(cmdName);
-        if (it == m_commands.end()) {
-            continue; 
-        }
-
-        it->second->execute(command, m_fileManager);
     }
 }

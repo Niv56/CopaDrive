@@ -1,15 +1,16 @@
 // AddCommand.cpp
 #include "PostCommand.h"
 #include "FileManager.h"
+#include "CommandResult.h"
 
 #include <iostream>
 #include <filesystem>
 #include <fstream>
 
-void PostCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
+CommandResult PostCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
         
-    if (comand.size() < 3) {
-        return;
+    if (comand.size() != 3) {
+        return CommandResult(StatusCode::BAD_REQUEST,"");
     }
 
     //Extract filename and content for clearer names 
@@ -17,7 +18,7 @@ void PostCommand::execute(const std::vector<std::string>& comand, FileManager& f
     const std::string& content  = comand[2];
 
     if (fileName.empty()) {
-        return;
+        return CommandResult(StatusCode::BAD_REQUEST,"");
     }
 
     const std::string& basePath = fm.getEnvironment();
@@ -36,10 +37,11 @@ void PostCommand::execute(const std::vector<std::string>& comand, FileManager& f
     std::ofstream myFile(fullPath);
     // In case the file opning failed
     if (!myFile.is_open()) {
-        return;
+        return CommandResult(StatusCode::INTERNAL_SERVER_ERROR,"");
     }
     // Write the content into the file
     myFile << compressed;
     // Close the file
     myFile.close();
+    return CommandResult(StatusCode::CREATED,"");
 }
