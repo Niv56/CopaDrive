@@ -1,11 +1,11 @@
 #include "ClientSession.h"
 #include "App.h"
-#include "RLECompressor.h"
+#include "FileManager.h"
 #include "SocketIOHandler.h"
 #include <iostream>
 #include <string>
 
-ClientSession::ClientSession(int clientSocket) : _clientSocket(clientSocket) {
+ClientSession::ClientSession(int clientSocket , FileManager& sharedFile) : _clientSocket(clientSocket) , m_fm(sharedFile) {
 }
 
 void ClientSession::run() {
@@ -13,11 +13,9 @@ void ClientSession::run() {
         // Creates the I/O base on the socket
         SocketIOHandler io(_clientSocket);
         
-        // Creates compressor for client
-        RLECompressor compressor;
         
         // Creates App and connects it to socket
-        App app(&compressor, &io);
+        App app(&io, m_fm);
         
         // Logical function based on clients connection
         app.run();
