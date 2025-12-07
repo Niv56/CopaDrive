@@ -6,48 +6,63 @@
 #include "CommandParser.h"
 #include "CommandResult.h"
 
-#include <iostream>
+#include <sstream>
+#include <vector>
 
+// ====== Constructor ======
 App::App(IIOHandler *io, FileManager &fileManager)
     : m_fileManager(fileManager),
       m_io(io)
 {
-
-  // Map command name to thier command object
-  m_commands["post"] = new PostCommand();
-  m_commands["get"] = new GetCommand();
-  m_commands["search"] = new SearchCommand();
-  m_commands["delete"] = new DeleteCommand();
+   
+    m_commands["post"]   = new PostCommand();
+    m_commands["get"]    = new GetCommand();
+    m_commands["search"] = new SearchCommand();
+    m_commands["delete"] = new DeleteCommand();
 }
 
+// ====== Main loop ======
 void App::run()
 {
-
-  while (true)
-  {
-    std::string input = m_io->read();
-
-    if (input.empty())
+    while (true)
     {
-      break;
+        std::string input = m_io->read();
+
+        if (input.empty())
+        {
+            break;
+        }
+
+        CommandResult result(StatusCode::BAD_REQUEST, "");
+
+        std::vector<std::string> command = CommandParser::parse(input);
+
+        if (!command.empty())
+        {
+            std::string cmdName = command[0]; // "post"/"get"/"search"/"delete"
+            auto it = m_commands.find(cmdName);
+
+            if (it != m_commands.end())
+            {
+                result = it->second->execute(command, m_fileManager);
+            }
+        }
+
+        m_io->write(CommandResult::format(result));
+
+        if (result.status == StatusCode::OK && !result.body.empty())
+        {
+
+            m_io->write("");
+
+            std::stringstream ss(result.body);
+            std::string line;
+            while (std::getline(ss, line))
+            {
+                m_io->write(line);
+            }
+
+            m_io->write("");
+        }
     }
-
-    // Set defult case for commands (unknoen command - bad request)
-    CommandResult result = CommandResult(StatusCode::BAD_REQUEST, "");
-
-    std::vector<std::string> command = CommandParser::parse(input);
-
-    if (!command.empty())
-    {
-
-      std::string cmdName = command[0]; // "post"/"get"/"search"/"delete"
-      auto it = m_commands.find(cmdName);
-
-      if (it != m_commands.end())
-      {
-        result = it->second->execute(command, m_fileManager);
-      }
-    }
-    m_io->write(CommandResult::format(result));
-  }
 }

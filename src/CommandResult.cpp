@@ -10,11 +10,9 @@ const std::map<StatusCode, std::string> CommandResult::StatusMessage = {
     {StatusCode::BAD_REQUEST,"Bad Request"},
     {StatusCode::INTERNAL_SERVER_ERROR,"Internal Server Error"}
 };
-
 std::string CommandResult::format(const CommandResult& result) {
     std::stringstream response;
 
-    // Build the status response
     auto it = StatusMessage.find(result.status);
     if (it == StatusMessage.end()) {
         response << 500 << " " << "Internal Server Error";
@@ -22,10 +20,7 @@ std::string CommandResult::format(const CommandResult& result) {
         response << static_cast<int>(result.status) << " " << it->second;
     }
 
-    // For 200 OK we also add body after blank line
-    if (result.status == StatusCode::OK) {
-        response << "\n\n" << result.body;
-    }
-
+ 
     return response.str();
 }
+

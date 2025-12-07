@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
 
         std::cout << statusLine << std::endl;
 
-        // If not 200, no body is expected
+     
         if (statusLine.rfind("200 ", 0) != 0) {
             continue;
         }
@@ -109,14 +109,25 @@ int main(int argc, char* argv[]) {
         std::string blank;
         if (!recvLine(sock, blank)) break;
 
-        // 3. Read body line (content / file list)
-        std::string body;
-        if (!recvLine(sock, body)) break;
+  
+        std::cout << std::endl;
 
-        if (!body.empty()) {
-            std::cout << body << std::endl;
+        while (true) {
+            std::string bodyLine;
+            if (!recvLine(sock, bodyLine)) {
+           
+                goto end;
+            }
+            if (bodyLine.empty()) {
+               
+                break;
+            }
+            std::cout << bodyLine << std::endl;
         }
     }
+end:
+    ;
+
 
     ::close(sock);
     return 0;
