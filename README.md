@@ -48,6 +48,7 @@ During the project we tried to code in a way that would be easy to extend later,
 Still, there were several places where we had to change existing code, and we learned from that.
 
 1. Moving from IMenu to IOHandler and CommandParser
+
    At the beginning, the IMenu interface did too many things: read input from the user, parsed the command, and passed it to App. This created unnecessary coupling between components that should not depend on each other.
    In the refactoring phase, we split it into two parts:
    IOHandler – responsible only for reading and writing through the socket.
@@ -56,6 +57,7 @@ Still, there were several places where we had to change existing code, and we le
    However, the change did require us to update several parts of the project. If we had designed it like this from the start, we would have avoided a lot of rewrite.
 
 2. Changing Command Names
+
    When the command names changed, we had to update:
    the parser and App tests,
    the command map inside App.
@@ -63,6 +65,7 @@ Still, there were several places where we had to change existing code, and we le
    But the good part is that the changes were limited to a few places and did not spread across all files.
 
 3. Adding New Commands
+
    When adding a new command, we saw that the architecture worked well:
    We created a new class.
    We added  one line in App to register the new command.
@@ -71,6 +74,7 @@ Still, there were several places where we had to change existing code, and we le
    This means the system is open for extension in this area, except for the single registration point in App.
 
 4. Changing Command Output and Adding CommandResult
+
    This was the biggest change. At the first project, commands did not return anything—they just wrote directly to the client. Once we upgraded the protocol and added Status Codes, every command had to return a CommandResult.
    This required:
    changing the execute signature in the interface,
@@ -80,11 +84,13 @@ Still, there were several places where we had to change existing code, and we le
    Any future protocol change will be much easier.
 
 5. Thread Safety
+
    To make the code safety to thread, we started passing references instead of copies (mainly in App).
    This prevented issues with duplicate objects and made the design cleaner. 
    The change was small but important.
 
 6. Thread pool change
+
    In our current implementation, the server logic (the App class and the command classes) does not depend on the threading model.
    Creating new thread for each client is done in the outer server layer, while App only receives an IOHandler and a FileManager.
    Therefore, if we will want switch to thread pool, we will need to change only the server-side code that manages the threads.
