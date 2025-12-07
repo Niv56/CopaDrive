@@ -84,10 +84,9 @@ Still, there were several places where we had to change existing code, and we le
    This prevented issues with duplicate objects and made the design cleaner. 
    The change was small but important.
 
-   Overall Summary
-   Some changes required touching many files, but they improved the system’s design.
-   Adding new commands required minimal changes in the code.
-   Renaming commands still requires editing a few places, but not too many.
-   Splitting IMenu into IOHandler and CommandParser made the system more organized and less coupled.
-   In the end, even though some changes were not small, the code is now much more ready for the next tasks, and future updates will be easier to implement.
-
+6. Thread pool change
+   In our current implementation, the server logic (the App class and the command classes) does not depend on the threading model.
+   Creating new thread for each client is done in the outer server layer, while App only receives an IOHandler and a FileManager.
+   Therefore, if we will want switch to thread pool, we will need to change only the server-side code that manages the threads.
+   We would not need to modify App or any of the command implementations.
+   In this sense, our code is relatively closed to modification (the internal logic does not change) and open to extension (we can replace the threading mechanism with a small change in the server layer only).
