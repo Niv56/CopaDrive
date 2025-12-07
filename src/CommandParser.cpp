@@ -1,95 +1,86 @@
 #include "CommandParser.h"
 #include <sstream>
-#include <algorithm> // for tolower
+#include <algorithm>
 #include <iostream>
 
+// Parses a raw command line into tokens: command name + arguments.
 std::vector<std::string> CommandParser::parse(const std::string& input) {
     std::vector<std::string> parts;
 
-    // Empty Input
-    if(input.empty()) return {};
+    if (input.empty()) return {};
 
     std::string command = input;
 
-    // Remove all '\r' and '\n'
+    // Strip all line-ending characters.
     command.erase(std::remove(command.begin(), command.end(), '\r'), command.end());
     command.erase(std::remove(command.begin(), command.end(), '\n'), command.end());
 
     std::istringstream iss(command);
 
-    //Extra command name
+    // Read the command name.
     std::string commandName;
-    if(!(iss >> commandName)){
-        return {}; // Only whitespace in command
+    if (!(iss >> commandName)) {
+        return {};
     }
 
-    // Convert to lowercase
+    // Normalize to lower case so commands are case-insensitive.
     for (char& c : commandName) c = std::tolower(c);
     parts.push_back(commandName);
 
-    // Handle search method ("search" + content)
-    if(commandName == "search"){
+    // search: "search" + free text.
+    if (commandName == "search") {
         std::string rest;
         std::getline(iss, rest);
 
-        // Trim leading space if exists
-        if(!rest.empty() && rest[0] == ' '){
-            rest.erase(0,1);
+        if (!rest.empty() && rest[0] == ' ') {
+            rest.erase(0, 1);
         }
-        
-        // search MUST have content
+
         if (rest.empty()) {
-            return {}; // invalid search
+            return {};
         }
 
         parts.push_back(rest);
         return parts;
     }
 
-    // Handle get and delete - exactly one filename
+    // get/delete: exactly one filename.
     if (commandName == "get" || commandName == "delete") {
         std::string filename;
 
-        // must have filename
         if (!(iss >> filename)) {
-            return {}; 
+            return {};
         }
 
-        // cannot have more than one argument
         std::string extra;
         if (iss >> extra) {
-            return {};  
+            return {};
         }
 
         parts.push_back(filename);
         return parts;
     }
 
-    // Handle post - ("post" + filename + content)
+    // post: "post" + filename + rest of line as content.
     if (commandName == "post") {
         std::string filename;
 
-        // must have filename
         if (!(iss >> filename)) {
-            return {};  
+            return {};
         }
 
         parts.push_back(filename);
 
-        // now read the rest of the line as content
         std::string content;
         std::getline(iss, content);
 
-        // remove leading space if exists
         if (!content.empty() && content[0] == ' ') {
             content.erase(0, 1);
         }
 
-        // EMPTY content is allowed for post
         parts.push_back(content);
-
         return parts;
     }
 
-    return {}; // invalid command
+    return {};
 }

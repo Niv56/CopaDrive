@@ -1,16 +1,13 @@
-// tests/PostCommand_test.cpp
 #include <gtest/gtest.h>
-
 #include "PostCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
 #include "CommandResult.h"
-
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
 
-// Helper: set PATH_DIR env var for tests
+// Configure PATH_DIR so PostCommand writes into a temp test directory.
 static void setPathDirEnv(const std::string& dir) {
 #ifdef _WIN32
     _putenv_s("PATH_DIR", dir.c_str());
@@ -19,28 +16,24 @@ static void setPathDirEnv(const std::string& dir) {
 #endif
 }
 
-// Test fixture for PostCommand-related tests
+// Test fixture: creates a temporary storage directory for each test and cleans it up.
 class PostCommandTest : public ::testing::Test {
 protected:
     std::string testDir;
 
     void SetUp() override {
-        // Create a temporary directory for the test files
         testDir = (std::filesystem::temp_directory_path()
                    / "copadrive_post_tests").string();
         std::filesystem::create_directories(testDir);
-
-        // Make FileManager use this temporary directory
         setPathDirEnv(testDir);
     }
 
     void TearDown() override {
-        // Clean up all files created during the test
         std::filesystem::remove_all(testDir);
     }
 };
 
-// should post a file successfully
+// Post a file with valid name and content → expect 201 Created and correct decompressed content.
 TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
     RLECompressor compressor;
     FileManager fm(compressor);
@@ -51,13 +44,11 @@ TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
     std::vector<std::string> comand = {"post", "hello.txt", "hello world"};
 
     CommandResult result = cmd.execute(comand, fm);
-    // Build full path to the created file
+
     std::string fullPath = fm.getEnvironment() + "/hello.txt";
 
-    // Check that file exists
     EXPECT_EQ(result.status,StatusCode::CREATED);
 
-    // Verify content by reading + decompressing
     std::ifstream file(fullPath);
     ASSERT_TRUE(file.is_open());
 
@@ -72,9 +63,8 @@ TEST_F(PostCommandTest, ShouldPostFileSuccessfully) {
     EXPECT_EQ(decompressed, "hello world");
 }
 
-// should not post an unnamed file
+// Reject a 'post' with empty filename → 400 Bad Request and no files written.
 TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
-    
     RLECompressor compressor;
     FileManager fm(compressor);
 
@@ -87,13 +77,10 @@ TEST_F(PostCommandTest, ShouldNotPostUnnamedFile) {
     EXPECT_EQ(result.status, StatusCode::BAD_REQUEST);
     EXPECT_TRUE(result.body.empty());
 
-    // Check that no files were created in the test directory
     std::size_t fileCount = 0;
     for (const auto& entry : std::filesystem::directory_iterator(testDir)) {
         if (entry.is_regular_file()) {
             ++fileCount;
         }
     }
-    
 }
-

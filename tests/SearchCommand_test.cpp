@@ -1,18 +1,15 @@
-// tests/SearchCommand_test.cpp
 #include <gtest/gtest.h>
-
 #include "PostCommand.h"
 #include "SearchCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
-
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
 
-// Helper: set PATH_DIR env var for tests
+// Configure PATH_DIR so all search tests work inside a temp directory.
 static void setPathDirEnv_Search(const std::string &dir)
 {
 #ifdef _WIN32
@@ -22,6 +19,7 @@ static void setPathDirEnv_Search(const std::string &dir)
 #endif
 }
 
+// Test fixture: creates a dedicated storage folder per test and cleans it up.
 class SearchCommandTest : public ::testing::Test
 {
 protected:
@@ -40,7 +38,7 @@ protected:
     }
 };
 
-// should find files that contain the searched text
+// Create several files and verify that 'search' returns only the matching filenames.
 TEST_F(SearchCommandTest, ShouldFindMatchingFiles)
 {
     RLECompressor compressor;
@@ -68,7 +66,7 @@ TEST_F(SearchCommandTest, ShouldFindMatchingFiles)
     EXPECT_EQ(output.find("file2.txt"), std::string::npos);
 }
 
-// should print nothing when no match found
+// Search for a term that does not exist → expect 404 and empty body.
 TEST_F(SearchCommandTest, ShouldPrintNothingIfNoMatch)
 {
     RLECompressor compressor;

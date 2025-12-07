@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 
+// Unit tests for CommandParser: splitting, validation, case-insensitivity and CRLF handling.
 TEST(CommandParserSplit, PostWithContent) {
     std::string input = "post hello.txt hello world";
     auto parts = CommandParser::parse(input);

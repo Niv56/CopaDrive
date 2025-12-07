@@ -4,29 +4,26 @@
 #include <iostream>
 #include <filesystem>
 
+// Deletes a single file from the storage directory.
 CommandResult DeleteCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
 
-   if (comand.size() != 2) {
-        return CommandResult{StatusCode::BAD_REQUEST,""};
+    if (comand.size() != 2) {
+        return CommandResult{StatusCode::BAD_REQUEST, ""};
     }
 
-    //Extract filename for clearer names 
     const std::string& fileName = comand[1];
 
     if (fileName.empty()) {
-        return CommandResult{StatusCode::BAD_REQUEST,""};
+        return CommandResult{StatusCode::BAD_REQUEST, ""};
     }
 
-     
     const std::string& basePath = fm.getEnvironment();
+    std::string fullPath = basePath + "/" + fileName;
 
-     // Build the full file path, so the ofstream knows where to save the file. 
-    std::string fullPath   = basePath + "/" + fileName;
-
-    // Use std::filesystem::remove to delete the file
-    if (std :: filesystem :: remove(fullPath)) {
-       return CommandResult{StatusCode::NO_CONTENT,""};
+    // Try to remove the file from disk.
+    if (std::filesystem::remove(fullPath)) {
+        return CommandResult{StatusCode::NO_CONTENT, ""};
     } else {
-                return CommandResult{StatusCode::NOT_FOUND,""};
-   }
+        return CommandResult{StatusCode::NOT_FOUND, ""};
+    }
 }

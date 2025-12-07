@@ -1,15 +1,13 @@
 #ifndef SEARCHCOMMAND_H
 #define SEARCHCOMMAND_H
-
 #include "ICommand.h"
 #include "CommandResult.h"
 
+// Command that searches all stored files by content or filename.
 class SearchCommand : public ICommand {
 public:
-    // Execute the 'search' command: print list of files that contain the given search term.
-    // Format of command: ['search' ,<content>]
+    // Executes: SEARCH <text>, returns matching filenames (one per line).
     CommandResult execute(const std::vector<std::string>& comand, FileManager& fm) override;
-
 };
 
 #endif
