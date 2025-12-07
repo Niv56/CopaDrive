@@ -1,8 +1,6 @@
-// GetCommand.cpp
 #include "GetCommand.h"
 #include "FileManager.h"
 #include "CommandResult.h"
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>

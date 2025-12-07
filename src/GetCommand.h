@@ -1,4 +1,3 @@
-// GetCommand.h
 #ifndef GETCOMMAND_H
 #define GETCOMMAND_H
 

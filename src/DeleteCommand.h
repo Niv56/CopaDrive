@@ -1,4 +1,3 @@
-// DeleteCommand.h
 #ifndef DELETECOMMAND_H
 #define DELETECOMMAND_H
 

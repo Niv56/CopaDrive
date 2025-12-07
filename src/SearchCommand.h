@@ -1,4 +1,3 @@
-// SearchCommand.h
 #ifndef SEARCHCOMMAND_H
 #define SEARCHCOMMAND_H
 
