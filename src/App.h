@@ -1,28 +1,28 @@
 #ifndef APP_H
 #define APP_H
-
 #include "ICommand.h"
 #include "IIOHandler.h"
 #include "FileManager.h"
 #include "ICompressor.h"
-
 #include <map>
 #include <string>
 #include <vector>
 
+// Central application class: wires IO, commands and file manager together.
 class App {
 private:
+    // Shared file-storage API (thread-safe, used by all commands).
     FileManager& m_fileManager;
-    // Defines the user interface for reading commands
+    // Abstract IO channel (console or socket).
     IIOHandler* m_io;
-    //maps command names to their ICommand handlers
+    // Maps command names to their handlers.
     std::map<std::string, ICommand*> m_commands;
 
 public:
-
-    //  Initialize the App with given menu and compressor components.
+    // Construct the app with a concrete IO and FileManager.
     App(IIOHandler* io, FileManager& FileManager);
-    // Main application loop: read, validate, and execute user commands
+
+    // Main loop: read a command, dispatch to the right ICommand, send response.
     void run();
 };
 

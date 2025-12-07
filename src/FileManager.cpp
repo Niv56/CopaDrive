@@ -8,18 +8,15 @@
 
 namespace fs = std::filesystem;
 
-// Initialize the static mutex (mandatory in .cpp file)
+// Static mutex shared by all FileManager instances (guards file-system access).
 std::mutex FileManager::_fsMutex;
 
-// Initialize the Filemanager with the provided compressor
+// Ctor: initialize base directory from PATH_DIR and store compressor reference.
 FileManager::FileManager(const ICompressor &compressor)
     : environmentVariable(), m_compressor(compressor)
 {
-
-    // Retrive the directory path from the "PATH_DIR" enviroment variable.
     const char *environment = std::getenv("PATH_DIR");
 
-    // If PATH_DIR is not defined, fail with an error
     if (environment == nullptr)
     {
         this->environmentVariable = ".";
@@ -40,25 +37,17 @@ const ICompressor &FileManager::getCompressor() const
     return m_compressor;
 }
 
+// Build full path for a given filename under the base directory.
 std::string FileManager::resolvePath(const std::string &filename) const
 {
     fs::path basePath(environmentVariable);
     return (basePath / filename).string();
 }
 
-/*  Thread Safety Implementation Notes:
-    Boundary: The static mutex _fsMutex guards ALL file system write/read operations.
-    Scope: The lock is held for the entire duration of the function to prevent partial reads/writes.
-    Safety: std::lock_guard ensures the mutex is released even if exceptions occur.
-*/
+// Compress and write content to a file (thread-safe).
 bool FileManager::writeCompressed(const std::string &filename, const std::string &content)
 {
-    // [Verification] Log entry to verify mutual exclusion
-    // std::cout << "[Thread " << std::this_thread::get_id() << "] Waiting for FS lock..." << std::endl;
-
     std::lock_guard<std::mutex> lock(_fsMutex);
-
-    // std::cout << "[Thread " << std::this_thread::get_id() << "] Acquired FS lock. Writing..." << std::endl;
 
     std::string compressed = m_compressor.compress(content);
     std::string fullPath = resolvePath(filename);
@@ -73,6 +62,7 @@ bool FileManager::writeCompressed(const std::string &filename, const std::string
     return true;
 }
 
+// Read and return the raw compressed content of a file (thread-safe).
 std::optional<std::string> FileManager::readCompressed(const std::string &filename)
 {
     std::lock_guard<std::mutex> lock(_fsMutex);
@@ -91,6 +81,7 @@ std::optional<std::string> FileManager::readCompressed(const std::string &filena
     return buffer.str();
 }
 
+// Search text in all stored files (by filename or decompressed content).
 std::vector<std::string> FileManager::searchInFiles(const std::string &search_text)
 {
     std::lock_guard<std::mutex> lock(_fsMutex);

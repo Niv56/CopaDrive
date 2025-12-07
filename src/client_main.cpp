@@ -1,15 +1,13 @@
 #include <iostream>
 #include <string>
 #include <cstring>
-
-// Networking
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>      // getaddrinfo, freeaddrinfo
-#include <unistd.h>     // close()
+#include <netdb.h>
+#include <unistd.h>
 
-// Send entire buffer over TCP
+// Sends the entire string over the TCP socket (handles partial sends).
 static bool sendAll(int sock, const std::string& data) {
     const char* buf = data.c_str();
     size_t total = 0;
@@ -23,7 +21,7 @@ static bool sendAll(int sock, const std::string& data) {
     return true;
 }
 
-// Receive a single line (until '\n'), ignoring '\r'
+// Reads a single line from the socket until '\n', ignoring '\r'.
 static bool recvLine(int sock, std::string& out) {
     out.clear();
     char c;
@@ -37,8 +35,9 @@ static bool recvLine(int sock, std::string& out) {
     return true;
 }
 
+// Simple C++ TCP client: connects to the server and forwards console commands.
 int main(int argc, char* argv[]) {
-    // Expect: <host> <port>   e.g.  "server 5555"
+    // Expected usage: <program> <host> <port>  (e.g. "client server 5555")
     if (argc != 3) {
         return 1;
     }
@@ -53,15 +52,15 @@ int main(int argc, char* argv[]) {
     }
     if (port < 1 || port > 65535) return 1;
 
-    // Create TCP socket
+    // Create TCP socket.
     int sock = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) return 1;
 
-    // Resolve hostname (e.g. "server") to IPv4 address
+    // Resolve host name (e.g. "server") to IPv4 address.
     struct addrinfo hints{};
     std::memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_INET;      // IPv4
-    hints.ai_socktype = SOCK_STREAM;  // TCP
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
 
     struct addrinfo* res = nullptr;
     int rc = ::getaddrinfo(serverHost.c_str(), nullptr, &hints, &res);
@@ -76,50 +75,48 @@ int main(int argc, char* argv[]) {
 
     ::freeaddrinfo(res);
 
-    // Connect to server
+    // Connect to the server.
     if (::connect(sock, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
         ::close(sock);
         return 1;
     }
 
-    // Main loop: read → send → receive → print
+    // Main loop: read from stdin, send to server, print the response.
     while (true) {
         std::string line;
         if (!std::getline(std::cin, line)) break;
 
-        // Exit command (local only)
+        // Local exit command (does not go to the server).
         if (line == "exit" || line == "quit") break;
 
         line.push_back('\n');
 
         if (!sendAll(sock, line)) break;
 
-        // 1. Read status line (e.g. "200 Ok", "201 Created", "404 Not Found")
+        // Read status line (e.g. "200 Ok", "201 Created", "404 Not Found").
         std::string statusLine;
         if (!recvLine(sock, statusLine)) break;
 
         std::cout << statusLine << std::endl;
 
-     
+        // Only "200 ..." replies are followed by a body.
         if (statusLine.rfind("200 ", 0) != 0) {
             continue;
         }
 
-        // 2. Read blank line (separator)
+        // Read the blank separator line.
         std::string blank;
         if (!recvLine(sock, blank)) break;
 
-  
         std::cout << std::endl;
 
+        // Read body lines until an empty line.
         while (true) {
             std::string bodyLine;
             if (!recvLine(sock, bodyLine)) {
-           
                 goto end;
             }
             if (bodyLine.empty()) {
-               
                 break;
             }
             std::cout << bodyLine << std::endl;
@@ -127,7 +124,6 @@ int main(int argc, char* argv[]) {
     }
 end:
     ;
-
 
     ::close(sock);
     return 0;

@@ -3,6 +3,7 @@ import socket
 
 
 def recv_line(sock):
+    # Read a single line (until '\n') from the socket, ignoring '\r'.
     """Receive a single line ending with '\n', ignoring '\r'. Returns bytes or None on error."""
     chunks = []
     try:
@@ -34,6 +35,7 @@ def main():
     if port < 1 or port > 65535:
         return 1
 
+    # Open a TCP connection to the given server and port.
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((server_ip, port))
@@ -41,6 +43,7 @@ def main():
         return 1
 
     try:
+        # Main loop: read from stdin, send to server, print structured response.
         while True:
             line = sys.stdin.readline()
             if not line:
@@ -48,6 +51,7 @@ def main():
 
             line = line.rstrip("\n")
 
+            # Local exit commands (not sent to the server).
             if line == "exit" or line == "quit":
                 break
 
@@ -66,7 +70,7 @@ def main():
             status_text = status.decode("utf-8")
             print(status_text)
 
-            
+            # If status is not 200, there is no body to read.
             if not status_text.startswith("200 "):
                 continue
 
@@ -85,7 +89,6 @@ def main():
                 if body == b"":\
                     break
                 print(body.decode("utf-8"), flush=True)
-
 
     finally:
         sock.close()

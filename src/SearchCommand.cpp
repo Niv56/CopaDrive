@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cctype>
 
-// --- Helper Function: Case-Insensitive Conversion ---
+// Helper: return lowercase copy of a string (for case-insensitive search).
 std::string toLowerCase(const std::string& str) {
     std::string lowerStr = str;
     std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
@@ -15,43 +15,33 @@ std::string toLowerCase(const std::string& str) {
     return lowerStr;
 }
 
+// Search across all stored files by content or filename (case-insensitive).
 CommandResult SearchCommand::execute(const std::vector<std::string> &comand, FileManager &fm)
 {
-
-    // Not enough arguments for 'search'
     if (comand.size() != 2)
     {
         return CommandResult(StatusCode::BAD_REQUEST, "");
     }
 
-    // Extract filename for clearer name.
     const std::string &textToSearch = comand[1];
+    std::string textToSearchLower   = toLowerCase(textToSearch);
 
-    // Convert search term to lowercase once
-    std::string textToSearchLower = toLowerCase(textToSearch);
+    const std::string &basePath     = fm.getEnvironment();
+    const ICompressor &compressor   = fm.getCompressor();
 
-    const std::string &basePath = fm.getEnvironment();
-    const ICompressor &compressor = fm.getCompressor();
-
-    // List of files matching the search term
     std::vector<std::string> filesName;
 
     try
     {
-        // Iterate over all files in the storage directory
+        // Scan all regular files under PATH_DIR.
         for (const auto &entry : std::filesystem::directory_iterator(basePath))
         {
-
-            // Ignore non-file entries
             if (!entry.is_regular_file())
-            {
                 continue;
-            }
 
             std::string fileName = entry.path().filename().string();
             std::string fullPath = basePath + "/" + fileName;
 
-            // If file can't be opened, ignore it
             std::ifstream myFile(fullPath);
             if (!myFile.is_open())
             {
@@ -60,20 +50,18 @@ CommandResult SearchCommand::execute(const std::vector<std::string> &comand, Fil
 
             std::string compressed;
             std::string nextLine;
-            // Read compressed file content line by line
             while (std::getline(myFile, nextLine))
             {
                 compressed += nextLine;
             }
             myFile.close();
-            // Expand the compressed data back to original text
+
             std::string contentDecompressed = compressor.decompress(compressed);
 
-            // Convert content and filename to lowercase for comparison
-            std::string contentLower = toLowerCase(contentDecompressed);
+            std::string contentLower  = toLowerCase(contentDecompressed);
             std::string fileNameLower = toLowerCase(fileName);
 
-            // Check if the file content contains the search term (using lowercase versions)
+            // Match either in file content or filename.
             if (contentLower.find(textToSearchLower) != std::string::npos ||
                 fileNameLower.find(textToSearchLower) != std::string::npos)
             {
@@ -86,8 +74,7 @@ CommandResult SearchCommand::execute(const std::vector<std::string> &comand, Fil
         return CommandResult(StatusCode::INTERNAL_SERVER_ERROR, "");
     }
 
-    std::string files = "";
-    // Insert all matching filenames into string
+    std::string files;
     for (const auto &name : filesName)
     {
         if (!files.empty())
@@ -96,6 +83,7 @@ CommandResult SearchCommand::execute(const std::vector<std::string> &comand, Fil
         }
         files += name;
     }
+
     if (files.empty())
     {
         return CommandResult(StatusCode::NOT_FOUND, files);

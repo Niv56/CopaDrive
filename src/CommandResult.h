@@ -1,35 +1,31 @@
 #ifndef COMMAND_RESULT_H
 #define COMMAND_RESULT_H
-
 #include <string>
 #include <map>
 #include <utility> 
 
+// Status codes used in the server responses.
 enum class StatusCode {
-    CREATED=201,
-    NO_CONTENT=204,
-    OK=200,
-    NOT_FOUND = 404,
-    BAD_REQUEST=400,
+    CREATED               = 201,
+    NO_CONTENT            = 204,
+    OK                    = 200,
+    NOT_FOUND             = 404,
+    BAD_REQUEST           = 400,
     INTERNAL_SERVER_ERROR = 500
 };
 
+// Holds the result of executing a single command.
 struct CommandResult
 {
-    // The http cose status.
-    StatusCode status;
-    // The body of the data (for get and search).
-    std::string body;
+    StatusCode   status; // response code
+    std::string  body;   // optional text body (GET / SEARCH)
 
-    // Constructor 
     CommandResult(StatusCode s, const std::string& b) : status(s), body(b) {}
 
     static const std::map<StatusCode, std::string> StatusMessage;
 
-    // Convert from CommandResult into string to able pass the info to the client.
-    static std::string format (const CommandResult& result);
+    // Builds the status line string (e.g. "200 Ok").
+    static std::string format(const CommandResult& result);
 };
-
-
 
 #endif

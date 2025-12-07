@@ -5,25 +5,23 @@
 #include <iostream>
 #include <string>
 
-ClientSession::ClientSession(int clientSocket , FileManager& sharedFile) : _clientSocket(clientSocket) , m_fm(sharedFile) {
+// Represents a single connected client, sharing the common FileManager.
+ClientSession::ClientSession(int clientSocket, FileManager& sharedFile)
+    : _clientSocket(clientSocket),
+      m_fm(sharedFile) {
 }
 
+// Entry point for the per-client thread: wrap the socket with IO and run the App.
 void ClientSession::run() {
     try {
-        // Creates the I/O base on the socket
         SocketIOHandler io(_clientSocket);
-        
-        
-        // Creates App and connects it to socket
         App app(&io, m_fm);
-        
-        // Logical function based on clients connection
         app.run();
-        
     } catch (const std::exception& e) {
-        std::cerr << "Error in client session (Socket " << _clientSocket << "): " << e.what() << std::endl;
+        std::cerr << "Error in client session (Socket "
+                  << _clientSocket << "): " << e.what() << std::endl;
     }
-    
-    // In client's disconnection the App will automatically close the socket
-    std::cout << "Client DISCONNECTED. Session terminated cleanly on socket ID: " << _clientSocket << std::endl;
+
+    std::cout << "Client DISCONNECTED. Session terminated cleanly on socket ID: "
+              << _clientSocket << std::endl;
 }

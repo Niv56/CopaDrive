@@ -1,19 +1,19 @@
-// tests/GetCommand_test.cpp
 #include <gtest/gtest.h>
-
 #include "PostCommand.h"
 #include "GetCommand.h"
 #include "FileManager.h"
 #include "RLECompressor.h"
 #include "CommandResult.h"
-
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
 
-// Helper: set PATH_DIR env var for tests
+// Tests for GetCommand: setup temp PATH_DIR, create files, and verify status + body.
+
+
+// Helper: configure PATH_DIR for all GetCommand tests
 static void setPathDirEnv_Get(const std::string& dir) {
 #ifdef _WIN32
     _putenv_s("PATH_DIR", dir.c_str());
@@ -22,6 +22,7 @@ static void setPathDirEnv_Get(const std::string& dir) {
 #endif
 }
 
+// Test fixture: creates a dedicated temp directory for each test and cleans it up.
 class GetCommandTest : public ::testing::Test {
 protected:
     std::string testDir;
@@ -38,7 +39,7 @@ protected:
     }
 };
 
-// should print file content to stdout
+// Verifies that an existing file is read correctly and returned with 200 OK.
 TEST_F(GetCommandTest, ShouldPrintFileContent) {
     RLECompressor compressor;
     FileManager fm(compressor);
@@ -66,7 +67,7 @@ TEST_F(GetCommandTest, ShouldPrintFileContent) {
 
 }
 
-// should return 404 not found if file does not exist
+// Verifies that requesting a missing file returns 404 Not Found and empty body.
 TEST_F(GetCommandTest, ShouldDoNothingIfFileMissing) {
     RLECompressor compressor;
     FileManager fm(compressor);

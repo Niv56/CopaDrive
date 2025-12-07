@@ -1,14 +1,12 @@
 #ifndef GETCOMMAND_H
 #define GETCOMMAND_H
-
 #include "ICommand.h"
 #include "CommandResult.h"
 
+// Command that reads a stored file and returns its decompressed content.
 class GetCommand : public ICommand {
 public:
-    // Execute the 'get' command: print the content of a file to the screen.
-    // Format of command: ['get', <content>]
-    // If the file dosent exist, nothing is printed.
+    // Executes: GET <filename>.
     CommandResult execute(const std::vector<std::string>& comand, FileManager& fm) override;
 };
 
