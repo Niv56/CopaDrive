@@ -19,11 +19,19 @@ CommandResult PostCommand::execute(const std::vector<std::string>& comand, FileM
         return CommandResult(StatusCode::BAD_REQUEST, "");
     }
 
-    const std::string& basePath      = fm.getEnvironment();
-    const ICompressor& compressor    = fm.getCompressor();
-    std::string        compressed    = compressor.compress(content);
-    std::string        fullPath      = basePath + "/" + fileName;
+    const std::string& basePath   = fm.getEnvironment();
+    const ICompressor& compressor = fm.getCompressor();
+    std::string        fullPath   = basePath + "/" + fileName;
 
+    // NEW: do not overwrite existing files – treat as logical error (404)
+    if (std::filesystem::exists(fullPath)) {
+        return CommandResult(StatusCode::NOT_FOUND, "");
+    }
+
+    // Compress content before saving
+    std::string compressed = compressor.compress(content);
+
+    // Ensure target directory exists
     std::filesystem::create_directories(basePath);
 
     std::ofstream myFile(fullPath);
