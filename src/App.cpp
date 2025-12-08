@@ -55,16 +55,12 @@ void App::run()
         // Always send back the status line.
         m_io->write(CommandResult::format(result));
 
-        // --- EMPTY CONTENT HANDLER ---
+        // Empty content handler
         if (result.status == StatusCode::OK && result.body.empty())
         {
-            // Send the blank separator line
-            m_io->write("");  // blank line after status
+            m_io->write("");
+            m_io->write("");
 
-            // Send the empty body line to signal end of body
-            m_io->write("");  
-
-            // Skip the following body loop
             continue;
         }
 
