@@ -31,5 +31,6 @@ CommandResult GetCommand::execute(const std::vector<std::string>& comand, FileMa
     myFile.close();
 
     std::string content = compressor.decompress(compressed);
+
     return CommandResult(StatusCode::OK, content);
 }

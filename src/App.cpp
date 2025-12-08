@@ -55,10 +55,24 @@ void App::run()
         // Always send back the status line.
         m_io->write(CommandResult::format(result));
 
+        // --- EMPTY CONTENT HANDLER ---
+        if (result.status == StatusCode::OK && result.body.empty())
+        {
+            // Send the blank separator line
+            m_io->write("");  // blank line after status
+
+            // Send the empty body line to signal end of body
+            m_io->write("");  
+
+            // Skip the following body loop
+            continue;
+        }
+
         // For successful commands with body, send the content line by line.
         if (result.status == StatusCode::OK && !result.body.empty())
         {
             m_io->write("");
+
 
             std::stringstream ss(result.body);
             std::string line;
@@ -66,8 +80,8 @@ void App::run()
             {
                 m_io->write(line);
             }
-
-            m_io->write("");
+            
+        m_io->write("");
         }
     }
 }
