@@ -55,10 +55,20 @@ void App::run()
         // Always send back the status line.
         m_io->write(CommandResult::format(result));
 
+        // Empty content handler
+        if (result.status == StatusCode::OK && result.body.empty())
+        {
+            m_io->write("");
+            m_io->write("");
+
+            continue;
+        }
+
         // For successful commands with body, send the content line by line.
         if (result.status == StatusCode::OK && !result.body.empty())
         {
             m_io->write("");
+
 
             std::stringstream ss(result.body);
             std::string line;
@@ -66,8 +76,8 @@ void App::run()
             {
                 m_io->write(line);
             }
-
-            m_io->write("");
+            
+        m_io->write("");
         }
     }
 }
