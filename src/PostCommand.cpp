@@ -25,7 +25,7 @@ CommandResult PostCommand::execute(const std::vector<std::string>& comand, FileM
 
     // NEW: do not overwrite existing files – treat as logical error (404)
     if (std::filesystem::exists(fullPath)) {
-        return CommandResult(StatusCode::NOT_FOUND, "");
+        return CommandResult(StatusCode::BAD_REQUEST, "");
     }
 
     // Compress content before saving
