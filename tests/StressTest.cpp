@@ -2,86 +2,92 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <atomic>
 #include <chrono>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "TCPServer.h" 
+#include <filesystem>
+#include "TCPServer.h"
 
-// Basic stress-test configuration for the multi-threaded server
-const std::string STRESS_SERVER_IP   = "127.0.0.1";
-const int         STRESS_SERVER_PORT = 5555;
-const int         NUM_STRESS_CLIENTS = 10;   // number of parallel clients
-const int         COMMANDS_PER_CLIENT = 50;  // number of commands per client
+// הגדרות לבדיקת מרוץ סמכויות
+const std::string TEST_IP = "127.0.0.1";
+const int TEST_PORT = 6666;
+const std::string SHARED_FILENAME = "race_condition_test.txt";
 
-// Single client routine: opens a socket, connects, and sends many post commands
-void run_stress_client(int id) {
+// מונים אטומיים למעקב אחר תגובות השרת
+std::atomic<int> successful_creations{0};
+std::atomic<int> rejected_requests{0};
+
+void run_concurrent_client(int id) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    ASSERT_GE(sock, 0) << "Client " << id << ": Failed to create socket";
+    if (sock < 0) return;
 
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port   = htons(STRESS_SERVER_PORT);
-    inet_pton(AF_INET, STRESS_SERVER_IP.c_str(), &serv_addr.sin_addr);
+    serv_addr.sin_port = htons(TEST_PORT);
+    inet_pton(AF_INET, TEST_IP.c_str(), &serv_addr.sin_addr);
 
-    // Try to connect a few times in case the server is still starting up
-    int retries = 5;
-    while (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        if (--retries == 0) {
-            close(sock);
-            FAIL() << "Client " << id << ": Failed to connect to server after retries";
-            return;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // ניסיון התחברות
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        close(sock);
+        return;
     }
 
+    // כל הלקוחות מנסים לכתוב לאותו קובץ בדיוק
+    std::string content = "Content_from_client_" + std::to_string(id);
+    std::string cmd = "post " + SHARED_FILENAME + " " + content + "\n";
+    send(sock, cmd.c_str(), cmd.length(), 0);
+
     char buffer[1024] = {0};
-    std::string filename = "stress_file_" + std::to_string(id) + ".txt";
-
-    // Send many post commands on the same connection and verify the server stays responsive
-    for (int i = 0; i < COMMANDS_PER_CLIENT; ++i) {
-        std::string content = "Content_" + std::to_string(id) + "_" + std::to_string(i);
-        std::string cmd     = "post " + filename + " " + content + "\n";
-
-        send(sock, cmd.c_str(), cmd.length(), 0);
-
-        // Read server response to confirm the connection is still alive
-        int valread = read(sock, buffer, 1024);
-        EXPECT_GT(valread, 0) << "Client " << id
-                              << ": Server closed connection unexpectedly at iter " << i;
+    int valread = read(sock, buffer, 1024);
+    if (valread > 0) {
+        std::string response(buffer);
+        // בדיקה אם השרת החזיר "201 Created" [cite: 52]
+        if (response.find("201") != std::string::npos) {
+            successful_creations++;
+        } else {
+            rejected_requests++;
+        }
     }
 
     close(sock);
 }
 
-// Full stress test: run the real TCPServer and hit it with many concurrent clients
-TEST(StressTest, ShouldHandleConcurrentClientsWithoutCrashing) {
-    // Start the server on a background thread
+TEST(MutexIntegrityTest, OnlyOneClientShouldSucceedInCreatingSharedFile) {
+    // 1. הכנת הסביבה - מחיקת הקובץ אם הוא קיים
+    if (std::filesystem::exists(SHARED_FILENAME)) {
+        std::filesystem::remove(SHARED_FILENAME);
+    }
+
+    // 2. הפעלת השרת ב-Thread נפרד [cite: 28, 43]
     std::thread serverThread([]() {
         try {
-            TCPServer server(STRESS_SERVER_PORT);
+            TCPServer server(TEST_PORT);
             server.start();
-        } catch (const std::exception& e) {
-            std::cerr << "StressTest Server Error: " << e.what() << std::endl;
-        }
+        } catch (...) {}
     });
 
-    // Small delay so the server can start listening
+    // המתנה קלה לעליית השרת
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    // Launch multiple clients in parallel
+    // 3. הרצת 20 לקוחות בו-זמנית שמנסים "להתנפל" על אותו קובץ
+    const int TOTAL_CLIENTS = 20;
     std::vector<std::thread> clients;
-    for (int i = 0; i < NUM_STRESS_CLIENTS; ++i) {
-        clients.emplace_back(run_stress_client, i);
+    for (int i = 0; i < TOTAL_CLIENTS; ++i) {
+        clients.emplace_back(run_concurrent_client, i);
     }
 
-    // Wait for all clients to finish
-    for (auto& t : clients) {
-        if (t.joinable()) {
-            t.join();
-        }
-    }
+    for (auto& t : clients) t.join();
 
-    // We detach the server thread here; process termination will end it
+    // 4. אימות התוצאות
+    // אם המיוטקס עובד: רק לקוח אחד בדיוק הצליח ליצור (201) והשאר נדחו.
+    // אם המיוטקס לא עובד: ייתכן שיותר מלקוח אחד קיבל 201 או שהקובץ מושחת.
+    EXPECT_EQ(successful_creations.load(), 1) 
+        << "מרוץ סמכויות זוהה! יותר מלקוח אחד הצליח ליצור את אותו הקובץ.";
+    
+    EXPECT_EQ(rejected_requests.load(), TOTAL_CLIENTS - 1)
+        << "לא כל הלקוחות שנדחו קיבלו הודעת שגיאה מתאימה.";
+
     serverThread.detach();
 }
