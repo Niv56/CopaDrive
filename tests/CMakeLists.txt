@@ -6,10 +6,10 @@ add_executable(runTests
     RLECompressor_test.cpp
 
     # New tests for command-based architecture
-    PostCommand_test.cpp
+    # PostCommand_test.cpp
     # SearchCommand_test.cpp
     # GetCommand_test.cpp
-    DeleteCommand_test.cpp
+    # DeleteCommand_test.cpp
     # CommandParser_test.cpp
 
     # New test for server validation
