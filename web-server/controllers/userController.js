@@ -45,8 +45,13 @@ exports.registerUser = (req, res, next) => {
         // Persistence: Save to the in-memory array via repository
         userRepository.create(newUser);
 
+        // Safe Response (Removing password)
+        // We create a copy of the object and delete the password field before sending.
+        const userResponse = { ...newUser };
+        delete userResponse.password;
+
         // If registration is successful, return a 201 Created status with a JSON response.
-        res.status(201).json(newUser);
+        res.status(201).json(userResponse);
 
     } catch (err) {
         // Ensures the Centralized Error Handler formats the response as JSON.
