@@ -1,9 +1,9 @@
-// Import the new infrastructure components [cite: 104, 105]
+// Import the new infrastructure components
 const userRepository = require('../repositories/userRepository');
 const { validateFields } = require('../utils/validation');
 const { generateId } = require('../utils/idGenerator');
 
-// This controller handles the business logic for user registration.
+// Handles the business logic for user registration.
 exports.registerUser = (req, res, next) => {
     try {
         // Validation: Ensure the client sent the 'username' field
@@ -54,7 +54,34 @@ exports.registerUser = (req, res, next) => {
         res.status(201).json(userResponse);
 
     } catch (err) {
-        // Ensures the Centralized Error Handler formats the response as JSON.
-        next(err);
+        next(err); // Centralized error handling
+    }
+};
+
+
+// Get User by ID.
+exports.getUserById = (req, res, next) => {
+    try {
+        const userId = req.params.id; // Extract ID from URL
+
+        // Fetch user from memory via repository
+        const user = userRepository.findById(userId);
+
+        // Handle missing user
+        if (!user) {
+            const error = new Error("User not found");
+            error.status = 404; // Standard 404 JSON error
+            throw error;
+        }
+
+        // Data Transfer Object (DTO): Remove secrets
+        const userDto = { ...user };
+        delete userDto.password;
+
+        // Response: Return 200 OK with safe data
+        res.status(200).json(userDto);
+
+    } catch (err) {
+        next(err); // Centralized error handling
     }
 };
