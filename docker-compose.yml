@@ -1,44 +1,61 @@
 services:
-
-  # Run port to ConsoleApp
+  # C++ Server (Exercise 2)
   server:
-    build: .
+    build: 
+      context: ./cpp-server
+      dockerfile: Dockerfile
     container_name: copadrive_server
     ports:
-      - "5555:5555"                   
+      - "5555:5555"
     environment:
       - PATH_DIR=/usr/src/mytest/storage
-    command: ["5555"]                 
+    networks:
+      - copadrive-network
 
-  # Run unit tests
-  test:
-    build: .
-    container_name: copadrive_test
-    working_dir: /usr/src/mytest/build
+  # Web Server (Exercise 3 - NodeJS MVC)
+  web-server:
+    build: 
+      context: ./web-server
+      dockerfile: Dockerfile
+    container_name: copadrive_web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
     environment:
-      - PATH_DIR=/usr/src/mytest/storage
-    entrypoint: ["ctest", "--output-on-failure"]  
+      - CPP_SERVER_HOST=server
+      - CPP_SERVER_PORT=5555
+    networks:
+      - copadrive-network
 
-  # C++ client image
+  # C++ Client (For testing)
   cpp-client:
     build:
-      context: .
+      context: ./cpp-server
       dockerfile: Dockerfile.client.cpp
     container_name: copadrive_client_cpp
-    stdin_open: true                  
-    tty: true                       
+    stdin_open: true
+    tty: true
     depends_on:
-      - server                           
-    command: ["server", "5555"]     
+      - server
+    command: ["server", "5555"]
+    networks:
+      - copadrive-network
 
-    # Python client image     
+  # Python Client (For testing)
   python-client:
     build:
-      context: .
-      dockerfile: Dockerfile.client.python 
+      context: ./cpp-server
+      dockerfile: Dockerfile.client.python
     container_name: copadrive_client_python
     stdin_open: true
     tty: true
     depends_on:
       - server
-    command: ["server", "5555"]            
+    command: ["server", "5555"]
+    networks:
+      - copadrive-network
+
+networks:
+  copadrive-network:
+    driver: bridge
