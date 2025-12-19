@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
     res.json({ message: "CopaDrive Web Server is running" });
 });
 
-app.use('/api', userRoutes);
+app.use('/api/users', userRoutes);
 
 /**
  * Global 404 Not Found handler.
