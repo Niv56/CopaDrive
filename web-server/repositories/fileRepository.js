@@ -2,7 +2,7 @@
  * Implement Files Repository Methods.
  * Handles in-memory data operations for files and directories.
  */
-const { files } = require('../services/userService');
+const { files } = require('../utils/storage');
 
 const normalizeParentId = (parentId) => (parentId === undefined ? null : parentId);
 
@@ -55,11 +55,23 @@ const hasChildren = (parentId, ownerId) => {
   });
 };
 
+const searchFiles = (userId, query) => {
+    const normalizedQuery = query.toLowerCase();
+    
+    return files.filter(file => 
+        file.ownerId === userId && (
+            file.name.toLowerCase().includes(normalizedQuery) || 
+            (file.content && file.content.toLowerCase().includes(normalizedQuery))
+        )
+    );
+};
+
 module.exports = {
   findByParent,
   findById,
   create,
   update,
   remove,
-  hasChildren
+  hasChildren,
+  searchFiles
 };

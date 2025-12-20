@@ -13,6 +13,7 @@ app.use((req, res, next) => {
 
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes'); 
+const searchRoutes = require('./routes/searchRoutes');
 
 // Basic test route from previous story
 app.get('/', (req, res) => {
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/tokens', authRoutes); 
 app.use('/api/files', fileRoutes);
+app.use('/api/search', searchRoutes);
 
 /**
  * Global 404 Not Found handler.
