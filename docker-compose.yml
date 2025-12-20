@@ -1,7 +1,7 @@
 services:
   # C++ Server (Exercise 2)
   server:
-    build: 
+    build:
       context: ./cpp-server
       dockerfile: Dockerfile
     container_name: copadrive_server
@@ -14,7 +14,7 @@ services:
 
   # Web Server (Exercise 3 - NodeJS MVC)
   web-server:
-    build: 
+    build:
       context: ./web-server
       dockerfile: Dockerfile
     container_name: copadrive_web
@@ -55,6 +55,19 @@ services:
     command: ["server", "5555"]
     networks:
       - copadrive-network
+
+  # Tests
+  test:
+    build:
+      context: ./cpp-server
+      dockerfile: Dockerfile
+    container_name: copadrive_test
+    environment:
+      - PATH_DIR=/usr/src/mytest/storage
+    networks:
+      - copadrive-network
+    entrypoint: ["sh", "-lc"]
+    command: ["cd /usr/src/mytest/build && ctest --output-on-failure"]
 
 networks:
   copadrive-network:

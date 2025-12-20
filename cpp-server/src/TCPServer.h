@@ -1,31 +1,32 @@
 #ifndef TCPSERVER_H
 #define TCPSERVER_H
-#include <sys/socket.h>
+
+#include <atomic>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #include <unistd.h>
+
 #include "FileManager.h"
 #include "RLECompressor.h"
+#include "ThreadPool.h"
 
-// Single TCP server that owns the shared FileManager and RLE compressor.
-class TCPServer
-{
+class TCPServer {
 private:
     int _port;
-    int _server_socket;
-    // Concrete compressor used by all clients.
+    int _server_socket = -1;
+
     RLECompressor m_compressor;
-    // Shared storage manager (thread-safe).
-    FileManager   m_fm;       
+    FileManager   m_fm;
+
+    ThreadPool m_pool;
+    std::atomic<bool> m_running{false};
 
 public:
-    // Initialize a server that will listen on the given port.
-    TCPServer(int port);
-
-    // Close the listening socket on shutdown.
+    explicit TCPServer(int port);
     ~TCPServer();
 
-    // Create, bind, listen and accept clients (spawn thread per client).
     void start();
+    void stop();
 };
 
 #endif
