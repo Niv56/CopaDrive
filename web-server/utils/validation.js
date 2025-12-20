@@ -28,5 +28,5 @@ const validateExistence = (resource, resourceName) => {
 
 module.exports = {
     validateFields,
-    validateExistence
+    validateExistence,
 };
