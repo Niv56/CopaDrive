@@ -2,27 +2,38 @@
 #include "FileManager.h"
 #include "CommandResult.h"
 #include "ICompressor.h"
-#include <iostream>
-#include <filesystem>
-#include <fstream>
+#include <sstream>
 
-// Stores a new compressed file in the storage directory.
 CommandResult PostCommand::execute(const std::vector<std::string>& comand, FileManager& fm) {
-    if (comand.size() != 3) return CommandResult(StatusCode::BAD_REQUEST, "");
+    // Must have: POST <filename> <content...>
+    if (comand.size() < 3) {
+        return CommandResult(StatusCode::BAD_REQUEST, "");
+    }
 
     const std::string& fileName = comand[1];
-    const std::string& content = comand[2];
+    if (fileName.empty()) {
+        return CommandResult(StatusCode::BAD_REQUEST, "");
+    }
 
-    // Check if file already exists to prevent overwrite if required by logic
-    if (fm.exists(fileName)) return CommandResult(StatusCode::BAD_REQUEST, "");
+    // Rebuild content (supports spaces)
+    std::ostringstream oss;
+    for (size_t i = 2; i < comand.size(); ++i) {
+        if (i > 2) oss << ' ';
+        oss << comand[i];
+    }
+    const std::string content = oss.str();
 
-    // Logic: Compress content using the reference provided by FileManage
+    // Compress content
     const ICompressor& compressor = fm.getCompressor();
-    std::string compressed = compressor.compress(content);
+    const std::string compressed  = compressor.compress(content);
 
-    // Write the compressed data via the FileManager's mutex
-    if (fm.write(fileName, compressed)) {
+    // Atomic: check + create under FileManager mutex
+    FileManager::CreateStatus st = fm.createIfAbsent(fileName, compressed);
+
+    if (st == FileManager::CreateStatus::Created) {
         return CommandResult(StatusCode::CREATED, "");
     }
-    return CommandResult(StatusCode::INTERNAL_SERVER_ERROR, "");
+
+    // Already exists OR IO error -> 400 (as your tests/flow expect)
+    return CommandResult(StatusCode::BAD_REQUEST, "");
 }

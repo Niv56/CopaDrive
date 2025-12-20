@@ -2,26 +2,35 @@
 #include "App.h"
 #include "FileManager.h"
 #include "SocketIOHandler.h"
+
 #include <iostream>
 #include <string>
+#include <unistd.h>
+#include <sys/socket.h>
 
-// Represents a single connected client, sharing the common FileManager.
 ClientSession::ClientSession(int clientSocket, FileManager& sharedFile)
     : _clientSocket(clientSocket),
       m_fm(sharedFile) {
 }
 
-// Entry point for the per-client thread: wrap the socket with IO and run the App.
 void ClientSession::run() {
     try {
         SocketIOHandler io(_clientSocket);
         App app(&io, m_fm);
         app.run();
     } catch (const std::exception& e) {
-        std::cerr << "Error in client session (Socket "
-                  << _clientSocket << "): " << e.what() << std::endl;
+        std::cerr << "Client session error (socket " << _clientSocket << "): "
+                  << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "Client session error (socket " << _clientSocket << "): unknown exception"
+                  << std::endl;
     }
 
-    std::cout << "Client DISCONNECTED. Session terminated cleanly on socket ID: "
-              << _clientSocket << std::endl;
+    if (_clientSocket >= 0) {
+        ::shutdown(_clientSocket, SHUT_RDWR);
+        ::close(_clientSocket);
+        _clientSocket = -1;
+    }
+
+    std::cout << "Client disconnected. Session closed." << std::endl;
 }

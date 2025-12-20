@@ -8,86 +8,105 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <filesystem>
+#include <cstdlib>
 #include "TCPServer.h"
 
-// הגדרות לבדיקת מרוץ סמכויות
-const std::string TEST_IP = "127.0.0.1";
-const int TEST_PORT = 6666;
-const std::string SHARED_FILENAME = "race_condition_test.txt";
+static const std::string TEST_IP = "127.0.0.1";
+static const int TEST_PORT = 6666;
+static const std::string SHARED_FILENAME = "race_condition_test.txt";
 
-// מונים אטומיים למעקב אחר תגובות השרת
-std::atomic<int> successful_creations{0};
-std::atomic<int> rejected_requests{0};
+static std::atomic<int> successful_creations{0};
+static std::atomic<int> rejected_requests{0};
 
-void run_concurrent_client(int id) {
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) return;
+static void run_concurrent_client(int id) {
+    int sock = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) { rejected_requests++; return; }
 
-    struct sockaddr_in serv_addr;
+    sockaddr_in serv_addr{};
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(TEST_PORT);
-    inet_pton(AF_INET, TEST_IP.c_str(), &serv_addr.sin_addr);
-
-    // ניסיון התחברות
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        close(sock);
+    if (::inet_pton(AF_INET, TEST_IP.c_str(), &serv_addr.sin_addr) != 1) {
+        rejected_requests++;
+        ::close(sock);
         return;
     }
 
-    // כל הלקוחות מנסים לכתוב לאותו קובץ בדיוק
-    std::string content = "Content_from_client_" + std::to_string(id);
-    std::string cmd = "post " + SHARED_FILENAME + " " + content + "\n";
-    send(sock, cmd.c_str(), cmd.length(), 0);
-
-    char buffer[1024] = {0};
-    int valread = read(sock, buffer, 1024);
-    if (valread > 0) {
-        std::string response(buffer);
-        // בדיקה אם השרת החזיר "201 Created" [cite: 52]
-        if (response.find("201") != std::string::npos) {
-            successful_creations++;
-        } else {
-            rejected_requests++;
-        }
+    if (::connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        rejected_requests++;
+        ::close(sock);
+        return;
     }
 
-    close(sock);
+    std::string content = "Content_from_client_" + std::to_string(id);
+    std::string cmd = "post " + SHARED_FILENAME + " " + content + "\n";
+
+    ssize_t sent = ::send(sock, cmd.c_str(), cmd.size(), 0);
+    if (sent <= 0) {
+        rejected_requests++;
+        ::close(sock);
+        return;
+    }
+
+    char buffer[1024] = {0};
+    int valread = (int)::read(sock, buffer, 1023);
+    if (valread <= 0) {
+        rejected_requests++;
+        ::close(sock);
+        return;
+    }
+
+    std::string response(buffer, (size_t)valread);
+    if (response.find("201") != std::string::npos) {
+        successful_creations++;
+    } else {
+        rejected_requests++;
+    }
+
+    ::close(sock);
 }
 
 TEST(MutexIntegrityTest, OnlyOneClientShouldSucceedInCreatingSharedFile) {
-    // 1. הכנת הסביבה - מחיקת הקובץ אם הוא קיים
+    successful_creations.store(0);
+    rejected_requests.store(0);
+
+    const char* envPath = std::getenv("PATH_DIR");
+    std::filesystem::path storageDir = (envPath && *envPath) ? envPath : ".";
+    std::filesystem::path fullPath = storageDir / SHARED_FILENAME;
+
+    if (std::filesystem::exists(fullPath)) {
+        std::filesystem::remove(fullPath);
+    }
     if (std::filesystem::exists(SHARED_FILENAME)) {
         std::filesystem::remove(SHARED_FILENAME);
     }
 
-    // 2. הפעלת השרת ב-Thread נפרד [cite: 28, 43]
     std::thread serverThread([]() {
         try {
             TCPServer server(TEST_PORT);
             server.start();
-        } catch (...) {}
+        } catch (...) {
+        }
     });
 
-    // המתנה קלה לעליית השרת
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-    // 3. הרצת 20 לקוחות בו-זמנית שמנסים "להתנפל" על אותו קובץ
     const int TOTAL_CLIENTS = 20;
     std::vector<std::thread> clients;
+    clients.reserve(TOTAL_CLIENTS);
+
     for (int i = 0; i < TOTAL_CLIENTS; ++i) {
         clients.emplace_back(run_concurrent_client, i);
     }
 
-    for (auto& t : clients) t.join();
+    for (auto& t : clients) {
+        t.join();
+    }
 
-    // 4. אימות התוצאות
-    // אם המיוטקס עובד: רק לקוח אחד בדיוק הצליח ליצור (201) והשאר נדחו.
-    // אם המיוטקס לא עובד: ייתכן שיותר מלקוח אחד קיבל 201 או שהקובץ מושחת.
-    EXPECT_EQ(successful_creations.load(), 1) 
-        << "מרוץ סמכויות זוהה! יותר מלקוח אחד הצליח ליצור את אותו הקובץ.";
-    
+    EXPECT_EQ(successful_creations.load(), 1)
+        << "Race condition detected: more than one client managed to create the same file.";
+
     EXPECT_EQ(rejected_requests.load(), TOTAL_CLIENTS - 1)
-        << "לא כל הלקוחות שנדחו קיבלו הודעת שגיאה מתאימה.";
+        << "Not all rejected clients received an error response as expected.";
 
     serverThread.detach();
 }
