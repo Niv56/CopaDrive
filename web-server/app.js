@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const port = 3000;
-
+const fileRoutes = require('./routes/fileRoutes');
 // Global middleware to parse JSON bodies. Required for all API endpoints.
 app.use(express.json());
 
@@ -21,6 +21,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/users', userRoutes);
 app.use('/api/tokens', authRoutes); 
+app.use('/api/files', fileRoutes);
 
 /**
  * Global 404 Not Found handler.
