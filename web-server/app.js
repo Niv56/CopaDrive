@@ -12,6 +12,7 @@ app.use((req, res, next) => {
 });
 
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes'); 
 
 // Basic test route from previous story
 app.get('/', (req, res) => {
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/tokens', authRoutes); 
 
 /**
  * Global 404 Not Found handler.
@@ -28,7 +30,6 @@ app.use('/api/users', userRoutes);
 app.use((req, res) => {
     res.status(404).json({ error: "Resource not found" });
 });
-
 
 // Global Error Middleware.
 app.use((err, req, res, next) => {

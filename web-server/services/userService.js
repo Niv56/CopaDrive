@@ -1,3 +1,4 @@
+//service
 // Initialize In-Memory Store. 
 // Volatile in-memory storage. Resets on server restart.
 const users = []; // Array to store user objects
