@@ -90,7 +90,7 @@ const createItem = async (ownerId, payload) => {
     }
   }
 
-  const id = generateId(); // Generate unique ID
+  const id = generateId((id) => fileRepository.findById(id)); // Generate unique ID
   const ts = nowIso();
 
   // If it is a file, store content in C++ server using the ID as the filename

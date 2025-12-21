@@ -33,7 +33,7 @@ const registerUser = (userData) => {
 
     // Enrich Data: Generate ID and ISO Timestamp
     const newUser = {
-        id: generateId(),
+        id: generateId((id) => userRepository.findById(id)),
         ...userData,
         lastLogin: new Date().toISOString() // Using ISO for consistency with Files API
     };
