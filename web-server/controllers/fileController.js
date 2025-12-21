@@ -14,10 +14,10 @@ exports.listTopLevel = (req, res, next) => {
   }
 };
 
-exports.createItem = (req, res, next) => {
+exports.createItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    const created = fileService.createItem(ownerId, req.body);
+    const created = await fileService.createItem(ownerId, req.body);
 
     res
       .status(201)
@@ -28,10 +28,10 @@ exports.createItem = (req, res, next) => {
   }
 };
 
-exports.getById = (req, res, next) => {
+exports.getById = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    const item = fileService.getById(ownerId, req.params.id);
+    const item = await fileService.getById(ownerId, req.params.id);
     res.status(200).json(item);
   } catch (err) {
     next(err);
@@ -48,11 +48,11 @@ exports.updateItem = (req, res, next) => {
   }
 };
 
-exports.deleteItem = (req, res, next) => {
+exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    fileService.deleteItem(ownerId, req.params.id);
-    res.status(204).end();
+    const result = await fileService.deleteItem(ownerId, req.params.id);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }
