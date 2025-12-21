@@ -66,6 +66,9 @@ const searchFiles = (userId, query) => {
     );
 };
 
+// Find multiple files by their IDs
+const findByIds = (idsArray) => files.filter(f => idsArray.includes(f.id));
+
 module.exports = {
   findByParent,
   findById,
@@ -73,5 +76,6 @@ module.exports = {
   update,
   remove,
   hasChildren,
-  searchFiles
+  searchFiles,
+  findByIds
 };

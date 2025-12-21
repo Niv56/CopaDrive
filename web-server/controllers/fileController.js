@@ -7,7 +7,7 @@ const fileService = require('../services/fileService');
 exports.listTopLevel = (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    const items = fileService.listTopLevel(ownerId);
+    const items = fileService.listAllFiles(ownerId); 
     res.status(200).json(items);
   } catch (err) {
     next(err);
