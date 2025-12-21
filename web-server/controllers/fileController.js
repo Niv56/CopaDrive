@@ -42,10 +42,10 @@ exports.getById = async (req, res, next) => {
   }
 };
 
-exports.updateItem = (req, res, next) => {
+exports.updateItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    const updated = fileService.updateItem(ownerId, req.params.id, req.body);
+    const updated = await fileService.updateItem(ownerId, req.params.id, req.body);
     res.status(200).json(updated);
   } catch (err) {
     next(err);
