@@ -13,20 +13,6 @@ const validateFields = (body, requiredFields) => {
     }
 };
 
-/**
- * Implement Existence Checkers.
- * Checks if a resource exists in the repository.
- * If not found, throws a 404 Not Found error.
- */
-const validateExistence = (resource, resourceName) => {
-    if (!resource) {
-        const error = new Error(`${resourceName} not found`);
-        error.status = 404;
-        throw error;
-    }
-};
-
 module.exports = {
-    validateFields,
-    validateExistence,
+    validateFields
 };

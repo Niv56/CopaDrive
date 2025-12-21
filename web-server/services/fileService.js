@@ -121,7 +121,7 @@ const createItem = async (ownerId, payload) => {
 
 const getById = async (userId, id) => {
   // Fetch item by ID only 
-  const item = fileRepository.findById(id); 
+  const item = fileRepository.findById(id);
 
   if (!item) {
     const err = new Error('File or folder not found');
@@ -135,8 +135,8 @@ const getById = async (userId, id) => {
 
   if (!isOwner && !hasSharedAccess) {
     const err = new Error('Access denied');
-   // Forbidden
-    err.status = 403; 
+    // Forbidden
+    err.status = 403;
     throw err;
   }
 
@@ -155,6 +155,7 @@ const getById = async (userId, id) => {
       }
     }
   }
+
   return result;
 };
 
@@ -215,7 +216,7 @@ const updateItem = (ownerId, id, patch) => {
       // Only relevant when moving a folder
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId, ownerId)) {
         const err = new Error('Cannot move a folder into its own descendant');
-        err.status = 409; // Bad Request (as requested)
+        err.status = 409; // Bad Request
         throw err;
       }
     }
@@ -302,7 +303,6 @@ const searchItems = async (ownerId, query) => {
 
     return uniqueMatches;
 };
-
 
  // Fetches only the files where the user is the owner.
 const getOwnedFiles = (userId, parentId = null) => {

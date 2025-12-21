@@ -1,7 +1,12 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+
 const fileRoutes = require('./routes/fileRoutes');
+const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes'); 
+const searchRoutes = require('./routes/searchRoutes');
+
 // Global middleware to parse JSON bodies. Required for all API endpoints.
 app.use(express.json());
 
@@ -10,10 +15,6 @@ app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
 });
-
-const userRoutes = require('./routes/userRoutes');
-const authRoutes = require('./routes/authRoutes'); 
-const searchRoutes = require('./routes/searchRoutes');
 
 // Basic test route from previous story
 app.get('/', (req, res) => {
@@ -39,17 +40,17 @@ app.use((err, req, res, next) => {
     // Log the full error stack for developer debugging
     console.error(err.stack);
 
-    // SCRUM-147: Determine status code. Use 400 for JSON errors, or 500 as default.
+    // Determine status code. Use 400 for JSON errors, or 500 as default.
     let statusCode = err.status || 500;
     let errorMessage = err.message || "Internal Server Error";
 
-    // Specific check for SCRUM-137: Malformed JSON
+    // Malformed JSON
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
         statusCode = 400;
         errorMessage = "Invalid JSON format";
     }
 
-    // Ensure response is ALWAYS a JSON object (SCRUM-118 Requirement)
+    // Ensure response is ALWAYS a JSON object
     res.status(statusCode).json({
         error: errorMessage,
         status: statusCode
