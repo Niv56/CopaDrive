@@ -1,87 +1,48 @@
-// Import the new infrastructure components
-const userRepository = require('../repositories/userRepository');
+/**
+ * User Controller
+ * Routes incoming HTTP requests to the appropriate service logic.
+ */
+const userService = require('../services/userService');
 const { validateFields } = require('../utils/validation');
-const { generateId } = require('../utils/idGenerator');
 
-// Handles the business logic for user registration.
+/**
+ * POST /api/users
+ * Handles user registration request.
+ */
 exports.registerUser = (req, res, next) => {
-    try {
-        // Validation: Ensure the client sent the 'username' field
-        const required = ['firstName', 'lastName', 'username', 'email', 'phoneNumber', 'password'];
-        validateFields(req.body, required);
+  try {
+    const required = ['firstName', 'lastName', 'username', 'email', 'phoneNumber', 'password', 'image'];
+    validateFields(req.body, required);
 
-        // Conflict Checks (Uniqueness Enforcement)
-        // Check Username
-        if (userRepository.findByUsername(req.body.username)) {
-            const error = new Error("Username already taken");
-            error.status = 409;
-            throw error;
-        }
 
-        // Check Email
-        if (userRepository.findByEmail(req.body.email)) {
-            const error = new Error("Email already registered");
-            error.status = 409;
-            throw error;
-        }
-
-        // Check Password
-        if (userRepository.findByPassword(req.body.password)) {
-            const error = new Error("Password must be unique among users");
-            error.status = 409;
-            throw error;
-        }
-
-        // Automated Data Generation: Server creates timestamps and ID's
-        const now = new Date().toLocaleString('he-IL');
-        
-        // Entity Definition: The 'shape' of the User object in this system
-        const newUser = {
-            id: generateId(),               // Unique ID generated on the server
-            ...req.body,                    // Spreads firstName, lastName, username, email, phoneNumber, password
-            lastLogin: now                  // "Connected at this time" (initial login)
-        };
-
-        // Persistence: Save to the in-memory array via repository
-        userRepository.create(newUser);
-
-        // Safe Response (Removing password)
-        // We create a copy of the object and delete the password field before sending.
-        const userResponse = { ...newUser };
-        delete userResponse.password;
-
-        // If registration is successful, return a 201 Created status with a JSON response.
-        res.status(201).json(userResponse);
-
-    } catch (err) {
-        next(err); // Centralized error handling
+    if (typeof req.body.image !== 'string' || req.body.image.trim() === '') {
+      const err = new Error('image must be a non-empty string');
+      err.status = 400;
+      throw err;
     }
+
+    const newUser = userService.registerUser(req.body);
+    res.status(201).json(newUser);
+  } catch (err) {
+    next(err);
+  }
 };
 
-
-// Get User by ID.
+/**
+ * GET /api/users/:id
+ * Fetches a specific user profile by ID.
+ */
 exports.getUserById = (req, res, next) => {
     try {
-        const userId = req.params.id; // Extract ID from URL
+        const userId = req.params.id;
 
-        // Fetch user from memory via repository
-        const user = userRepository.findById(userId);
+        // Fetch the safe user profile from service
+        const user = userService.getSafeUserById(userId);
 
-        // Handle missing user
-        if (!user) {
-            const error = new Error("User not found");
-            error.status = 404; // Standard 404 JSON error
-            throw error;
-        }
-
-        // Data Transfer Object (DTO): Remove secrets
-        const userDto = { ...user };
-        delete userDto.password;
-
-        // Response: Return 200 OK with safe data
-        res.status(200).json(userDto);
+        // Respond with 200 OK
+        res.status(200).json(user);
 
     } catch (err) {
-        next(err); // Centralized error handling
+        next(err);
     }
 };

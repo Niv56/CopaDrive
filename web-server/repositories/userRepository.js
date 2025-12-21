@@ -2,7 +2,7 @@
  * Implement Users Repository Methods.
  * This layer abstracts the direct manipulation of the in-memory users array.
  */
-const { users } = require('../services/userService'); // Accessing the initialized store
+const { users } = require('../utils/storage');// Accessing the initialized store
 
 // Find a user by their unique ID
 const findById = (id) => users.find(u => u.id === id);
