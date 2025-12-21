@@ -1,9 +1,11 @@
 /**
  * File Service
  * Business logic for file/folder listing and operations.
+ * Integrates with C++ TCP Server for content storage.
  */
 const fileRepository = require('../repositories/fileRepository');
 const { generateId } = require('../utils/idGenerator');
+const { sendTcpCommand } = require('../utils/tcpClient'); // Import the TCP Client
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
@@ -32,10 +34,11 @@ const listTopLevel = (ownerId) => {
   return fileRepository.findByParent(null, ownerId);
 };
 
-const createItem = (ownerId, payload) => {
+const createItem = async (ownerId, payload) => {
   const name = payload?.name;
   const type = payload?.type;
   const parentId = payload?.parentId ?? null;
+  const content = payload?.content || "";
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     const err = new Error('Name is required');
@@ -64,10 +67,23 @@ const createItem = (ownerId, payload) => {
     }
   }
 
+  const id = generateId(); // Generate unique ID
   const ts = nowIso();
+
+  // If it is a file, store content in C++ server using the ID as the filename
+  if (type === 'file') {
+      try {
+        // Command format: POST <id> <content>
+        // We use 'id' instead of 'name' to allow multiple files with the same name
+        await sendTcpCommand(`POST ${id} ${content}`);
+      } catch (err) {
+        throw err; // Propagate error (e.g., if C++ server is down)
+      }
+  }
+
   const item = {
-    id: generateId(),
-    name: name.trim(),
+    id, // Used as key in C++ storage
+    name: name.trim(), // Visible name to user
     type,
     ownerId,
     parentId,
@@ -78,14 +94,33 @@ const createItem = (ownerId, payload) => {
   return fileRepository.create(item);
 };
 
-const getById = (ownerId, id) => {
+const getById = async (ownerId, id) => {
   const item = fileRepository.findById(id, ownerId);
   if (!item) {
     const err = new Error('File or folder not found');
     err.status = 404;
     throw err;
   }
-  return item;
+
+  // Clone item to avoid mutation of repo state
+    const result = { ...item };
+
+    if (item.type === 'file') {
+        try {
+            // Command format: GET <id>
+            const content = await sendTcpCommand(`GET ${id}`);
+            result.content = content; // Attach content to response
+        } catch (err) {
+            // If physical file is missing but metadata exists, we handle gracefully or throw
+            if (err.status === 404) {
+                result.content = ""; // Fallback or handle as error
+            } else {
+                throw err;
+            }
+        }
+    }
+
+    return result;
 };
 
 const updateItem = (ownerId, id, patch) => {
@@ -160,7 +195,7 @@ const updateItem = (ownerId, id, patch) => {
   return updated; // cannot be null here
 };
 
-const deleteItem = (ownerId, id) => {
+const deleteItem = async (ownerId, id) => {
   const item = fileRepository.findById(id, ownerId);
   if (!item) {
     const err = new Error('File or folder not found');
@@ -175,7 +210,54 @@ const deleteItem = (ownerId, id) => {
     throw err;
   }
 
+  if (item.type === 'file') {
+    try {
+      // Command format: DELETE <id>
+      await sendTcpCommand(`DELETE ${id}`);
+    } catch (err) {
+      console.error(`Failed to delete physical file ${id}:`, err.message);
+      // We proceed to delete metadata even if physical delete fails (or handle otherwise)
+    }
+  }
+
   fileRepository.remove(id, ownerId);
+};
+
+/**
+ * Searches for files by Name (NodeJS) or Content (C++).
+ * Map search to TCP SEARCH
+ */
+const searchItems = async (ownerId, query) => {
+    // Search by Name (In-Memory Metadata)
+    const nameMatches = fileRepository.searchFiles(ownerId, query);
+
+    // Search by Content (TCP Request to C++)
+    // Returns a list of ID's (because we stored them by ID)
+    let contentMatchIds = [];
+    try {
+      const response = await sendTcpCommand(`SEARCH ${query}`);
+      if (response) {
+        contentMatchIds = response.split('\n').filter(line => line.length > 0);
+      }
+    } catch (err) {
+      if (err.status !== 404) {
+        console.error("Search error on C++ server:", err.message);
+      }
+    }
+
+    // Merge Results
+    // Convert contentMatchIds to actual file objects
+    const contentMatches = contentMatchIds
+      .map(id => fileRepository.findById(id, ownerId))
+      .filter(item => item !== undefined); // Filter out if ID doesn't belong to this user
+
+    // Combine arrays and remove duplicates (by ID)
+    const allMatches = [...nameMatches, ...contentMatches];
+    
+    // Deduplicate based on unique ID
+    const uniqueMatches = Array.from(new Map(allMatches.map(item => [item.id, item])).values());
+
+    return uniqueMatches;
 };
 
 module.exports = {
@@ -183,5 +265,6 @@ module.exports = {
   createItem,
   getById,
   updateItem,
-  deleteItem
+  deleteItem,
+  searchItems
 };
