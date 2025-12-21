@@ -5,8 +5,10 @@
  */
 
 const fileRepository = require('../repositories/fileRepository');
+const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
 const { sendTcpCommand } = require('../utils/tcpClient'); // Import the TCP Client
+
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
@@ -115,33 +117,45 @@ const createItem = async (ownerId, payload) => {
   return fileRepository.create(item);
 };
 
-const getById = async (ownerId, id) => {
-  const item = fileRepository.findById(id, ownerId);
+
+
+const getById = async (userId, id) => {
+  // Fetch item by ID only 
+  const item = fileRepository.findById(id); 
+
   if (!item) {
     const err = new Error('File or folder not found');
     err.status = 404;
     throw err;
   }
 
-  // Clone item to avoid mutation of repo state
-    const result = { ...item };
+  // Check if the user is the owner OR has a shared permission
+  const isOwner = item.ownerId === userId;
+  const hasSharedAccess = (permissionRepository.findByFileId(id) || []).some(p => p.userId === userId);
 
-    if (item.type === 'file') {
-        try {
-            // Command format: GET <id>
-            const content = await sendTcpCommand(`GET ${id}`);
-            result.content = content; // Attach content to response
-        } catch (err) {
-            // If physical file is missing but metadata exists, we handle gracefully or throw
-            if (err.status === 404) {
-                result.content = ""; // Fallback or handle as error
-            } else {
-                throw err;
-            }
-        }
+  if (!isOwner && !hasSharedAccess) {
+    const err = new Error('Access denied');
+   // Forbidden
+    err.status = 403; 
+    throw err;
+  }
+
+  // Clone item and proceed with content fetching
+  const result = { ...item };
+  if (item.type === 'file') {
+    try {
+      // Command format: GET <id>
+      const content = await sendTcpCommand(`GET ${id}`);
+      result.content = content;
+    } catch (err) {
+      if (err.status === 404) {
+        result.content = ""; 
+      } else {
+        throw err;
+      }
     }
-
-    return result;
+  }
+  return result;
 };
 
 const updateItem = (ownerId, id, patch) => {
@@ -290,8 +304,39 @@ const searchItems = async (ownerId, query) => {
     return uniqueMatches;
 };
 
+
+ // Fetches only the files where the user is the owner.
+const getOwnedFiles = (userId, parentId = null) => {
+    return fileRepository.findByParent(parentId, userId) || [];
+};
+
+ //Fetches files where the user was granted permission by someone else.
+const getSharedWithMeFiles = (userId) => {
+    // Look up permissions assigned to this specific user
+    const myPermissions = permissionRepository.findByUserId(userId) || [];
+    if (myPermissions.length === 0) return [];
+
+    // Map the permissions to get the actual file objects
+    const sharedFileIds = myPermissions.map(p => p.fileId);
+    return fileRepository.findByIds(sharedFileIds) || [];
+};
+
+// Combines owned items (at Root) and all shared items into a single list
+const listAllFiles = (ownerId) => {
+    const ownedFiles = getOwnedFiles(ownerId, null);
+    const sharedFiles = getSharedWithMeFiles(ownerId);
+
+    // Merge both arrays
+    const allFiles = [...ownedFiles, ...sharedFiles];
+    
+    // Safety check: Remove duplicates by ID using a Map
+    return Array.from(new Map(allFiles.map(item => [item.id, item])).values());
+};
+
+
 module.exports = {
   listTopLevel,
+  listAllFiles,
   createItem,
   getById,
   updateItem,
