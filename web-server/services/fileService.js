@@ -1,18 +1,10 @@
-/**
- * File Service
- * Business logic for file/folder listing and operations.
- */
 const fileRepository = require('../repositories/fileRepository');
 const { generateId } = require('../utils/idGenerator');
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
 
-/**
- * Cycle protection:
- * Returns true if moving `itemId` under `newParentId` would create a cycle.
- * We detect cycles by walking up from newParentId to the root and checking if we hit itemId.
- */
+
 const wouldCreateCycle = (itemId, newParentId, ownerId) => {
   let cursor = newParentId ?? null;
 
@@ -20,12 +12,36 @@ const wouldCreateCycle = (itemId, newParentId, ownerId) => {
     if (cursor === itemId) return true;
 
     const node = fileRepository.findById(cursor, ownerId);
-    if (!node) return false; // safety (shouldn't happen if parent is validated)
+    if (!node) return false; // safety: parent missing => no cycle decision here
 
     cursor = node.parentId ?? null;
   }
 
   return false;
+};
+
+/**
+ * Collect all descendant ids (including the root id) for recursive delete.
+ * Uses a stack to avoid recursion depth issues.
+ */
+const collectSubtreeIds = (ownerId, rootId) => {
+  const stack = [rootId];
+  const visited = new Set();
+  const ids = [];
+
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+    ids.push(currentId);
+
+    const children = fileRepository.findByParent(currentId, ownerId) || [];
+    for (const child of children) {
+      stack.push(child.id);
+    }
+  }
+
+  return ids;
 };
 
 const listTopLevel = (ownerId) => {
@@ -142,11 +158,10 @@ const updateItem = (ownerId, id, patch) => {
         err.status = 400;
         throw err;
       }
-
-      // ✅ Block cycles only when moving a folder
+      // Only relevant when moving a folder
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId, ownerId)) {
         const err = new Error('Cannot move a folder into its own descendant');
-        err.status = 409; // Conflict
+        err.status = 409; // Bad Request (as requested)
         throw err;
       }
     }
@@ -157,7 +172,7 @@ const updateItem = (ownerId, id, patch) => {
   updates.updatedAt = nowIso();
 
   const updated = fileRepository.update(id, updates, ownerId);
-  return updated; // cannot be null here
+  return updated;
 };
 
 const deleteItem = (ownerId, id) => {
@@ -168,14 +183,13 @@ const deleteItem = (ownerId, id) => {
     throw err;
   }
 
-  // Block deleting folder if it has children
-  if (item.type === 'folder' && fileRepository.hasChildren(item.id, ownerId)) {
-    const err = new Error('Folder is not empty');
-    err.status = 409;
-    throw err;
-  }
+  //  Recursive delete (folder/file)
+  const idsToDelete = collectSubtreeIds(ownerId, id);
 
-  fileRepository.remove(id, ownerId);
+  // Delete children first, then the parent
+  for (const deleteId of idsToDelete.reverse()) {
+    fileRepository.remove(deleteId, ownerId);
+  }
 };
 
 module.exports = {

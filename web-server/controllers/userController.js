@@ -10,20 +10,22 @@ const { validateFields } = require('../utils/validation');
  * Handles user registration request.
  */
 exports.registerUser = (req, res, next) => {
-    try {
-        // Validate that all required fields exist in request body
-        const required = ['firstName', 'lastName', 'username', 'email', 'phoneNumber', 'password'];
-        validateFields(req.body, required);
+  try {
+    const required = ['firstName', 'lastName', 'username', 'email', 'phoneNumber', 'password', 'image'];
+    validateFields(req.body, required);
 
-        // Delegate logic to the service layer
-        const newUser = userService.registerUser(req.body);
 
-        // Prepare response (Service already cleaned the password)
-        res.status(201).json(newUser);
-
-    } catch (err) {
-        next(err); // Forward errors to Global Error Handler
+    if (typeof req.body.image !== 'string' || req.body.image.trim() === '') {
+      const err = new Error('image must be a non-empty string');
+      err.status = 400;
+      throw err;
     }
+
+    const newUser = userService.registerUser(req.body);
+    res.status(201).json(newUser);
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
