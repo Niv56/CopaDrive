@@ -84,7 +84,7 @@ const createItem = async (ownerId, payload) => {
     }
   }
 
-  const id = generateId();
+  const id = generateId((id) => fileRepository.findById(id)); // Generate unique ID
   const ts = nowIso();
 
   if (type === 'file') {
