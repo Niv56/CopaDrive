@@ -2,6 +2,7 @@
  * File Service
  * Business logic for file/folder listing and operations.
  */
+
 const fileRepository = require('../repositories/fileRepository');
 const { generateId } = require('../utils/idGenerator');
 
@@ -185,3 +186,4 @@ module.exports = {
   updateItem,
   deleteItem
 };
+

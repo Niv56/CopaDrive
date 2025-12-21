@@ -1,11 +1,13 @@
-/**
- * Route definition for File endpoints.
- */
+
+//Route definition for File endpoints.
+ 
 const express = require('express');
 const router = express.Router();
 
 const fileController = require('../controllers/fileController');
+const permissionController = require('../controllers/permissionController');
 const { requireAuth } = require('../middleware/authMiddleware');
+const permissionRoutes = require('./permissionRoutes');
 
 // GET /api/files - list top-level items for the logged-in user
 router.get('/', requireAuth, fileController.listTopLevel);
@@ -21,5 +23,10 @@ router.patch('/:id', requireAuth, fileController.updateItem);
 
 // DELETE /api/files/:id - delete item metadata (blocked if folder not empty)
 router.delete('/:id', requireAuth, fileController.deleteItem);
+
+// /api/files/:id/permissions - pass to permissionRoutes
+router.use('/:id/permissions' , permissionRoutes);
+
+
 
 module.exports = router;
