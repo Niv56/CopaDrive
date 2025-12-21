@@ -215,6 +215,7 @@ const updateItem = (ownerId, id, patch) => {
 };
 
 const deleteItem = async (ownerId, id) => {
+  // 1. Validate that the item exists
   const item = fileRepository.findById(id, ownerId);
   if (!item) {
     const err = new Error('File or folder not found');
@@ -222,24 +223,33 @@ const deleteItem = async (ownerId, id) => {
     throw err;
   }
 
-  // Block deleting folder if it has children
-  if (item.type === 'folder' && fileRepository.hasChildren(item.id, ownerId)) {
-    const err = new Error('Folder is not empty');
-    err.status = 409;
-    throw err;
-  }
+  // 2. Collect all descendant IDs (recursive delete)
+  // We need to delete all children before deleting the folder itself.
+  const idsToDelete = collectSubtreeIds(ownerId, id);
 
-  if (item.type === 'file') {
-    try {
-      // Command format: DELETE <id>
-      await sendTcpCommand(`DELETE ${id}`);
-    } catch (err) {
-      console.error(`Failed to delete physical file ${id}:`, err.message);
-      // We proceed to delete metadata even if physical delete fails (or handle otherwise)
+  // 3. Iterate over all IDs to delete (reverse order: children first, then parent)
+  for (const deleteId of idsToDelete.reverse()) {
+    
+    // Fetch item to check its type before deletion
+    const itemToDelete = fileRepository.findById(deleteId, ownerId);
+
+    // 4. If it's a file, delete physical content from C++ server
+    // This logic comes from the TCP integration requirement
+    if (itemToDelete && itemToDelete.type === 'file') {
+      try {
+        // Command format: DELETE <id>
+        await sendTcpCommand(`DELETE ${deleteId}`);
+      } catch (err) {
+        console.error(`Failed to delete physical file ${deleteId}:`, err.message);
+        // We proceed to delete metadata even if physical delete fails
+        // to ensure the DB state remains consistent.
+      }
     }
-  }
 
-  fileRepository.remove(id, ownerId);
+    // 5. Finally, remove metadata from memory (Logic from main branch)
+    fileRepository.remove(deleteId, ownerId);
+    return { id: id };
+  }
 };
 
 /**

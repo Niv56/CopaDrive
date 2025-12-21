@@ -51,8 +51,8 @@ exports.updateItem = (req, res, next) => {
 exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    await fileService.deleteItem(ownerId, req.params.id)
-    res.status(204).end();
+    const result = await fileService.deleteItem(ownerId, req.params.id);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }
