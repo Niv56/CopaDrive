@@ -7,12 +7,10 @@
 const fileRepository = require('../repositories/fileRepository');
 const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
-const { sendTcpCommand } = require('../utils/tcpClient'); // Import the TCP Client
-
+const { sendTcpCommand } = require('../utils/tcpClient');
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
-
 
 const wouldCreateCycle = (itemId, newParentId, ownerId) => {
   let cursor = newParentId ?? null;
@@ -21,7 +19,7 @@ const wouldCreateCycle = (itemId, newParentId, ownerId) => {
     if (cursor === itemId) return true;
 
     const node = fileRepository.findById(cursor, ownerId);
-    if (!node) return false; // safety: parent missing => no cycle decision here
+    if (!node) return false;
 
     cursor = node.parentId ?? null;
   }
@@ -53,10 +51,6 @@ const collectSubtreeIds = (ownerId, rootId) => {
   return ids;
 };
 
-const listTopLevel = (ownerId) => {
-  return fileRepository.findByParent(null, ownerId);
-};
-
 const createItem = async (ownerId, payload) => {
   const name = payload?.name;
   const type = payload?.type;
@@ -75,7 +69,7 @@ const createItem = async (ownerId, payload) => {
     throw err;
   }
 
-  // Validate parent folder if provided
+  // Validate parent folder if provided (must be an owned folder)
   if (parentId !== null) {
     const parent = fileRepository.findById(parentId, ownerId);
     if (!parent) {
@@ -90,23 +84,16 @@ const createItem = async (ownerId, payload) => {
     }
   }
 
-  const id = generateId(); // Generate unique ID
+  const id = generateId();
   const ts = nowIso();
 
-  // If it is a file, store content in C++ server using the ID as the filename
   if (type === 'file') {
-      try {
-        // Command format: POST <id> <content>
-        // We use 'id' instead of 'name' to allow multiple files with the same name
-        await sendTcpCommand(`POST ${id} ${content}`);
-      } catch (err) {
-        throw err; // Propagate error (e.g., if C++ server is down)
-      }
+    await sendTcpCommand(`POST ${id} ${content}`);
   }
 
   const item = {
-    id, // Used as key in C++ storage
-    name: name.trim(), // Visible name to user
+    id,
+    name: name.trim(),
     type,
     ownerId,
     parentId,
@@ -117,11 +104,8 @@ const createItem = async (ownerId, payload) => {
   return fileRepository.create(item);
 };
 
-
-
 const getById = async (userId, id) => {
-  // Fetch item by ID only 
-  const item = fileRepository.findById(id); 
+  const item = fileRepository.findById(id);
 
   if (!item) {
     const err = new Error('File or folder not found');
@@ -129,32 +113,29 @@ const getById = async (userId, id) => {
     throw err;
   }
 
-  // Check if the user is the owner OR has a shared permission
   const isOwner = item.ownerId === userId;
-  const hasSharedAccess = (permissionRepository.findByFileId(id) || []).some(p => p.userId === userId);
+  const hasSharedAccess = (permissionRepository.findByFileId(id) || []).some(
+    (p) => p.userId === userId
+  );
 
   if (!isOwner && !hasSharedAccess) {
     const err = new Error('Access denied');
-   // Forbidden
-    err.status = 403; 
+    err.status = 403;
     throw err;
   }
 
-  // Clone item and proceed with content fetching
   const result = { ...item };
+
   if (item.type === 'file') {
     try {
-      // Command format: GET <id>
       const content = await sendTcpCommand(`GET ${id}`);
       result.content = content;
     } catch (err) {
-      if (err.status === 404) {
-        result.content = ""; 
-      } else {
-        throw err;
-      }
+      if (err.status === 404) result.content = "";
+      else throw err;
     }
   }
+
   return result;
 };
 
@@ -165,7 +146,6 @@ const updateItem = (ownerId, id, patch) => {
     throw err;
   }
 
-  // Disallow type updates
   if (patch.type !== undefined) {
     const err = new Error('Type cannot be updated');
     err.status = 400;
@@ -193,7 +173,6 @@ const updateItem = (ownerId, id, patch) => {
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
 
-    // Prevent setting itself as parent
     if (newParentId === id) {
       const err = new Error('parentId cannot be the same as id');
       err.status = 400;
@@ -212,10 +191,9 @@ const updateItem = (ownerId, id, patch) => {
         err.status = 400;
         throw err;
       }
-      // Only relevant when moving a folder
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId, ownerId)) {
         const err = new Error('Cannot move a folder into its own descendant');
-        err.status = 409; // Bad Request (as requested)
+        err.status = 409;
         throw err;
       }
     }
@@ -224,13 +202,10 @@ const updateItem = (ownerId, id, patch) => {
   }
 
   updates.updatedAt = nowIso();
-
-  const updated = fileRepository.update(id, updates, ownerId);
-  return updated;
+  return fileRepository.update(id, updates, ownerId);
 };
 
 const deleteItem = async (ownerId, id) => {
-  // 1. Validate that the item exists
   const item = fileRepository.findById(id, ownerId);
   if (!item) {
     const err = new Error('File or folder not found');
@@ -238,103 +213,97 @@ const deleteItem = async (ownerId, id) => {
     throw err;
   }
 
-  // 2. Collect all descendant IDs (recursive delete)
-  // We need to delete all children before deleting the folder itself.
   const idsToDelete = collectSubtreeIds(ownerId, id);
 
-  // 3. Iterate over all IDs to delete (reverse order: children first, then parent)
   for (const deleteId of idsToDelete.reverse()) {
-    
-    // Fetch item to check its type before deletion
     const itemToDelete = fileRepository.findById(deleteId, ownerId);
 
-    // 4. If it's a file, delete physical content from C++ server
-    // This logic comes from the TCP integration requirement
     if (itemToDelete && itemToDelete.type === 'file') {
       try {
-        // Command format: DELETE <id>
         await sendTcpCommand(`DELETE ${deleteId}`);
       } catch (err) {
         console.error(`Failed to delete physical file ${deleteId}:`, err.message);
-        // We proceed to delete metadata even if physical delete fails
-        // to ensure the DB state remains consistent.
       }
     }
 
-    // 5. Finally, remove metadata from memory (Logic from main branch)
     fileRepository.remove(deleteId, ownerId);
   }
 };
 
-/**
- * Searches for files by Name (NodeJS) or Content (C++).
- * Map search to TCP SEARCH
- */
 const searchItems = async (ownerId, query) => {
-    // Search by Name (In-Memory Metadata)
-    const nameMatches = fileRepository.searchFiles(ownerId, query);
+  const nameMatches = fileRepository.searchFiles(ownerId, query);
 
-    // Search by Content (TCP Request to C++)
-    // Returns a list of ID's (because we stored them by ID)
-    let contentMatchIds = [];
-    try {
-      const response = await sendTcpCommand(`SEARCH ${query}`);
-      if (response) {
-        contentMatchIds = response.split('\n').filter(line => line.length > 0);
-      }
-    } catch (err) {
-      if (err.status !== 404) {
-        console.error("Search error on C++ server:", err.message);
+  let contentMatchIds = [];
+  try {
+    const response = await sendTcpCommand(`SEARCH ${query}`);
+    if (response) {
+      contentMatchIds = response.split('\n').filter(line => line.length > 0);
+    }
+  } catch (err) {
+    if (err.status !== 404) {
+      console.error("Search error on C++ server:", err.message);
+    }
+  }
+
+  const contentMatches = contentMatchIds
+    .map(id => fileRepository.findById(id, ownerId))
+    .filter(item => item !== undefined);
+
+  const allMatches = [...nameMatches, ...contentMatches];
+  return Array.from(new Map(allMatches.map(item => [item.id, item])).values());
+};
+
+/**
+ * Fetch ALL owned items (entire tree) without requiring a new repository method.
+ */
+const getAllOwnedItems = (ownerId) => {
+  const result = [];
+  const visited = new Set();
+  const stack = [null];
+
+  while (stack.length > 0) {
+    const parentId = stack.pop();
+    const children = fileRepository.findByParent(parentId, ownerId) || [];
+
+    for (const child of children) {
+      if (visited.has(child.id)) continue;
+      visited.add(child.id);
+
+      result.push(child);
+
+      if (child.type === 'folder') {
+        stack.push(child.id);
       }
     }
+  }
 
-    // Merge Results
-    // Convert contentMatchIds to actual file objects
-    const contentMatches = contentMatchIds
-      .map(id => fileRepository.findById(id, ownerId))
-      .filter(item => item !== undefined); // Filter out if ID doesn't belong to this user
-
-    // Combine arrays and remove duplicates (by ID)
-    const allMatches = [...nameMatches, ...contentMatches];
-    
-    // Deduplicate based on unique ID
-    const uniqueMatches = Array.from(new Map(allMatches.map(item => [item.id, item])).values());
-
-    return uniqueMatches;
+  return result;
 };
 
-
- // Fetches only the files where the user is the owner.
-const getOwnedFiles = (userId, parentId = null) => {
-    return fileRepository.findByParent(parentId, userId) || [];
-};
-
- //Fetches files where the user was granted permission by someone else.
+/**
+ * Fetch ALL items shared with the user.
+ */
 const getSharedWithMeFiles = (userId) => {
-    // Look up permissions assigned to this specific user
-    const myPermissions = permissionRepository.findByUserId(userId) || [];
-    if (myPermissions.length === 0) return [];
+  const myPermissions = permissionRepository.findByUserId(userId) || [];
+  if (myPermissions.length === 0) return [];
 
-    // Map the permissions to get the actual file objects
-    const sharedFileIds = myPermissions.map(p => p.fileId);
-    return fileRepository.findByIds(sharedFileIds) || [];
+  const sharedFileIds = myPermissions.map(p => p.fileId);
+  return fileRepository.findByIds(sharedFileIds) || [];
 };
 
-// Combines owned items (at Root) and all shared items into a single list
+/**
+ * Main listing: ALL accessible items for the user (owned + shared)
+ */
 const listAllFiles = (ownerId) => {
-    const ownedFiles = getOwnedFiles(ownerId, null);
-    const sharedFiles = getSharedWithMeFiles(ownerId);
+  const ownedFiles = getAllOwnedItems(ownerId);
+  const sharedFiles = getSharedWithMeFiles(ownerId);
 
-    // Merge both arrays
-    const allFiles = [...ownedFiles, ...sharedFiles];
-    
-    // Safety check: Remove duplicates by ID using a Map
-    return Array.from(new Map(allFiles.map(item => [item.id, item])).values());
+  const allFiles = [...ownedFiles, ...sharedFiles];
+
+  return Array.from(new Map(allFiles.map(item => [item.id, item])).values());
 };
-
 
 module.exports = {
-  listTopLevel,
   listAllFiles,
   createItem,
   getById,
@@ -342,4 +311,3 @@ module.exports = {
   deleteItem,
   searchItems
 };
-
