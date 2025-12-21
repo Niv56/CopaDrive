@@ -263,7 +263,6 @@ const deleteItem = async (ownerId, id) => {
 
     // 5. Finally, remove metadata from memory (Logic from main branch)
     fileRepository.remove(deleteId, ownerId);
-    return { id: id };
   }
 };
 
