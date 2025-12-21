@@ -13,9 +13,6 @@ const findByUsername = (username) => users.find(u => u.username === username);
 // Find user by email
 const findByEmail = (email) => users.find(u => u.email === email);
 
-// Find user by password (as requested for uniqueness check)
-const findByPassword = (password) => users.find(u => u.password === password);
-
 // Add a new user entity to the memory store
 const create = (userData) => {
     users.push(userData);
@@ -26,6 +23,5 @@ module.exports = {
     findById,
     findByUsername,
     findByEmail, 
-    findByPassword,
     create
 };
