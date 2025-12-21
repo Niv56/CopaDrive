@@ -4,10 +4,14 @@
  */
 const fileService = require('../services/fileService');
 
-exports.listTopLevel = (req, res, next) => {
+/**
+ * GET /api/files
+ * Returns ALL items the user can access (owned + shared).
+ */
+exports.listAll = (req, res, next) => {
   try {
-    const ownerId = req.user.id;
-    const items = fileService.listAllFiles(ownerId); 
+    const userId = req.user.id;
+    const items = fileService.listAllFiles(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);
@@ -30,8 +34,8 @@ exports.createItem = async (req, res, next) => {
 
 exports.getById = async (req, res, next) => {
   try {
-    const ownerId = req.user.id;
-    const item = await fileService.getById(ownerId, req.params.id);
+    const userId = req.user.id;
+    const item = await fileService.getById(userId, req.params.id);
     res.status(200).json(item);
   } catch (err) {
     next(err);
@@ -51,7 +55,7 @@ exports.updateItem = (req, res, next) => {
 exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
-    await fileService.deleteItem(ownerId, req.params.id)
+    await fileService.deleteItem(ownerId, req.params.id);
     res.status(204).end();
   } catch (err) {
     next(err);
