@@ -158,7 +158,7 @@ const getById = async (userId, id) => {
   return result;
 };
 
-const updateItem = (ownerId, id, patch) => {
+const updateItem = async (ownerId, id, patch) => {
   if (!patch || typeof patch !== 'object') {
     const err = new Error('Invalid JSON body');
     err.status = 400;
@@ -181,6 +181,44 @@ const updateItem = (ownerId, id, patch) => {
 
   const updates = {};
 
+  // --- Handle Content Update ---
+  if (patch.content !== undefined) {
+      // Folder's content cannot be changed
+      if (current.type === 'folder') {
+          const err = new Error('Cannot update content of a folder');
+          err.status = 400; 
+          throw err;
+      }
+
+      // File's content can be changed
+      if (current.type === 'file') {
+          try {
+              // WORKAROUND: The C++ TCP Server does not support 'UPDATE' or overwriting via POST.
+              // To update content, we must:
+              // 1. Delete the existing physical file.
+              // 2. Create a new file with the new content using the SAME ID.
+
+              // Step 1: Attempt to delete the old physical file
+              try {
+                  await sendTcpCommand(`DELETE ${id}`);
+              } catch (deleteErr) {
+                  // We suppress errors here (Soft Fail).
+                  // If the file was missing on the server (sync issue), we still want to proceed
+                  // and create the new content.
+                  console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
+              }
+
+              // Step 2: Post the new content reusing the existing ID
+              await sendTcpCommand(`POST ${id} ${patch.content}`);
+
+          } catch (err) {
+              // If the POST fails, this is a critical error (e.g. server down, storage full).
+              throw err; 
+          }
+      }
+  }
+
+  // --- Handle Name Update ---
   if (patch.name !== undefined) {
     if (typeof patch.name !== 'string' || patch.name.trim() === '') {
       const err = new Error('Name must be a non-empty string');
@@ -190,6 +228,7 @@ const updateItem = (ownerId, id, patch) => {
     updates.name = patch.name.trim();
   }
 
+  // --- Handle Move (ParentId) ---
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
 
@@ -212,10 +251,10 @@ const updateItem = (ownerId, id, patch) => {
         err.status = 400;
         throw err;
       }
-      // Only relevant when moving a folder
+      // Cycle detection (Only relevant when moving a folder)
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId, ownerId)) {
         const err = new Error('Cannot move a folder into its own descendant');
-        err.status = 409; // Bad Request (as requested)
+        err.status = 409;
         throw err;
       }
     }
