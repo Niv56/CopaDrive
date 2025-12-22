@@ -1,6 +1,6 @@
 /**
- * File Service - FINAL VERSION
- * Business logic with full Permission Inheritance
+ * File Service - FINAL FIXED VERSION
+ * Fixed: updateItem now calls repository without userId to allow editors to update files.
  */
 
 const fileRepository = require('../repositories/fileRepository');
@@ -14,7 +14,7 @@ const assertValidType = (type) => type === 'file' || type === 'folder';
 // --- Internal Helpers ---
 
 /**
- * RECURSIVE Access Check (The logic we've built)
+ * RECURSIVE Access Check
  * Checks permissions from the item up to the root.
  */
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
@@ -22,7 +22,7 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
     let highestRoleFound = null;
 
     while (currentId !== null) {
-        const item = fileRepository.getById(currentId);
+        const item = fileRepository.findById(currentId); 
         if (!item) break;
 
         // Owner always has full access
@@ -41,10 +41,10 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
 };
 
 const isDescendant = (fileId, folderId) => {
-    let current = fileRepository.getById(fileId);
+    let current = fileRepository.findById(fileId);
     while (current && current.parentId) {
         if (current.parentId === folderId) return true;
-        current = fileRepository.getById(current.parentId);
+        current = fileRepository.findById(current.parentId);
     }
     return false;
 };
@@ -53,7 +53,7 @@ const wouldCreateCycle = (itemId, newParentId) => {
     let cursor = newParentId ?? null;
     while (cursor !== null) {
         if (cursor === itemId) return true;
-        const node = fileRepository.getById(cursor);
+        const node = fileRepository.findById(cursor);
         if (!node) return false;
         cursor = node.parentId ?? null;
     }
@@ -81,8 +81,8 @@ const listTopLevel = async (userId) => {
     const ownedFiles = fileRepository.findByParent(null, userId);
     const userPermissions = permissionRepository.findByUserId(userId) || [];
     const sharedItems = userPermissions
-        .map(perm => fileRepository.getById(perm.fileId))
-        .filter(item => item !== null);
+        .map(perm => fileRepository.findById(perm.fileId))
+        .filter(item => item !== undefined && item !== null);
 
     const allFiles = [...ownedFiles];
     sharedItems.forEach(item => {
@@ -96,7 +96,7 @@ const listTopLevel = async (userId) => {
 };
 
 const getById = async (userId, id) => {
-    const item = fileRepository.getById(id);
+    const item = fileRepository.findById(id);
     if (!item) throw { status: 404, message: 'File or folder not found' };
 
     if (!(await checkAccess(userId, id, 'viewer'))) {
@@ -121,22 +121,23 @@ const createItem = async (ownerId, payload) => {
     if (!type || !assertValidType(type)) throw { status: 400, message: 'Invalid type' };
 
     if (parentId) {
-        const parent = fileRepository.getById(parentId);
+        const parent = fileRepository.findById(parentId);
         if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Invalid parent' };
-        // Check if user can create in this folder
         if (!(await checkAccess(ownerId, parentId, 'editor'))) throw { status: 403, message: 'No permission to create here' };
     }
 
     const id = generateId();
     const ts = nowIso();
-    if (type === 'file') await sendTcpCommand(`POST ${id} ${content}`);
+    
+    if (type === 'file') {
+        await sendTcpCommand(`POST ${id} ${content}`);
+    }
 
     return fileRepository.create({ id, name: name.trim(), type, ownerId, parentId, createdAt: ts, updatedAt: ts });
 };
 
 const updateItem = async (userId, id, patch) => {
-  // 1. Security Check (From existing project)
-  // We verify if the user has permission to edit this file.
+  // 1. Security Check
   if (!(await checkAccess(userId, id, 'editor'))) {
     const err = new Error('Editor access required');
     err.status = 403;
@@ -150,7 +151,6 @@ const updateItem = async (userId, id, patch) => {
     throw err;
   }
 
-  // Disallow type updates (e.g., changing a file to a folder)
   if (patch.type !== undefined) {
     const err = new Error('Type cannot be updated');
     err.status = 400;
@@ -158,8 +158,8 @@ const updateItem = async (userId, id, patch) => {
   }
 
   // 3. Fetch Current Item
-  // We use the repository to get the current state of the file
-  const current = await fileRepository.findById(id, userId); // Adapted to use userId
+  const current = fileRepository.findById(id); 
+  
   if (!current) {
     const err = new Error('File or folder not found');
     err.status = 404;
@@ -170,36 +170,23 @@ const updateItem = async (userId, id, patch) => {
 
   // --- Handle Content Update ---
   if (patch.content !== undefined) {
-      // Folder's content cannot be changed
       if (current.type === 'folder') {
           const err = new Error('Cannot update content of a folder');
           err.status = 400; 
           throw err;
       }
 
-      // File's content can be changed
       if (current.type === 'file') {
           try {
-              // WORKAROUND: The C++ TCP Server does not support 'UPDATE' or overwriting via POST.
-              // To update content, we must:
-              // 1. Delete the existing physical file.
-              // 2. Create a new file with the new content using the SAME ID.
-
-              // Step 1: Attempt to delete the old physical file
+              // WORKAROUND: Delete then Post
               try {
                   await sendTcpCommand(`DELETE ${id}`);
               } catch (deleteErr) {
-                  // We suppress errors here (Soft Fail).
-                  // If the file was missing on the server (sync issue), we still want to proceed
-                  // and create the new content.
                   console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
               }
-
-              // Step 2: Post the new content reusing the existing ID
               await sendTcpCommand(`POST ${id} ${patch.content}`);
 
           } catch (err) {
-              // If the POST fails, this is a critical error (e.g. server down, storage full).
               throw err; 
           }
       }
@@ -219,7 +206,6 @@ const updateItem = async (userId, id, patch) => {
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
 
-    // Prevent setting itself as parent
     if (newParentId === id) {
       const err = new Error('parentId cannot be the same as id');
       err.status = 400;
@@ -227,9 +213,8 @@ const updateItem = async (userId, id, patch) => {
     }
 
     if (newParentId !== null) {
-      const parent = await fileRepository.findById(newParentId, userId);
+      const parent = fileRepository.findById(newParentId);
       
-      // Strict validation for the new parent folder
       if (!parent) {
         const err = new Error('Parent folder not found');
         err.status = 404;
@@ -241,9 +226,7 @@ const updateItem = async (userId, id, patch) => {
         throw err;
       }
       
-      // Cycle detection (Only relevant when moving a folder)
-      // Checks if we are trying to move a folder inside one of its own children
-      if (current.type === 'folder' && await wouldCreateCycle(id, newParentId, userId)) {
+      if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
         const err = new Error('Cannot move a folder into its own descendant');
         err.status = 409;
         throw err;
@@ -256,29 +239,34 @@ const updateItem = async (userId, id, patch) => {
   updates.updatedAt = nowIso();
 
   // Final DB Update
-  const updated = await fileRepository.update(id, updates, userId);
+  // FIXED HERE: Removed 'userId' parameter. 
+  // Since we already checked permissions with checkAccess() above, 
+  // we tell the repo to update the item regardless of who the owner is.
+  const updated = fileRepository.update(id, updates); 
   return updated;
 };
 
 const deleteItem = async (userId, id) => {
-    const item = fileRepository.getById(id);
+    const item = fileRepository.findById(id);
     if (!item) throw { status: 404, message: 'Not found' };
 
-    // Strict: Only owner can delete (as discussed)
+    // Strict: Only owner can delete
     if (item.ownerId !== userId) throw { status: 403, message: 'Only owner can delete' };
 
     const idsToDelete = collectSubtreeIds(id);
     for (const dId of idsToDelete.reverse()) {
-        const target = fileRepository.getById(dId);
-        if (target && target.type === 'file') await sendTcpCommand(`DELETE ${dId}`).catch(() => {});
+        const target = fileRepository.findById(dId);
+        
+        if (target && target.type === 'file') {
+             await sendTcpCommand(`DELETE ${dId}`).catch(() => {});
+        }
         fileRepository.remove(dId);
-        permissionRepository.removeAllByFileId(dId);
     }
     return { id };
 };
 
 const searchItems = async (userId, query) => {
-    const nameMatches = fileRepository.searchFiles(query).filter(f => checkAccess(userId, f.id, 'viewer'));
+    const nameMatches = fileRepository.searchFiles(userId, query).filter(f => checkAccess(userId, f.id, 'viewer'));
     let contentMatchIds = [];
     try {
         const response = await sendTcpCommand(`SEARCH ${query}`);
@@ -286,7 +274,7 @@ const searchItems = async (userId, query) => {
     } catch (err) {}
 
     const contentMatches = contentMatchIds
-        .map(id => fileRepository.getById(id))
+        .map(id => fileRepository.findById(id))
         .filter(f => f && checkAccess(userId, f.id, 'viewer'));
 
     const all = [...nameMatches, ...contentMatches];
@@ -294,7 +282,7 @@ const searchItems = async (userId, query) => {
 };
 
 module.exports = {
-  listAllFiles,
+  listTopLevel,
   createItem,
   getById,
   updateItem,
