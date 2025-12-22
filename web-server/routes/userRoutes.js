@@ -1,7 +1,5 @@
-/**
- * Route definition for User-related endpoints.
- * This file maps incoming HTTP requests to their respective controller functions.
- */
+// Route definition for User-related endpoints.
+// This file maps incoming HTTP requests to their respective controller functions.
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');

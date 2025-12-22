@@ -28,7 +28,6 @@ exports.login = (req, res, next) => {
         }
 
         // Success: Return user ID
-        // Note: In exercise 4, this will change to return a token
         res.status(200).json({
             userId: user.id
         });

@@ -69,3 +69,41 @@ exports.deletePermission = (ownerId, fileId, pId) => {
     }
     return removed;
 };
+
+
+/**
+ * Check if user has permission to specific file.
+ */
+const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
+    let currentId = fileId;
+    let foundPermission = null;
+
+    // Iterate from the target file up to the root
+    while (currentId !== null) {
+        const item = fileRepository.getById(currentId);
+        if (!item) break;
+
+        // Owner check If user owns any folder in the path, they have full access
+        if (item.ownerId === userId) return true;
+
+        // Look for an explicit permission entry for this user at this level
+        const permissions = permissionRepository.findByFileId(currentId) || [];
+        const userPerm = permissions.find(p => p.userId === userId);
+
+        if (userPerm) {
+            // If the user has 'editor' role at this level, it's the strongest possible
+            if (userPerm.role === 'editor') return true;
+            if (!foundPermission) foundPermission = userPerm.role;
+        }
+
+        currentId = item.parentId;
+    }
+
+    if (requiredRole === 'viewer') {
+        return foundPermission !== null;
+    } else if (requiredRole === 'editor') {
+        return foundPermission === 'editor';
+    }
+
+    return false;
+};

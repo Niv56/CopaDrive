@@ -12,7 +12,7 @@ exports.addPermission = (req, res, next) => {
 
         const ownerId = req.user.id;
         const fileId = req.params.id;
-        const role = "viewer"
+        const role = "viewer";
 
         const created = permissionService.addPermission(ownerId, fileId, req.body, role);
         res.status(201).json(created); // 201 Created as required
@@ -22,8 +22,7 @@ exports.addPermission = (req, res, next) => {
 };
 
  
- // GET /api/files/:id/permissions - Handle listing all permissions for a file
- 
+// GET /api/files/:id/permissions - Handle listing all permissions for a file
 exports.getPermissions = (req, res, next) => {
     try {
         // User ID from authMiddleware

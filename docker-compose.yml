@@ -1,5 +1,5 @@
 services:
-  # C++ Server (Exercise 2)
+  # C++ Server
   server:
     build:
       context: ./cpp-server
@@ -12,7 +12,7 @@ services:
     networks:
       - copadrive-network
 
-  # Web Server (Exercise 3 - NodeJS MVC)
+  # Web Server
   web-server:
     build:
       context: ./web-server
