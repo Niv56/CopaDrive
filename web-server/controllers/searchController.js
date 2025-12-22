@@ -11,7 +11,6 @@ exports.search = async (req, res, next) => {
         // Fetch matching files/folders for this specific user
         const results = await fileService.searchItems(userId, query);
 
-        // Response returned in JSON format only
         res.status(200).json(results);
     } catch (err) {
         next(err);

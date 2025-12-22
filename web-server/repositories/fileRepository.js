@@ -1,7 +1,3 @@
-/**
- * Implement Files Repository Methods.
- * Handles in-memory data operations for files and directories.
- */
 const { files } = require('../utils/storage');
 
 const normalizeParentId = (parentId) => (parentId === undefined ? null : parentId);

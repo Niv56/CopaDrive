@@ -1,5 +1,3 @@
-
-// Handles HTTP requests related to file/folder access permissions.
 const permissionService = require('../services/permissionService');
 const { validateFields } = require('../utils/validation');
 
@@ -65,7 +63,6 @@ exports.deletePermission = (req, res, next) => {
         const pId = req.params.pId; 
 
         permissionService.deletePermission(ownerId, fileId, pId);
-        // 204 No Content as required
         res.status(204).end(); 
     } catch (err) {
         next(err);

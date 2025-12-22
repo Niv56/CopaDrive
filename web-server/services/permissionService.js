@@ -1,15 +1,10 @@
-
-// Handles business logic for file and folder permissions
-
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
-const userRepository = require('../repositories/userRepository'); // Added for user validation
+const userRepository = require('../repositories/userRepository');
 const { generateId } = require('../utils/idGenerator');
 
 
-// Validates that the file exists and belongs to the owner
 const verifyOwnership = (ownerId, fileId) => {
-    // Check if the file exists and if the user is the owner
     const file = fileRepository.findById(fileId, ownerId);
     if (!file) {
         const err = new Error('File not found or access denied');
@@ -20,7 +15,6 @@ const verifyOwnership = (ownerId, fileId) => {
 };
 
 
- // Get all permissions for a specific file
 exports.getPermissions = (ownerId, fileId) => {
     verifyOwnership(ownerId, fileId);
     return permissionRepository.findByFileId(fileId);
@@ -31,8 +25,7 @@ exports.getPermissions = (ownerId, fileId) => {
 exports.addPermission = (ownerId, fileId, payload) => {
     verifyOwnership(ownerId, fileId);
 
-    // FIX 1: Validate that the target user exists
-    // SCRUM-219 Requirement: Granting permission to non-existent user returns error
+    // Validate that the target user exists
     const targetUser = userRepository.findById(payload.userId);
     if (!targetUser) {
         const err = new Error('User to grant permission to not found');
@@ -40,8 +33,7 @@ exports.addPermission = (ownerId, fileId, payload) => {
         throw err;
     }
 
-    // FIX 2: Check for duplicates (Idempotency / Conflict)
-    // Option B Selected: Throw 409 if permission already exists
+    // Check for duplicates
     const existingPermissions = permissionRepository.findByFileId(fileId);
     const duplicate = existingPermissions.find(p => p.userId === payload.userId);
     
@@ -62,7 +54,7 @@ exports.addPermission = (ownerId, fileId, payload) => {
 };
 
 
-// PATCH /api/files/:id/permissions/:pId - Update an existing permission entry 
+// Update an existing permission entry 
 exports.updatePermission = (ownerId, fileId, pId) => {
     verifyOwnership(ownerId, fileId);
         const permission = permissionRepository.findById(pId);
@@ -91,9 +83,6 @@ exports.deletePermission = (ownerId, fileId, pId) => {
     return removed;
 };
 
-/**
- * Check if user has permission to specific file.
- */
 const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
     let currentId = fileId;
     let foundPermission = null;

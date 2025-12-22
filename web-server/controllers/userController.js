@@ -1,7 +1,3 @@
-/**
- * User Controller
- * Routes incoming HTTP requests to the appropriate service logic.
- */
 const userService = require('../services/userService');
 const { validateFields, validateNonEmptyString } = require('../utils/validation');
 
@@ -34,7 +30,6 @@ exports.getUserById = (req, res, next) => {
     // Fetch the safe user profile from service
     const user = userService.getSafeUserById(userId);
 
-    // Respond with 200 OK
     res.status(200).json(user);
   } catch (err) {
     next(err);

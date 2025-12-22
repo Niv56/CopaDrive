@@ -1,8 +1,3 @@
-/**
- * File Service - FINAL FIXED VERSION
- * Fixed: updateItem now calls repository without userId to allow editors to update files.
- */
-
 const fileRepository = require('../repositories/fileRepository');
 const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
@@ -137,7 +132,7 @@ const createItem = async (ownerId, payload) => {
 };
 
 const updateItem = async (userId, id, patch) => {
-  // 1. Input Validation
+  // Input Validation
   if (!patch || typeof patch !== 'object') {
     const err = new Error('Invalid JSON body');
     err.status = 400;
@@ -150,19 +145,16 @@ const updateItem = async (userId, id, patch) => {
     throw err;
   }
 
-  // 2. Fetch Current Item (MOVED UP)
-  // We verify existence BEFORE permissions to satisfy the requirement:
-  // "Non-existent id returns 404 Not Found" (instead of 403).
+  // Fetch Current Item (MOVED UP)
   const current = fileRepository.findById(id); 
   
   if (!current) {
     const err = new Error('File or folder not found');
-    err.status = 404; // Returns 404 correctly
+    err.status = 404;
     throw err;
   }
 
-  // 3. Security Check (MOVED DOWN)
-  // Now that we know the file exists, we check if the user has 'editor' access.
+  // Security Check (MOVED DOWN)
   if (!(await checkAccess(userId, id, 'editor'))) {
     const err = new Error('Editor access required');
     err.status = 403;
@@ -171,7 +163,6 @@ const updateItem = async (userId, id, patch) => {
 
   const updates = {};
 
-  // --- Handle Content Update ---
   if (patch.content !== undefined) {
       if (current.type === 'folder') {
           const err = new Error('Cannot update content of a folder');
@@ -181,20 +172,14 @@ const updateItem = async (userId, id, patch) => {
 
       if (current.type === 'file') {
           try {
-              // WORKAROUND: The C++ TCP Server does not support 'UPDATE' or overwriting via POST.
-              // To update content, we must:
-              // 1. Delete the existing physical file.
-              // 2. Create a new file with the new content using the SAME ID.
-
-              // Step 1: Attempt to delete the old physical file
+              // Attempt to delete the old physical file
               try {
                   await sendTcpCommand(`DELETE ${id}`);
               } catch (deleteErr) {
-                  // Soft Fail: If file didn't exist on TCP server, log warning but proceed to create it.
                   console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
               }
 
-              // Step 2: Post the new content reusing the existing ID
+              // Post the new content reusing the existing ID
               await sendTcpCommand(`POST ${id} ${patch.content}`);
 
           } catch (err) {
@@ -203,7 +188,7 @@ const updateItem = async (userId, id, patch) => {
       }
   }
 
-  // --- Handle Name Update ---
+  // Handle Name Update
   if (patch.name !== undefined) {
     if (typeof patch.name !== 'string' || patch.name.trim() === '') {
       const err = new Error('Name must be a non-empty string');
@@ -213,7 +198,7 @@ const updateItem = async (userId, id, patch) => {
     updates.name = patch.name.trim();
   }
 
-  // --- Handle Move (ParentId) ---
+  // Handle Move (ParentId)
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
 
@@ -251,9 +236,6 @@ const updateItem = async (userId, id, patch) => {
 
   updates.updatedAt = nowIso();
 
-  // Final DB Update
-  // We do NOT pass 'userId' here. Since we already validated permissions via checkAccess(),
-  // we allow the update to proceed regardless of who the owner is (enabling shared editing).
   const updated = fileRepository.update(id, updates); 
   return updated;
 };
@@ -262,7 +244,7 @@ const deleteItem = async (userId, id) => {
     const item = fileRepository.findById(id);
     if (!item) throw { status: 404, message: 'Not found' };
 
-    // Strict: Only owner can delete
+    // Only owner can delete
     if (item.ownerId !== userId) throw { status: 403, message: 'Only owner can delete' };
 
     const idsToDelete = collectSubtreeIds(id);

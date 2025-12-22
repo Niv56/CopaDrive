@@ -1,7 +1,3 @@
-/**
- * File Controller
- * Handles HTTP requests related to files/folders metadata.
- */
 const fileService = require('../services/fileService');
 
 /**

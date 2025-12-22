@@ -1,5 +1,3 @@
-
-// Handle in - memory data operation for file / folder permissions
 const { permissions } = require('../utils/storage');
 
 // Find all associated with a specific file
