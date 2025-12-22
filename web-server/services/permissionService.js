@@ -1,13 +1,13 @@
 
 // Handles business logic for file and folder permissions
- 
+
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
+const userRepository = require('../repositories/userRepository'); // Added for user validation
 const { generateId } = require('../utils/idGenerator');
 
 
 // Validates that the file exists and belongs to the owner
- 
 const verifyOwnership = (ownerId, fileId) => {
     // Check if the file exists and if the user is the owner
     const file = fileRepository.findById(fileId, ownerId);
@@ -30,6 +30,27 @@ exports.getPermissions = (ownerId, fileId) => {
 // Add a new permission entry
 exports.addPermission = (ownerId, fileId, payload) => {
     verifyOwnership(ownerId, fileId);
+
+    // FIX 1: Validate that the target user exists
+    // SCRUM-219 Requirement: Granting permission to non-existent user returns error
+    const targetUser = userRepository.findById(payload.userId);
+    if (!targetUser) {
+        const err = new Error('User to grant permission to not found');
+        err.status = 404;
+        throw err;
+    }
+
+    // FIX 2: Check for duplicates (Idempotency / Conflict)
+    // Option B Selected: Throw 409 if permission already exists
+    const existingPermissions = permissionRepository.findByFileId(fileId);
+    const duplicate = existingPermissions.find(p => p.userId === payload.userId);
+    
+    if (duplicate) {
+        const err = new Error('Permission already exists for this user');
+        err.status = 409;
+        throw err;
+    }
+
     const newPermission = {
         id: generateId((id) => permissionRepository.findById(id)), 
         fileId: fileId,
@@ -69,7 +90,6 @@ exports.deletePermission = (ownerId, fileId, pId) => {
     }
     return removed;
 };
-
 
 /**
  * Check if user has permission to specific file.

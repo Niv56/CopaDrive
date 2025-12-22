@@ -137,14 +137,7 @@ const createItem = async (ownerId, payload) => {
 };
 
 const updateItem = async (userId, id, patch) => {
-  // 1. Security Check
-  if (!(await checkAccess(userId, id, 'editor'))) {
-    const err = new Error('Editor access required');
-    err.status = 403;
-    throw err;
-  }
-
-  // 2. Input Validation
+  // 1. Input Validation
   if (!patch || typeof patch !== 'object') {
     const err = new Error('Invalid JSON body');
     err.status = 400;
@@ -157,12 +150,22 @@ const updateItem = async (userId, id, patch) => {
     throw err;
   }
 
-  // 3. Fetch Current Item
+  // 2. Fetch Current Item (MOVED UP)
+  // We verify existence BEFORE permissions to satisfy the requirement:
+  // "Non-existent id returns 404 Not Found" (instead of 403).
   const current = fileRepository.findById(id); 
   
   if (!current) {
     const err = new Error('File or folder not found');
-    err.status = 404;
+    err.status = 404; // Returns 404 correctly
+    throw err;
+  }
+
+  // 3. Security Check (MOVED DOWN)
+  // Now that we know the file exists, we check if the user has 'editor' access.
+  if (!(await checkAccess(userId, id, 'editor'))) {
+    const err = new Error('Editor access required');
+    err.status = 403;
     throw err;
   }
 
@@ -178,12 +181,20 @@ const updateItem = async (userId, id, patch) => {
 
       if (current.type === 'file') {
           try {
-              // WORKAROUND: Delete then Post
+              // WORKAROUND: The C++ TCP Server does not support 'UPDATE' or overwriting via POST.
+              // To update content, we must:
+              // 1. Delete the existing physical file.
+              // 2. Create a new file with the new content using the SAME ID.
+
+              // Step 1: Attempt to delete the old physical file
               try {
                   await sendTcpCommand(`DELETE ${id}`);
               } catch (deleteErr) {
+                  // Soft Fail: If file didn't exist on TCP server, log warning but proceed to create it.
                   console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
               }
+
+              // Step 2: Post the new content reusing the existing ID
               await sendTcpCommand(`POST ${id} ${patch.content}`);
 
           } catch (err) {
@@ -206,6 +217,7 @@ const updateItem = async (userId, id, patch) => {
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
 
+    // Prevent setting itself as parent
     if (newParentId === id) {
       const err = new Error('parentId cannot be the same as id');
       err.status = 400;
@@ -226,6 +238,7 @@ const updateItem = async (userId, id, patch) => {
         throw err;
       }
       
+      // Cycle detection (Only relevant when moving a folder)
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
         const err = new Error('Cannot move a folder into its own descendant');
         err.status = 409;
@@ -239,9 +252,8 @@ const updateItem = async (userId, id, patch) => {
   updates.updatedAt = nowIso();
 
   // Final DB Update
-  // FIXED HERE: Removed 'userId' parameter. 
-  // Since we already checked permissions with checkAccess() above, 
-  // we tell the repo to update the item regardless of who the owner is.
+  // We do NOT pass 'userId' here. Since we already validated permissions via checkAccess(),
+  // we allow the update to proceed regardless of who the owner is (enabling shared editing).
   const updated = fileRepository.update(id, updates); 
   return updated;
 };
