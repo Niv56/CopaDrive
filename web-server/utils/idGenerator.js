@@ -6,7 +6,6 @@ const _makeRandomId = () => {
 
 /**
  * Generates a generic ID.
- * @param {Function} [checkExists] - Optional function that returns true if ID exists.
  * If provided, the generator will loop until a unique ID is found.
  */
 const generateId = (checkExists) => {

@@ -1,7 +1,3 @@
-/**
- * Implement Users Repository Methods.
- * This layer abstracts the direct manipulation of the in-memory users array.
- */
 const { users } = require('../utils/storage');// Accessing the initialized store
 
 // Find a user by their unique ID

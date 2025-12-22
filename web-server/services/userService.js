@@ -1,14 +1,6 @@
-/**
- * User Service
- * Handles business logic, data enrichment, and uniqueness validation.
- */
 const userRepository = require('../repositories/userRepository');
 const { generateId } = require('../utils/idGenerator');
 
-/**
- * Logic for registering a new user.
- * Performs conflict checks (409) and prepares the user entity.
- */
 const registerUser = (userData) => {
     // Conflict Check: Username
     if (userRepository.findByUsername(userData.username)) {
@@ -38,16 +30,12 @@ const registerUser = (userData) => {
     return safeResponse;
 };
 
-/**
- * Logic for retrieving a user and cleaning sensitive data.
- * Returns a DTO (Data Transfer Object).
- */
 const getSafeUserById = (userId) => {
     const user = userRepository.findById(userId);
 
     if (!user) {
         const error = new Error("User not found");
-        error.status = 404; // Standard 404 for missing resources
+        error.status = 404;
         throw error;
     }
 

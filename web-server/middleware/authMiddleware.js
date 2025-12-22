@@ -1,7 +1,3 @@
-/**
- * Authentication Middleware
- * Checks if user is logged in by reading the X-User-Id header
- */
 const userRepository = require('../repositories/userRepository');
 
 /**
