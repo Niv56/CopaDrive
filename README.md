@@ -1,98 +1,87 @@
-# CopaDrive
-
-
-
-# Build the Docker:
-docker compose build
-
-# Run server
-docker compose up server
-
-# Run C++ Client
-docker compose run --rm cpp-client
-
-# Run Python Client
-docker compose run --rm python-client
-
-# Run Tests
-docker compose run --rm test
-
-# About the Application
-CopaDrive is a TCP client–server app that stores RLE-compressed text files under a directory defined by PATH_DIR.
-The C++ server is multi-threaded and can handle many clients in parallel.
-We provide two clients, C++ & Python, both talk to the same server.
-The App supports 4 case-insensitive commands.
-
+## CopaDrive
+## About the Application
+The app is split into two cooperating servers:
+- **NodeJS Web Server (REST API)** – handles users, authentication, files metadata and permissions
+- **C++ TCP Storage Server** – stores and retrieves compressed content. The NodeJS server connects to it as a TCP client whenever file content is created/read/searched
+### Main Features
+- **Users**
+  - Register a new account
+  - Login
+  - Get user profile by id
+- **Files & Folders**
+  - Create, view, update, and delete files/folders
+  - Each request operates only on items the user has permission to
+  - File content is stored in the Cpp storage server and folders are metadata-only
+  - Search over items the user has permission to, Matches by name and/or by file content
+- **Permissions**
+  - Add Permissions to files/folders to other users when default role is viewer
+  - The creator is editor by default
+  - Permissions can be updated (viewer ↔ editor) or revoked
+  - Get Permissions to files/folders by id
+### Notes
+- This project uses an in-memory data store
+- Authentication is done by sending the logged-in user id in the request headers
+## Launching
+| Command | What it does | Expected result |
+|---|---|---|
+|`docker compose build` |Build all Docker images (web-server, cpp-server, clients, tests) |Build succeeds |
+|`docker compose up` |Run full environment |Containers start |
+|`docker compose up web-server` |Run the NodeJS web server |Web server starts |
+|`docker compose up cpp-server` |Run the C++ TCP server |C++ server starts |
+|`docker compose run --rm cpp-client` |Run the C++ client |Client runs |
+|`docker compose run --rm python-client` |Run the Python client |Client runs |
+|`docker compose run --rm test` |Run the tests |Test runs |
 ## Commands
-| Command                     | What it does                                   | Success response      |
-|----------------------------|-----------------------------------------------|-----------------------|
-| `POST <filename> <text>`   | Create/overwrite compressed file              | `201 Created`         |
-| `GET <filename>`           | Print file contents                           | `200 Ok` + body       |
-| `SEARCH <text>`            | List files whose name/content contains text   | `200 Ok` + file list  |
-| `DELETE <filename>`        | Delete file                                   | `204 No Content`      |
+### Users
+| Command | What it does | Expected result |
+|---|---|---|
+|`curl -i -X POST "..." -H "Content-Type: application/json" -d '{"firstName":"...","lastName":"...","username":"...","email":"...","phoneNumber":"...","password":"...","image":"..."}'` |Register a new user |`201 Created` + user JSON (without password) |
+|`curl -i -X GET "..."` |Get user profile by user id |`200 OK` + user JSON (without password) |
+|`curl -i -X POST "..." -H "Content-Type: application/json" -d '{"username":"...","password":"..."}'` |Login (username + password) |`200 OK` + `{ "userId": "..." }` |
+### Files
+| Command | What it does | Expected result |
+|---|---|---|
+|`curl -i -X GET "..." -H "X-User-Id: ..."` |List all items the user has permission to |`200 OK` + array of items |
+|`curl -i -X POST "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"name":"...","type":"file/folder","parentId":"...","content":"..."}'` |Create a new file/folder under `parentId` (or root if `parentId` is `null`) |`201 Created` + created item |
+|`curl -i -X GET "..." -H "X-User-Id: ..."` |Get file/folder by id | `200 OK` + item JSON |
+|`curl -i -X PATCH "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"name":"...","parentId":"..."}'` |Update a file/folder (rename/move/content) | `200 OK` + updated item |
+|`curl -i -X DELETE "..." -H "X-User-Id: ..."` |Delete a file/folder (folders are deleted recursively). |`204 No Content` |
+|`curl -i -X GET "..." -H "X-User-Id: ..."` |Search files/folders the user has permission to (matches by name and/or content) |`200 OK` + array of matching items |
+### Permissions
+| Command | What it does | Expected result |
+|---|---|---|
+|`curl -i -X GET "..." -H "X-User-Id: ..."` |List permissions for a file/folder |`200 OK` + array of permissions |
+|`curl -i -X POST "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"userId":"..."}'` | Create a new permission for a file/folder Default is `viewer` | `201 Created` + created permission |
+|`curl -i -X PATCH "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"role":"viewer/editor"}'` | Update an existing permission between `viewer` and `editor` |`200 OK` + updated permission |
+|`curl -i -X DELETE "..." -H "X-User-Id: ..."` |Revoke permission (remove access) for a user from a file/folder. |`204 No Content` |
 
-
-
-# App Run Example
-
-![Docker Build & Run](Images/1.png)
-
-# Tests Run Example
-
-![Docker Build & Run](Images/2.png)
-
-
-# Reflection on Code Design and Open/Closed Principles
-
-During the project we tried to code in a way that would be easy to extend later, following SOLID principles and loose coupling.
-Still, there were several places where we had to change existing code, and we learned from that.
-
-1. Moving from IMenu to IOHandler and CommandParser
-
-   At the beginning, the IMenu interface did too many things: read input from the user, parsed the command, and passed it to App. This created unnecessary coupling between components that should not depend on each other.
-   In the refactoring phase, we split it into two parts:
-   IOHandler – responsible only for reading and writing through the socket.
-   CommandParser – responsible only for parsing and validating the command.
-   This made the code cleaner and reduced dependencies. 
-   However, the change did require us to update several parts of the project. If we had designed it like this from the start, we would have avoided a lot of rewrite.
-
-2. Changing Command Names
-
-   When the command names changed, we had to update:
-   the parser and App tests,
-   the command map inside App.
-   This shows that our design is not fully “closed for modification” when it comes to command names.
-   But the good part is that the changes were limited to a few places and did not spread across all files.
-
-3. Adding New Commands
-
-   When adding a new command, we saw that the architecture worked well:
-   We created a new class.
-   We added  one line in App to register the new command.
-   We add new validation to allow delete command.
-   We didn't need to modify any existing command class. 
-   This means the system is open for extension in this area, except for the single registration point in App.
-
-4. Changing Command Output and Adding CommandResult
-
-   This was the biggest change. At the first project, commands did not return anything—they just wrote directly to the client. Once we upgraded the protocol and added Status Codes, every command had to return a CommandResult.
-   This required:
-   changing the execute signature in the interface,
-   updating every command implementation,
-   updating App to send the formatted response back to the client.
-   Although this was a large rewrite, it made the system much better for the future: now the output formatting is handled in one place, and command classes return only logical results.
-   Any future protocol change will be much easier.
-
-5. Thread Safety
-
-   To make the code safety to thread, we started passing references instead of copies (mainly in App).
-   This prevented issues with duplicate objects and made the design cleaner. 
-   The change was small but important.
-
-6. Thread pool change
-
-   In our current implementation, the server logic (the App class and the command classes) does not depend on the threading model.
-   Creating new thread for each client is done in the outer server layer, while App only receives an IOHandler and a FileManager.
-   Therefore, if we will want switch to thread pool, we will need to change only the server-side code that manages the threads.
-   We would not need to modify App or any of the command implementations.
-   In this sense, our code is relatively closed to modification (the internal logic does not change) and open to extension (we can replace the threading mechanism with a small change in the server layer only).
+| Area  | When it happens  | What is returned |
+|---|---|---|
+| Global        | JSON body (bad JSON)                                      | `400` + `{ "error": "Invalid JSON format", "status": 400 }`                          |
+| Auth          | Missing `X-User-Id` (or missing `Authorization: Bearer ...`)        | `401` + `{ "error": "Authentication required", "status": 401 }`                      |
+| Auth          | `X-User-Id` provided but user does not exist                        | `401` + `{ "error": "Invalid user ID", "status": 401 }`                              |
+| Users         | Missing required registration field                                 | `400` + `{ "error": "<Field> is required", "status": 400 }`                          |
+| Users         | `image` is not a non-empty string                                   | `400` + `{ "error": "image must be a non-empty string", "status": 400 }`             |
+| Users         | Register with an already used username                              | `409` + `{ "error": "Username already taken", "status": 409 }`                       |
+| Users         | Register with an already used email                                 | `409` + `{ "error": "Email already registered", "status": 409 }`                     |
+| Users         | Register with a password that already exists                        | `409` + `{ "error": "Password must be unique among users", "status": 409 }`          |
+| Users         | Login with wrong username/password                                  | `401` + `{ "error": "Invalid credentials", "status": 401 }`                          |
+| Users         | Get user by id that doesn’t exist                                   | `404` + `{ "error": "User not found", "status": 404 }`                               |
+| Files         | Create item: missing/empty `name`                                   | `400` + `{ "error": "Name is required", "status": 400 }`                             |
+| Files         | Create item: invalid `type`                                         | `400` + `{ "error": "Type must be \"file\" or \"folder\"", "status": 400 }`          |
+| Files         | Create item: `parentId` provided but parent not found               | `404` + `{ "error": "Parent folder not found", "status": 404 }`                      |
+| Files         | Create item: parent exists but is not a folder                      | `400` + `{ "error": "Parent must be a folder", "status": 400 }`                      |
+| Files         | Get item by id but user has no permission                           | `403` + `{ "error": "Access denied", "status": 403 }`                                |
+| Files         | Get/Update/Delete: item id not found                                | `404` + `{ "error": "File or folder not found", "status": 404 }`                     |
+| Files         | PATCH: body missing / invalid JSON body                             | `400` + `{ "error": "Invalid JSON body", "status": 400 }`                            |
+| Files         | PATCH: trying to update `type`                                      | `400` + `{ "error": "Type cannot be updated", "status": 400 }`                       |
+| Files         | PATCH: invalid `name`                                               | `400` + `{ "error": "Name must be a non-empty string", "status": 400 }`              |
+| Files         | PATCH: `parentId` equals the item id                                | `400` + `{ "error": "parentId cannot be the same as id", "status": 400 }`            |
+| Files         | PATCH move: moving folder into its descendant                       | `409` + `{ "error": "Cannot move a folder into its own descendant", "status": 409 }` |
+| Permissions   | Permissions actions when file not owned by user / or not found      | `404` + `{ "error": "File not found or access denied", "status": 404 }`              |
+| Permissions   | POST permission: missing `userId`                                   | `400` + `{ "error": "UserId is required", "status": 400 }`                           |
+| Permissions   | PATCH/DELETE: permission id not found                               | `404` + `{ "error": "Permission not found", "status": 404 }`                         |
+| Storage (TCP) | Storage server unavailable / connection error                       | `503` + `{ "error": "Storage server unavailable", "status": 503 }`                   |
+| Storage (TCP) | Storage returns error status (illegal command / missing file) | `<status>` + `{ "error": "<storage status line>", "status": <status> }`              |
+| Files         | File exists in metadata but content missing in storage              | `200` + item JSON with `content: ""`                                                 |
+| Search        | Content-search on storage returns 404                               | `200` + array of matching items (name-match still works)                             |
