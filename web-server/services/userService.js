@@ -24,16 +24,9 @@ const registerUser = (userData) => {
         throw error;
     }
 
-    // Conflict Check: Password uniqueness (Exercise requirement)
-    if (userRepository.findByPassword(userData.password)) {
-        const error = new Error("Password must be unique among users");
-        error.status = 409;
-        throw error;
-    }
-
     // Enrich Data: Generate ID and ISO Timestamp
     const newUser = {
-        id: generateId(),
+        id: generateId((id) => userRepository.findById(id)),
         ...userData,
         lastLogin: new Date().toISOString() // Using ISO for consistency with Files API
     };

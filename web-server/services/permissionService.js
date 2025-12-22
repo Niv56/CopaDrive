@@ -31,7 +31,7 @@ exports.getPermissions = (ownerId, fileId) => {
 exports.addPermission = (ownerId, fileId, payload) => {
     verifyOwnership(ownerId, fileId);
     const newPermission = {
-        id: generateId(), 
+        id: generateId((id) => permissionRepository.findById(id)), 
         fileId: fileId,
         userId: payload.userId,
         role: 'viewer'
