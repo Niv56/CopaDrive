@@ -276,7 +276,7 @@ const searchItems = async (userId, query) => {
 };
 
 module.exports = {
-  listTopLevel,
+  listAllFiles: listTopLevel,
   createItem,
   getById,
   updateItem,
