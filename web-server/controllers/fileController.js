@@ -1,13 +1,19 @@
 const fileService = require('../services/fileService');
 
+
 /**
  * GET /api/files
- * Returns ALL items the user can access (owned + shared).
+ * Retrieves all top-level files and folders for the authenticated user.
  */
-exports.listAll = (req, res, next) => {
+exports.listAll = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    const items = fileService.listAllFiles(userId);
+    const userId = req.headers.authorization || null;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Missing Authorization header" });
+    }
+
+    const items = await fileService.listTopLevel(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);
