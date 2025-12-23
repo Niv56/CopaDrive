@@ -4,10 +4,10 @@ const fileService = require('../services/fileService');
  * GET /api/files
  * Returns ALL items the user can access (owned + shared).
  */
-exports.listAll = (req, res, next) => {
+exports.listAll = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const items = fileService.listAllFiles(userId);
+    const items = await fileService.listAllFiles(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);

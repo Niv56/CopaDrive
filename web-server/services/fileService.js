@@ -71,23 +71,40 @@ const collectSubtreeIds = (rootId) => {
 };
 
 // --- Exported Methods ---
-
 const listTopLevel = async (userId) => {
-    const ownedFiles = fileRepository.findByParent(null, userId);
-    const userPermissions = permissionRepository.findByUserId(userId) || [];
-    const sharedItems = userPermissions
-        .map(perm => fileRepository.findById(perm.fileId))
-        .filter(item => item !== undefined && item !== null);
+  // 1) roots: owned top-level
+  const ownedRoots = fileRepository.findByParent(null, userId);
 
-    const allFiles = [...ownedFiles];
-    sharedItems.forEach(item => {
-        const isOwned = allFiles.some(f => f.id === item.id);
-        const hasSharedAncestor = sharedItems.some(other => 
-            other.id !== item.id && isDescendant(item.id, other.id)
-        );
-        if (!isOwned && !hasSharedAncestor) allFiles.push(item);
-    });
-    return allFiles;
+  // 2) roots: shared items (directly shared to user)
+  const userPermissions = permissionRepository.findByUserId(userId) || [];
+  const sharedRoots = userPermissions
+    .map(perm => fileRepository.findById(perm.fileId))
+    .filter(Boolean);
+
+  // 3) merge unique roots (avoid duplicates + avoid nested shared duplicates)
+  const roots = [...ownedRoots];
+  for (const item of sharedRoots) {
+    const already = roots.some(r => r.id === item.id);
+    const hasAncestorInShared = sharedRoots.some(other =>
+      other.id !== item.id && isDescendant(item.id, other.id)
+    );
+    if (!already && !hasAncestorInShared) roots.push(item);
+  }
+
+  // 4) EXPAND: return all accessible items under each root (including the root itself)
+  const result = new Map(); // id -> item
+
+  for (const root of roots) {
+    const ids = collectSubtreeIds(root.id); // includes root + all descendants
+    for (const id of ids) {
+      if (await checkAccess(userId, id, 'viewer')) {
+        const item = fileRepository.findById(id);
+        if (item) result.set(item.id, item);
+      }
+    }
+  }
+
+  return Array.from(result.values());
 };
 
 const getById = async (userId, id) => {

@@ -12,6 +12,9 @@ const findByParent = (parentId, ownerId) => {
   });
 };
 
+const findAll = () => files;
+
+
 const findById = (id, ownerId) => {
   if (!ownerId) return files.find(f => f.id === id);
   return files.find(f => f.id === id && f.ownerId === ownerId);
@@ -73,5 +76,6 @@ module.exports = {
   remove,
   hasChildren,
   searchFiles,
-  findByIds
+  findByIds,
+  findAll
 };
