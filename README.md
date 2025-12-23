@@ -87,29 +87,29 @@ The app is split into two cooperating servers:
 | Files         | File exists in metadata but content missing in storage              | `200` + item JSON with `content: ""`                                                 |
 | Search        | Content-search on storage returns 404                               | `200` + array of matching items (name-match still works)                             |
 ### App Run Example
-### Docker Compose Build + Up (All Services Started) + Automated 100% Passed
+**Docker Compose Build + Up (All Services Started) + Automated 100% Passed**
 ![Docker Build & Run](Images/1.png)
-### User Registration + Login + Get User Details
+**User Registration + Login + Get User Details**
 ![Docker Build & Run](Images/1.1.png)
-### Create Folder (POST /api/files)
+**Create Folder (POST /api/files)**
 ![Docker Build & Run](Images/2.png)
-### Create File with Content (POST /api/files)
+**Create File with Content (POST /api/files)**
 ![Docker Build & Run](Images/3.png)
-### List Accessible Items (GET /api/files)
+**List Accessible Items (GET /api/files)**
 ![Docker Build & Run](Images/4.png)
-### Read & Update a File (GET/PATCH /api/files/:id)
+**Read & Update a File (GET/PATCH /api/files/:id)**
 ![Docker Build & Run](Images/5.png)
-### Search Files by Name/Content (GET /api/search/:query)
+**Search Files by Name/Content (GET /api/search/:query)**
 ![Docker Build & Run](Images/6.png)
-### Search Files by Content Match (GET /api/search/:query)
+**Search Files by Content Match (GET /api/search/:query)**
 ![Docker Build & Run](Images/7.png)
-### Share a Folder (Create File + Grant Permission + List Permissions)
+**Share a Folder (Create File + Grant Permission + List Permissions)**
 ![Docker Build & Run](Images/8.png)
-### Permission Upgrade (Viewer → Editor) + Guest Edit Allowed
+**Permission Upgrade (Viewer → Editor) + Guest Edit Allowed**
 ![Docker Build & Run](Images/9.png)
-### Permission Revocation (Delete Share) → Guest Loses Access (403 Forbidden)
+**Permission Revocation (Delete Share) → Guest Loses Access (403 Forbidden)**
 ![Docker Build & Run](Images/10.png)
-### Folder Shared as Editor → Guest Can Edit a File Inside the Shared Folder
+**Folder Shared as Editor → Guest Can Edit a File Inside the Shared Folder**
 ![Docker Build & Run](Images/11.png)
-### ** List Shared Folder + Access Shared File Content (Recursive Permissions)**
+**List Shared Folder + Access Shared File Content (Recursive Permissions)**
 ![Docker Build & Run](Images/12.png)
