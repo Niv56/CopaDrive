@@ -13,7 +13,7 @@ exports.listAll = async (req, res, next) => {
       return res.status(401).json({ error: "Missing Authorization header" });
     }
 
-    const items = await fileService.listTopLevel(userId);
+    const items = await fileService.listAllFiles(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);
