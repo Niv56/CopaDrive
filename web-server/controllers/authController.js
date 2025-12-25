@@ -7,14 +7,14 @@ const { validateFields } = require('../utils/validation');
  */
 exports.login = (req, res, next) => {
     try {
-        // Ensure username and password are provided
-        const required = ['username', 'password'];
+        // Ensure email and password are provided
+        const required = ['email', 'password'];
         validateFields(req.body, required);
 
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
         // Verify credentials using the auth service
-        const user = authService.verifyCredentials(username, password);
+        const user = authService.verifyCredentials(email, password);
 
         // If credentials are invalid
         if (!user) {

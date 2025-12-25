@@ -2,13 +2,6 @@ const userRepository = require('../repositories/userRepository');
 const { generateId } = require('../utils/idGenerator');
 
 const registerUser = (userData) => {
-    // Conflict Check: Username
-    if (userRepository.findByUsername(userData.username)) {
-        const error = new Error("Username already taken");
-        error.status = 409;
-        throw error;
-    }
-
     // Conflict Check: Email
     if (userRepository.findByEmail(userData.email)) {
         const error = new Error("Email already registered");
@@ -19,7 +12,12 @@ const registerUser = (userData) => {
     // Enrich Data: Generate ID and ISO Timestamp
     const newUser = {
         id: generateId((id) => userRepository.findById(id)),
-        ...userData,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        password: userData.password,
+        image: userData.image,
         lastLogin: new Date().toISOString() // Using ISO for consistency with Files API
     };
 
@@ -45,7 +43,12 @@ const getSafeUserById = (userId) => {
     return userDto;
 };
 
+const getByEmail = (email) => {
+    return userRepository.findByEmail(email);
+};
+
 module.exports = {
     registerUser,
-    getSafeUserById
+    getSafeUserById,
+    getByEmail
 };

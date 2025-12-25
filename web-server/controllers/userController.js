@@ -7,7 +7,7 @@ const { validateFields, validateNonEmptyString } = require('../utils/validation'
  */
 exports.registerUser = (req, res, next) => {
   try {
-    const required = ['firstName', 'lastName', 'username', 'email', 'phoneNumber', 'password', 'image'];
+    const required = ['firstName', 'lastName', 'email', 'phoneNumber', 'password', 'image'];
     validateFields(req.body, required);
 
     validateNonEmptyString(req.body, 'image', 'image must be a non-empty string');

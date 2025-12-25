@@ -3,9 +3,6 @@ const { users } = require('../utils/storage');// Accessing the initialized store
 // Find a user by their unique ID
 const findById = (id) => users.find(u => u.id === id);
 
-// Find a user by username to support uniqueness checks during registration
-const findByUsername = (username) => users.find(u => u.username === username);
-
 // Find user by email
 const findByEmail = (email) => users.find(u => u.email === email);
 
@@ -17,7 +14,6 @@ const create = (userData) => {
 
 module.exports = {
     findById,
-    findByUsername,
     findByEmail, 
     create
 };
