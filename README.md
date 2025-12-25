@@ -21,7 +21,9 @@ The app is split into two cooperating servers:
 ### Notes
 - This project uses an in-memory data store
 - Authentication is done by sending the logged-in user id in the request headers
-- We set **main3** as the default branch and froze main2 so the Exercise 2 server remains unchanged.
+- We set **main3** as the default branch and froze main2 so the Exercise 2 server remains unchanged
+##Run Instructions
+The commands are tailored for: Bash shells, Git Bash and WSL
 ## Launching
 | Command | What it does | Expected result |
 |---|---|---|
@@ -55,8 +57,6 @@ The app is split into two cooperating servers:
 |`curl -i -X POST "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"userId":"..."}'` | Create a new permission for a file/folder Default is `viewer` | `201 Created` + created permission |
 |`curl -i -X PATCH "..." -H "X-User-Id: ..." -H "Content-Type: application/json" -d '{"role":"viewer/editor"}'` | Update an existing permission between `viewer` and `editor` |`200 OK` + updated permission |
 |`curl -i -X DELETE "..." -H "X-User-Id: ..."` |Revoke permission (remove access) for a user from a file/folder. |`204 No Content` |
-
-The commands are tailored for: **Bash shells, Git Bash and WSL**
 ### Error Handling
 | Area  | When it happens  | What is returned |
 |---|---|---|
