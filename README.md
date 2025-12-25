@@ -38,7 +38,7 @@ The app is split into two cooperating servers:
 |---|---|---|
 |`curl -i -X POST "..." -H "Content-Type: application/json" -d '{"firstName":"...","lastName":"...","email":"...","phoneNumber":"...","password":"...","image":"..."}'` |Register a new user |`201 Created` + user JSON (without password) |
 |`curl -i -X GET "..."` |Get user profile by user id |`200 OK` + user JSON (without password) |
-|`curl -i -X POST "..." -H "Content-Type: application/json" -d '{"gmail":"...","password":"..."}'` |Login (username + password) |`200 OK` + `{ "userId": "..." }` |
+|`curl -i -X POST "..." -H "Content-Type: application/json" -d '{"email":"...","password":"..."}'` |Login (username + password) |`200 OK` + `{ "userId": "..." }` |
 ### Files
 | Command | What it does | Expected result |
 |---|---|---|
