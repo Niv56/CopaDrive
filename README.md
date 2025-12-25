@@ -22,7 +22,7 @@ The app is split into two cooperating servers:
 - This project uses an in-memory data store
 - Authentication is done by sending the logged-in user id in the request headers
 - We set **main3** as the default branch and froze main2 so the Exercise 2 server remains unchanged
-##Run Instructions
+### Run Instructions
 The commands are tailored for: Bash shells, Git Bash and WSL
 ## Launching
 | Command | What it does | Expected result |
