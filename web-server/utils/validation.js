@@ -42,5 +42,5 @@ const validateExistence = (resource, resourceName) => {
 module.exports = {
   validateFields,
   validateNonEmptyString,
-  validateExistence,
+  validateExistence
 };

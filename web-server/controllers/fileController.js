@@ -7,13 +7,9 @@ const fileService = require('../services/fileService');
  */
 exports.listAll = async (req, res, next) => {
   try {
-    const userId = req.headers.authorization || null;
+    const userId = req.user.id;
 
-    if (!userId) {
-      return res.status(401).json({ error: "Missing Authorization header" });
-    }
-
-    const items = await fileService.listAllFiles(userId);
+    const items = await fileService.listTopLevel(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);
@@ -63,3 +59,4 @@ exports.deleteItem = async (req, res, next) => {
     next(err);
   }
 };
+

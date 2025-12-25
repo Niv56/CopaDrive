@@ -1,7 +1,7 @@
 const userRepository = require('../repositories/userRepository');
 
-const verifyCredentials = (username, password) => {
-    const user = userRepository.findByUsername(username);
+const verifyCredentials = (email, password) => {
+    const user = userRepository.findByEmail(email);
 
     if (!user) {
         return null;
