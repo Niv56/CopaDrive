@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authenticateUser, saveToken } from '../../services/authService'; // ← הסרתי checkUserExists!
 import './Login.css';
 import logo from '../../logo.svg';
 
@@ -9,8 +10,6 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // reset previous error
         setError('');
 
         if (!email || !password) {
@@ -18,34 +17,13 @@ const Login = () => {
             return;
         }
 
-        try {
-            const response = await fetch('/api/tokens', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+        const result = await authenticateUser(email, password);
 
-            // some responses may not be JSON (safety)
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (_) {
-                data = {};
-            }
-
-            if (response.ok) {
-                if (!data.token) {
-                    setError('Login succeeded but token is missing from server response.');
-                    return;
-                }
-
-                localStorage.setItem('token', data.token);
-                window.location.href = '/home';
-            } else {
-                setError(data.error || 'Invalid email or password');
-            }
-        } catch (err) {
-            setError('Server connection error. Ensure the backend is running.');
+        if (result.success) {
+            saveToken(result.token);
+            window.location.href = '/home';
+        } else {
+            setError(result.error);
         }
     };
 
@@ -90,7 +68,6 @@ const Login = () => {
                         </div>
                     </form>
                 </div>
-
             </div>
         </div>
     );

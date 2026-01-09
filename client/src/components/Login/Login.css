@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LOGIN PAGE STYLES - Google Drive Inspired Design
+   LOGIN PAGE STYLES - copa Drive Inspired Design
    ========================================================================== */
 
 /* Container - Full viewport with centered card */
@@ -145,7 +145,7 @@
 }
 
 /* Link Button */
-.btn-link-google {
+.btn-link-copa {
     color: #1a73e8;
     font-weight: 500;
     font-size: 14px;
@@ -158,11 +158,11 @@
     border-radius: 4px;
 }
 
-.btn-link-google:hover {
+.btn-link-copa:hover {
     background-color: rgba(26, 115, 232, 0.04);
 }
 
-.btn-link-google:active {
+.btn-link-copa:active {
     background-color: rgba(26, 115, 232, 0.08);
 }
 
@@ -199,4 +199,8 @@
 
 .text-decoration-none {
     text-decoration: none;
+}
+
+.gap-4 {
+    gap: 1.5rem;
 }

@@ -8,13 +8,23 @@ exports.login = (req, res, next) => {
 
     const { email, password } = req.body;
 
+    // Step 1: Check if user exists
+    const userExists = authService.getUserByEmail(email);
+    if (!userExists) {
+      const error = new Error("User not found");
+      error.status = 404;
+      throw error;
+    }
+
+    // Step 2: Verify password
     const user = authService.verifyCredentials(email, password);
     if (!user) {
-      const error = new Error("Invalid credentials");
+      const error = new Error("Incorrect password");
       error.status = 401;
       throw error;
     }
 
+    // Step 3: Generate JWT
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       const error = new Error("JWT_SECRET is not configured");

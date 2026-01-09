@@ -150,16 +150,21 @@ const Register = () => {
                         )}
 
                         <div className="copa-action-bar mt-auto">
-                            <div className="d-flex justify-content-between align-items-center w-100">
-                                {step === 1 ? (
+                            {step === 1 ? (
+                                <div className="d-flex justify-content-end align-items-center gap-4 w-100">
                                     <button
                                         type="button"
-                                        className="btn-link-copa"
+                                        className="btn-link-google"
                                         onClick={() => navigate('/login')}
                                     >
                                         Sign in instead
                                     </button>
-                                ) : (
+                                    <button type="submit" className="btn-primary-copa">
+                                        Next
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="d-flex justify-content-between align-items-center w-100">
                                     <button
                                         type="button"
                                         className="btn-secondary-copa"
@@ -167,11 +172,11 @@ const Register = () => {
                                     >
                                         Back
                                     </button>
-                                )}
-                                <button type="submit" className="btn-primary-copa">
-                                    {step < TOTAL_STEPS ? "Next" : "Submit"}
-                                </button>
-                            </div>
+                                    <button type="submit" className="btn-primary-copa">
+                                        {step < TOTAL_STEPS ? "Next" : "Submit"}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </form>
                 </div>

@@ -25,6 +25,8 @@ services:
       - CPP_SERVER_PORT=5555
     networks:
       - copadrive-network
+    env_file:
+      - .env
 
   # C++ Client (For testing)
   cpp-client:
