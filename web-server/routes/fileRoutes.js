@@ -15,6 +15,7 @@ router.patch('/:id', requireAuth, fileController.updateItem);
 
 router.delete('/:id', requireAuth, fileController.deleteItem);
 
-router.use('/:id/permissions', permissionRoutes);
+router.use('/:id/permissions', requireAuth, permissionRoutes);
+
 
 module.exports = router;

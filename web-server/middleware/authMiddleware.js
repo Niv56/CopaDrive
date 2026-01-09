@@ -1,44 +1,56 @@
+const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 
-/**
- * Middleware: Require Authentication
- * Verifies that the request contains a valid X-User-Id header
- * and that the user exists in the system.
- */
 const requireAuth = (req, res, next) => {
-    try {
-        // Read the user ID from the header
-        // Supporting both X-User-Id and Authorization formats
-        const userId = req.headers['x-user-id'] || req.headers['authorization']?.replace('Bearer ', '');
+  try {
+    const authHeader = req.headers['authorization'];
 
-        // If no header provided, return 401
-        if (!userId) {
-            const error = new Error("Authentication required");
-            error.status = 401;
-            throw error;
-        }
-
-        // Check if user exists in the system
-        const user = userRepository.findById(userId);
-
-        // If user doesn't exist, return 401
-        if (!user) {
-            const error = new Error("Invalid user ID");
-            error.status = 401;
-            throw error;
-        }
-
-        // Attach user to request object for use in controllers
-        req.user = user;
-
-        // Continue to next middleware/controller
-        next();
-
-    } catch (err) {
-        next(err); // Pass to error handling middleware
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const error = new Error("Authentication required");
+      error.status = 401;
+      throw error;
     }
+
+    const token = authHeader.substring('Bearer '.length).trim();
+    if (!token) {
+      const error = new Error("Authentication required");
+      error.status = 401;
+      throw error;
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      const error = new Error("JWT_SECRET is not configured");
+      error.status = 500;
+      throw error;
+    }
+
+    const payload = jwt.verify(token, secret);
+
+    const userId = payload?.userId;
+    if (!userId) {
+      const error = new Error("Invalid token");
+      error.status = 401;
+      throw error;
+    }
+
+    const user = userRepository.findById(userId);
+    if (!user) {
+      const error = new Error("Invalid token user");
+      error.status = 401;
+      throw error;
+    }
+
+    req.user = user;
+    next();
+
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      err.status = 401;
+      err.message = "Invalid or expired token";
+    }
+    next(err);
+  }
 };
 
-module.exports = {
-    requireAuth
-};
+module.exports = { requireAuth };
