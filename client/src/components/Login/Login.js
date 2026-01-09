@@ -58,7 +58,7 @@ const Login = () => {
 
                         <div className="copa-action-bar mt-auto">
                             <div className="d-flex justify-content-end align-items-center gap-4 w-100">
-                                <a href="/register" className="btn-link-google text-decoration-none">
+                                <a href="/register" className="btn-link-copa text-decoration-none">
                                     Create account
                                 </a>
                                 <button type="submit" className="btn-primary-copa">

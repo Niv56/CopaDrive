@@ -154,7 +154,7 @@ const Register = () => {
                                 <div className="d-flex justify-content-end align-items-center gap-4 w-100">
                                     <button
                                         type="button"
-                                        className="btn-link-google"
+                                        className="btn-link-copa"
                                         onClick={() => navigate('/login')}
                                     >
                                         Sign in instead
