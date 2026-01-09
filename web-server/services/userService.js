@@ -13,11 +13,11 @@ const registerUser = (userData) => {
     const newUser = {
         id: generateId((id) => userRepository.findById(id)),
         firstName: userData.firstName,
-        lastName: userData.lastName,
+        lastName: userData.lastName || '',
         email: userData.email,
         phoneNumber: userData.phoneNumber,
         password: userData.password,
-        image: userData.image,
+        image: userData.profilePicture || userData.image || '',
         lastLogin: new Date().toISOString() // Using ISO for consistency with Files API
     };
 
