@@ -4,8 +4,8 @@ import Login from './components/Login/Login';
 import Register from './components/Register/Register';
 
 function App() {
-const token = localStorage.getItem('token');
-const isAuthenticated = !!token && token !== "undefined";
+  const token = localStorage.getItem('token');
+  const isAuthenticated = !!token && token !== "undefined";
 
 
   return (
@@ -20,7 +20,7 @@ const isAuthenticated = !!token && token !== "undefined";
             isAuthenticated ? (
               <div className="p-5">
                 <h1>CopaDrive Dashboard</h1>
-                
+
                 <p>
                   JWT Token is active: {token ? token.substring(0, 10) : 'N/A'}...
                 </p>
