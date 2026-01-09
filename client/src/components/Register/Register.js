@@ -5,7 +5,7 @@ import Step1, { validateStep1 } from './steps/Step1';
 import Step2, { validateStep2 } from './steps/Step2';
 import Step3, { validateStep3 } from './steps/Step3';
 import './Register.css';
-import logo from '../../logo.svg';
+import logo from '../../photos/logo.svg';
 
 // Step configuration - moved outside component for better performance
 const STEP_CONFIG = {
