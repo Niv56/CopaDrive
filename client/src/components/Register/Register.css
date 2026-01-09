@@ -1,53 +1,84 @@
-/* Container centered in light gray */
+/* ==========================================================================
+   REGISTRATION PAGE STYLES - Copa Drive Inspired Design
+   ========================================================================== */
+
+/* Container - Full viewport with centered card */
 .copa-register-container {
     background-color: #f0f2f5;
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Roboto', arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
+    padding: 20px;
 }
 
-/* 1000x500 Split Layout Card */
+/* Card - Main registration container (two-column layout) */
 .copa-card {
     background-color: #ffffff;
     border: 1px solid #dadce0;
     border-radius: 8px;
-    padding: 48px;
+    padding: 48px 40px 36px;
     width: 100%;
     max-width: 1000px;
-    min-height: 500px;
     display: flex;
     flex-direction: row;
-    align-items: stretch;
+    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3),
+        0 4px 8px 3px rgba(60, 64, 67, 0.15);
 }
 
-/* Left Section: Context (40% width) */
+/* Mobile responsive - Collapses into vertical stack */
+@media (max-width: 768px) {
+    .copa-card {
+        flex-direction: column;
+        padding: 24px;
+        max-width: 450px;
+    }
+
+    .copa-left-side {
+        padding-right: 0 !important;
+        margin-bottom: 24px;
+        text-align: center;
+        align-items: center;
+    }
+}
+
+/* ==========================================================================
+   BRANDING SECTION (Left Side)
+   ========================================================================== */
+
 .copa-left-side {
-    flex: 1;
+    flex: 0 0 280px;
     display: flex;
     flex-direction: column;
-    padding-right: 40px;
+    padding-right: 48px;
 }
 
 .copa-title {
     color: #202124;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 400;
-    line-height: 1.3;
+    line-height: 1.3333;
+    margin: 0;
+    margin-top: 16px;
 }
 
 .copa-subtitle {
-    color: #202124;
+    color: #5f6368;
     font-size: 18px;
-    margin-top: 12px;
+    margin-top: 8px;
+    line-height: 1.5;
 }
 
-/* Right Section: Interaction (60% width) */
+/* ==========================================================================
+   FORM SECTION (Right Side)
+   ========================================================================== */
+
 .copa-right-side {
-    flex: 1.5;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .copa-form-content {
@@ -59,92 +90,257 @@
 .copa-input-stack {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 20px;
+    gap: 20px;
+    margin-bottom: 26px;
 }
+
+/* ==========================================================================
+   INPUT FIELDS
+   ========================================================================== */
 
 .copa-input {
     border: 1px solid #dadce0;
     border-radius: 4px;
-    padding: 16px 18px;
+    padding: 13px 15px;
     font-size: 16px;
+    line-height: 24px;
+    color: #202124;
     width: 100%;
-    background-color: #ffffff;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.copa-input::placeholder {
+    color: #5f6368;
 }
 
 .copa-input:focus {
     border: 2px solid #1a73e8;
-    /* Google Blue focus */
-    outline: none;
+    padding: 12px 14px;
 }
 
-/* Action Bar aligned to right */
-.copa-action-bar {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin-top: auto;
-    padding-top: 24px;
-}
+/* ==========================================================================
+   PROFILE PICTURE UPLOAD
+   ========================================================================== */
 
-.copa-action-bar .d-flex {
-    display: flex;
-    justify-content: flex-end;
-    /* Align buttons to right */
-    align-items: center;
-    gap: 32px;
-    /* Gap between link and next button */
-}
-
-/* Primary and Secondary Google-style buttons */
-.btn-primary-copa {
-    background-color: #1a73e8;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    padding: 12px 32px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.btn-secondary-copa {
-    background: transparent;
-    color: #1a73e8;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-link-google {
-    background: transparent;
-    border: none;
-    color: #1a73e8;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-link-google:hover {
-    background-color: rgba(26, 115, 232, 0.05);
-    border-radius: 4px;
-    padding: 8px 12px;
-}
-
-/* Profile Image Upload Circle */
 .copa-profile-upload {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
+    border: 2px dashed #dadce0;
     border-radius: 50%;
-    border: 1px solid #dadce0;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
     cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.copa-profile-upload:hover {
+    border-color: #1a73e8;
+}
+
+.copa-profile-upload:active {
+    border-color: #1557b0;
 }
 
 .copa-profile-upload img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.copa-profile-upload span {
+    color: #5f6368;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ==========================================================================
+   BUTTONS AND ACTIONS
+   ========================================================================== */
+
+.copa-action-bar {
+    margin-top: auto;
+    padding-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Primary Button */
+.btn-primary-copa {
+    background-color: #1a73e8;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 9px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-copa:hover {
+    background-color: #1765cc;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+        0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.btn-primary-copa:active {
+    background-color: #1557b0;
+}
+
+/* Secondary Button (Back button) */
+.btn-secondary-copa {
+    background-color: transparent;
+    color: #1a73e8;
+    border: none;
+    border-radius: 4px;
+    padding: 9px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secondary-copa:hover {
+    background-color: rgba(26, 115, 232, 0.04);
+}
+
+.btn-secondary-copa:active {
+    background-color: rgba(26, 115, 232, 0.08);
+}
+
+/* Link Button */
+.btn-link-copa {
+    color: #1a73e8;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 9px 8px;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    border-radius: 4px;
+    outline: none;
+}
+
+.btn-link-copa:hover {
+    background-color: rgba(26, 115, 232, 0.04);
+}
+
+.btn-link-copa:active {
+    background-color: rgba(26, 115, 232, 0.08);
+}
+
+.btn-link-copa:focus {
+    outline: none;
+}
+
+/* ==========================================================================
+   ERROR MESSAGES
+   ========================================================================== */
+
+.text-danger {
+    color: #d93025;
+    font-size: 12px;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   PASSWORD STRENGTH INDICATOR
+   ========================================================================== */
+
+.password-requirements {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e8eaed;
+    margin-top: 8px;
+}
+
+.password-requirements small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.8;
+    font-weight: 400;
+}
+
+.text-success {
+    color: #137333;
+}
+
+.text-muted {
+    color: #5f6368;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.justify-content-end {
+    justify-content: flex-end;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-decoration-none {
+    text-decoration: none;
+}
+
+.mt-auto {
+    margin-top: auto;
+}
+
+.mt-1 {
+    margin-top: 0.25rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.d-block {
+    display: block;
+}
+
+.gap-4 {
+    gap: 1.5rem;
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
 }

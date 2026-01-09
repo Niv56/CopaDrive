@@ -7,11 +7,13 @@ const { validateFields, validateNonEmptyString } = require('../utils/validation'
  */
 exports.registerUser = (req, res, next) => {
   try {
-    const required = ['firstName', 'lastName', 'email', 'phoneNumber', 'password', 'image'];
+    const required = ['firstName', 'email', 'phoneNumber', 'password'];
     validateFields(req.body, required);
 
-    validateNonEmptyString(req.body, 'image', 'image must be a non-empty string');
-
+    // If profilePicture is provided, validate it's a string
+    if (req.body.profilePicture) {
+      validateNonEmptyString(req.body, 'profilePicture', 'profilePicture must be a non-empty string');
+    }
     const newUser = userService.registerUser(req.body);
     res.status(201).json(newUser);
   } catch (err) {
