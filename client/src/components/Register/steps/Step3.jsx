@@ -4,27 +4,32 @@ import React from "react";
  * Step 3: Date of birth + Gender
  */
 const Step3 = ({ formData, setFormData, errors }) => {
+  const hasDobError = Boolean(errors.dateOfBirth);
+  const hasGenderError = Boolean(errors.gender);
+
   return (
-    <div className="copa-input-stack">
-      {/* Date of birth */}
+    <div className="d-grid gap-3">
       <div>
         <input
           type="date"
-          className={`copa-input ${errors.dateOfBirth ? "error" : ""}`}
+          className={`form-control form-control-lg rounded-pill ${
+            hasDobError ? "is-invalid" : ""
+          }`}
           value={formData.dateOfBirth || ""}
           onChange={(e) =>
             setFormData({ ...formData, dateOfBirth: e.target.value })
           }
         />
         {errors.dateOfBirth && (
-          <small className="text-danger d-block">{errors.dateOfBirth}</small>
+          <div className="invalid-feedback d-block">{errors.dateOfBirth}</div>
         )}
       </div>
 
-      {/* Gender */}
       <div>
         <select
-          className={`copa-input ${errors.gender ? "error" : ""}`}
+          className={`form-select form-select-lg rounded-pill ${
+            hasGenderError ? "is-invalid" : ""
+          }`}
           value={formData.gender || ""}
           onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
         >
@@ -38,20 +43,16 @@ const Step3 = ({ formData, setFormData, errors }) => {
         </select>
 
         {errors.gender && (
-          <small className="text-danger d-block">{errors.gender}</small>
+          <div className="invalid-feedback d-block">{errors.gender}</div>
         )}
       </div>
     </div>
   );
 };
 
-/**
- * Validate Step 3
- */
 export const validateStep3 = (formData) => {
   const errors = {};
 
-  // dateOfBirth: required + basic YYYY-MM-DD format
   if (!formData.dateOfBirth || String(formData.dateOfBirth).trim() === "") {
     errors.dateOfBirth = "Date of birth is required";
   } else {
@@ -60,7 +61,6 @@ export const validateStep3 = (formData) => {
     if (!dobOk) errors.dateOfBirth = "Date of birth must be YYYY-MM-DD";
   }
 
-  // gender: required + allowed values
   const allowed = new Set(["male", "female", "other", "prefer_not_to_say"]);
   if (!formData.gender || String(formData.gender).trim() === "") {
     errors.gender = "Gender is required";
