@@ -1,3 +1,4 @@
+import { useNavigate, Link } from 'react-router-dom';
 import React, { useState } from 'react';
 import './Login.css';
 import '../Auth/Auth.css';
@@ -13,6 +14,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     /**
      * Handles the login form submission.
@@ -41,8 +43,8 @@ const Login = () => {
                 // SUCCESS: Save JWT to localStorage to persist after page refresh
                 localStorage.setItem('token', data.token);
 
-                // Force a full page redirect to /home to ensure App.js re-validates the token
-                window.location.href = '/home';
+                // Navigate without page refresh using React Router
+                navigate('/home');
             } else {
                 // Server-side error (e.g., wrong credentials)
                 setError(data.error || "Invalid email or password");
@@ -58,15 +60,15 @@ const Login = () => {
             <div className="copa-card shadow-sm">
 
                 {/* Left Branding Side: Google-style 1000x500 split layout */}
-<div className="copa-left-side">
-  <div className="copa-brand">
-    <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
-    <span className="copa-wordmark">Copadrive</span>
-  </div>
+                <div className="copa-left-side">
+                    <div className="copa-brand">
+                        <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
+                        <span className="copa-wordmark">Copadrive</span>
+                    </div>
 
-  <h1 className="copa-title">Sign in</h1>
-  <p className="copa-subtitle">Use your Copa Account</p>
-</div>
+                    <h1 className="copa-title">Sign in</h1>
+                    <p className="copa-subtitle">Use your Copa Account</p>
+                </div>
 
                 {/* Right Form Side */}
                 <div className="copa-right-side">
@@ -91,9 +93,9 @@ const Login = () => {
                         {/* Footer: Links and Submit button aligned to right */}
                         <div className="copa-action-bar mt-auto">
                             <div className="d-flex justify-content-end align-items-center gap-4 w-100">
-                                <a href="/register" className="btn-link-google text-decoration-none">
+                                <Link to="/register" className="btn-link-google text-decoration-none">
                                     Create account
-                                </a>
+                                </Link>
                                 <button type="submit" className="btn-primary-copa">Sign In</button>
                             </div>
                         </div>
