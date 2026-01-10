@@ -1,0 +1,296 @@
+
+/* Full screen container (shared layout) */
+.copa-login-container,
+.copa-register-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Roboto', Arial, sans-serif;
+  padding: 20px;
+  background-color: #fff;
+}
+
+/* Card base (shared) - Google dimensions */
+.copa-card {
+  background: rgba(255, 255, 255, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.50);
+
+  border-radius: 8px;
+
+  width: 100%;
+  max-width: 450px;        /* Google's card width */
+
+  display: flex;           
+  flex-direction: column;
+
+  padding: 48px 40px 36px; /* Google's exact padding */
+
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3),
+              0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .copa-card {
+    padding: 24px;
+    max-width: 100%;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+/* Logo/Branding */
+.copa-logo {
+  width: 75px;
+  height: 75px;
+  margin-bottom: 16px;
+}
+
+.copa-left-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Typography - Google exact sizes */
+.copa-title {
+  color: #202124;
+  font-size: 24px;           /* Google's title size */
+  font-weight: 400;
+  line-height: 1.3333;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.copa-subtitle {
+  color: #5f6368;
+  font-size: 16px;           /* Google's subtitle size */
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Form (shared) */
+.copa-right-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.copa-form-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.copa-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;                 /* Google's input spacing */
+  margin-bottom: 24px;
+}
+
+/* Inputs - Google style */
+.copa-input {
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 15px 15px;        /* Google's input padding */
+  font-size: 16px;
+  line-height: 24px;
+  color: #202124;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+  background-color: #fff;
+}
+
+.copa-input::placeholder {
+  color: #80868b;            /* Google's placeholder color */
+}
+
+.copa-input:focus {
+  border: 2px solid #131619; /* Google blue */
+  padding: 14px 14px;        /* Adjust for 2px border */
+}
+
+.copa-input:hover:not(:focus) {
+  border-color: #5f6368;
+}
+
+/* Profile picture upload - Google style */
+.copa-profile-upload {
+  width: 120px;              /* Google's profile circle size */
+  height: 120px;
+  border: 2px dashed #dadce0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  margin: 0 auto 24px;
+}
+
+.copa-profile-upload:hover {
+  border-color: #1a73e8;
+  background-color: #f8f9fa;
+}
+
+.copa-profile-upload img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Action bar base (shared) */
+.copa-action-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+}
+
+/* Primary Button (shared) */
+.btn-primary-copa{
+  border: none;
+  border-radius: 999px;               /* pill */
+  padding: 10px 34px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  color: #eaf3f7;
+  background: linear-gradient(180deg, #2f7f95 0%, #1d566a 55%, #163f52 100%);
+
+  /* outer depth + soft shadow */
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.22),
+    0 4px 10px rgba(0,0,0,0.18);
+
+  position: relative;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+/* inner top highlight + subtle border (like the mock) */
+.btn-primary-copa::before{
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.03));
+  pointer-events: none;
+}
+
+.btn-primary-copa:hover{
+  filter: brightness(1.06);
+  box-shadow:
+    0 16px 32px rgba(0,0,0,0.24),
+    0 6px 14px rgba(0,0,0,0.20);
+}
+
+.btn-primary-copa:active{
+  transform: translateY(1px);
+  filter: brightness(0.98);
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.20),
+    0 3px 8px rgba(0,0,0,0.16);
+}
+/* Errors (shared) - Google style */
+.text-danger {
+  color: #d93025;           /* Google red */
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.text-danger::before {
+  content: "⚠";
+  font-size: 14px;
+}
+
+/* Input with error state */
+.copa-input.error {
+  border-color: #d93025;
+}
+
+.copa-input.error:focus {
+  border-color: #d93025;
+}
+
+/* Footer text - Google style */
+.copa-footer-text {
+  color: #5f6368;
+  font-size: 12px;
+  margin-top: 24px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.btn-link-google {
+  color: #121313;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-link-google:hover {
+  text-decoration: underline;
+}
+/* Brand row (logo + colorful wordmark) */
+.copa-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.copa-wordmark {
+  font-size: 40px;
+  font-weight: 750;
+  letter-spacing: 0.2px;
+  line-height: 1;
+
+  /* colorful text */
+  background: linear-gradient(90deg, #1a73e8, #34a853, #fbbc05, #ea4335);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  /* make it a bit “pretty” on the sky background */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+
+/* optional: nicer on small screens */
+@media (max-width: 768px) {
+  .copa-wordmark { font-size: 18px; }
+}
+ד
+/* Utilities (shared) */
+.d-flex { display: flex; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-end { justify-content: flex-end; }
+.justify-content-center { justify-content: center; }
+.align-items-center { align-items: center; }
+.w-100 { width: 100%; }
+.text-center { text-align: center; }
+.text-decoration-none { text-decoration: none; }
+.mt-auto { margin-top: auto; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.d-block { display: block; }
+.gap-4 { gap: 1.5rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }

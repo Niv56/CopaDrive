@@ -28,7 +28,7 @@ const Step3 = ({ formData, setFormData, errors }) => {
                 <input
                     type="email"
                     className="copa-input"
-                    placeholder="Email address"
+                    placeholder="👤 Email address"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -39,7 +39,7 @@ const Step3 = ({ formData, setFormData, errors }) => {
                 <input
                     type="password"
                     className="copa-input"
-                    placeholder="Password"
+                    placeholder="🔒 Password"
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                 />
@@ -72,7 +72,7 @@ const Step3 = ({ formData, setFormData, errors }) => {
                 <input
                     type="password"
                     className="copa-input"
-                    placeholder="Confirm Password"
+                    placeholder="🔒 Confirm Password"
                     value={formData.verifyPassword}
                     onChange={e => setFormData({ ...formData, verifyPassword: e.target.value })}
                 />

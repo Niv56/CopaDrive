@@ -19,8 +19,19 @@ const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, error
             {/* Custom file upload trigger using a profile circle */}
             <div className="text-center mb-3">
                 <div className="copa-profile-upload mx-auto mb-2" onClick={() => fileInputRef.current.click()}>
-                    {preview ? <img src={preview} alt="Profile" /> : <span>Add Photo</span>}
-                </div>
+{preview ? (
+  <img src={preview} alt="Profile" /> 
+) : (
+  <span style={{
+    fontSize: '60px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%'
+  }}>
+    🖼️
+  </span>
+)}  </div>
                 {errors.image && <small className="text-danger d-block">{errors.image}</small>}
             </div>
 
@@ -37,7 +48,7 @@ const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, error
                 <input
                     type="tel"
                     className="copa-input"
-                    placeholder="Phone number"
+                    placeholder="📞 Phone number"
                     value={formData.phoneNumber}
                     onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />

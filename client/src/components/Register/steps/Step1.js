@@ -7,7 +7,7 @@ const Step1 = ({ formData, setFormData, errors }) => {
                 <input
                     type="text"
                     className="copa-input"
-                    placeholder="First name"
+                    placeholder="👤 First name"
                     value={formData.firstName}
                     onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                 />
@@ -18,7 +18,7 @@ const Step1 = ({ formData, setFormData, errors }) => {
                 <input
                     type="text"
                     className="copa-input"
-                    placeholder="Last name (Optional)"
+                    placeholder="👤 Last name (Optional)"
                     value={formData.lastName}
                     onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                 />

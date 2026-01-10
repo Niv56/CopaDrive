@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Login.css';
+import '../Auth/Auth.css';
+
 // Import the local logo from the src directory
 import logo from '../../photos/logo.svg';
 
@@ -56,11 +58,15 @@ const Login = () => {
             <div className="copa-card shadow-sm">
 
                 {/* Left Branding Side: Google-style 1000x500 split layout */}
-                <div className="copa-left-side">
-                    <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
-                    <h1 className="copa-title">Sign in</h1>
-                    <p className="copa-subtitle">Use your Copa Account</p>
-                </div>
+<div className="copa-left-side">
+  <div className="copa-brand">
+    <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
+    <span className="copa-wordmark">Copadrive</span>
+  </div>
+
+  <h1 className="copa-title">Sign in</h1>
+  <p className="copa-subtitle">Use your Copa Account</p>
+</div>
 
                 {/* Right Form Side */}
                 <div className="copa-right-side">
@@ -69,13 +75,13 @@ const Login = () => {
                             <input
                                 type="text"
                                 className="copa-input"
-                                placeholder="Email"
+                                placeholder="👤 Email"
                                 onChange={e => setEmail(e.target.value)}
                             />
                             <input
                                 type="password"
                                 className="copa-input"
-                                placeholder="Password"
+                                placeholder="🔒 Password"
                                 onChange={e => setPassword(e.target.value)}
                             />
                             {/* Visual feedback for errors */}
