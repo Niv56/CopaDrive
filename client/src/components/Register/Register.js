@@ -5,6 +5,8 @@ import Step1, { validateStep1 } from './steps/Step1';
 import Step2, { validateStep2 } from './steps/Step2';
 import Step3, { validateStep3 } from './steps/Step3';
 import './Register.css';
+import '../Auth/Auth.css';
+
 import logo from '../../photos/logo.svg';
 
 // Step configuration - moved outside component for better performance
@@ -135,11 +137,16 @@ const Register = () => {
     return (
         <div className="copa-register-container">
             <div className="copa-card shadow-sm">
-                <div className="copa-left-side">
-                    <img src={logo} alt="Copa Logo" width="75" className="mb-3" />
-                    <h1 className="copa-title">{currentConfig.title}</h1>
-                    <p className="copa-subtitle">{currentConfig.subtitle}</p>
-                </div>
+<div className="copa-left-side">
+  <div className="copa-brand">
+    <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
+    <span className="copa-wordmark">Copadrive</span>
+  </div>
+
+  <h1 className="copa-title">Sign in</h1>
+  <p className="copa-subtitle">Use your Copa Account</p>
+</div>
+
 
                 <div className="copa-right-side">
                     <form onSubmit={handleSubmit}>
@@ -152,26 +159,28 @@ const Register = () => {
                         <div className="copa-action-bar mt-auto">
                             {step === 1 ? (
                                 <div className="d-flex justify-content-end align-items-center gap-4 w-100">
-                                    <button
-                                        type="button"
-                                        className="btn-link-copa"
-                                        onClick={() => navigate('/login')}
-                                    >
-                                        Sign in instead
-                                    </button>
+
+<button
+  type="button"
+  className="btn-link-google text-decoration-none"
+  onClick={() => navigate("/login")}   // או window.location.href="/login"
+>
+  Sign in instead
+</button>
+
                                     <button type="submit" className="btn-primary-copa">
                                         Next
                                     </button>
                                 </div>
                             ) : (
                                 <div className="d-flex justify-content-between align-items-center w-100">
-                                    <button
-                                        type="button"
-                                        className="btn-secondary-copa"
-                                        onClick={handleBack}
-                                    >
-                                        Back
-                                    </button>
+ <button
+  type="button"
+  className="btn-link-google text-decoration-none"
+  onClick={handleBack}
+>
+  Back
+</button>
                                     <button type="submit" className="btn-primary-copa">
                                         {step < TOTAL_STEPS ? "Next" : "Submit"}
                                     </button>
