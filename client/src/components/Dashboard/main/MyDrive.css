@@ -1,0 +1,138 @@
+.mainarea {
+  position: relative;
+  min-height: 80vh;
+  padding: 16px;
+}
+
+.files-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+
+  font-size: 32px;
+  line-height: 0;
+  cursor: pointer;
+
+  background: #1a73e8;
+  color: white;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* Menu above the FAB */
+.fab-menu {
+  position: fixed;
+  right: 20px;
+  bottom: 86px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  background: white;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+}
+
+.fab-menu-item {
+  border: none;
+  background: #f6f8fc;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fab-menu-item:hover {
+  background: #e9eefc;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 18px;
+  z-index: 9999;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.modal-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin: 10px 0 6px;
+}
+
+.modal-input,
+.modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  outline: none;
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+  border-color: #1a73e8;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #1a73e8;
+  color: white;
+}
+
+.btn.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  background: #f1f3f4;
+}

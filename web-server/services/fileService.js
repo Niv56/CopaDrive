@@ -2,6 +2,8 @@ const fileRepository = require('../repositories/fileRepository');
 const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
 const { sendTcpCommand } = require('../utils/tcpClient');
+const { getProvider } = require("../storage/storageProvider");
+
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
@@ -72,6 +74,13 @@ const collectSubtreeIds = (rootId) => {
 
 // --- Exported Methods ---
 const listTopLevel = async (userId) => {
+
+  const provider = getProvider();
+if (provider.name === "local") {
+  const db = provider.readDB();
+  return db.files.filter(f => f.parentId === null && f.ownerId === userId);
+}
+
   // 1) roots: owned top-level
   const ownedRoots = fileRepository.findByParent(null, userId);
 

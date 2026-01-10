@@ -1,4 +1,7 @@
 require('dotenv').config();
+const { getProvider } = require("./storage/storageProvider");
+console.log("Provider:", getProvider().name);
+
 console.log("JWT_SECRET exists?", !!process.env.JWT_SECRET);
 
 const express = require('express');
@@ -62,6 +65,9 @@ app.use((err, req, res, next) => {
         status: statusCode
     });
 });
+
+
+
 
 app.listen(port, () => {
     console.log(`Web server listening at http://localhost:${port}`);

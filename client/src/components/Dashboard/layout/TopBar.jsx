@@ -1,0 +1,61 @@
+import React, { useState } from "react";
+import appLogo from "../../../photos/logo.svg";
+import UserMenu from "../UserMenu";
+
+export default function TopBar() {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+
+  return (
+    <header className="dashboard-top">
+      <div className="dashboard-top-left">
+        <img src={appLogo} alt="CopaDrive logo" className="app-logo" />
+        <h2 className="app-title">CopaDrive</h2>
+      </div>
+
+      <div className="dashboard-top-center">
+        <input
+          type="text"
+          placeholder="Search in CopaDrive"
+          className="dashboard-search"
+        />
+      </div>
+
+      <div className="dashboard-top-right">
+        <UserMenu
+          isOpen={isUserMenuOpen}
+          onToggle={() => setIsUserMenuOpen((v) => !v)}
+          userEmail="guest@copadrive.com"
+          onEditUser={() => {
+            setIsUserMenuOpen(false);
+            setIsEditUserOpen(true);
+          }}
+          onCloseMenu={() => setIsUserMenuOpen(false)}
+        />
+
+        {isEditUserOpen && (
+          <div className="modal-overlay" onClick={() => setIsEditUserOpen(false)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-title">Edit user</div>
+
+              <label className="modal-label">Full name</label>
+              <input className="modal-input" placeholder="Your name" />
+
+              <label className="modal-label">Email</label>
+              <input className="modal-input" placeholder="user@email.com" />
+
+              <div className="modal-actions">
+                <button className="btn secondary" onClick={() => setIsEditUserOpen(false)}>
+                  Cancel
+                </button>
+                <button className="btn primary" onClick={() => setIsEditUserOpen(false)}>
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
