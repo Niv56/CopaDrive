@@ -1,26 +1,19 @@
-import React from 'react';
-import './Dashboard.css';
+import { useState } from "react";
+import TopBar from "../components/Dashboard/layout/TopBar";
+import SideBar from "../components/Dashboard/layout/SideBar";
+import MainArea from "../components/Dashboard/layout/MainArea";
+import "./Dashboard.css";
 
-import TopBar from '../components/Dashboard/TopBar';
-import SideBar from '../components/Dashboard/SideBar';
-import MainArea from '../components/Dashboard/MainArea';
+export default function Dashboard() {
+  const [activeView, setActiveView] = useState("mydrive");
 
-
-
-function Dashboard() {
   return (
-    
     <div className="dashboard-root">
       <TopBar />
-
       <div className="dashboard-body">
-        <SideBar />
-        <MainArea />
+        <SideBar activeView={activeView} onChangeView={setActiveView} />
+        <MainArea activeView={activeView} />
       </div>
     </div>
-
   );
-
 }
-
-export default Dashboard;

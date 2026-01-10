@@ -9,11 +9,21 @@
       "password": "1234",
       "image": "",
       "lastLogin": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "devUser2",
+      "firstName": "Dana",
+      "lastName": "Cohen",
+      "email": "dana@test2.com",
+      "phoneNumber": "0527654321",
+      "password": "1234",
+      "image": "",
+      "lastLogin": "2026-01-10T00:00:00.000Z"
     }
   ],
   "files": [
     {
-      "id": "rootFolder1",
+      "id": "u1_root",
       "name": "root",
       "type": "folder",
       "ownerId": "devUser1",
@@ -22,14 +32,610 @@
       "updatedAt": "2026-01-10T00:00:00.000Z"
     },
     {
-      "id": "file4",
-      "name": "file4",
+      "id": "u2_root",
+      "name": "root",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": null,
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u1_folder_projects",
+      "name": "Projects",
       "type": "file",
       "ownerId": "devUser1",
-      "parentId": "rootFolder1",
+      "parentId": null,
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_courses",
+      "name": "Courses",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": null,
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_personal",
+      "name": "Personal",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_shared",
+      "name": "Shared with me",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u1_folder_copadrive",
+      "name": "CopaDrive",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_projects",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_copadrive_docs",
+      "name": "Docs",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_copadrive_src",
+      "name": "Source",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_readme",
+      "name": "README.md",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_api_spec",
+      "name": "api-spec.json",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive_docs",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_arch",
+      "name": "architecture-notes.txt",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive_docs",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_server",
+      "name": "server.cpp",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive_src",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_client",
+      "name": "client.js",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive_src",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u1_folder_ds",
+      "name": "Data Structures",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_courses",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_ds_assignments",
+      "name": "Assignments",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_ds_notes",
+      "name": "Notes",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_ds_hw1",
+      "name": "hw1.pdf",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds_assignments",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_ds_hw2",
+      "name": "hw2.pdf",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds_assignments",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_ds_summary",
+      "name": "summary.txt",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds_notes",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u1_folder_photos",
+      "name": "Photos",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_personal",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_trips",
+      "name": "Trips",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_personal",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_folder_trip_budapest",
+      "name": "Budapest 2025",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_trips",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_budget",
+      "name": "budget.xlsx",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_trip_budapest",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_itinerary",
+      "name": "itinerary.docx",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_trip_budapest",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_photo_1",
+      "name": "IMG_0001.jpg",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_photos",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_file_photo_2",
+      "name": "IMG_0002.jpg",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_photos",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u2_folder_projects",
+      "name": "Projects",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_courses",
+      "name": "Courses",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_personal",
+      "name": "Personal",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_shared",
+      "name": "Shared with me",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_root",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u2_folder_portfolio",
+      "name": "Portfolio",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_projects",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_portfolio_design",
+      "name": "Design",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_portfolio_code",
+      "name": "Code",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_cv",
+      "name": "CV.pdf",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_mock1",
+      "name": "homepage-mock.png",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_design",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_mock2",
+      "name": "mobile-mock.png",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_design",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_app_js",
+      "name": "App.js",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_code",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_components_zip",
+      "name": "components.zip",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_code",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u2_folder_uni",
+      "name": "University",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_courses",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_uni_reports",
+      "name": "Reports",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_uni_notes",
+      "name": "Notes",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_report1",
+      "name": "report-jan.pdf",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni_reports",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_note1",
+      "name": "lecture1-notes.txt",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni_notes",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_note2",
+      "name": "lecture2-notes.txt",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni_notes",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u2_folder_music",
+      "name": "Music",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_personal",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_folder_music_2026",
+      "name": "2026",
+      "type": "folder",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_music",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_file_song1",
+      "name": "playlist.txt",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_music_2026",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u1_share_1",
+      "name": "Team Roadmap",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_projects",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_share_2",
+      "name": "Sprint Plan",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_copadrive_docs",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_share_3",
+      "name": "Shared Notes",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_ds_notes",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_share_4",
+      "name": "Budget Draft",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_trip_budapest",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u1_share_5",
+      "name": "Project Ideas",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "u1_folder_projects",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "u2_share_1",
+      "name": "Design Review",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_design",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_share_2",
+      "name": "Client Proposal",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_share_3",
+      "name": "Shared Playlist",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_music_2026",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_share_4",
+      "name": "Course Summary",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_uni_notes",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "u2_share_5",
+      "name": "Project Brief",
+      "type": "file",
+      "ownerId": "devUser2",
+      "parentId": "u2_folder_portfolio_code",
       "createdAt": "2026-01-10T00:00:00.000Z",
       "updatedAt": "2026-01-10T00:00:00.000Z"
     }
   ],
-  "permissions": []
+  "permissions": [
+    {
+      "id": "perm_u1_1",
+      "fileId": "u1_share_1",
+      "ownerId": "devUser1",
+      "sharedWithId": "devUser2",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u1_2",
+      "fileId": "u1_share_2",
+      "ownerId": "devUser1",
+      "sharedWithId": "devUser2",
+      "role": "editor",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u1_3",
+      "fileId": "u1_share_3",
+      "ownerId": "devUser1",
+      "sharedWithId": "devUser2",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u1_4",
+      "fileId": "u1_share_4",
+      "ownerId": "devUser1",
+      "sharedWithId": "devUser2",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u1_5",
+      "fileId": "u1_share_5",
+      "ownerId": "devUser1",
+      "sharedWithId": "devUser2",
+      "role": "editor",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+
+    {
+      "id": "perm_u2_1",
+      "fileId": "u2_share_1",
+      "ownerId": "devUser2",
+      "sharedWithId": "devUser1",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u2_2",
+      "fileId": "u2_share_2",
+      "ownerId": "devUser2",
+      "sharedWithId": "devUser1",
+      "role": "editor",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u2_3",
+      "fileId": "u2_share_3",
+      "ownerId": "devUser2",
+      "sharedWithId": "devUser1",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u2_4",
+      "fileId": "u2_share_4",
+      "ownerId": "devUser2",
+      "sharedWithId": "devUser1",
+      "role": "viewer",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "perm_u2_5",
+      "fileId": "u2_share_5",
+      "ownerId": "devUser2",
+      "sharedWithId": "devUser1",
+      "role": "editor",
+      "createdAt": "2026-01-10T00:00:00.000Z"
+    }
+  ]
 }
