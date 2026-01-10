@@ -9,7 +9,7 @@ function AppRoutes() {
     const navigate = useNavigate();
 
     return (
-        <Routes>  {/* הסרתי את <Router> מכאן! */}
+        <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
