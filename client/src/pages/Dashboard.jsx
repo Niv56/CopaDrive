@@ -5,13 +5,11 @@ import TopBar from '../components/Dashboard/TopBar';
 import SideBar from '../components/Dashboard/SideBar';
 import MainArea from '../components/Dashboard/MainArea';
 
-console.log('TopBar:', TopBar);
-console.log('SideBar:', SideBar);
-console.log('MainArea:', MainArea);
 
 
 function Dashboard() {
   return (
+    
     <div className="dashboard-root">
       <TopBar />
 
@@ -20,7 +18,9 @@ function Dashboard() {
         <MainArea />
       </div>
     </div>
+
   );
+
 }
 
 export default Dashboard;
