@@ -1,55 +1,121 @@
-import React from "react";
+import { useState } from "react";
 
-function FileListItem({ item, onOpen, onEdit, onShare, onDelete }) {
-  const isFolder = item.type === "folder";
+function CreateItem({ folders = [] }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modalType, setModalType] = useState(null); // null | "folder" | "file"
+  const [name, setName] = useState("");
+  const [content, setContent] = useState("");
+  const [parentId, setParentId] = useState(null);
+
+  function openCreate(type) {
+    setParentId(null);
+    setModalType(type);
+    setMenuOpen(false);
+    setName("");
+    setContent("");
+  }
+
+  function closeModal() {
+    setModalType(null);
+    setName("");
+    setContent("");
+  }
+
+  function onSaveClicked() {
+    alert("יש לממש");
+    closeModal();
+  }
 
   return (
-    <div
-      className="list-group-item d-flex justify-content-between align-items-center rounded-4 shadow-sm py-3 px-3"
-      onClick={() => onOpen?.(item)}
-      style={{ cursor: "pointer" }}
-    >
-      <div className="d-flex align-items-center gap-3">
-        <span style={{ fontSize: 22 }}>{isFolder ? "📁" : "📄"}</span>
-        <div className="d-flex flex-column">
-          <div className="fw-semibold">{item.name}</div>
-          <div className="text-muted small">{isFolder ? "Folder" : "File"}</div>
+    <>
+      <button
+        className="fab"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label="Create"
+        type="button"
+      >
+        +
+      </button>
+
+      {menuOpen && (
+        <div className="fab-menu">
+          <button
+            type="button"
+            className="fab-menu-item"
+            onClick={() => openCreate("folder")}
+          >
+            New folder
+          </button>
+          <button
+            type="button"
+            className="fab-menu-item"
+            onClick={() => openCreate("file")}
+          >
+            New file
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="dropdown" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="btn btn-light rounded-circle"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          style={{ width: 40, height: 40 }}
-        >
-          ⋮
-        </button>
+      {modalType && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">
+              {modalType === "folder" ? "Create new folder" : "Create new file"}
+            </div>
 
-        <ul className="dropdown-menu dropdown-menu-end">
-          <li>
-            <button className="dropdown-item" onClick={() => onEdit?.(item)}>
-              Edit
-            </button>
-          </li>
-          <li>
-            <button className="dropdown-item" onClick={() => onShare?.(item)}>
-              Share
-            </button>
-          </li>
-          <li>
-            <hr className="dropdown-divider" />
-          </li>
-          <li>
-            <button className="dropdown-item text-danger" onClick={() => onDelete?.(item)}>
-              Delete
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
+            <label className="modal-label">Name</label>
+            <input
+              className="modal-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={modalType === "folder" ? "Folder name" : "File title"}
+            />
+
+            <label className="modal-label">Destination</label>
+            <select
+              className="modal-input"
+              value={parentId ?? ""}
+              onChange={(e) => setParentId(e.target.value || null)}
+            >
+              <option value="">/ (top level)</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+
+            {modalType === "file" && (
+              <>
+                <label className="modal-label">Content</label>
+                <textarea
+                  className="modal-textarea"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write something..."
+                  rows={8}
+                />
+              </>
+            )}
+
+            <div className="modal-actions">
+              <button type="button" className="btn secondary" onClick={closeModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={onSaveClicked}
+                disabled={!name.trim()}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
-export default FileListItem;
+export default CreateItem;

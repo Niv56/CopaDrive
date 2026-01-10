@@ -1,4 +1,5 @@
 function FileListItem({ item, onOpen, onEdit, onShare, onDelete }) {
+   if (!item) return null;
   const isFolder = item.type === "folder";
 
   return (
