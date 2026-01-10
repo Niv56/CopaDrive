@@ -1,0 +1,35 @@
+{
+  "users": [
+    {
+      "id": "devUser1",
+      "firstName": "Niv",
+      "lastName": "Levi",
+      "email": "niv@test1.com",
+      "phoneNumber": "0501234567",
+      "password": "1234",
+      "image": "",
+      "lastLogin": "2026-01-10T00:00:00.000Z"
+    }
+  ],
+  "files": [
+    {
+      "id": "rootFolder1",
+      "name": "root",
+      "type": "folder",
+      "ownerId": "devUser1",
+      "parentId": null,
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "file4",
+      "name": "file4",
+      "type": "file",
+      "ownerId": "devUser1",
+      "parentId": "rootFolder1",
+      "createdAt": "2026-01-10T00:00:00.000Z",
+      "updatedAt": "2026-01-10T00:00:00.000Z"
+    }
+  ],
+  "permissions": []
+}
