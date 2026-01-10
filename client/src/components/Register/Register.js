@@ -1,197 +1,220 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../../utils/profileUtils';
+
 import Step1, { validateStep1 } from './steps/Step1';
 import Step2, { validateStep2 } from './steps/Step2';
 import Step3, { validateStep3 } from './steps/Step3';
+import Step4, { validateStep4 } from './steps/Step4';
+
+
 import './Register.css';
 import '../Auth/Auth.css';
-
 import logo from '../../photos/logo.svg';
 
-// Step configuration - moved outside component for better performance
+// Step configuration
 const STEP_CONFIG = {
-    1: {
-        title: "Create a Copa Account",
-        subtitle: "Enter your name",
-        validate: validateStep1
-    },
-    2: {
-        title: "Add your profile picture",
-        subtitle: "Add a profile picture and phone number",
-        validate: validateStep2
-    },
-    3: {
-        title: "Create your Copa Account",
-        subtitle: "Enter your email and create a password",
-        validate: validateStep3
-    }
+  1: {
+    title: "Create a Copa Account",
+    subtitle: "Enter your name",
+    validate: validateStep1
+  },
+  2: {
+    title: "Basic information",
+    subtitle: "Add a profile picture and phone number",
+    validate: validateStep2
+  },
+  3: {
+    title: "Basic information",
+    subtitle: "Enter your date of birth and gender",
+    validate: validateStep3
+  },
+  4: {
+    title: "Create your Copa Account",
+    subtitle: "Enter your email and create a password",
+    validate: validateStep4
+  }
 };
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 const API_URL = 'http://localhost:3000/api/users';
 
 const Register = () => {
-    const navigate = useNavigate();
-    const fileInputRef = useRef(null);
-    const [step, setStep] = useState(1);
-    const [preview, setPreview] = useState(null);
-    const [errors, setErrors] = useState({});
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneNumber: '',
-        password: '',
-        verifyPassword: '',
-        image: null
-    });
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
-    // Validate current step
-    const validateCurrentStep = () => {
-        const stepErrors = STEP_CONFIG[step].validate(formData);
-        setErrors(stepErrors);
-        return Object.keys(stepErrors).length === 0;
-    };
+  const [step, setStep] = useState(1);
+  const [preview, setPreview] = useState(null);
+  const [errors, setErrors] = useState({});
 
-    // Handle registration submission
-    const submitRegistration = async () => {
-        try {
-            const profilePicture = await getProfilePicture(
-                formData.image,
-                formData.firstName,
-                formData.lastName
-            );
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    image: null,
 
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    email: formData.email,
-                    phoneNumber: formData.phoneNumber,
-                    password: formData.password,
-                    profilePicture
-                })
-            });
+    dateOfBirth: '',
+    gender: '',
 
-            const data = await response.json();
+    email: '',
+    password: '',
+    verifyPassword: ''
+  });
 
-            if (response.ok) {
-                console.log("Registration successful!");
-                navigate('/login');
-            } else {
-                const errorMessage = data.error || data.message || "Registration failed. Please try again.";
-                setErrors({ submit: errorMessage });
-            }
-        } catch (error) {
-            console.error("Registration failed:", error);
-            setErrors({ submit: "Server connection error. Ensure the backend is running." });
-        }
-    };
+  const validateCurrentStep = () => {
+    const stepErrors = STEP_CONFIG[step].validate(formData);
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
 
-    // Handle form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const submitRegistration = async () => {
+    try {
+      const profilePicture = await getProfilePicture(
+        formData.image,
+        formData.firstName,
+        formData.lastName
+      );
 
-        if (!validateCurrentStep()) {
-            return;
-        }
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phoneNumber,
 
-        if (step === TOTAL_STEPS) {
-            await submitRegistration();
-        } else {
-            setStep(step + 1);
-        }
-    };
+          dateOfBirth: formData.dateOfBirth,
+          gender: formData.gender,
 
-    // Handle back button
-    const handleBack = () => {
-        setStep(step - 1);
-        setErrors({});
-    };
+          email: formData.email,
+          password: formData.password,
 
-    // Render current step component
-    const renderStep = () => {
-        const stepProps = {
-            formData,
-            setFormData,
-            errors
-        };
+          profilePicture
+        })
+      });
 
-        switch (step) {
-            case 1:
-                return <Step1 {...stepProps} />;
-            case 2:
-                return <Step2 {...stepProps} preview={preview} setPreview={setPreview} fileInputRef={fileInputRef} />;
-            case 3:
-                return <Step3 {...stepProps} />;
-            default:
-                return null;
-        }
-    };
+      const data = await response.json();
 
-    const currentConfig = STEP_CONFIG[step];
+      if (response.ok) {
+        console.log("Registration successful!");
+        navigate('/login');
+      } else {
+        const errorMessage = data.error || data.message || "Registration failed. Please try again.";
+        setErrors({ submit: errorMessage });
+      }
+    } catch (error) {
+      console.error("Registration failed:", error);
+      setErrors({ submit: "Server connection error. Ensure the backend is running." });
+    }
+  };
 
-    return (
-        <div className="copa-register-container">
-            <div className="copa-card shadow-sm">
-<div className="copa-left-side">
-  <div className="copa-brand">
-    <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
-    <span className="copa-wordmark">Copadrive</span>
-  </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  <h1 className="copa-title">Sign in</h1>
-  <p className="copa-subtitle">Use your Copa Account</p>
-</div>
+    if (!validateCurrentStep()) return;
 
+    if (step === TOTAL_STEPS) {
+      await submitRegistration();
+    } else {
+      setErrors({});
+      setStep(step + 1);
+    }
+  };
 
-                <div className="copa-right-side">
-                    <form onSubmit={handleSubmit}>
-                        {renderStep()}
+  const handleBack = () => {
+    if (step === 1) return;
+    setErrors({});
+    setStep(step - 1);
+  };
 
-                        {errors.submit && (
-                            <div className="text-danger mt-2">{errors.submit}</div>
-                        )}
+  const renderStep = () => {
+    const stepProps = { formData, setFormData, errors };
 
-                        <div className="copa-action-bar mt-auto">
-                            {step === 1 ? (
-                                <div className="d-flex justify-content-end align-items-center gap-4 w-100">
+    switch (step) {
+      case 1:
+        return <Step1 {...stepProps} />;
+      case 2:
+        return (
+          <Step2
+            {...stepProps}
+            preview={preview}
+            setPreview={setPreview}
+            fileInputRef={fileInputRef}
+          />
+        );
+      case 3:
+        return <Step3 {...stepProps} />;
+      case 4:
+        return <Step4 {...stepProps} />;
+      default:
+        return null;
+    }
+  };
 
-<button
-  type="button"
-  className="btn-link-google text-decoration-none"
-  onClick={() => navigate("/login")}   // או window.location.href="/login"
->
-  Sign in instead
-</button>
+  const currentConfig = STEP_CONFIG[step];
 
-                                    <button type="submit" className="btn-primary-copa">
-                                        Next
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="d-flex justify-content-between align-items-center w-100">
- <button
-  type="button"
-  className="btn-link-google text-decoration-none"
-  onClick={handleBack}
->
-  Back
-</button>
-                                    <button type="submit" className="btn-primary-copa">
-                                        {step < TOTAL_STEPS ? "Next" : "Submit"}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </form>
-                </div>
-            </div>
+  return (
+    <div className="copa-register-container">
+      <div className="copa-card shadow-sm">
+
+        {/* Left side */}
+        <div className="copa-left-side">
+          <div className="copa-brand">
+            <img src={logo} alt="CopaDrive" width="90" className="mb-4" />
+            <span className="copa-wordmark">Copadrive</span>
+          </div>
+
+          <h1 className="copa-title">{currentConfig.title}</h1>
+          <p className="copa-subtitle">{currentConfig.subtitle}</p>
         </div>
-    );
+
+        {/* Right side */}
+        <div className="copa-right-side">
+          <form onSubmit={handleSubmit}>
+            {renderStep()}
+
+            {errors.submit && (
+              <div className="text-danger mt-2">{errors.submit}</div>
+            )}
+
+            <div className="copa-action-bar mt-auto">
+              {step === 1 ? (
+                <div className="d-flex justify-content-end align-items-center gap-4 w-100">
+                  <button
+                    type="button"
+                    className="btn-link-google text-decoration-none"
+                    onClick={() => navigate("/login")}
+                  >
+                    Sign in instead
+                  </button>
+
+                  <button type="submit" className="btn-primary-copa">
+                    Next
+                  </button>
+                </div>
+              ) : (
+                <div className="d-flex justify-content-between align-items-center w-100">
+                  <button
+                    type="button"
+                    className="btn-link-google text-decoration-none"
+                    onClick={handleBack}
+                  >
+                    Back
+                  </button>
+
+                  <button type="submit" className="btn-primary-copa">
+                    {step < TOTAL_STEPS ? "Next" : "Submit"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  );
 };
 
 export default Register;

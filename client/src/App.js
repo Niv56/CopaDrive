@@ -5,10 +5,6 @@ import Register from './components/Register/Register';
 import Dashboard from './pages/Dashboard';
 
 function App() {
-  const token = localStorage.getItem('token');
-  const isAuthenticated = !!token && token !== "undefined";
-
-
   return (
     <Router>
       <Routes>
