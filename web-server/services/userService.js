@@ -18,6 +18,8 @@ const registerUser = (userData) => {
         phoneNumber: userData.phoneNumber,
         password: userData.password,
         image: userData.profilePicture || userData.image || '',
+        dateOfBirth: userData.dateOfBirth,  
+        gender: userData.gender,            
         lastLogin: new Date().toISOString() // Using ISO for consistency with Files API
     };
 

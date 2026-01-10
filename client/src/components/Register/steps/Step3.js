@@ -1,139 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React from "react";
 
 /**
- * Step 3: Handles email address and secure password creation.
+ * Step 3: Date of birth + Gender
  */
 const Step3 = ({ formData, setFormData, errors }) => {
-    const [passwordStrength, setPasswordStrength] = useState({
-        hasLength: false,
-        hasUpper: false,
-        hasLower: false,
-        hasNumber: false
-    });
+  return (
+    <div className="copa-input-stack">
+      {/* Date of birth */}
+      <div>
+        <input
+          type="date"
+          className={`copa-input ${errors.dateOfBirth ? "error" : ""}`}
+          value={formData.dateOfBirth || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, dateOfBirth: e.target.value })
+          }
+        />
+        {errors.dateOfBirth && (
+          <small className="text-danger d-block">{errors.dateOfBirth}</small>
+        )}
+      </div>
 
-    // Check password strength in real-time
-    useEffect(() => {
-        const pwd = formData.password;
-        setPasswordStrength({
-            hasLength: pwd.length >= 8,
-            hasUpper: /[A-Z]/.test(pwd),
-            hasLower: /[a-z]/.test(pwd),
-            hasNumber: /[0-9]/.test(pwd)
-        });
-    }, [formData.password]);
+      {/* Gender */}
+      <div>
+        <select
+          className={`copa-input ${errors.gender ? "error" : ""}`}
+          value={formData.gender || ""}
+          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+        >
+          <option value="" disabled>
+            Select gender
+          </option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+          <option value="prefer_not_to_say">Prefer not to say</option>
+        </select>
 
-    return (
-        <div className="copa-input-stack">
-            <div>
-                <input
-                    type="email"
-                    className="copa-input"
-                    placeholder="👤 Email address"
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                />
-                {errors.email && <small className="text-danger d-block mt-1">{errors.email}</small>}
-            </div>
-
-            <div>
-                <input
-                    type="password"
-                    className="copa-input"
-                    placeholder="🔒 Password"
-                    value={formData.password}
-                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                />
-
-                {/* Password strength indicator */}
-                {formData.password && (
-                    <div className="password-requirements mt-2">
-                        <small className={passwordStrength.hasLength ? 'text-success' : 'text-muted'}>
-                            {passwordStrength.hasLength ? '✓' : '○'} At least 8 characters
-                        </small>
-                        <br />
-                        <small className={passwordStrength.hasUpper ? 'text-success' : 'text-muted'}>
-                            {passwordStrength.hasUpper ? '✓' : '○'} One uppercase letter (A-Z)
-                        </small>
-                        <br />
-                        <small className={passwordStrength.hasLower ? 'text-success' : 'text-muted'}>
-                            {passwordStrength.hasLower ? '✓' : '○'} One lowercase letter (a-z)
-                        </small>
-                        <br />
-                        <small className={passwordStrength.hasNumber ? 'text-success' : 'text-muted'}>
-                            {passwordStrength.hasNumber ? '✓' : '○'} One number (0-9)
-                        </small>
-                    </div>
-                )}
-
-                {errors.password && <small className="text-danger d-block mt-1">{errors.password}</small>}
-            </div>
-
-            <div>
-                <input
-                    type="password"
-                    className="copa-input"
-                    placeholder="🔒 Confirm Password"
-                    value={formData.verifyPassword}
-                    onChange={e => setFormData({ ...formData, verifyPassword: e.target.value })}
-                />
-                {errors.verifyPassword && <small className="text-danger d-block mt-1">{errors.verifyPassword}</small>}
-            </div>
-        </div>
-    );
+        {errors.gender && (
+          <small className="text-danger d-block">{errors.gender}</small>
+        )}
+      </div>
+    </div>
+  );
 };
 
-// Validation function for Step3
+/**
+ * Validate Step 3
+ */
 export const validateStep3 = (formData) => {
-    const errors = {};
+  const errors = {};
 
-    // Email validation
-    if (!formData.email.trim()) {
-        errors.email = "Enter your email address";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        errors.email = "Enter a valid email address";
-    }
+  // dateOfBirth: required + basic YYYY-MM-DD format
+  if (!formData.dateOfBirth || String(formData.dateOfBirth).trim() === "") {
+    errors.dateOfBirth = "Date of birth is required";
+  } else {
+    const dob = String(formData.dateOfBirth).trim();
+    const dobOk = /^\d{4}-\d{2}-\d{2}$/.test(dob);
+    if (!dobOk) errors.dateOfBirth = "Date of birth must be YYYY-MM-DD";
+  }
 
-    // Advanced password validation
-    if (!formData.password) {
-        errors.password = "Enter your password";
-    } else {
-        const password = formData.password;
-        const passwordErrors = [];
+  // gender: required + allowed values
+  const allowed = new Set(["male", "female", "other", "prefer_not_to_say"]);
+  if (!formData.gender || String(formData.gender).trim() === "") {
+    errors.gender = "Gender is required";
+  } else if (!allowed.has(formData.gender)) {
+    errors.gender = "Invalid gender value";
+  }
 
-        // Check minimum length
-        if (password.length < 8) {
-            passwordErrors.push("at least 8 characters");
-        }
-
-        // Check uppercase letter
-        if (!/[A-Z]/.test(password)) {
-            passwordErrors.push("one uppercase letter (A-Z)");
-        }
-
-        // Check lowercase letter
-        if (!/[a-z]/.test(password)) {
-            passwordErrors.push("one lowercase letter (a-z)");
-        }
-
-        // Check number
-        if (!/[0-9]/.test(password)) {
-            passwordErrors.push("one number (0-9)");
-        }
-
-        // If there are errors, display clear message
-        if (passwordErrors.length > 0) {
-            errors.password = `Password must contain ${passwordErrors.join(", ")}`;
-        }
-    }
-
-    // Password confirmation validation
-    if (!formData.verifyPassword) {
-        errors.verifyPassword = "Confirm your password";
-    } else if (formData.password !== formData.verifyPassword) {
-        errors.verifyPassword = "Passwords don't match";
-    }
-
-    return errors;
+  return errors;
 };
 
 export default Step3;
