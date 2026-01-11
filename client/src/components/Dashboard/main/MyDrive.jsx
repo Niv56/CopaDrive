@@ -30,6 +30,17 @@ function MyDrive() {
     };
   }, []);
 
+  // Open folder event from search
+  useEffect(() => {
+    const handleOpenFolder = (e) => {
+      const folderId = e?.detail?.folderId ?? null;
+      setCurrentFolderId(folderId);
+    };
+
+    window.addEventListener("open-folder", handleOpenFolder);
+    return () => window.removeEventListener("open-folder", handleOpenFolder);
+  }, []);
+
   async function loadFiles() {
     try {
       setLoading(true);
@@ -185,7 +196,7 @@ function MyDrive() {
 
       <FileViewerModal
         file={openedFile}
-        role={"viewer"}
+        role={openedRole}
         onClose={() => setOpenedFile(null)}
         onEdit={() => alert("יש לממש")}
         onShare={() => alert("יש לממש")}
