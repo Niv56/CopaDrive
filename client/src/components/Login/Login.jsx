@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import "../Auth/Auth.css";
 import logo from "../../photos/logo.svg";
 
 const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,7 +24,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("token", data.token);
+        login(data.token);
         navigate("/home");
       } else {
         setError(data.error || "Invalid email or password");
@@ -68,10 +70,9 @@ const Login = () => {
           {error && <div className="alert alert-danger py-2 mb-0">{error}</div>}
 
           <div className="d-flex justify-content-between align-items-center mt-1">
-          <Link to="/register" className="btn btn-outline-secondary rounded-pill px-3">
-          Create account
-          </Link>
-
+            <Link to="/register" className="btn btn-outline-secondary rounded-pill px-3">
+              Create account
+            </Link>
 
             <button type="submit" className="btn btn-primary btn-lg rounded-pill px-4">
               Sign in
