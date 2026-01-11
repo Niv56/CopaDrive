@@ -17,23 +17,25 @@ function SideBar({ activeView, onChangeView }) {
           quotaBytes: u?.quotaBytes ?? 15 * 1024 * 1024 * 1024,
         });
       } catch {
-        // לא מפילים UI אם זה נכשל
+        // שקט תעשייתי במקרה של שגיאה
       }
     }
 
     loadUsage();
-
-    // אופציונלי: לרענן כל כמה שניות
-    const t = setInterval(loadUsage, 4000);
+    const t = setInterval(loadUsage, 10000); // רענון כל 10 שניות מספיק בהחלט
     return () => {
       alive = false;
       clearInterval(t);
     };
   }, []);
 
+  // חישוב GB עבור האינדיקטור
+  const usedGB = usage.usedBytes / (1024 * 1024 * 1024);
+
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
+        {/* הוספת Important/Priority בראש הרשימה כמקובל */}
         <li
           className={activeView === "mydrive" ? "active" : ""}
           onClick={() => {
@@ -59,6 +61,13 @@ function SideBar({ activeView, onChangeView }) {
         </li>
 
         <li
+          className={activeView === "important" ? "active" : ""}
+          onClick={() => onChangeView("important")}
+        >
+          ❗ Important
+        </li>
+
+        <li
           className={activeView === "shared" ? "active" : ""}
           onClick={() => onChangeView("shared")}
         >
@@ -77,7 +86,8 @@ function SideBar({ activeView, onChangeView }) {
         </li>
       </ul>
 
-      <StorageIndicator usedGB={12} />
+      {/* שימוש במידע האמיתי מהשרת */}
+      <StorageIndicator usedGB={usedGB} />
     </aside>
   );
 }
