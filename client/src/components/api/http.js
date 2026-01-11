@@ -1,40 +1,43 @@
-// src/api/http.js
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+function getAuthToken() {
+  return localStorage.getItem("token");
+}
 
-export async function http(path, options = {}) {
-  const url = `${BASE_URL}${path}`;
+export async function getRootFiles() {
+  const token = getAuthToken();
+  if (!token) throw new Error("Not authenticated");
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
-
-  const token = localStorage.getItem("token");
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url, {
-    ...options,
-    headers,
+  const response = await fetch("http://localhost:3000/api/files", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    let errorBody = null;
-    try {
-      errorBody = await res.json();
-    } catch {
-      // ignore
-    }
-    const err = new Error(`HTTP ${res.status}`);
-    err.status = res.status;
-    err.body = errorBody;
-    throw err;
+  if (!response.ok) throw new Error("Failed to fetch files");
+  return response.json();
+}
+
+export async function createItem({ name, type, parentId = null, content = "" }) {
+  const token = getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const body = {
+    name,
+    type,
+    parentId,
+    content: type === "file" ? content : "",
+  };
+
+  const response = await fetch("http://localhost:3000/api/files", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create item");
   }
 
-  // אם אין תוכן (204), נחזיר null
-  if (res.status === 204) return null;
-
-  // ברירת מחדל: JSON
-  return res.json();
+  return response.json();
 }

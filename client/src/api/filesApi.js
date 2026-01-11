@@ -1,15 +1,13 @@
 function getAuthToken() {
-  return localStorage.getItem("accessToken");
+  return localStorage.getItem("token"); // ✅ שונה מ-"accessToken"
 }
 
 export async function getRootFiles() {
   const token = getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-
-
-//Get api/files - all files in top level
-  const response = await fetch("/api/files", {
+  // ✅ URL מלא
+  const response = await fetch("http://localhost:3000/api/files", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -18,7 +16,6 @@ export async function getRootFiles() {
   return response.json();
 }
 
-
 // Post api/files 
 export async function createItem({ name, type, parentId = null, content = "" }) {
   const token = getAuthToken();
@@ -26,12 +23,13 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
 
   const body = {
     name,
-    type,                 
-    parentId,            
-    content: type === "file" ? content : "", 
+    type,
+    parentId,
+    content: type === "file" ? content : "",
   };
 
-  const response = await fetch("/api/files", {
+  // ✅ URL מלא
+  const response = await fetch("http://localhost:3000/api/files", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -44,5 +42,5 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
     throw new Error("Failed to create item");
   }
 
-  return response.json(); 
+  return response.json();
 }
