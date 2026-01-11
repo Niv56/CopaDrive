@@ -58,3 +58,13 @@ export async function getFileById(id) {
   if (!response.ok) throw new Error("Failed to fetch file content");
   return response.json();
 }
+
+export async function getCurrentUser(userId) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch user data");
+  return response.json();
+}
