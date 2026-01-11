@@ -1,14 +1,11 @@
 const fileService = require('../services/fileService');
 
-
 /**
  * GET /api/files
- * Retrieves all top-level files and folders for the authenticated user.
  */
 exports.listAll = async (req, res, next) => {
   try {
     const userId = req.user.id;
-
     const items = await fileService.listTopLevel(userId);
     res.status(200).json(items);
   } catch (err) {
@@ -50,6 +47,10 @@ exports.updateItem = async (req, res, next) => {
   }
 };
 
+/**
+ * DELETE /api/files/:id
+ * Now moves to Trash (soft delete)
+ */
 exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
@@ -59,6 +60,7 @@ exports.deleteItem = async (req, res, next) => {
     next(err);
   }
 };
+
 exports.listStarred = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -110,6 +112,34 @@ exports.setImportant = async (req, res, next) => {
     next(err);
   }
 };
+
+// ✅ Trash
+exports.listTrash = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listTrash(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.setTrashed = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { trashed } = req.body;
+
+    if (typeof trashed !== 'boolean') {
+      return res.status(400).json({ error: 'trashed must be boolean' });
+    }
+
+    await fileService.setTrashed(userId, req.params.id, trashed);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getUsage = async (req, res, next) => {
   try {
     const userId = req.user.id;
