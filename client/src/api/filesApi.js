@@ -49,13 +49,15 @@ export async function getCurrentUser(userId) {
   return response.json();
 }
 
-// 🕒 לוגיקת קבצים אחרונים
+// client/src/api/filesApi.js
 export async function getRecentFiles() {
   const data = await getRootFiles();
+
   return Array.isArray(data)
     ? data
-      .filter((f) => f.type === "file")
-      .sort((a, b) => new Date(b.lastAccessed || 0) - new Date(a.lastAccessed || 0))
+      // 🎯 השינוי כאן: מוודאים שזה קובץ ושיש לו שדה lastAccessed תקין
+      .filter((f) => f.type === "file" && f.lastAccessed)
+      .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
       .slice(0, 20)
     : [];
 }
