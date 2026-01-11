@@ -1,10 +1,19 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
 import appLogo from "../../../photos/logo.svg";
 import UserMenu from "../UserMenu";
 
 export default function TopBar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const { logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="dashboard-top">
@@ -26,11 +35,13 @@ export default function TopBar() {
           isOpen={isUserMenuOpen}
           onToggle={() => setIsUserMenuOpen((v) => !v)}
           userEmail="guest@copadrive.com"
+          isAuthenticated={isAuthenticated}
           onEditUser={() => {
             setIsUserMenuOpen(false);
             setIsEditUserOpen(true);
           }}
           onCloseMenu={() => setIsUserMenuOpen(false)}
+          onLogout={handleLogout}
         />
 
         {isEditUserOpen && (
