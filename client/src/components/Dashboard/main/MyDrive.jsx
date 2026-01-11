@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { getRootFiles, getFileById } from "../../../api/filesApi";
+// שינוי כאן: ייבוא openItem במקום getFileById
+import { getRootFiles, openItem } from "../../../api/filesApi";
 import FileListItem from "../widgets/FileListItem";
 import CreateItem from "../widgets/CreateItem";
 import FileViewerModal from "../widgets/FileViewerModal";
@@ -65,22 +66,29 @@ function MyDrive() {
     return allFiles.find(f => f.id === currentFolderId);
   }, [allFiles, currentFolderId]);
 
+  // ============================================================================
+  // 🎯 שימוש בפונקציית openItem המרכזית (מעדכנת lastAccessed בשרת)
+  // ============================================================================
   async function onOpen(item) {
-    if (item.type === "folder") {
-      setCurrentFolderId(item.id);
-      setFolderPath([...folderPath, { id: item.id, name: item.name }]);
-    } else {
-      // ✅ טען את התוכן המלא מהשרת
-      setLoadingFile(true);
-      try {
-        const fullFile = await getFileById(item.id);
+    setLoadingFile(true);
+
+    try {
+      // פונקציית openItem מטפלת גם בהבאת תוכן הקובץ וגם ברישום הגישה בשרת
+      const fullFile = await openItem(item, (folder) => {
+        // לוגיקת התיקיות נשלחת כ-Callback כדי לשמור על מבנה הניווט
+        setCurrentFolderId(folder.id);
+        setFolderPath([...folderPath, { id: folder.id, name: folder.name }]);
+      });
+
+      // אם חזר קובץ (ולא תיקייה), נציג אותו במודאל
+      if (fullFile) {
         setOpenedFile(fullFile);
-      } catch (e) {
-        console.error("Failed to load file:", e);
-        alert("Failed to open file: " + e.message);
-      } finally {
-        setLoadingFile(false);
       }
+    } catch (e) {
+      console.error("Failed to open item:", e);
+      alert("Failed to open: " + e.message);
+    } finally {
+      setLoadingFile(false);
     }
   }
 

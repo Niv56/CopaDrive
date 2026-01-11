@@ -45,7 +45,6 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
   return response.json();
 }
 
-// client/src/api/filesApi.js
 export async function getFileById(id) {
   const token = getAuthToken();
   if (!token) throw new Error("Not authenticated");
