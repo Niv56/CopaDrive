@@ -1,44 +1,61 @@
 import React from "react";
+import StorageIndicator from "../widgets/StorageIndicator";
 
- function SideBar({ activeView, onChangeView }) {
+function SideBar({ activeView, onChangeView }) {
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
+         <li
+          className={activeView === "home" ? "active" : ""}
+          onClick={() => onChangeView("home")}
+        >
+          🏠 Home
+        </li>
+
         <li
           className={activeView === "mydrive" ? "active" : ""}
           onClick={() => onChangeView("mydrive")}
         >
-          My Drive
+          📁 My Drive
         </li>
 
         <li
           className={activeView === "recent" ? "active" : ""}
           onClick={() => onChangeView("recent")}
         >
-          Recent
+          🕒 Recent
         </li>
 
         <li
           className={activeView === "starred" ? "active" : ""}
           onClick={() => onChangeView("starred")}
         >
-          Starred
+          ⭐ Starred
         </li>
 
         <li
           className={activeView === "shared" ? "active" : ""}
           onClick={() => onChangeView("shared")}
         >
-          Shared
+          👤 Shared with me
         </li>
 
         <li
           className={activeView === "trash" ? "active" : ""}
           onClick={() => onChangeView("trash")}
         >
-          Trash
+          🗑️ Trash
+        </li>
+        <li
+          className={activeView === "storage" ? "active" : ""}
+          onClick={() => onChangeView("storage")}
+        >
+          ☁️ Storage
         </li>
       </ul>
+      
+      {/* מחוץ ל-ul, בתחתית */}
+      <StorageIndicator usedGB={12} />
     </aside>
   );
 }
