@@ -68,3 +68,25 @@ export async function getCurrentUser(userId) {
   if (!response.ok) throw new Error("Failed to fetch user data");
   return response.json();
 }
+
+export async function searchItems(query) {
+  const token = getAuthToken();
+  console.log("TOKEN:", token);
+
+  if (!token) throw new Error("Not authenticated");
+
+    console.log("SEARCH API CALLED WITH:", query);
+
+
+  const res = await fetch(
+    `http://localhost:3000/api/search/${encodeURIComponent(query)}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  if (!res.ok) throw new Error("Failed to search items");
+  return res.json();
+}
+

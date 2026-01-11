@@ -3,6 +3,7 @@ import { getRootFiles, getFileById } from "../../../api/filesApi";
 import CreateItem from "../widgets/CreateItem";
 import FileViewerModal from "../widgets/FileViewerModal";
 import FileListItem from "../widgets/FileListItem";
+import { useAuth } from "../../../contexts/AuthContext";
 import "./MyDrive.css";
 
 function MyDrive() {
@@ -12,11 +13,28 @@ function MyDrive() {
 
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
+  const [openedRole, setOpenedRole] = useState("viewer");
+
+  const { token } = useAuth();
+
+  // --- userId from JWT ---
+  const myUserId = useMemo(() => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(window.atob(base64));
+      return payload.userId || null;
+    } catch {
+      return null;
+    }
+  }, [token]);
 
   useEffect(() => {
     loadFiles();
   }, []);
 
+  // Reset event (optional)
   useEffect(() => {
     const handleReset = () => {
       setCurrentFolderId(null);
@@ -24,8 +42,18 @@ function MyDrive() {
     };
 
     window.addEventListener("reset-mydrive", handleReset);
-
     return () => window.removeEventListener("reset-mydrive", handleReset);
+  }, []);
+
+  // Open folder event from search
+  useEffect(() => {
+    const handleOpenFolder = (e) => {
+      const folderId = e?.detail?.folderId ?? null;
+      setCurrentFolderId(folderId);
+    };
+
+    window.addEventListener("open-folder", handleOpenFolder);
+    return () => window.removeEventListener("open-folder", handleOpenFolder);
   }, []);
 
   async function loadFiles() {
@@ -54,19 +82,23 @@ function MyDrive() {
   async function onOpen(item) {
     if (item.type === "folder") {
       setCurrentFolderId(item.id);
-    } else {
-      try {
-        const fullFile = await getFileById(item.id);
-        setOpenedFile(fullFile);
-      } catch (e) {
-        alert("Error loading file: " + e.message);
-      }
+      return;
+    }
+
+    try {
+      // decide role BEFORE open
+      const role = item.ownerId && myUserId && item.ownerId === myUserId ? "owner" : "viewer";
+      setOpenedRole(role);
+
+      const fullFile = await getFileById(item.id);
+      setOpenedFile(fullFile);
+    } catch (e) {
+      alert("Error loading file: " + e.message);
     }
   }
 
-  // Callback שנקרא אחרי יצירה מוצלחת
   function handleItemCreated() {
-    loadFiles(); // רענן את הרשימה
+    loadFiles();
   }
 
   if (loading) return <div>Loading...</div>;
@@ -76,7 +108,11 @@ function MyDrive() {
     <div className="mainarea">
       <div className="d-flex align-items-center gap-2 mb-4" style={{ fontSize: "1.1rem" }}>
         <span
-          style={{ cursor: "pointer", color: "#1a73e8", fontWeight: !currentFolderId ? "bold" : "normal" }}
+          style={{
+            cursor: "pointer",
+            color: "#1a73e8",
+            fontWeight: !currentFolderId ? "bold" : "normal",
+          }}
           onClick={() => setCurrentFolderId(null)}
         >
           My Drive
@@ -89,7 +125,7 @@ function MyDrive() {
               className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
               onClick={() => setCurrentFolderId(currentFolder?.parentId || null)}
             >
-              ⬅️ Back
+              Back
             </button>
             <strong className="ms-2">{currentFolder?.name}</strong>
           </>
@@ -119,7 +155,7 @@ function MyDrive() {
 
       <FileViewerModal
         file={openedFile}
-        role={"viewer"}
+        role={openedRole}
         onClose={() => setOpenedFile(null)}
         onEdit={() => alert("יש לממש")}
         onShare={() => alert("יש לממש")}
