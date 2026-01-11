@@ -1,31 +1,26 @@
 import React from "react";
 import "./StorageIndicator.css";
+import { formatBytes } from "../../../utils/formatBytes";
 
-export default function StorageIndicator({ usedGB = 1.69 }) {
-  const TOTAL = 15;
-  const used = Math.max(0, Math.min(Number(usedGB) || 0, TOTAL));
-  const pct = (used / TOTAL) * 100;
-  
-  // כמה למלא מלמעלה (100% - pct = כמה לחתוך מלמעלה)
+export default function StorageIndicator({ usedBytes = 0, quotaBytes = 15 * 1024 * 1024 * 1024 }) {
+  const used = Math.max(0, Number(usedBytes) || 0);
+  const quota = Math.max(1, Number(quotaBytes) || 1);
+
+  const pct = Math.min(100, (used / quota) * 100);
   const fillTop = `${100 - pct}%`;
 
   return (
     <div className="storage-box">
       <div className="storage-tree-container">
-        {/* רקע דהוי */}
         <div className="storage-tree-bg">🌴</div>
-        
-        {/* מילוי צבעוני */}
-        <div 
-          className="storage-tree-fill"
-          style={{ '--fill-top': fillTop }}
-        >
+
+        <div className="storage-tree-fill" style={{ "--fill-top": fillTop }}>
           🌴
         </div>
       </div>
 
       <div className="storage-sub">
-        {used.toFixed(2)} GB of {TOTAL.toFixed(2)} GB used
+        {formatBytes(used)} of {formatBytes(quota)} used
       </div>
     </div>
   );
