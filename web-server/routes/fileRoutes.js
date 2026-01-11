@@ -13,6 +13,9 @@ router.get('/usage', requireAuth, fileController.getUsage);
 router.get('/starred', requireAuth, fileController.listStarred);
 router.get('/important', requireAuth, fileController.listImportant);
 
+// ✅ Trash routes (must be before "/:id")
+router.get('/trash', requireAuth, fileController.listTrash);
+
 router.post('/', requireAuth, fileController.createItem);
 
 router.get('/:id', requireAuth, fileController.getById);
@@ -20,7 +23,12 @@ router.get('/:id', requireAuth, fileController.getById);
 router.patch('/:id/star', requireAuth, fileController.setStarred);
 router.patch('/:id/important', requireAuth, fileController.setImportant);
 
+// ✅ set/unset trash
+router.patch('/:id/trash', requireAuth, fileController.setTrashed);
+
 router.patch('/:id', requireAuth, fileController.updateItem);
+
+// DELETE now means "move to trash"
 router.delete('/:id', requireAuth, fileController.deleteItem);
 
 router.use('/:id/permissions', requireAuth, permissionRoutes);
