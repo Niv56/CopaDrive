@@ -14,6 +14,9 @@ function MainArea({ activeView }) {
       {activeView === "starred" && <StarredView />}
       {activeView === "shared" && <SharedView />}
       {activeView === "trash" && <TrashView />}
+      {activeView === "home" && <Home />}
+      {activeView === "storage" && <Storage />}
+
     </main>
   );
 }
