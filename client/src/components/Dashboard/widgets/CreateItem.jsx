@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { getRootFiles, createItem } from "../../../api/filesApi";
 
-function CreateItem({ onItemCreated }) {
+function CreateItem({ onItemCreated, currentFolderId }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
-  const [parentId, setParentId] = useState(null);
+  const [parentId, setParentId] = useState(currentFolderId || null);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,7 @@ function CreateItem({ onItemCreated }) {
   }
 
   function openCreate(type) {
-    setParentId(null);
+    setParentId(currentFolderId || null);
     setModalType(type);
     setMenuOpen(false);
     setName("");
@@ -113,14 +113,15 @@ function CreateItem({ onItemCreated }) {
               autoFocus
             />
 
-            <label className="modal-label">Destination</label>
+            <label className="modal-label">Location</label>
             <select
               className="modal-input"
               value={parentId ?? ""}
               onChange={(e) => setParentId(e.target.value || null)}
               disabled={loading}
             >
-              <option value="">/ (top level)</option>
+              <option value="">My Drive</option>
+
               {folders.map((f) => (
                 <option key={f.id} value={f.id}>
                   📁 {f.name}

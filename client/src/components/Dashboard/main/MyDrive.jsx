@@ -17,6 +17,17 @@ function MyDrive() {
     loadFiles();
   }, []);
 
+  useEffect(() => {
+    const handleReset = () => {
+      setCurrentFolderId(null);
+      loadFiles();
+    };
+
+    window.addEventListener("reset-mydrive", handleReset);
+
+    return () => window.removeEventListener("reset-mydrive", handleReset);
+  }, []);
+
   async function loadFiles() {
     try {
       setLoading(true);
@@ -31,6 +42,10 @@ function MyDrive() {
       setLoading(false);
     }
   }
+
+  const currentFolder = useMemo(() => {
+    return allFiles.find((f) => f.id === currentFolderId);
+  }, [allFiles, currentFolderId]);
 
   const currentItems = useMemo(() => {
     return allFiles.filter((f) => f.parentId === currentFolderId);
@@ -59,12 +74,32 @@ function MyDrive() {
 
   return (
     <div className="mainarea">
-      <h2>My Drive</h2>
+      <div className="d-flex align-items-center gap-2 mb-4" style={{ fontSize: "1.1rem" }}>
+        <span
+          style={{ cursor: "pointer", color: "#1a73e8", fontWeight: !currentFolderId ? "bold" : "normal" }}
+          onClick={() => setCurrentFolderId(null)}
+        >
+          My Drive
+        </span>
+
+        {currentFolderId && (
+          <>
+            <span className="text-muted">/</span>
+            <button
+              className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+              onClick={() => setCurrentFolderId(currentFolder?.parentId || null)}
+            >
+              ⬅️ Back
+            </button>
+            <strong className="ms-2">{currentFolder?.name}</strong>
+          </>
+        )}
+      </div>
 
       <div className="files-container">
         {currentItems.length === 0 ? (
           <div style={{ textAlign: "center", color: "#999", padding: "40px" }}>
-            No files or folders yet. Click + to create one!
+            No files or folders here.
           </div>
         ) : (
           currentItems.map((item) => (
@@ -80,7 +115,7 @@ function MyDrive() {
         )}
       </div>
 
-      <CreateItem onItemCreated={handleItemCreated} />
+      <CreateItem onItemCreated={handleItemCreated} currentFolderId={currentFolderId} />
 
       <FileViewerModal
         file={openedFile}

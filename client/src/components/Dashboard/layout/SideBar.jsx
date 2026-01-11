@@ -1,12 +1,15 @@
 import React from "react";
 
- function SideBar({ activeView, onChangeView }) {
+function SideBar({ activeView, onChangeView }) {
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
         <li
           className={activeView === "mydrive" ? "active" : ""}
-          onClick={() => onChangeView("mydrive")}
+          onClick={() => {
+            onChangeView("mydrive");
+            window.dispatchEvent(new CustomEvent("reset-mydrive"));
+          }}
         >
           My Drive
         </li>
