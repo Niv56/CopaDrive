@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getRootFiles, createItem } from "../../../api/filesApi";
+import './CreateItem.css'
 
 
 function CreateItem({ onItemCreated, currentFolderId }) {
@@ -15,6 +16,19 @@ function CreateItem({ onItemCreated, currentFolderId }) {
     if (modalType) {
       loadFolders();
     }
+  }, [modalType]);
+
+  useEffect(() => {
+    if (!modalType) return;
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [modalType]);
 
   async function loadFolders() {
@@ -47,19 +61,21 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     setLoading(true);
     try {
-      await createItem({
+      const created = await createItem({
         name: name.trim(),
         type: modalType,
         parentId: parentId || null,
         content: modalType === "file" ? content : ""
       });
 
+
       closeModal();
 
       // קרא ל-callback במקום window.location.reload()
-      if (onItemCreated) {
-        onItemCreated();
-      }
+     if (onItemCreated) {
+  onItemCreated(created);
+}
+
     } catch (error) {
       alert(`Failed to create ${modalType}: ${error.message}`);
     } finally {
@@ -100,9 +116,22 @@ function CreateItem({ onItemCreated, currentFolderId }) {
       {modalType && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">
-              {modalType === "folder" ? "Create new folder" : "Create new file"}
+            <div className="modal-title-row">
+              <div className="modal-title-text">
+                {modalType === "folder" ? "Create new folder" : "Create new file"}
+              </div>
+
+              <button
+                type="button"
+                className="share-btn"
+                title="Share (TODO)"
+                onClick={() => alert("צריך לממש שיתוף")}
+                disabled={loading}
+              >
+                🔗
+              </button>
             </div>
+
 
             <label className="modal-label">Name</label>
             <input
@@ -121,6 +150,10 @@ function CreateItem({ onItemCreated, currentFolderId }) {
               onChange={(e) => setParentId(e.target.value || null)}
               disabled={loading}
             >
+              {currentFolderId && (
+                <option value={currentFolderId}>📌 Current folder</option>
+              )}
+
               <option value="">My Drive</option>
 
               {folders.map((f) => (

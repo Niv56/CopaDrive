@@ -2,102 +2,144 @@
    AUTH (Login + Register) - compact
    ========================================================================== */
 
-.copa-auth-container{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  background:url("../../photos/back.png") center/cover no-repeat;
+.copa-auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: url("../../photos/back.png") center/cover no-repeat;
 }
 
-.copa-auth-card{
-  width:100%;
-  max-width:520px;
-  padding:36px 34px;
-  background:rgba(255,255,255,.28);
-  border:1px solid rgba(255,255,255,.45);
-  border-radius:18px;
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  box-shadow:0 18px 55px rgba(0,0,0,.18);
+.copa-auth-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 36px 34px;
+  background: rgba(255, 255, 255, .28);
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .18);
 }
 
-.copa-brand-text{
+.copa-brand-text {
   font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 34px;          /* פה משנים גודל טקסט */
+  font-size: 34px;
+  /* פה משנים גודל טקסט */
   font-weight: 800;
   letter-spacing: 0.2px;
   line-height: 1;
 }
 
-.copa-link{color:#0b2b38;text-decoration:none;font-weight:600}
-.copa-link:hover{text-decoration:underline}
+.copa-link {
+  color: #0b2b38;
+  text-decoration: none;
+  font-weight: 600
+}
+
+.copa-link:hover {
+  text-decoration: underline
+}
 
 /* Scoped rules inside the auth card */
-.copa-auth-card :where(.btn-primary){
-  background:#0d6efd;      /* normal */
-  border-color:#0d6efd;
+.copa-auth-card :where(.btn-primary) {
+  background: #0d6efd;
+  /* normal */
+  border-color: #0d6efd;
 }
-.copa-auth-card :where(.btn-primary:hover){
-  background:#0b5ed7;      /* darker on hover */
-  border-color:#0b5ed7;
+
+.copa-auth-card :where(.btn-primary:hover) {
+  background: #0b5ed7;
+  /* darker on hover */
+  border-color: #0b5ed7;
 }
-.copa-auth-card :where(.btn-primary:active){
-  background:#0a58ca;      /* even darker on press */
-  border-color:#0a58ca;
+
+.copa-auth-card :where(.btn-primary:active) {
+  background: #0a58ca;
+  /* even darker on press */
+  border-color: #0a58ca;
 }
 
 /* Inputs (hover ring + focus ring + invalid hover) */
-.copa-auth-card :where(.form-control,.form-select){
-  transition:border-color .16s, box-shadow .16s;
+.copa-auth-card :where(.form-control, .form-select) {
+  transition: border-color .16s, box-shadow .16s;
 }
-.copa-auth-card :where(.form-control,.form-select):hover:not(:focus):not(:disabled){
-  border-color:rgba(13,110,253,.65);
-  box-shadow:0 0 0 .25rem rgba(13,110,253,.25);
+
+.copa-auth-card :where(.form-control, .form-select):hover:not(:focus):not(:disabled) {
+  border-color: rgba(13, 110, 253, .65);
+  box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
 }
-.copa-auth-card :where(.form-control,.form-select):focus{
-  border-color:rgba(13,110,253,.85);
-  box-shadow:0 0 0 .25rem rgba(13,110,253,.30);
+
+.copa-auth-card :where(.form-control, .form-select):focus {
+  border-color: rgba(13, 110, 253, .85);
+  box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .30);
 }
-.copa-auth-card :where(.form-control.is-invalid,.form-select.is-invalid):hover:not(:focus){
-  border-color:#dc3545;
-  box-shadow:0 0 0 .25rem rgba(220,53,69,.20);
+
+.copa-auth-card :where(.form-control.is-invalid, .form-select.is-invalid):hover:not(:focus) {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 .25rem rgba(220, 53, 69, .20);
 }
 
 /* Buttons (add copa-btn on buttons/links) */
-.copa-auth-card :where(.copa-btn){
-  transition:transform .16s, box-shadow .16s, filter .16s, background-color .16s;
+.copa-auth-card :where(.copa-btn) {
+  transition: transform .16s, box-shadow .16s, filter .16s, background-color .16s;
 }
-.copa-auth-card :where(.copa-btn:hover){
-  transform:translateY(-1px);
-  box-shadow:0 12px 26px rgba(0,0,0,.16);
+
+.copa-auth-card :where(.copa-btn:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .16);
 }
-.copa-auth-card :where(.copa-btn:active){
-  transform:translateY(0);
-  box-shadow:0 8px 18px rgba(0,0,0,.14);
+
+.copa-auth-card :where(.copa-btn:active) {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .14);
 }
-.copa-auth-card :where(.btn-primary.copa-btn:hover){
-  filter:brightness(.95) saturate(1.05);
+
+.copa-auth-card :where(.btn-primary.copa-btn:hover) {
+  filter: brightness(.95) saturate(1.05);
 }
-.copa-auth-card :where(.btn-outline-secondary.copa-btn:hover){
-  background:rgba(255,255,255,.45);
+
+.copa-auth-card :where(.btn-outline-secondary.copa-btn:hover) {
+  background: rgba(255, 255, 255, .45);
 }
 
 /* Avatar (Register Step2) */
-.copa-avatar-preview{
-  width:110px;height:110px;margin:0 auto;border-radius:999px;
-  border:2px dashed rgba(0,0,0,.25);
-  background:rgba(255,255,255,.55);
-  display:grid;place-items:center;overflow:hidden;cursor:pointer;
-  transition:border-color .16s, transform .16s;
+.copa-avatar-preview {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 2px dashed rgba(0, 0, 0, .25);
+  background: rgba(255, 255, 255, .55);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .16s, transform .16s;
 }
-.copa-avatar-preview:hover{border-color:rgba(0,0,0,.45);transform:translateY(-1px)}
-.copa-avatar-preview.copa-avatar-error{border-color:#dc3545}
-.copa-avatar-preview img{width:100%;height:100%;object-fit:cover}
-.copa-avatar-icon{font-size:44px;opacity:.85}
 
-.copa-logo{
-  width: 110px; 
+.copa-avatar-preview:hover {
+  border-color: rgba(0, 0, 0, .45);
+  transform: translateY(-1px)
+}
+
+.copa-avatar-preview.copa-avatar-error {
+  border-color: #dc3545
+}
+
+.copa-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover
+}
+
+.copa-avatar-icon {
+  font-size: 44px;
+  opacity: .85
+}
+
+.copa-logo {
+  width: 110px;
   height: auto;
 }
