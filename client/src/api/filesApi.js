@@ -44,7 +44,15 @@ async function request(path, options = {}) {
 
   // Try read body (may be empty)
   const text = await res.text();
-  const data = text ? (() => { try { return JSON.parse(text); } catch { return text; } })() : null;
+  const data = text
+    ? (() => {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      })()
+    : null;
 
   if (!res.ok) {
     // backend might return {error} or {message}
@@ -96,9 +104,18 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
   });
 }
 
+/**
+ * ✅ Move to trash (soft delete)
+ * Backend: DELETE /api/files/:id
+ */
 export async function deleteItem(fileId) {
   if (!fileId) throw new Error("fileId is required");
   return request(`/api/files/${fileId}`, { method: "DELETE" });
+}
+
+// nicer alias for UI wording
+export async function moveToTrash(fileId) {
+  return deleteItem(fileId);
 }
 
 export async function updateItem(fileId, patch) {
@@ -108,6 +125,48 @@ export async function updateItem(fileId, patch) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
+}
+
+/* -----------------------------
+   Trash
+------------------------------ */
+
+/**
+ * ✅ List trash
+ * GET /api/files/trash
+ */
+export async function getTrashFiles() {
+  return request("/api/files/trash", { method: "GET" });
+}
+
+/**
+ * ✅ Restore from trash
+ * PATCH /api/files/:id/trash  { trashed:false }
+ */
+export async function restoreFromTrash(fileId) {
+  if (!fileId) throw new Error("fileId is required");
+  return request(`/api/files/${fileId}/trash`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trashed: false }),
+  });
+}
+
+/**
+ * ✅ Delete forever
+ * DELETE /api/files/:id/forever
+ */
+export async function deleteForever(fileId) {
+  if (!fileId) throw new Error("fileId is required");
+  return request(`/api/files/${fileId}/forever`, { method: "DELETE" });
+}
+
+/**
+ * ✅ Empty trash
+ * DELETE /api/files/trash/empty
+ */
+export async function emptyTrash() {
+  return request("/api/files/trash/empty", { method: "DELETE" });
 }
 
 /* -----------------------------
@@ -190,7 +249,7 @@ export function formatLastAccessed(dateString) {
 export async function findUserByEmail(email) {
   const token = getAuthToken();
   const response = await fetch(`http://localhost:3000/api/users/email/${email}`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) return null;
   return response.json();
@@ -198,20 +257,24 @@ export async function findUserByEmail(email) {
 
 export async function addFilePermission(fileId, targetUserId) {
   const token = getAuthToken();
-  const response = await fetch(`http://localhost:3000/api/files/${fileId}/permissions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ userId: targetUserId }) // השרת קובע תפקיד "viewer" כברירת מחדל
-  });
+  const response = await fetch(
+    `http://localhost:3000/api/files/${fileId}/permissions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId: targetUserId }), // השרת קובע תפקיד "viewer" כברירת מחדל
+    }
+  );
   if (!response.ok) {
     const err = await response.json();
     throw new Error(err.error || "Failed to share");
   }
   return response.json();
 }
+
 /* -----------------------------
    Search
 ------------------------------ */

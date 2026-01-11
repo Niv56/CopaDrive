@@ -49,12 +49,26 @@ exports.updateItem = async (req, res, next) => {
 
 /**
  * DELETE /api/files/:id
- * Now moves to Trash (soft delete)
+ * Move to Trash (soft delete)
  */
 exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
     await fileService.deleteItem(ownerId, req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/files/:id/forever
+ * Permanent delete (or remove-from-trash for non-owner)
+ */
+exports.deleteForever = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await fileService.deleteForever(userId, req.params.id);
     res.status(204).end();
   } catch (err) {
     next(err);
@@ -140,6 +154,20 @@ exports.setTrashed = async (req, res, next) => {
   }
 };
 
+/**
+ * DELETE /api/files/trash/empty  (וגם /api/files/trash כ-alias)
+ * Empty Trash for this user (hard delete owned items that are in trash; non-owned just disappears)
+ */
+exports.emptyTrash = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await fileService.emptyTrash(userId);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.getUsage = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -149,8 +177,6 @@ exports.getUsage = async (req, res, next) => {
     next(err);
   }
 };
-
-
 
 exports.listRecent = async (req, res, next) => {
   try {
