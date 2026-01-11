@@ -104,7 +104,11 @@
   background: #ffffff;
   border-right: 1px solid #ddd;
   padding: 15px;
+
+  display: flex;
+  flex-direction: column;
 }
+
 
 .dashboard-side ul {
   list-style: none;

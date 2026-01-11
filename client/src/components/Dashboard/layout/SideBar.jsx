@@ -22,7 +22,7 @@ function SideBar({ activeView, onChangeView }) {
     }
 
     loadUsage();
-    const t = setInterval(loadUsage, 10000); // רענון כל 10 שניות מספיק בהחלט
+   const t = setInterval(loadUsage, 3000);
     return () => {
       alive = false;
       clearInterval(t);
@@ -94,7 +94,7 @@ function SideBar({ activeView, onChangeView }) {
       </ul>
 
       {/* שימוש במידע האמיתי מהשרת */}
-      <StorageIndicator usedGB={usedGB} />
+      <StorageIndicator usedBytes={usage.usedBytes} quotaBytes={usage.quotaBytes} />
     </aside>
   );
 }
