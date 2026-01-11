@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getRootFiles, openItem } from "../../../api/filesApi"; // ✅ שימוש ב-openItem
 import FileListItem from "../widgets/FileListItem";
 import CreateItem from "../widgets/CreateItem";
+import ShareModal from "../widgets/ShareModal";
 import FileViewerModal from "../widgets/FileViewerModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import "./MyDrive.css";
@@ -10,7 +11,7 @@ function MyDrive() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [sharingItem, setSharingItem] = useState(null);
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
   const [openedRole, setOpenedRole] = useState("viewer");
@@ -108,13 +109,28 @@ function MyDrive() {
 
       <div className="files-container">
         {currentItems.map((item) => (
-          <FileListItem key={item.id} item={item} onOpen={onOpen} />
+          <FileListItem
+            key={item.id} item={item} onOpen={onOpen}
+            onShare={(item) => setSharingItem(item)}
+          />
         ))}
       </div>
 
       <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} />
+      <FileViewerModal
+        file={openedFile}
+        ole={openedRole}
+        onClose={() => setOpenedFile(null)}
+        onShare={(item) => setSharingItem(item)}
+      />
+
+      {sharingItem && (
+        <ShareModal
+          item={sharingItem}
+          onClose={() => setSharingItem(null)}
+        />
+      )}
     </div>
   );
 }
