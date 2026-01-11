@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 
 /**
- * Step 4: Email + Password
+ * Step4: Email (@copa.com restricted) + Password
+ * Includes auto-completion for @copa.com
  */
 const Step4 = ({ formData, setFormData, errors }) => {
   const [passwordStrength, setPasswordStrength] = useState({
@@ -10,6 +11,8 @@ const Step4 = ({ formData, setFormData, errors }) => {
     hasLower: false,
     hasNumber: false,
   });
+
+  const [isCopaEmail, setIsCopaEmail] = useState(false);
 
   useEffect(() => {
     const pwd = formData.password || "";
@@ -21,12 +24,34 @@ const Step4 = ({ formData, setFormData, errors }) => {
     });
   }, [formData.password]);
 
+  useEffect(() => {
+    const email = formData.email || "";
+    setIsCopaEmail(email.toLowerCase().endsWith("@copa.com"));
+  }, [formData.email]);
+
+  // 🎯 פונקציית השלמה אוטומטית
+  const handleEmailChange = (e) => {
+    let value = e.target.value;
+    const oldEmail = formData.email || "";
+
+    // אם המשתמש הקליד @ (והוא לא במצב של מחיקה)
+    if (value.endsWith("@") && value.length > oldEmail.length) {
+      // בודקים אם כבר קיים @ בשם המשתמש (כדי לא להשלים פעמיים)
+      const atCount = (value.match(/@/g) || []).length;
+      if (atCount === 1) {
+        value += "copa.com";
+      }
+    }
+
+    setFormData({ ...formData, email: value });
+  };
+
   const hasEmailError = Boolean(errors.email);
   const hasPasswordError = Boolean(errors.password);
   const hasVerifyError = Boolean(errors.verifyPassword);
 
-  const StrengthRow = ({ ok, text }) => (
-    <div className={`d-flex align-items-center gap-2 ${ok ? "text-success" : "text-secondary"}`}>
+  const InfoRow = ({ ok, text }) => (
+    <div className={`d-flex align-items-center gap-2 ${ok ? "text-success" : "text-danger"}`}>
       <span style={{ width: 18, textAlign: "center" }}>{ok ? "✓" : "•"}</span>
       <span style={{ fontSize: 13 }}>{text}</span>
     </div>
@@ -34,63 +59,57 @@ const Step4 = ({ formData, setFormData, errors }) => {
 
   return (
     <div className="d-grid gap-3">
+      {/* Email address field with Auto-complete */}
       <div>
         <input
           type="email"
-          className={`form-control form-control-lg rounded-pill ${
-            hasEmailError ? "is-invalid" : ""
-          }`}
-          placeholder="👤 Email address"
+          className={`form-control form-control-lg rounded-pill ${hasEmailError ? "is-invalid" : ""}`}
+          placeholder="username@copa.com"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        />
-        {errors.email && (
-          <div className="invalid-feedback d-block">{errors.email}</div>
-        )}
-      </div>
-
-      <div>
-        <input
-          type="password"
-          className={`form-control form-control-lg rounded-pill ${
-            hasPasswordError ? "is-invalid" : ""
-          }`}
-          placeholder="🔒 Password"
-          value={formData.password}
-          onChange={(e) =>
-            setFormData({ ...formData, password: e.target.value })
-          }
+          onChange={handleEmailChange}
         />
 
-        {formData.password && (
-          <div className="mt-2 p-3 bg-white bg-opacity-75 rounded-3 border">
-            <StrengthRow ok={passwordStrength.hasLength} text="At least 8 characters" />
-            <StrengthRow ok={passwordStrength.hasUpper} text="One uppercase letter (A-Z)" />
-            <StrengthRow ok={passwordStrength.hasLower} text="One lowercase letter (a-z)" />
-            <StrengthRow ok={passwordStrength.hasNumber} text="One number (0-9)" />
+        {formData.email && (
+          <div className="mt-2 p-2 bg-light rounded-3 border ps-3">
+            <InfoRow ok={isCopaEmail} text="Must end with @copa.com" />
           </div>
         )}
 
-        {errors.password && (
-          <div className="invalid-feedback d-block">{errors.password}</div>
+        {errors.email && (
+          <div className="invalid-feedback d-block ps-3">{errors.email}</div>
         )}
       </div>
 
+      {/* Password field */}
       <div>
         <input
           type="password"
-          className={`form-control form-control-lg rounded-pill ${
-            hasVerifyError ? "is-invalid" : ""
-          }`}
+          className={`form-control form-control-lg rounded-pill ${hasPasswordError ? "is-invalid" : ""}`}
+          placeholder="🔒 Password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+        />
+        {formData.password && (
+          <div className="mt-2 p-3 bg-white bg-opacity-75 rounded-3 border ps-3">
+            <InfoRow ok={passwordStrength.hasLength} text="At least 8 characters" />
+            <InfoRow ok={passwordStrength.hasUpper} text="One uppercase letter (A-Z)" />
+            <InfoRow ok={passwordStrength.hasLower} text="One lowercase letter (a-z)" />
+            <InfoRow ok={passwordStrength.hasNumber} text="One number (0-9)" />
+          </div>
+        )}
+        {errors.password && <div className="invalid-feedback d-block ps-3">{errors.password}</div>}
+      </div>
+
+      {/* Confirm Password field */}
+      <div>
+        <input
+          type="password"
+          className={`form-control form-control-lg rounded-pill ${hasVerifyError ? "is-invalid" : ""}`}
           placeholder="🔒 Confirm password"
           value={formData.verifyPassword}
-          onChange={(e) =>
-            setFormData({ ...formData, verifyPassword: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, verifyPassword: e.target.value })}
         />
-        {errors.verifyPassword && (
-          <div className="invalid-feedback d-block">{errors.verifyPassword}</div>
-        )}
+        {errors.verifyPassword && <div className="invalid-feedback d-block ps-3">{errors.verifyPassword}</div>}
       </div>
     </div>
   );
@@ -98,32 +117,26 @@ const Step4 = ({ formData, setFormData, errors }) => {
 
 export const validateStep4 = (formData) => {
   const errors = {};
+  const email = (formData.email || "").trim().toLowerCase();
 
-  if (!formData.email.trim()) {
-    errors.email = "Enter your email address";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    errors.email = "Enter a valid email address";
+  if (!email) {
+    errors.email = "Email is required";
+  } else if (!email.endsWith("@copa.com")) {
+    errors.email = "Only @copa.com accounts are permitted";
+  } else if (!/^[^\s@]+@copa\.com$/.test(email)) {
+    errors.email = "Enter a valid email username";
   }
 
   if (!formData.password) {
-    errors.password = "Enter your password";
+    errors.password = "Password is required";
   } else {
-    const password = formData.password;
-    const passwordErrors = [];
-
-    if (password.length < 8) passwordErrors.push("at least 8 characters");
-    if (!/[A-Z]/.test(password)) passwordErrors.push("one uppercase letter (A-Z)");
-    if (!/[a-z]/.test(password)) passwordErrors.push("one lowercase letter (a-z)");
-    if (!/[0-9]/.test(password)) passwordErrors.push("one number (0-9)");
-
-    if (passwordErrors.length > 0) {
-      errors.password = `Password must contain ${passwordErrors.join(", ")}`;
+    const pwd = formData.password;
+    if (pwd.length < 8 || !/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) {
+      errors.password = "Password does not meet requirements";
     }
   }
 
-  if (!formData.verifyPassword) {
-    errors.verifyPassword = "Confirm your password";
-  } else if (formData.password !== formData.verifyPassword) {
+  if (formData.password !== formData.verifyPassword) {
     errors.verifyPassword = "Passwords don't match";
   }
 

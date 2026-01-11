@@ -8,6 +8,8 @@ import Step1, { validateStep1 } from "./steps/Step1.jsx";
 import Step2, { validateStep2 } from "./steps/Step2.jsx";
 import Step3, { validateStep3 } from "./steps/Step3.jsx";
 import Step4, { validateStep4 } from "./steps/Step4.jsx";
+// ייבוא הקומפוננטה של מסך ההצלחה (או יצירתה inline למטה)
+import Step5 from "./steps/Step5.jsx";
 
 import logo from "../../photos/logo.svg";
 
@@ -32,9 +34,15 @@ const STEP_CONFIG = {
     subtitle: "Enter your email and create a password",
     validate: validateStep4,
   },
+  // הגדרה לצעד החמישי
+  5: {
+    title: "Welcome to Copa!",
+    subtitle: "Your account has been created",
+    validate: () => ({}), // אין ולידציה בצעד הזה
+  },
 };
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 4; // השלב האחרון לשליחת הטופס
 const API_URL = "http://localhost:3000/api/users";
 
 const Register = () => {
@@ -50,10 +58,8 @@ const Register = () => {
     lastName: "",
     phoneNumber: "",
     image: null,
-
     dateOfBirth: "",
     gender: "",
-
     email: "",
     password: "",
     verifyPassword: "",
@@ -91,10 +97,10 @@ const Register = () => {
       const data = await response.json();
 
       if (response.ok) {
-        navigate("/login");
+        // במקום לנווט ישר, אנחנו עוברים לצעד 5
+        setStep(5);
       } else {
-        const errorMessage =
-          data.error || data.message || "Registration failed. Please try again.";
+        const errorMessage = data.error || data.message || "Registration failed. Please try again.";
         setErrors({ submit: errorMessage });
       }
     } catch (error) {
@@ -118,7 +124,7 @@ const Register = () => {
   };
 
   const handleBack = () => {
-    if (step === 1) return;
+    if (step === 1 || step === 5) return; // לא ניתן לחזור אחורה ממסך ההצלחה
     setErrors({});
     setStep((s) => s - 1);
   };
@@ -127,23 +133,12 @@ const Register = () => {
     const stepProps = { formData, setFormData, errors };
 
     switch (step) {
-      case 1:
-        return <Step1 {...stepProps} />;
-      case 2:
-        return (
-          <Step2
-            {...stepProps}
-            preview={preview}
-            setPreview={setPreview}
-            fileInputRef={fileInputRef}
-          />
-        );
-      case 3:
-        return <Step3 {...stepProps} />;
-      case 4:
-        return <Step4 {...stepProps} />;
-      default:
-        return null;
+      case 1: return <Step1 {...stepProps} />;
+      case 2: return <Step2 {...stepProps} preview={preview} setPreview={setPreview} fileInputRef={fileInputRef} />;
+      case 3: return <Step3 {...stepProps} />;
+      case 4: return <Step4 {...stepProps} />;
+      case 5: return <Step5 />;
+      default: return null;
     }
   };
 
@@ -155,8 +150,7 @@ const Register = () => {
         {/* Header */}
         <div className="text-center mb-4">
           <div className="d-inline-flex align-items-center gap-2">
-           <img src={logo} alt="CopaDrive" className="copa-logo" />
-
+            <img src={logo} alt="CopaDrive" className="copa-logo" />
             <span className="copa-brand-text">Copadrive</span>
           </div>
 
@@ -174,23 +168,36 @@ const Register = () => {
 
           {/* Actions */}
           <div className="d-flex justify-content-between align-items-center mt-2">
-            {step === 1 ? (
-              <Link to="/login" className="btn btn-outline-secondary rounded-pill px-3">
-                Sign in instead
-              </Link>
-            ) : (
+            {step === 5 ? (
+              // כפתור מיוחד למסך האחרון שתופס את כל הרוחב
               <button
                 type="button"
-                className="btn btn-outline-secondary rounded-pill px-3"
-                onClick={handleBack}
+                className="btn btn-primary btn-lg rounded-pill w-100"
+                onClick={() => navigate("/login")}
               >
-                Back
+                Proceed to Login
               </button>
-            )}
+            ) : (
+              <>
+                {step === 1 ? (
+                  <Link to="/login" className="btn btn-outline-secondary rounded-pill px-3">
+                    Sign in instead
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary rounded-pill px-3"
+                    onClick={handleBack}
+                  >
+                    Back
+                  </button>
+                )}
 
-            <button type="submit" className="btn btn-primary btn-lg rounded-pill px-4">
-              {step < TOTAL_STEPS ? "Next" : "Submit"}
-            </button>
+                <button type="submit" className="btn btn-primary btn-lg rounded-pill px-4">
+                  {step < TOTAL_STEPS ? "Next" : "Submit"}
+                </button>
+              </>
+            )}
           </div>
         </form>
       </div>
