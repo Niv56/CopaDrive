@@ -82,7 +82,7 @@ const Step4 = ({ formData, setFormData, errors }) => {
           className={`form-control form-control-lg rounded-pill ${
             hasVerifyError ? "is-invalid" : ""
           }`}
-          placeholder="Confirm password"
+          placeholder="🔒 Confirm password"
           value={formData.verifyPassword}
           onChange={(e) =>
             setFormData({ ...formData, verifyPassword: e.target.value })
@@ -122,7 +122,7 @@ export const validateStep4 = (formData) => {
   }
 
   if (!formData.verifyPassword) {
-    errors.verifyPassword = "🔒 Confirm your password";
+    errors.verifyPassword = "Confirm your password";
   } else if (formData.password !== formData.verifyPassword) {
     errors.verifyPassword = "Passwords don't match";
   }
