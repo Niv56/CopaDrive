@@ -3,14 +3,6 @@ const userRepository = require('../repositories/userRepository');
 
 const requireAuth = (req, res, next) => {
 
-   if (process.env.DEV_SEED === "true") {
-    const auth = req.headers.authorization;
-    if (auth === "Bearer DEV") {
-      req.user = { id: "devUser1" };
-      return next();
-    }
-  }
-
   try {
     const authHeader = req.headers['authorization'];
 

@@ -3,6 +3,8 @@ const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
 const { sendTcpCommand } = require('../utils/tcpClient');
 const { getProvider } = require("../storage/storageProvider");
+const permissionService = require("./permissionService"); 
+
 
 
 const nowIso = () => new Date().toISOString();
@@ -154,7 +156,9 @@ const createItem = async (ownerId, payload) => {
     await sendTcpCommand(`POST ${id} ${content}`);
   }
 
-  return fileRepository.create({ id, name: name.trim(), type, ownerId, parentId, createdAt: ts, updatedAt: ts, lastAccessed: ts });
+    const created =  fileRepository.create({ id, name: name.trim(), type, ownerId, parentId, createdAt: ts, updatedAt: ts });
+    permissionService.addPermission( ownerId, id, { userId: ownerId }, "owner" );
+      return created;
 };
 
 const updateItem = async (userId, id, patch) => {
