@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { getRootFiles, getFileById } from "../../../api/filesApi";
+import { getRootFiles, openItem } from "../../../api/filesApi"; // ✅ שימוש ב-openItem
 import FileListItem from "../widgets/FileListItem";
 import CreateItem from "../widgets/CreateItem";
 import FileViewerModal from "../widgets/FileViewerModal";
+import { useAuth } from "../../../contexts/AuthContext";
 import "./MyDrive.css";
 
 function MyDrive() {
@@ -12,32 +13,40 @@ function MyDrive() {
 
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
+  const [openedRole, setOpenedRole] = useState("viewer");
   const [folderPath, setFolderPath] = useState([]);
   const [loadingFile, setLoadingFile] = useState(false);
 
+  const { token } = useAuth();
+
+  const myUserId = useMemo(() => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(window.atob(base64));
+      return payload.userId || null;
+    } catch { return null; }
+  }, [token]);
+
   useEffect(() => {
     loadFiles();
+  }, []);
 
-    function handleReset() {
+  useEffect(() => {
+    const handleReset = () => {
       setCurrentFolderId(null);
       setFolderPath([]);
-    }
-
-    window.addEventListener("reset-mydrive", handleReset);
-
-    return () => {
-      window.removeEventListener("reset-mydrive", handleReset);
     };
+    window.addEventListener("reset-mydrive", handleReset);
+    return () => window.removeEventListener("reset-mydrive", handleReset);
   }, []);
 
   async function loadFiles() {
     try {
       setLoading(true);
-      setError(null);
-
       const data = await getRootFiles();
-      const list = Array.isArray(data) ? data : [];
-      setAllFiles(list);
+      setAllFiles(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e?.message ?? "Failed to load files");
     } finally {
@@ -55,146 +64,57 @@ function MyDrive() {
   }, [allFiles, currentFolderId]);
 
   async function onOpen(item) {
-    if (item.type === "folder") {
-      setCurrentFolderId(item.id);
-      setFolderPath([...folderPath, { id: item.id, name: item.name }]);
-    } else {
-      // ✅ טען את התוכן המלא מהשרת
-      setLoadingFile(true);
-      try {
-        const fullFile = await getFileById(item.id);
-        setOpenedFile(fullFile);
-      } catch (e) {
-        console.error("Failed to load file:", e);
+    setLoadingFile(true);
+    try {
+      const role = item.ownerId && myUserId && item.ownerId === myUserId ? "owner" : "viewer";
+      setOpenedRole(role);
 
-        // ✅ 401 מטופל ע"י המנגנון הגלובלי (SessionExpiredModal)
-        if (e?.message?.includes("Unauthorized (401)")) return;
+      const fullFile = await openItem(item, (folder) => {
+        setCurrentFolderId(folder.id);
+        setFolderPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
+      });
 
-        alert("Failed to open file: " + (e?.message ?? "Unknown error"));
-      } finally {
-        setLoadingFile(false);
-      }
-
+      if (fullFile) setOpenedFile(fullFile);
+    } catch (e) {
+      alert("Error: " + e.message);
+    } finally {
+      setLoadingFile(false);
     }
   }
 
   function goBack() {
-    if (folderPath.length === 0) return
     const newPath = [...folderPath];
     newPath.pop();
     setFolderPath(newPath);
-
-    if (newPath.length === 0) {
-      setCurrentFolderId(null);
-    } else {
-      setCurrentFolderId(newPath[newPath.length - 1].id);
-    }
-  }
-
-  function goToRoot() {
-    setCurrentFolderId(null);
-    setFolderPath([]);
-  }
-
-  function handleItemCreated() {
-    loadFiles();
+    setCurrentFolderId(newPath.length === 0 ? null : newPath[newPath.length - 1].id);
   }
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
 
   return (
     <div className="mainarea">
-      {/* Header with breadcrumb */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        marginBottom: "20px"
-      }}>
-        <h2
-          style={{
-            margin: 0,
-            cursor: "pointer",
-            color: currentFolderId ? "#1a73e8" : "#202124",
-            fontSize: "24px",
-            fontWeight: "400"
-          }}
-          onClick={goToRoot}
-        >
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+        <h2 style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }} onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>
           My Drive
         </h2>
-
-        {currentFolderId && currentFolder && (
+        {currentFolderId && (
           <>
-            <span style={{ fontSize: "24px", color: "#5f6368" }}>/</span>
-            <button
-              className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-              onClick={goBack}
-              style={{ fontSize: "14px" }}
-            >
-              ← Back
-            </button>
-            <span style={{ fontSize: "20px", fontWeight: "500", color: "#202124" }}>
-              {currentFolder.name}
-            </span>
+            <span>/</span>
+            <button className="btn btn-sm btn-outline-secondary" onClick={goBack}>← Back</button>
+            <span>{currentFolder?.name}</span>
           </>
         )}
       </div>
 
-      {/* Files container */}
       <div className="files-container">
-        {currentItems.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#999", padding: "40px" }}>
-            No files or folders here. Click + to create one!
-          </div>
-        ) : (
-          currentItems.map((item) => (
-            <FileListItem
-              key={item.id}
-              item={item}
-              onOpen={onOpen}
-              onEdit={() => alert("יש לממש")}
-              onShare={() => alert("יש לממש")}
-              onDelete={() => alert("יש לממש")}
-            />
-          ))
-        )}
+        {currentItems.map((item) => (
+          <FileListItem key={item.id} item={item} onOpen={onOpen} />
+        ))}
       </div>
 
-      <CreateItem
-        onItemCreated={handleItemCreated}
-        currentFolderId={currentFolderId}
-      />
+      <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
 
-      {loadingFile && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: "white",
-            padding: "20px",
-            borderRadius: "8px"
-          }}>
-            Loading file...
-          </div>
-        </div>
-      )}
-
-      <FileViewerModal
-        file={openedFile}
-        role={"viewer"}
-        onClose={() => setOpenedFile(null)}
-        onEdit={() => alert("יש לממש")}
-        onShare={() => alert("יש לממש")}
-        onDelete={() => alert("יש לממש")}
-      />
+      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} />
     </div>
   );
 }

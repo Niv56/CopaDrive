@@ -17,7 +17,10 @@ function SideBar({ activeView, onChangeView }) {
 
         <li
           className={activeView === "recent" ? "active" : ""}
-          onClick={() => onChangeView("recent")}
+          onClick={() => {
+            onChangeView("recent");
+            window.dispatchEvent(new CustomEvent("reset-recent"));
+          }}
         >
           🕒 Recent
         </li>
@@ -33,7 +36,7 @@ function SideBar({ activeView, onChangeView }) {
           className={activeView === "shared" ? "active" : ""}
           onClick={() => onChangeView("shared")}
         >
-          👤 Shared with me
+          👥 Shared with me
         </li>
 
         <li
@@ -47,7 +50,7 @@ function SideBar({ activeView, onChangeView }) {
           className={activeView === "storage" ? "active" : ""}
           onClick={() => onChangeView("storage")}
         >
-          ☁️ Storage
+          💾 Storage
         </li>
       </ul>
 
