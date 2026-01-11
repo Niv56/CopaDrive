@@ -122,3 +122,22 @@ exports.getUsage = async (req, res, next) => {
 
 
 
+exports.listRecent = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listRecent(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.recordAccess = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const updated = await fileService.updateAccessTime(userId, req.params.id);
+    res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};

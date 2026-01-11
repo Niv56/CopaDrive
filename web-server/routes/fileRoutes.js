@@ -25,4 +25,10 @@ router.delete('/:id', requireAuth, fileController.deleteItem);
 
 router.use('/:id/permissions', requireAuth, permissionRoutes);
 
+router.get('/recent', requireAuth, fileController.listRecent);
+
+router.patch('/:id/access', requireAuth, fileController.recordAccess);
+
+router.patch('/:id/access', requireAuth, fileController.recordAccess);
+
 module.exports = router;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser, onLogout, isAuthenticated }) {
+function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, userName, userImage, onEditUser, onLogout, isAuthenticated }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -24,12 +24,21 @@ function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser, onLogo
           e.stopPropagation();
           onToggle?.();
         }}
+        style={{ padding: 0, overflow: 'hidden' }}
       >
-        <span className="user-avatar-icon">👤</span>
+        {userImage ? (
+          <img
+            src={userImage}
+            alt="Profile"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <span className="user-avatar-icon">👤</span>
+        )}
       </button>
 
       <div className="user-meta">
-        <div className="user-name">{isAuthenticated ? "User" : "Guest"}</div>
+        <div className="user-name">{isAuthenticated ? userName : "Guest"}</div>
         <div className="user-sub">{isAuthenticated ? "Signed in" : "Not signed in"}</div>
       </div>
 

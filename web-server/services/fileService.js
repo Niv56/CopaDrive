@@ -3,7 +3,7 @@ const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
 const { sendTcpCommand } = require('../utils/tcpClient');
 const { getProvider } = require("../storage/storageProvider");
-
+const permissionService = require("./permissionService");
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
@@ -15,27 +15,28 @@ const assertValidType = (type) => type === 'file' || type === 'folder';
  * Checks permissions from the item up to the root.
  */
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
-    let currentId = fileId;
-    let highestRoleFound = null;
+  let currentId = fileId;
+  let highestRoleFound = null;
 
-    while (currentId !== null) {
-        const item = fileRepository.findById(currentId); 
-        if (!item) break;
+  while (currentId !== null) {
+    const item = fileRepository.findById(currentId);
+    if (!item) break;
 
-        // Owner always has full access
-        if (item.ownerId === userId) return true;
+    // Owner always has full access
+    if (item.ownerId === userId) return true;
 
-        const permissions = permissionRepository.findByFileId(currentId) || [];
-        const userPerm = permissions.find(p => p.userId === userId);
+    const permissions = permissionRepository.findByFileId(currentId) || [];
+    const userPerm = permissions.find(p => p.userId === userId);
 
-        if (userPerm) {
-            if (userPerm.role === 'editor') return true;
-            if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
-        }
-        currentId = item.parentId;
+    if (userPerm) {
+      if (userPerm.role === 'editor') return true;
+      if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
     }
-    return requiredRole === 'viewer' ? highestRoleFound !== null : false;
+    currentId = item.parentId;
+  }
+  return requiredRole === 'viewer' ? highestRoleFound !== null : false;
 };
+
 const contentSizeBytes = (content) => {
   if (content === undefined || content === null) return 0;
   const s = typeof content === 'string' ? content : String(content);
@@ -45,39 +46,40 @@ const contentSizeBytes = (content) => {
 const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
 const isDescendant = (fileId, folderId) => {
-    let current = fileRepository.findById(fileId);
-    while (current && current.parentId) {
-        if (current.parentId === folderId) return true;
-        current = fileRepository.findById(current.parentId);
-    }
-    return false;
+  let current = fileRepository.findById(fileId);
+  while (current && current.parentId) {
+    if (current.parentId === folderId) return true;
+    current = fileRepository.findById(current.parentId);
+  }
+  return false;
 };
 
 const wouldCreateCycle = (itemId, newParentId) => {
-    let cursor = newParentId ?? null;
-    while (cursor !== null) {
-        if (cursor === itemId) return true;
-        const node = fileRepository.findById(cursor);
-        if (!node) return false;
-        cursor = node.parentId ?? null;
-    }
-    return false;
+  let cursor = newParentId ?? null;
+  while (cursor !== null) {
+    if (cursor === itemId) return true;
+    const node = fileRepository.findById(cursor);
+    if (!node) return false;
+    cursor = node.parentId ?? null;
+  }
+  return false;
 };
 
 const collectSubtreeIds = (rootId) => {
-    const stack = [rootId];
-    const visited = new Set();
-    const ids = [];
-    while (stack.length > 0) {
-        const currentId = stack.pop();
-        if (visited.has(currentId)) continue;
-        visited.add(currentId);
-        ids.push(currentId);
-        const children = fileRepository.findByParent(currentId) || [];
-        for (const child of children) stack.push(child.id);
-    }
-    return ids;
+  const stack = [rootId];
+  const visited = new Set();
+  const ids = [];
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+    ids.push(currentId);
+    const children = fileRepository.findByParent(currentId) || [];
+    for (const child of children) stack.push(child.id);
+  }
+  return ids;
 };
+
 const ensureArray = (v) => Array.isArray(v) ? v : [];
 
 const decorateFlagsForUser = (item, userId) => {
@@ -93,19 +95,19 @@ const decorateFlagsForUser = (item, userId) => {
 
 const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
 
-
 // --- Exported Methods ---
+
 const listTopLevel = async (userId) => {
-
   const provider = getProvider();
-if (provider.name === "local") {
-  const db = provider.readDB();
-  return decorateListForUser(
-  db.files.filter(f => f.parentId === null && f.ownerId === userId),
-  userId
-);
 
-}
+  // local provider shortcut
+  if (provider.name === "local") {
+    const db = provider.readDB();
+    return decorateListForUser(
+      db.files.filter(f => f.parentId === null && f.ownerId === userId),
+      userId
+    );
+  }
 
   // 1) roots: owned top-level
   const ownedRoots = fileRepository.findByParent(null, userId);
@@ -139,28 +141,32 @@ if (provider.name === "local") {
     }
   }
 
-     return decorateListForUser(Array.from(result.values()), userId);
+  return decorateListForUser(Array.from(result.values()), userId);
 };
 
 const getById = async (userId, id) => {
-    const item = fileRepository.findById(id);
-    if (!item) throw { status: 404, message: 'File or folder not found' };
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: 'File or folder not found' };
 
-    if (!(await checkAccess(userId, id, 'viewer'))) {
-        throw { status: 403, message: 'Access denied' };
+  if (!(await checkAccess(userId, id, 'viewer'))) {
+    throw { status: 403, message: 'Access denied' };
+  }
+
+  const result = { ...item };
+
+  if (item.type === 'file') {
+    try {
+      const content = await sendTcpCommand(`GET ${id}`);
+      result.content = content;
+    } catch (err) {
+      // אם לא נמצא פיזית - החזר תוכן ריק, אחרת זרוק את השגיאה
+      result.content = (err.message && err.message.includes('not found'))
+        ? ""
+        : (() => { throw err; })();
     }
+  }
 
-    const result = { ...item };
-    if (item.type === 'file') {
-        try {
-            const content = await sendTcpCommand(`GET ${id}`);
-            result.content = content;
-        } catch (err) {
-            result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
-        }
-    }
-    return decorateFlagsForUser(result, userId);
-
+  return decorateFlagsForUser(result, userId);
 };
 
 const createItem = async (ownerId, payload) => {
@@ -183,13 +189,12 @@ const createItem = async (ownerId, payload) => {
   const ts = nowIso();
 
   let sizeBytes = 0;
-
   if (type === 'file') {
     await sendTcpCommand(`POST ${id} ${content}`);
     sizeBytes = contentSizeBytes(content);
   }
 
-  return fileRepository.create({
+  const created = fileRepository.create({
     id,
     name: name.trim(),
     type,
@@ -197,12 +202,18 @@ const createItem = async (ownerId, payload) => {
     parentId,
     createdAt: ts,
     updatedAt: ts,
-    sizeBytes,               // ✅ חדש
+    sizeBytes,
     starredBy: [],
     importantBy: []
   });
-};
 
+  // give owner an explicit "owner" permission entry (if your system expects it)
+  try {
+    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
+  } catch (_) { }
+
+  return created;
+};
 
 const updateItem = async (userId, id, patch) => {
   // Input Validation
@@ -218,16 +229,15 @@ const updateItem = async (userId, id, patch) => {
     throw err;
   }
 
-  // Fetch Current Item (MOVED UP)
-  const current = fileRepository.findById(id); 
-  
+  // Fetch Current Item
+  const current = fileRepository.findById(id);
   if (!current) {
     const err = new Error('File or folder not found');
     err.status = 404;
     throw err;
   }
 
-  // Security Check (MOVED DOWN)
+  // Security Check
   if (!(await checkAccess(userId, id, 'editor'))) {
     const err = new Error('Editor access required');
     err.status = 403;
@@ -237,30 +247,30 @@ const updateItem = async (userId, id, patch) => {
   const updates = {};
 
   if (patch.content !== undefined) {
-      if (current.type === 'folder') {
-          const err = new Error('Cannot update content of a folder');
-          err.status = 400; 
-          throw err;
+    if (current.type === 'folder') {
+      const err = new Error('Cannot update content of a folder');
+      err.status = 400;
+      throw err;
+    }
+
+    if (current.type === 'file') {
+      try {
+        // Attempt to delete the old physical file
+        try {
+          await sendTcpCommand(`DELETE ${id}`);
+        } catch (deleteErr) {
+          console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
+        }
+
+        // Post the new content reusing the existing ID
+        await sendTcpCommand(`POST ${id} ${patch.content}`);
+
+        // keep db sizeBytes up to date
+        updates.sizeBytes = contentSizeBytes(patch.content);
+      } catch (err) {
+        throw err;
       }
-
-      if (current.type === 'file') {
-          try {
-              // Attempt to delete the old physical file
-              try {
-                  await sendTcpCommand(`DELETE ${id}`);
-              } catch (deleteErr) {
-                  console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
-              }
-
-              // Post the new content reusing the existing ID
-              await sendTcpCommand(`POST ${id} ${patch.content}`);
-              updates.sizeBytes = contentSizeBytes(patch.content);
-
-
-          } catch (err) {
-              throw err; 
-          }
-      }
+    }
   }
 
   // Handle Name Update
@@ -286,7 +296,7 @@ const updateItem = async (userId, id, patch) => {
 
     if (newParentId !== null) {
       const parent = fileRepository.findById(newParentId);
-      
+
       if (!parent) {
         const err = new Error('Parent folder not found');
         err.status = 404;
@@ -297,7 +307,7 @@ const updateItem = async (userId, id, patch) => {
         err.status = 400;
         throw err;
       }
-      
+
       // Cycle detection (Only relevant when moving a folder)
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
         const err = new Error('Cannot move a folder into its own descendant');
@@ -311,44 +321,46 @@ const updateItem = async (userId, id, patch) => {
 
   updates.updatedAt = nowIso();
 
-  const updated = fileRepository.update(id, updates); 
+  const updated = fileRepository.update(id, updates);
   return updated;
 };
 
 const deleteItem = async (userId, id) => {
-    const item = fileRepository.findById(id);
-    if (!item) throw { status: 404, message: 'Not found' };
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: 'Not found' };
 
-    // Only owner can delete
-    if (item.ownerId !== userId) throw { status: 403, message: 'Only owner can delete' };
+  // Only owner can delete
+  if (item.ownerId !== userId) throw { status: 403, message: 'Only owner can delete' };
 
-    const idsToDelete = collectSubtreeIds(id);
-    for (const dId of idsToDelete.reverse()) {
-        const target = fileRepository.findById(dId);
-        
-        if (target && target.type === 'file') {
-             await sendTcpCommand(`DELETE ${dId}`).catch(() => {});
-        }
-        fileRepository.remove(dId);
+  const idsToDelete = collectSubtreeIds(id);
+  for (const dId of idsToDelete.reverse()) {
+    const target = fileRepository.findById(dId);
+
+    if (target && target.type === 'file') {
+      await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
     }
-    return { id };
+    fileRepository.remove(dId);
+  }
+  return { id };
 };
 
 const searchItems = async (userId, query) => {
-    const nameMatches = fileRepository.searchFiles(userId, query).filter(f => checkAccess(userId, f.id, 'viewer'));
-    let contentMatchIds = [];
-    try {
-        const response = await sendTcpCommand(`SEARCH ${query}`);
-        if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
-    } catch (err) {}
+  const nameMatches = fileRepository.searchFiles(userId, query).filter(f => checkAccess(userId, f.id, 'viewer'));
+  let contentMatchIds = [];
+  try {
+    const response = await sendTcpCommand(`SEARCH ${query}`);
+    if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
+  } catch (err) { }
 
-    const contentMatches = contentMatchIds
-        .map(id => fileRepository.findById(id))
-        .filter(f => f && checkAccess(userId, f.id, 'viewer'));
+  const contentMatches = contentMatchIds
+    .map(id => fileRepository.findById(id))
+    .filter(f => f && checkAccess(userId, f.id, 'viewer'));
 
-    const all = [...nameMatches, ...contentMatches];
-    return Array.from(new Map(all.map(i => [i.id, i])).values());
+  const all = [...nameMatches, ...contentMatches];
+  return Array.from(new Map(all.map(i => [i.id, i])).values());
 };
+
+// ✅ merged (as requested)
 const setUserFlag = async (userId, id, flagKey, enabled) => {
   const item = fileRepository.findById(id);
   if (!item) {
@@ -371,7 +383,8 @@ const setUserFlag = async (userId, id, flagKey, enabled) => {
   if (enabled && !has) next = [...current, userId];
   if (!enabled && has) next = current.filter(x => x !== userId);
 
-  const updated = fileRepository.update(id, { [flagKey]: next }); // לא נוגעים updatedAt כדי לא לשבור לוגיקות אחרות
+  // לא נוגעים updatedAt כדי לא לשבור לוגיקות אחרות
+  const updated = fileRepository.update(id, { [flagKey]: next });
   return decorateFlagsForUser(updated, userId);
 };
 
@@ -389,12 +402,12 @@ const listStarred = async (userId) => {
 };
 
 const listImportant = async (userId) => {
-  const all = await listTopLevel(userId);
+  const all = await listTopLevel(userId); // כבר כולל shared + decorate
   return all.filter(i => i.important === true);
 };
+
 const getOwnedStorageUsage = async (userId) => {
   const all = fileRepository.findAll();
-
   const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
 
   const usedBytes = ownedFiles.reduce((sum, f) => {
@@ -411,6 +424,23 @@ const getOwnedStorageUsage = async (userId) => {
   };
 };
 
+const listRecent = async (userId) => {
+  const all = await listTopLevel(userId);
+  return all
+    .filter(f => f.type === 'file' && f.lastAccessed)
+    .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
+    .slice(0, 20);
+};
+
+const updateAccessTime = async (userId, id) => {
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: 'Not found' };
+
+  if (!(await checkAccess(userId, id, 'viewer'))) throw { status: 403, message: 'Denied' };
+
+  const updated = fileRepository.update(id, { lastAccessed: new Date().toISOString() });
+  return decorateFlagsForUser(updated, userId);
+};
 
 module.exports = {
   listTopLevel,
@@ -419,9 +449,13 @@ module.exports = {
   updateItem,
   deleteItem,
   searchItems,
+
   setStarred,
   setImportant,
   listStarred,
   listImportant,
-  getOwnedStorageUsage, // ✅ חדש
+  getOwnedStorageUsage,
+
+  listRecent,
+  updateAccessTime
 };

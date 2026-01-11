@@ -2,26 +2,48 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getRootFiles,
   getFileById,
+  openItem,
   setStarred,
   setImportant,
 } from "../../../api/filesApi";
+
 import FileListItem from "../widgets/FileListItem";
 import CreateItem from "../widgets/CreateItem";
 import FileViewerModal from "../widgets/FileViewerModal";
+import { useAuth } from "../../../contexts/AuthContext";
 import "./MyDrive.css";
 
 function MyDrive() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingFile, setLoadingFile] = useState(false);
   const [error, setError] = useState(null);
 
   const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [openedFile, setOpenedFile] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
+  const [openedFile, setOpenedFile] = useState(null);
+  const [openedRole, setOpenedRole] = useState("viewer");
+
+  const { token } = useAuth();
+
+  const myUserId = useMemo(() => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(window.atob(base64));
+      return payload.userId || null;
+    } catch {
+      return null;
+    }
+  }, [token]);
 
   useEffect(() => {
     loadFiles();
+  }, []);
 
+  // reset from outside
+  useEffect(() => {
     function handleReset() {
       setCurrentFolderId(null);
       setFolderPath([]);
@@ -32,53 +54,58 @@ function MyDrive() {
     return () => window.removeEventListener("reset-mydrive", handleReset);
   }, []);
 
-  // ✅ פתיחה מבחוץ (Starred/Important/Storage)
- useEffect(() => {
-  function handleOpenFolder(e) {
-    const folderId = e?.detail?.folderId;
-    if (!folderId) return;
+  // ✅ open folder/file from outside (Starred/Important/Storage etc.)
+  useEffect(() => {
+    function handleOpenFolder(e) {
+      const folderId = e?.detail?.folderId;
+      if (!folderId) return;
 
-    const folder = allFiles.find((f) => f.id === folderId);
-    setCurrentFolderId(folderId);
-    setFolderPath([{ id: folderId, name: folder?.name || "Folder" }]);
-    setOpenedFile(null);
-  }
+      const folder = allFiles.find((f) => f.id === folderId);
+      setCurrentFolderId(folderId);
+      setFolderPath([{ id: folderId, name: folder?.name || "Folder" }]);
+      setOpenedFile(null);
+    }
 
-  function handleOpenFile(e) {
-    const fileId = e?.detail?.fileId;
-    if (!fileId) return;
+    function handleOpenFile(e) {
+      const fileId = e?.detail?.fileId;
+      if (!fileId) return;
 
-    (async () => {
-      try {
-        const full = await getFileById(fileId);
-        if (!full) return;
+      (async () => {
+        try {
+          // bring full file (content) from server
+          const full = await getFileById(fileId);
+          if (!full) return;
 
-        const parentId = full.parentId ?? null;
-        setCurrentFolderId(parentId);
+          const parentId = full.parentId ?? null;
+          setCurrentFolderId(parentId);
 
-        // שם תיקייה אם קיים אצלנו, אחרת "Folder"
-        if (parentId) {
-          const parent = allFiles.find((f) => f.id === parentId);
-          setFolderPath([{ id: parentId, name: parent?.name || "Folder" }]);
-        } else {
-          setFolderPath([]);
+          if (parentId) {
+            const parent = allFiles.find((f) => f.id === parentId);
+            setFolderPath([{ id: parentId, name: parent?.name || "Folder" }]);
+          } else {
+            setFolderPath([]);
+          }
+
+          // role calc
+          const role =
+            full.ownerId && myUserId && full.ownerId === myUserId ? "owner" : "viewer";
+          setOpenedRole(role);
+
+          setOpenedFile(full);
+        } catch (err) {
+          alert(err?.message ?? "Failed to open file");
         }
+      })();
+    }
 
-        setOpenedFile(full); // ✅ יפתח את FileViewerModal עם תוכן אמיתי
-      } catch (err) {
-        alert(err?.message ?? "Failed to open file");
-      }
-    })();
-  }
+    window.addEventListener("open-folder", handleOpenFolder);
+    window.addEventListener("open-file", handleOpenFile);
 
-  window.addEventListener("open-folder", handleOpenFolder);
-  window.addEventListener("open-file", handleOpenFile);
-
-  return () => {
-    window.removeEventListener("open-folder", handleOpenFolder);
-    window.removeEventListener("open-file", handleOpenFile);
-  };
-}, [allFiles]);
+    return () => {
+      window.removeEventListener("open-folder", handleOpenFolder);
+      window.removeEventListener("open-file", handleOpenFile);
+    };
+  }, [allFiles, myUserId]);
 
   async function loadFiles() {
     try {
@@ -100,25 +127,31 @@ function MyDrive() {
 
   const currentFolder = useMemo(() => {
     if (!currentFolderId) return null;
-    return allFiles.find((f) => f.id === currentFolderId);
+    return allFiles.find((f) => f.id === currentFolderId) || null;
   }, [allFiles, currentFolderId]);
 
-async function onOpen(item) {
-  if (item.type === "folder") {
-    setCurrentFolderId(item.id);
-    setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
-    setOpenedFile(null);
-  } else {
+  async function onOpen(item) {
+    if (!item) return;
+
+    setLoadingFile(true);
     try {
-      // ✅ מביאים את התוכן המלא מהשרת ואז פותחים
-      const full = await getFileById(item.id);
-      setOpenedFile(full ?? item);
+      const role =
+        item.ownerId && myUserId && item.ownerId === myUserId ? "owner" : "viewer";
+      setOpenedRole(role);
+
+      const fullFile = await openItem(item, (folder) => {
+        setCurrentFolderId(folder.id);
+        setFolderPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
+        setOpenedFile(null);
+      });
+
+      if (fullFile) setOpenedFile(fullFile);
     } catch (e) {
-      alert(e?.message ?? "Failed to open file");
+      alert(e?.message ?? "Failed to open item");
+    } finally {
+      setLoadingFile(false);
     }
   }
-}
-
 
   function goBack() {
     setFolderPath((prev) => {
@@ -143,7 +176,7 @@ async function onOpen(item) {
     window.dispatchEvent(new Event("storage-changed"));
   }
 
-  // ✅ STAR / IMPORTANT handlers (עובד גם על תיקיות)
+  // ✅ STAR / IMPORTANT handlers (works for files + folders)
   async function handleToggleStar(item, newValue) {
     try {
       await setStarred(item.id, newValue);
@@ -169,7 +202,7 @@ async function onOpen(item) {
   }
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  if (error) return <div style={{ color: "crimson" }}>{error}</div>;
 
   return (
     <div className="mainarea">
@@ -216,6 +249,8 @@ async function onOpen(item) {
             </span>
           </>
         )}
+
+        {loadingFile && <span style={{ color: "#5f6368" }}>Opening...</span>}
       </div>
 
       {/* Files */}
@@ -240,14 +275,11 @@ async function onOpen(item) {
         )}
       </div>
 
-      <CreateItem
-        onItemCreated={handleItemCreated}
-        currentFolderId={currentFolderId}
-      />
+      <CreateItem onItemCreated={handleItemCreated} currentFolderId={currentFolderId} />
 
       <FileViewerModal
         file={openedFile}
-        role={"viewer"}
+        role={openedRole}
         onClose={() => setOpenedFile(null)}
         onEdit={() => alert("יש לממש")}
         onShare={() => alert("יש לממש")}
