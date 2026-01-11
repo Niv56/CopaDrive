@@ -5,7 +5,7 @@ function SideBar({ activeView, onChangeView }) {
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
-         <li
+        <li
           className={activeView === "home" ? "active" : ""}
           onClick={() => onChangeView("home")}
         >
@@ -56,7 +56,7 @@ function SideBar({ activeView, onChangeView }) {
           ☁️ Storage
         </li>
       </ul>
-      
+
       {/* מחוץ ל-ul, בתחתית */}
       <StorageIndicator usedGB={12} />
     </aside>
