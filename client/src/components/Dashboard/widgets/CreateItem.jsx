@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getRootFiles, createItem } from "../../../api/filesApi";
-  import './CreateItem.css'
+import './CreateItem.css'
 
 function CreateItem({ onItemCreated, currentFolderId }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,19 +60,21 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     setLoading(true);
     try {
-      await createItem({
+      const created = await createItem({
         name: name.trim(),
         type: modalType,
         parentId: parentId || null,
         content: modalType === "file" ? content : ""
       });
 
+
       closeModal();
 
       // קרא ל-callback במקום window.location.reload()
-      if (onItemCreated) {
-        onItemCreated();
-      }
+     if (onItemCreated) {
+  onItemCreated(created);
+}
+
     } catch (error) {
       alert(`Failed to create ${modalType}: ${error.message}`);
     } finally {
