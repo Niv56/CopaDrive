@@ -65,9 +65,14 @@ function MyDrive() {
   }
 
   // Callback שנקרא אחרי יצירה מוצלחת
-  function handleItemCreated() {
-    loadFiles(); // רענן את הרשימה
+  function handleItemCreated(created) {
+  if (!created) {
+    loadFiles();
+    return;
   }
+  setAllFiles((prev) => [...prev, created]);
+}
+
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
