@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser }) {
+function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser, onLogout, isAuthenticated }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -29,8 +29,8 @@ function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser }) {
       </button>
 
       <div className="user-meta">
-        <div className="user-name">Guest</div>
-        <div className="user-sub">Not signed in</div>
+        <div className="user-name">{isAuthenticated ? "User" : "Guest"}</div>
+        <div className="user-sub">{isAuthenticated ? "Signed in" : "Not signed in"}</div>
       </div>
 
       {isOpen && (
@@ -59,7 +59,7 @@ function UserMenu({ isOpen, onToggle, onCloseMenu, userEmail, onEditUser }) {
           <button
             type="button"
             className="user-dropdown-item danger"
-            onClick={() => alert("Logout")}
+            onClick={onLogout}
           >
             Log out
           </button>
