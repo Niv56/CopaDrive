@@ -5,11 +5,14 @@ import { useAuth } from "../../../contexts/AuthContext";
 import appLogo from "../../../photos/logo.svg";
 import UserMenu from "../UserMenu";
 
+
 export default function TopBar() {
   const [userData, setUserData] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const { token, logout, isAuthenticated } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -47,7 +50,10 @@ export default function TopBar() {
           type="text"
           placeholder="Search in CopaDrive"
           className="dashboard-search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
+
       </div>
 
       <div className="dashboard-top-right">
