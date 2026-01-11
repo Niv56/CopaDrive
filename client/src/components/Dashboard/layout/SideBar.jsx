@@ -56,7 +56,9 @@ function SideBar({ activeView, onChangeView }) {
           🕒 Recent
         </li>
 
-        <li className={activeView === "starred" ? "active" : ""} onClick={() => onChangeView("starred")}>
+        <li
+          className={activeView === "starred" ? "active" : ""}
+          onClick={() => onChangeView("starred")}>
           ⭐ Starred
         </li>
 
@@ -77,7 +79,9 @@ function SideBar({ activeView, onChangeView }) {
           👥 Shared with me
         </li>
 
-        <li className={activeView === "trash" ? "active" : ""} onClick={() => onChangeView("trash")}>
+        <li
+          className={activeView === "trash" ? "active" : ""}
+          onClick={() => onChangeView("trash")}>
           🗑️ Trash
         </li>
 

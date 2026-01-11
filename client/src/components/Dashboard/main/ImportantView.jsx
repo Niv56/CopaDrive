@@ -1,97 +1,68 @@
-import { useEffect, useState } from "react";
-import { getImportantFiles, setStarred, setImportant } from "../../../api/filesApi";
+import { useEffect, useState, useMemo } from "react";
+import { getImportantFiles } from "../../../api/filesApi";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useFileActions } from "../../../hooks/useFileActions";
 import FileListItem from "../widgets/FileListItem";
 import FileViewerModal from "../widgets/FileViewerModal";
+import ShareModal from "../widgets/ShareModal";
 
 function ImportantView({ onChangeView }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [openedFile, setOpenedFile] = useState(null);
+  const { token } = useAuth();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getImportantFiles();
-        setItems(Array.isArray(data) ? data : []);
-      } catch (e) {
-        setError(e?.message ?? "Failed to load important");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const myUserId = useMemo(() => {
+    if (!token) return null;
+    const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload.userId;
+  }, [token]);
 
-  function onOpen(item) {
-    if (item.type === "folder") {
-      onChangeView?.("mydrive");
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: item.id } }));
-      }, 0);
-      return;
-    }
-
-    setOpenedFile(item);
-  }
-
-  async function handleToggleStar(item, newValue) {
+  const loadData = async () => {
     try {
-      await setStarred(item.id, newValue);
-      setItems((prev) =>
-        prev.map((x) => (x.id === item.id ? { ...x, starred: newValue } : x))
-      );
-    } catch (e) {
-      alert(e?.message ?? "Failed to toggle starred");
+      setLoading(true);
+      const data = await getImportantFiles();
+      setItems(Array.isArray(data) ? data : []);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  async function handleToggleImportant(item, newValue) {
-    try {
-      await setImportant(item.id, newValue);
-      if (!newValue) {
-        setItems((prev) => prev.filter((x) => x.id !== item.id));
-      } else {
-        setItems((prev) =>
-          prev.map((x) => (x.id === item.id ? { ...x, important: true } : x))
-        );
-      }
-    } catch (e) {
-      alert(e?.message ?? "Failed to toggle important");
-    }
-  }
+  const {
+    sharingItem, setSharingItem, openedFile, setOpenedFile,
+    openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+  } = useFileActions(myUserId, loadData);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  useEffect(() => { loadData(); }, []);
+
+  if (loading) return <div className="mainarea">Loading important items...</div>;
 
   return (
     <div className="mainarea">
-      <h2>Important</h2>
-
+      <h2 className="mb-4">Important</h2>
       <div className="files-container">
-        {items.map((item) => (
-          <FileListItem
-            key={item.id}
-            item={item}
-            onOpen={onOpen}
-            onEdit={() => alert("יש לממש")}
-            onShare={() => alert("יש לממש")}
-            onDelete={() => alert("יש לממש")}
-            onToggleStar={handleToggleStar}
-            onToggleImportant={handleToggleImportant}
-          />
-        ))}
+        {items.length === 0 ? (
+          <div className="text-center p-5 text-muted">No important items yet.</div>
+        ) : (
+          items.map(item => (
+            <FileListItem
+              key={item.id}
+              item={item}
+              onOpen={(it) => handleOpen(it, (folder) => {
+                onChangeView?.("mydrive");
+                setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
+              })}
+              onShare={setSharingItem}
+              onToggleStar={handleToggleStar}
+              onToggleImportant={handleToggleImportant}
+              onDelete={handleDelete}
+              onEdit={() => alert("Edit to be implemented")}
+            />
+          ))
+        )}
       </div>
 
-      <FileViewerModal
-        file={openedFile}
-        role={"viewer"}
-        onClose={() => setOpenedFile(null)}
-        onEdit={() => alert("יש לממש")}
-        onShare={() => alert("יש לממש")}
-        onDelete={() => alert("יש לממש")}
-      />
+      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} />
+      {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
   );
 }
