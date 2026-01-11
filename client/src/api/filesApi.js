@@ -44,3 +44,27 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
 
   return response.json();
 }
+
+// client/src/api/filesApi.js
+export async function getFileById(id) {
+  const token = getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const response = await fetch(`http://localhost:3000/api/files/${id}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) throw new Error("Failed to fetch file content");
+  return response.json();
+}
+
+export async function getCurrentUser(userId) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Failed to fetch user data");
+  return response.json();
+}

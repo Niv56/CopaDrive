@@ -1,19 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getCurrentUser } from "../../../api/filesApi";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import appLogo from "../../../photos/logo.svg";
 import UserMenu from "../UserMenu";
 
 export default function TopBar() {
+  const [userData, setUserData] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const { logout, isAuthenticated } = useAuth();
+  const { token, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+
+        if (payload.userId) {
+          getCurrentUser(payload.userId)
+            .then(data => setUserData(data))
+            .catch(err => console.error(err));
+        }
+      } catch (e) {
+        console.error("Error decoding token", e);
+      }
+    }
+  }, [isAuthenticated, token]);
 
   return (
     <header className="dashboard-top">
@@ -34,7 +54,9 @@ export default function TopBar() {
         <UserMenu
           isOpen={isUserMenuOpen}
           onToggle={() => setIsUserMenuOpen((v) => !v)}
-          userEmail="guest@copadrive.com"
+          userEmail={userData?.email || "guest@copadrive.com"}
+          userName={userData?.firstName || "Guest"}
+          userImage={userData?.image}
           isAuthenticated={isAuthenticated}
           onEditUser={() => {
             setIsUserMenuOpen(false);

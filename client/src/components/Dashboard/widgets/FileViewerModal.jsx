@@ -36,7 +36,7 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
               onClick={onShare}
               title="Share"
             >
-              👤
+              🔗
             </button>
 
             <button
@@ -54,12 +54,12 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
           </div>
         </div>
 
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
+        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 12, minHeight: 200 }}>
           <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>
-            Content (placeholder)
+            Content:
           </div>
-          <div style={{ whiteSpace: "pre-wrap" }}>
-            {file.content ?? "(אין תוכן — יש לממש טעינה)"}
+          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+            {file.content || "(Empty file - no content yet)"}
           </div>
         </div>
       </div>

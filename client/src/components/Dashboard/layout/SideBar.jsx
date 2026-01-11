@@ -14,7 +14,10 @@ function SideBar({ activeView, onChangeView }) {
 
         <li
           className={activeView === "mydrive" ? "active" : ""}
-          onClick={() => onChangeView("mydrive")}
+          onClick={() => {
+            onChangeView("mydrive");
+            window.dispatchEvent(new CustomEvent("reset-mydrive"));
+          }}
         >
           📁 My Drive
         </li>
