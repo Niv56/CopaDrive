@@ -1,18 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { getRootFiles, getCurrentUser } from "../../../api/filesApi";
+import { useEffect, useMemo, useState } from "react";
+import { getRootFiles, getUsage } from "../../../api/filesApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useFileActions } from "../../../hooks/useFileActions";
+import { formatBytes } from "../../../utils/formatBytes";
 import FileListItem from "../widgets/FileListItem";
 import FileViewerModal from "../widgets/FileViewerModal";
 import ShareModal from "../widgets/ShareModal";
 
-function SharedView() {
-  const [allFiles, setAllFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [ownersData, setOwnersData] = useState({});
-  const [selectedOwnerId, setSelectedOwnerId] = useState(null);
-  const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [folderPath, setFolderPath] = useState([]);
+export default function StorageView({ onChangeView }) {
+  const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
+  const [files, setFiles] = useState([]);
   const { token } = useAuth();
 
   const myUserId = useMemo(() => {
@@ -20,64 +17,43 @@ function SharedView() {
     return JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).userId;
   }, [token]);
 
-  const loadFiles = async () => {
-    setLoading(true);
-    const data = await getRootFiles();
-    const files = Array.isArray(data) ? data : [];
-    setAllFiles(files);
+  async function load() {
+    const [u, all] = await Promise.all([getUsage(), getRootFiles()]);
+    setUsage({ usedBytes: u?.usedBytes ?? 0, quotaBytes: u?.quotaBytes ?? 15 * 1024 * 1024 * 1024 });
+    setFiles(Array.isArray(all) ? all : []);
+  }
 
-    // טעינת שמות המשתמשים ששיתפו איתי
-    const uniqueOwnerIds = [...new Set(files.filter(f => f.ownerId !== myUserId).map(f => f.ownerId))];
-    uniqueOwnerIds.forEach(async (id) => {
-      const userData = await getCurrentUser(id);
-      setOwnersData(prev => ({ ...prev, [id]: userData }));
-    });
-    setLoading(false);
-  };
+  const {
+    sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
+    handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+  } = useFileActions(myUserId, load);
 
-  const { sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole, handleOpen } = useFileActions(myUserId, loadFiles);
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { loadFiles(); }, []);
-
-  const displayItems = useMemo(() => {
-    if (!selectedOwnerId) return [];
-    return allFiles.filter(f => f.ownerId === selectedOwnerId && f.parentId === currentFolderId);
-  }, [allFiles, selectedOwnerId, currentFolderId]);
-
-  if (loading) return <div className="mainarea">Loading shared items...</div>;
+  const sortedFiles = useMemo(() => [...files].filter(f => f.type === "file").sort((a, b) => b.sizeBytes - a.sizeBytes), [files]);
 
   return (
     <div className="mainarea">
-      <div className="d-flex align-items-center gap-2 mb-4">
-        <h2 style={{ cursor: "pointer", color: !selectedOwnerId ? "#202124" : "#1a73e8" }}
-          onClick={() => { setSelectedOwnerId(null); setCurrentFolderId(null); setFolderPath([]); }}>Shared with me</h2>
-        {selectedOwnerId && (
-          <><span className="text-muted">/</span><span className="fw-bold">{ownersData[selectedOwnerId]?.email}</span></>
-        )}
-      </div>
+      <h2 className="mb-2">Storage</h2>
+      <div className="text-muted mb-4">{formatBytes(usage.usedBytes)} of {formatBytes(usage.quotaBytes)} used</div>
 
       <div className="files-container">
-        {!selectedOwnerId ? (
-          Object.keys(ownersData).map(ownerId => (
-            <div key={ownerId} className="list-group-item d-flex align-items-center gap-3 rounded-4 shadow-sm p-3 mb-2"
-              style={{ cursor: "pointer", background: "#fff" }} onClick={() => setSelectedOwnerId(ownerId)}>
-              <div className="bg-light rounded-circle p-2">👤</div>
-              <div className="fw-semibold">Items shared by {ownersData[ownerId]?.email}</div>
-            </div>
-          ))
-        ) : (
-          displayItems.map(item => (
-            <FileListItem key={item.id} item={item} onShare={setSharingItem}
-              onOpen={(it) => handleOpen(it, (folder) => {
-                setCurrentFolderId(folder.id);
-                setFolderPath(prev => [...prev, { id: folder.id, name: folder.name }]);
-              })} />
-          ))
-        )}
+        {sortedFiles.map(f => (
+          <FileListItem
+            key={f.id} item={f}
+            onOpen={(it) => handleOpen(it, (folder) => {
+              onChangeView?.("mydrive");
+              setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
+            })}
+            onShare={setSharingItem}
+            onToggleStar={handleToggleStar}
+            onToggleImportant={handleToggleImportant}
+            onDelete={handleDelete}
+          />
+        ))}
       </div>
       <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} />
       {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
   );
 }
-export default SharedView;
