@@ -1,20 +1,15 @@
 function getAuthToken() {
   return localStorage.getItem("token"); // ✅ שונה מ-"accessToken"
 }
-
 export async function getRootFiles() {
-  const token = getAuthToken();
-  if (!token) throw new Error("Not authenticated");
-
-  // ✅ URL מלא
-  const response = await fetch("http://localhost:3000/api/files", {
+  const response = await fetchWithAuth("http://localhost:3000/api/files", {
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) throw new Error("Failed to fetch files");
   return response.json();
 }
+
 
 // Post api/files 
 export async function createItem({ name, type, parentId = null, content = "" }) {
@@ -47,17 +42,14 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
 
 // client/src/api/filesApi.js
 export async function getFileById(id) {
-  const token = getAuthToken();
-  if (!token) throw new Error("Not authenticated");
-
-  const response = await fetch(`http://localhost:3000/api/files/${id}`, {
+  const response = await fetchWithAuth(`http://localhost:3000/api/files/${id}`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) throw new Error("Failed to fetch file content");
   return response.json();
 }
+
 
 export async function getCurrentUser(userId) {
   const token = localStorage.getItem("token");
@@ -67,4 +59,33 @@ export async function getCurrentUser(userId) {
   });
   if (!response.ok) throw new Error("Failed to fetch user data");
   return response.json();
+}
+
+let unauthorizedHandler = null;
+
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler;
+}
+
+async function fetchWithAuth(url, options = {}) {
+  const token = getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (res.status === 401) {
+    if (typeof unauthorizedHandler === "function") {
+      unauthorizedHandler();
+    }
+    throw new Error("Unauthorized (401)");
+  }
+
+  return res;
 }

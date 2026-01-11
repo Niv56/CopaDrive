@@ -66,16 +66,20 @@ function MyDrive() {
         setOpenedFile(fullFile);
       } catch (e) {
         console.error("Failed to load file:", e);
-        alert("Failed to open file: " + e.message);
+
+        // ✅ 401 מטופל ע"י המנגנון הגלובלי (SessionExpiredModal)
+        if (e?.message?.includes("Unauthorized (401)")) return;
+
+        alert("Failed to open file: " + (e?.message ?? "Unknown error"));
       } finally {
         setLoadingFile(false);
       }
+
     }
   }
 
   function goBack() {
-    if (folderPath.length === 0) return;
-
+    if (folderPath.length === 0) return
     const newPath = [...folderPath];
     newPath.pop();
     setFolderPath(newPath);
