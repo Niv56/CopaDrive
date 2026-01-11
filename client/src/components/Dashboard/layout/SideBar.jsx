@@ -34,7 +34,10 @@ function SideBar({ activeView, onChangeView }) {
 
         <li
           className={activeView === "shared" ? "active" : ""}
-          onClick={() => onChangeView("shared")}
+          onClick={() => {
+            onChangeView("shared")
+            window.dispatchEvent(new CustomEvent("reset-shared"));
+          }}
         >
           👥 Shared with me
         </li>
