@@ -36,3 +36,19 @@ exports.getUserById = (req, res, next) => {
     next(err);
   }
 };
+
+exports.getUserByEmail = (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const user = userService.getByEmail(email);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // חשיפת פרטים ציבוריים בלבד
+    res.status(200).json({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      image: user.image
+    });
+  } catch (err) { next(err); }
+};

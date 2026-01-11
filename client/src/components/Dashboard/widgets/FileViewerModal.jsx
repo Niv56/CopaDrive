@@ -33,7 +33,7 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
             <button
               type="button"
               className="btn secondary"
-              onClick={onShare}
+              onClick={() => onShare(file)}
               title="Share"
             >
               🔗

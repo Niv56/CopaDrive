@@ -7,4 +7,6 @@ router.post('/', userController.registerUser);
 
 router.get('/:id', userController.getUserById);
 
+router.get('/email/:email', userController.getUserByEmail);
+
 module.exports = router;

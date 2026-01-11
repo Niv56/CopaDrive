@@ -9,6 +9,7 @@ import {
 
 import FileListItem from "../widgets/FileListItem";
 import CreateItem from "../widgets/CreateItem";
+import ShareModal from "../widgets/ShareModal";
 import FileViewerModal from "../widgets/FileViewerModal";
 import { useAuth } from "../../../contexts/AuthContext";
 import "./MyDrive.css";
@@ -18,6 +19,8 @@ function MyDrive() {
   const [loading, setLoading] = useState(true);
   const [loadingFile, setLoadingFile] = useState(false);
   const [error, setError] = useState(null);
+
+  const [sharingItem, setSharingItem] = useState(null);
 
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
@@ -72,7 +75,6 @@ function MyDrive() {
 
       (async () => {
         try {
-          // bring full file (content) from server
           const full = await getFileById(fileId);
           if (!full) return;
 
@@ -86,7 +88,6 @@ function MyDrive() {
             setFolderPath([]);
           }
 
-          // role calc
           const role =
             full.ownerId && myUserId && full.ownerId === myUserId ? "owner" : "viewer";
           setOpenedRole(role);
@@ -266,7 +267,7 @@ function MyDrive() {
               item={item}
               onOpen={onOpen}
               onEdit={() => alert("יש לממש")}
-              onShare={() => alert("יש לממש")}
+              onShare={(it) => setSharingItem(it)}     // ✅ real share flow
               onDelete={() => alert("יש לממש")}
               onToggleStar={handleToggleStar}
               onToggleImportant={handleToggleImportant}
@@ -279,12 +280,19 @@ function MyDrive() {
 
       <FileViewerModal
         file={openedFile}
-        role={openedRole}
+        role={openedRole}                              // ✅ fixed "ole" -> "role"
         onClose={() => setOpenedFile(null)}
         onEdit={() => alert("יש לממש")}
-        onShare={() => alert("יש לממש")}
+        onShare={(it) => setSharingItem(it ?? openedFile)} // ✅ share from viewer
         onDelete={() => alert("יש לממש")}
       />
+
+      {sharingItem && (
+        <ShareModal
+          item={sharingItem}
+          onClose={() => setSharingItem(null)}
+        />
+      )}
     </div>
   );
 }

@@ -187,6 +187,31 @@ export function formatLastAccessed(dateString) {
   return date.toLocaleDateString();
 }
 
+export async function findUserByEmail(email) {
+  const token = getAuthToken();
+  const response = await fetch(`http://localhost:3000/api/users/email/${email}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+export async function addFilePermission(fileId, targetUserId) {
+  const token = getAuthToken();
+  const response = await fetch(`http://localhost:3000/api/files/${fileId}/permissions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ userId: targetUserId }) // השרת קובע תפקיד "viewer" כברירת מחדל
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || "Failed to share");
+  }
+  return response.json();
+}
 /* -----------------------------
    Search
 ------------------------------ */
