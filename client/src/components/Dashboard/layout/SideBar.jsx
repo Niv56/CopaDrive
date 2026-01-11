@@ -1,7 +1,36 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import StorageIndicator from "../widgets/StorageIndicator";
+import { getUsage } from "../../../api/filesApi";
 
 function SideBar({ activeView, onChangeView }) {
+  const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadUsage() {
+      try {
+        const u = await getUsage();
+        if (!alive) return;
+        setUsage({
+          usedBytes: u?.usedBytes ?? 0,
+          quotaBytes: u?.quotaBytes ?? 15 * 1024 * 1024 * 1024,
+        });
+      } catch {
+        // לא מפילים UI אם זה נכשל
+      }
+    }
+
+    loadUsage();
+
+    // אופציונלי: לרענן כל כמה שניות
+    const t = setInterval(loadUsage, 4000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
@@ -25,10 +54,7 @@ function SideBar({ activeView, onChangeView }) {
           🕒 Recent
         </li>
 
-        <li
-          className={activeView === "starred" ? "active" : ""}
-          onClick={() => onChangeView("starred")}
-        >
+        <li className={activeView === "starred" ? "active" : ""} onClick={() => onChangeView("starred")}>
           ⭐ Starred
         </li>
 
@@ -39,10 +65,7 @@ function SideBar({ activeView, onChangeView }) {
           👥 Shared with me
         </li>
 
-        <li
-          className={activeView === "trash" ? "active" : ""}
-          onClick={() => onChangeView("trash")}
-        >
+        <li className={activeView === "trash" ? "active" : ""} onClick={() => onChangeView("trash")}>
           🗑️ Trash
         </li>
 
@@ -58,4 +81,5 @@ function SideBar({ activeView, onChangeView }) {
     </aside>
   );
 }
+
 export default SideBar;

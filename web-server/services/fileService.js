@@ -3,9 +3,7 @@ const permissionRepository = require('../repositories/permissionRepository');
 const { generateId } = require('../utils/idGenerator');
 const { sendTcpCommand } = require('../utils/tcpClient');
 const { getProvider } = require("../storage/storageProvider");
-const permissionService = require("./permissionService"); 
-
-
+const permissionService = require("./permissionService");
 
 const nowIso = () => new Date().toISOString();
 const assertValidType = (type) => type === 'file' || type === 'folder';
@@ -38,6 +36,14 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   }
   return requiredRole === 'viewer' ? highestRoleFound !== null : false;
 };
+
+const contentSizeBytes = (content) => {
+  if (content === undefined || content === null) return 0;
+  const s = typeof content === 'string' ? content : String(content);
+  return Buffer.byteLength(s, 'utf8');
+};
+
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
 const isDescendant = (fileId, folderId) => {
   let current = fileRepository.findById(fileId);
@@ -74,13 +80,33 @@ const collectSubtreeIds = (rootId) => {
   return ids;
 };
 
-// --- Exported Methods ---
-const listTopLevel = async (userId) => {
+const ensureArray = (v) => Array.isArray(v) ? v : [];
 
+const decorateFlagsForUser = (item, userId) => {
+  const starredBy = ensureArray(item.starredBy);
+  const importantBy = ensureArray(item.importantBy);
+
+  return {
+    ...item,
+    starred: starredBy.includes(userId),
+    important: importantBy.includes(userId),
+  };
+};
+
+const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
+
+// --- Exported Methods ---
+
+const listTopLevel = async (userId) => {
   const provider = getProvider();
+
+  // local provider shortcut
   if (provider.name === "local") {
     const db = provider.readDB();
-    return db.files.filter(f => f.parentId === null && f.ownerId === userId);
+    return decorateListForUser(
+      db.files.filter(f => f.parentId === null && f.ownerId === userId),
+      userId
+    );
   }
 
   // 1) roots: owned top-level
@@ -115,7 +141,7 @@ const listTopLevel = async (userId) => {
     }
   }
 
-  return Array.from(result.values());
+  return decorateListForUser(Array.from(result.values()), userId);
 };
 
 const getById = async (userId, id) => {
@@ -127,21 +153,31 @@ const getById = async (userId, id) => {
   }
 
   const result = { ...item };
+
   if (item.type === 'file') {
     try {
       const content = await sendTcpCommand(`GET ${id}`);
       result.content = content;
     } catch (err) {
-      result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
+      // אם לא נמצא פיזית - החזר תוכן ריק, אחרת זרוק את השגיאה
+      result.content = (err.message && err.message.includes('not found'))
+        ? ""
+        : (() => { throw err; })();
     }
   }
-  return result;
+
+  return decorateFlagsForUser(result, userId);
 };
 
 const createItem = async (ownerId, payload) => {
   const { name, type, parentId = null, content = "" } = payload;
-  if (!name || typeof name !== 'string' || name.trim() === '') throw { status: 400, message: 'Name is required' };
-  if (!type || !assertValidType(type)) throw { status: 400, message: 'Invalid type' };
+
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    throw { status: 400, message: 'Name is required' };
+  }
+  if (!type || !assertValidType(type)) {
+    throw { status: 400, message: 'Invalid type' };
+  }
 
   if (parentId) {
     const parent = fileRepository.findById(parentId);
@@ -152,13 +188,31 @@ const createItem = async (ownerId, payload) => {
   const id = generateId();
   const ts = nowIso();
 
+  let sizeBytes = 0;
   if (type === 'file') {
     await sendTcpCommand(`POST ${id} ${content}`);
+    sizeBytes = contentSizeBytes(content);
   }
 
-    const created =  fileRepository.create({ id, name: name.trim(), type, ownerId, parentId, createdAt: ts, updatedAt: ts });
-    permissionService.addPermission( ownerId, id, { userId: ownerId }, "owner" );
-      return created;
+  const created = fileRepository.create({
+    id,
+    name: name.trim(),
+    type,
+    ownerId,
+    parentId,
+    createdAt: ts,
+    updatedAt: ts,
+    sizeBytes,
+    starredBy: [],
+    importantBy: []
+  });
+
+  // give owner an explicit "owner" permission entry (if your system expects it)
+  try {
+    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
+  } catch (_) { }
+
+  return created;
 };
 
 const updateItem = async (userId, id, patch) => {
@@ -175,16 +229,15 @@ const updateItem = async (userId, id, patch) => {
     throw err;
   }
 
-  // Fetch Current Item (MOVED UP)
+  // Fetch Current Item
   const current = fileRepository.findById(id);
-
   if (!current) {
     const err = new Error('File or folder not found');
     err.status = 404;
     throw err;
   }
 
-  // Security Check (MOVED DOWN)
+  // Security Check
   if (!(await checkAccess(userId, id, 'editor'))) {
     const err = new Error('Editor access required');
     err.status = 403;
@@ -212,6 +265,8 @@ const updateItem = async (userId, id, patch) => {
         // Post the new content reusing the existing ID
         await sendTcpCommand(`POST ${id} ${patch.content}`);
 
+        // keep db sizeBytes up to date
+        updates.sizeBytes = contentSizeBytes(patch.content);
       } catch (err) {
         throw err;
       }
@@ -305,6 +360,70 @@ const searchItems = async (userId, query) => {
   return Array.from(new Map(all.map(i => [i.id, i])).values());
 };
 
+// ✅ merged (as requested)
+const setUserFlag = async (userId, id, flagKey, enabled) => {
+  const item = fileRepository.findById(id);
+  if (!item) {
+    const err = new Error('File or folder not found');
+    err.status = 404;
+    throw err;
+  }
+
+  // viewer מספיק (כי זה רק “תיוג” אישי)
+  if (!(await checkAccess(userId, id, 'viewer'))) {
+    const err = new Error('Access denied');
+    err.status = 403;
+    throw err;
+  }
+
+  const current = ensureArray(item[flagKey]);
+  const has = current.includes(userId);
+
+  let next = current;
+  if (enabled && !has) next = [...current, userId];
+  if (!enabled && has) next = current.filter(x => x !== userId);
+
+  // לא נוגעים updatedAt כדי לא לשבור לוגיקות אחרות
+  const updated = fileRepository.update(id, { [flagKey]: next });
+  return decorateFlagsForUser(updated, userId);
+};
+
+const setStarred = async (userId, id, starred) => {
+  return setUserFlag(userId, id, 'starredBy', starred);
+};
+
+const setImportant = async (userId, id, important) => {
+  return setUserFlag(userId, id, 'importantBy', important);
+};
+
+const listStarred = async (userId) => {
+  const all = await listTopLevel(userId); // כבר כולל shared + decorate
+  return all.filter(i => i.starred === true);
+};
+
+const listImportant = async (userId) => {
+  const all = await listTopLevel(userId); // כבר כולל shared + decorate
+  return all.filter(i => i.important === true);
+};
+
+const getOwnedStorageUsage = async (userId) => {
+  const all = fileRepository.findAll();
+  const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
+
+  const usedBytes = ownedFiles.reduce((sum, f) => {
+    const s = typeof f.sizeBytes === 'number' ? f.sizeBytes : 0;
+    return sum + s;
+  }, 0);
+
+  const percent = QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0;
+
+  return {
+    usedBytes,
+    quotaBytes: QUOTA_BYTES,
+    percent,
+  };
+};
+
 const listRecent = async (userId) => {
   const all = await listTopLevel(userId);
   return all
@@ -319,7 +438,8 @@ const updateAccessTime = async (userId, id) => {
 
   if (!(await checkAccess(userId, id, 'viewer'))) throw { status: 403, message: 'Denied' };
 
-  return fileRepository.update(id, { lastAccessed: new Date().toISOString() });
+  const updated = fileRepository.update(id, { lastAccessed: new Date().toISOString() });
+  return decorateFlagsForUser(updated, userId);
 };
 
 module.exports = {
@@ -329,6 +449,13 @@ module.exports = {
   updateItem,
   deleteItem,
   searchItems,
+
+  setStarred,
+  setImportant,
+  listStarred,
+  listImportant,
+  getOwnedStorageUsage,
+
   listRecent,
   updateAccessTime
 };
