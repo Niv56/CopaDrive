@@ -12,7 +12,7 @@ export default function Dashboard() {
       <TopBar />
       <div className="dashboard-body">
         <SideBar activeView={activeView} onChangeView={setActiveView} />
-        <MainArea activeView={activeView} />
+        <MainArea activeView={activeView} onChangeView={setActiveView} />
       </div>
     </div>
   );

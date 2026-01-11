@@ -59,4 +59,66 @@ exports.deleteItem = async (req, res, next) => {
     next(err);
   }
 };
+exports.listStarred = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listStarred(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.listImportant = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listImportant(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.setStarred = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { starred } = req.body;
+
+    if (typeof starred !== 'boolean') {
+      return res.status(400).json({ error: 'starred must be boolean' });
+    }
+
+    await fileService.setStarred(userId, req.params.id, starred);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.setImportant = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { important } = req.body;
+
+    if (typeof important !== 'boolean') {
+      return res.status(400).json({ error: 'important must be boolean' });
+    }
+
+    await fileService.setImportant(userId, req.params.id, important);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+exports.getUsage = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const usage = await fileService.getOwnedStorageUsage(userId);
+    res.status(200).json(usage);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 

@@ -7,6 +7,7 @@ function readDB() {
   return JSON.parse(fs.readFileSync(dbPath, "utf8"));
 }
 
+
 module.exports = {
   name: "local",
   readDB,

@@ -36,6 +36,13 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
     }
     return requiredRole === 'viewer' ? highestRoleFound !== null : false;
 };
+const contentSizeBytes = (content) => {
+  if (content === undefined || content === null) return 0;
+  const s = typeof content === 'string' ? content : String(content);
+  return Buffer.byteLength(s, 'utf8');
+};
+
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
 const isDescendant = (fileId, folderId) => {
     let current = fileRepository.findById(fileId);
@@ -71,6 +78,21 @@ const collectSubtreeIds = (rootId) => {
     }
     return ids;
 };
+const ensureArray = (v) => Array.isArray(v) ? v : [];
+
+const decorateFlagsForUser = (item, userId) => {
+  const starredBy = ensureArray(item.starredBy);
+  const importantBy = ensureArray(item.importantBy);
+
+  return {
+    ...item,
+    starred: starredBy.includes(userId),
+    important: importantBy.includes(userId),
+  };
+};
+
+const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
+
 
 // --- Exported Methods ---
 const listTopLevel = async (userId) => {
@@ -78,7 +100,11 @@ const listTopLevel = async (userId) => {
   const provider = getProvider();
 if (provider.name === "local") {
   const db = provider.readDB();
-  return db.files.filter(f => f.parentId === null && f.ownerId === userId);
+  return decorateListForUser(
+  db.files.filter(f => f.parentId === null && f.ownerId === userId),
+  userId
+);
+
 }
 
   // 1) roots: owned top-level
@@ -113,7 +139,7 @@ if (provider.name === "local") {
     }
   }
 
-  return Array.from(result.values());
+     return decorateListForUser(Array.from(result.values()), userId);
 };
 
 const getById = async (userId, id) => {
@@ -133,29 +159,50 @@ const getById = async (userId, id) => {
             result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
         }
     }
-    return result;
+    return decorateFlagsForUser(result, userId);
+
 };
 
 const createItem = async (ownerId, payload) => {
-    const { name, type, parentId = null, content = "" } = payload;
-    if (!name || typeof name !== 'string' || name.trim() === '') throw { status: 400, message: 'Name is required' };
-    if (!type || !assertValidType(type)) throw { status: 400, message: 'Invalid type' };
+  const { name, type, parentId = null, content = "" } = payload;
 
-    if (parentId) {
-        const parent = fileRepository.findById(parentId);
-        if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Invalid parent' };
-        if (!(await checkAccess(ownerId, parentId, 'editor'))) throw { status: 403, message: 'No permission to create here' };
-    }
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    throw { status: 400, message: 'Name is required' };
+  }
+  if (!type || !assertValidType(type)) {
+    throw { status: 400, message: 'Invalid type' };
+  }
 
-    const id = generateId();
-    const ts = nowIso();
-    
-    if (type === 'file') {
-        await sendTcpCommand(`POST ${id} ${content}`);
-    }
+  if (parentId) {
+    const parent = fileRepository.findById(parentId);
+    if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Invalid parent' };
+    if (!(await checkAccess(ownerId, parentId, 'editor'))) throw { status: 403, message: 'No permission to create here' };
+  }
 
-    return fileRepository.create({ id, name: name.trim(), type, ownerId, parentId, createdAt: ts, updatedAt: ts });
+  const id = generateId();
+  const ts = nowIso();
+
+  let sizeBytes = 0;
+
+  if (type === 'file') {
+    await sendTcpCommand(`POST ${id} ${content}`);
+    sizeBytes = contentSizeBytes(content);
+  }
+
+  return fileRepository.create({
+    id,
+    name: name.trim(),
+    type,
+    ownerId,
+    parentId,
+    createdAt: ts,
+    updatedAt: ts,
+    sizeBytes,               // ✅ חדש
+    starredBy: [],
+    importantBy: []
+  });
 };
+
 
 const updateItem = async (userId, id, patch) => {
   // Input Validation
@@ -207,6 +254,8 @@ const updateItem = async (userId, id, patch) => {
 
               // Post the new content reusing the existing ID
               await sendTcpCommand(`POST ${id} ${patch.content}`);
+              updates.sizeBytes = contentSizeBytes(patch.content);
+
 
           } catch (err) {
               throw err; 
@@ -300,6 +349,68 @@ const searchItems = async (userId, query) => {
     const all = [...nameMatches, ...contentMatches];
     return Array.from(new Map(all.map(i => [i.id, i])).values());
 };
+const setUserFlag = async (userId, id, flagKey, enabled) => {
+  const item = fileRepository.findById(id);
+  if (!item) {
+    const err = new Error('File or folder not found');
+    err.status = 404;
+    throw err;
+  }
+
+  // viewer מספיק (כי זה רק “תיוג” אישי)
+  if (!(await checkAccess(userId, id, 'viewer'))) {
+    const err = new Error('Access denied');
+    err.status = 403;
+    throw err;
+  }
+
+  const current = ensureArray(item[flagKey]);
+  const has = current.includes(userId);
+
+  let next = current;
+  if (enabled && !has) next = [...current, userId];
+  if (!enabled && has) next = current.filter(x => x !== userId);
+
+  const updated = fileRepository.update(id, { [flagKey]: next }); // לא נוגעים updatedAt כדי לא לשבור לוגיקות אחרות
+  return decorateFlagsForUser(updated, userId);
+};
+
+const setStarred = async (userId, id, starred) => {
+  return setUserFlag(userId, id, 'starredBy', starred);
+};
+
+const setImportant = async (userId, id, important) => {
+  return setUserFlag(userId, id, 'importantBy', important);
+};
+
+const listStarred = async (userId) => {
+  const all = await listTopLevel(userId); // כבר כולל shared + decorate
+  return all.filter(i => i.starred === true);
+};
+
+const listImportant = async (userId) => {
+  const all = await listTopLevel(userId);
+  return all.filter(i => i.important === true);
+};
+const getOwnedStorageUsage = async (userId) => {
+  const all = fileRepository.findAll();
+
+  const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
+
+  const usedBytes = ownedFiles.reduce((sum, f) => {
+    const s = typeof f.sizeBytes === 'number' ? f.sizeBytes : 0;
+    return sum + s;
+  }, 0);
+
+  const percent = QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0;
+
+  return {
+    usedBytes,
+    quotaBytes: QUOTA_BYTES,
+    percent,
+  };
+};
+
 
 module.exports = {
   listTopLevel,
@@ -307,5 +418,10 @@ module.exports = {
   getById,
   updateItem,
   deleteItem,
-  searchItems
+  searchItems,
+  setStarred,
+  setImportant,
+  listStarred,
+  listImportant,
+  getOwnedStorageUsage, // ✅ חדש
 };

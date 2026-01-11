@@ -1,6 +1,34 @@
-function FileListItem({ item, onOpen, onEdit, onShare, onDelete }) {
-   if (!item) return null;
+import { formatBytes } from "../../../utils/formatBytes";
+
+function FileListItem({
+  item,
+  onOpen,
+  onEdit,
+  onShare,
+  onDelete,
+  onToggleStar,
+  onToggleImportant,
+}) {
+  if (!item) return null;
+
   const isFolder = item.type === "folder";
+  const isStarred = !!item.starred;
+  const isImportant = !!item.important;
+
+  const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes ?? 0);
+
+  function stop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function pillStyle(active, kind) {
+    if (!active) return {};
+    if (kind === "star") {
+      return { backgroundColor: "#FFD54F", borderColor: "#FFD54F", color: "#111" };
+    }
+    return { backgroundColor: "#EF5350", borderColor: "#EF5350", color: "#fff" };
+  }
 
   return (
     <div
@@ -21,34 +49,71 @@ function FileListItem({ item, onOpen, onEdit, onShare, onDelete }) {
         </div>
       </div>
 
-      <div className="dropdown" onClick={(e) => e.stopPropagation()}>
+      {/* Right side */}
+      <div className="d-flex align-items-center gap-3" onClick={stop}>
+        {/* Size */}
+        <div className="text-muted small" style={{ minWidth: 80, textAlign: "right" }}>
+          {sizeLabel}
+        </div>
+
+        {/* STAR */}
         <button
+          type="button"
           className="btn btn-light rounded-circle"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          style={{ width: 40, height: 40 }}
+          title={isStarred ? "Remove from starred" : "Add to starred"}
+          style={{ width: 40, height: 40, ...pillStyle(isStarred, "star") }}
+          onClick={(e) => {
+            stop(e);
+            onToggleStar?.(item, !isStarred);
+          }}
         >
-          ⋮
+          ☆
         </button>
 
-        <ul className="dropdown-menu dropdown-menu-end">
-          <li>
-            <button className="dropdown-item" onClick={() => onEdit?.(item)}>
-              Edit
-            </button>
-          </li>
-          <li>
-            <button className="dropdown-item" onClick={() => onShare?.(item)}>
-              Share
-            </button>
-          </li>
-          <li><hr className="dropdown-divider" /></li>
-          <li>
-            <button className="dropdown-item text-danger" onClick={() => onDelete?.(item)}>
-              Delete
-            </button>
-          </li>
-        </ul>
+        {/* IMPORTANT */}
+        <button
+          type="button"
+          className="btn btn-light rounded-circle"
+          title={isImportant ? "Remove from important" : "Add to important"}
+          style={{ width: 40, height: 40, ...pillStyle(isImportant, "important") }}
+          onClick={(e) => {
+            stop(e);
+            onToggleImportant?.(item, !isImportant);
+          }}
+        >
+          !
+        </button>
+
+        {/* MENU */}
+        <div className="dropdown" onClick={stop}>
+          <button
+            className="btn btn-light rounded-circle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            style={{ width: 40, height: 40 }}
+          >
+            ⋮
+          </button>
+
+          <ul className="dropdown-menu dropdown-menu-end">
+            <li>
+              <button className="dropdown-item" onClick={(e) => { stop(e); onEdit?.(item); }}>
+                Edit
+              </button>
+            </li>
+            <li>
+              <button className="dropdown-item" onClick={(e) => { stop(e); onShare?.(item); }}>
+                Share
+              </button>
+            </li>
+            <li><hr className="dropdown-divider" /></li>
+            <li>
+              <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDelete?.(item); }}>
+                Delete
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
