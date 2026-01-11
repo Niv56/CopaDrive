@@ -1,16 +1,39 @@
 // client/src/api/filesApi.js
 
-function getAuthToken() {
-  return localStorage.getItem("token"); // ✅ תואם לגרסת הגיט
+// 1. משתנה פנימי לשמירת ה-callback
+let unauthorizedHandler = null;
+
+// 2. ייצוא הפונקציה שחסרה לך (זו ש-App.js מחפש)
+export function setUnauthorizedHandler(handler) {
+  unauthorizedHandler = handler;
 }
+
+function getAuthToken() {
+  return localStorage.getItem("token");
+}
+
+// פונקציית עזר פנימית לטיפול בתשובות (מונעת חזרתיות)
+async function handleResponse(response) {
+  if (response.status === 401 && unauthorizedHandler) {
+    unauthorizedHandler(); // מפעיל את ה-Modal ב-App.js
+  }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Request failed");
+  }
+  return response.json();
+}
+
 export async function getRootFiles() {
   const token = getAuthToken();
   if (!token) throw new Error("Not authenticated");
+
+  // שים לב: הוספתי כאן את ה-Authorization header שהיה חסר 
   const response = await fetch("http://localhost:3000/api/files", {
     method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error("Failed to fetch files");
-  return response.json();
+  return handleResponse(response);
 }
 
 export async function createItem({ name, type, parentId = null, content = "" }) {
@@ -22,8 +45,7 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error("Failed to create item");
-  return response.json();
+  return handleResponse(response);
 }
 
 export async function getFileById(id) {
@@ -31,11 +53,10 @@ export async function getFileById(id) {
   if (!token) throw new Error("Not authenticated");
   const response = await fetch(`http://localhost:3000/api/files/${id}`, {
     method: "GET",
+    headers: { Authorization: `Bearer ${token}` }, // תיקון: הוספת טוקן
   });
-  if (!response.ok) throw new Error("Failed to fetch file content");
-  return response.json();
+  return handleResponse(response);
 }
-
 
 export async function getCurrentUser(userId) {
   const token = localStorage.getItem("token");
