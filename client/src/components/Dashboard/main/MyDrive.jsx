@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { getRootFiles } from "../../../api/filesApi";
-import FileListItem from "../widgets/FileListItem";
+import { getRootFiles, getFileById } from "../../../api/filesApi";
 import CreateItem from "../widgets/CreateItem";
 import FileViewerModal from "../widgets/FileViewerModal";
+import FileListItem from "../widgets/FileListItem";
 import "./MyDrive.css";
 
 function MyDrive() {
@@ -14,36 +14,44 @@ function MyDrive() {
   const [openedFile, setOpenedFile] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const data = await getRootFiles(); // listTopLevel
-        const list = Array.isArray(data) ? data : [];
-        setAllFiles(list);
-      } catch (e) {
-        setError(e?.message ?? "Failed to load files");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadFiles();
   }, []);
+
+  async function loadFiles() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await getRootFiles();
+      const list = Array.isArray(data) ? data : [];
+      setAllFiles(list);
+    } catch (e) {
+      setError(e?.message ?? "Failed to load files");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const currentItems = useMemo(() => {
     return allFiles.filter((f) => f.parentId === currentFolderId);
   }, [allFiles, currentFolderId]);
 
-  const folders = useMemo(() => {
-    return allFiles.filter((f) => f.type === "folder");
-  }, [allFiles]);
-
-  function onOpen(item) {
+  async function onOpen(item) {
     if (item.type === "folder") {
       setCurrentFolderId(item.id);
     } else {
-      setOpenedFile(item);
+      try {
+        const fullFile = await getFileById(item.id);
+        setOpenedFile(fullFile);
+      } catch (e) {
+        alert("Error loading file: " + e.message);
+      }
     }
+  }
+
+  // Callback שנקרא אחרי יצירה מוצלחת
+  function handleItemCreated() {
+    loadFiles(); // רענן את הרשימה
   }
 
   if (loading) return <div>Loading...</div>;
@@ -54,23 +62,29 @@ function MyDrive() {
       <h2>My Drive</h2>
 
       <div className="files-container">
-        {currentItems.map((item) => (
-          <FileListItem
-            key={item.id}
-            item={item}
-            onOpen={onOpen}
-            onEdit={() => alert("יש לממש")}
-            onShare={() => alert("יש לממש")}
-            onDelete={() => alert("יש לממש")}
-          />
-        ))}
+        {currentItems.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#999", padding: "40px" }}>
+            No files or folders yet. Click + to create one!
+          </div>
+        ) : (
+          currentItems.map((item) => (
+            <FileListItem
+              key={item.id}
+              item={item}
+              onOpen={onOpen}
+              onEdit={() => alert("יש לממש")}
+              onShare={() => alert("יש לממש")}
+              onDelete={() => alert("יש לממש")}
+            />
+          ))
+        )}
       </div>
 
-      <CreateItem folders={folders} />
+      <CreateItem onItemCreated={handleItemCreated} />
 
       <FileViewerModal
         file={openedFile}
-        role={"viewer"} // כרגע בלי לוגיקה
+        role={"viewer"}
         onClose={() => setOpenedFile(null)}
         onEdit={() => alert("יש לממש")}
         onShare={() => alert("יש לממש")}

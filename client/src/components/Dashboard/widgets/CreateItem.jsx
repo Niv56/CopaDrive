@@ -1,11 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getRootFiles, createItem } from "../../../api/filesApi";
 
-function CreateItem({ folders = [] }) {
+function CreateItem({ onItemCreated }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // null | "folder" | "file"
+  const [modalType, setModalType] = useState(null);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [parentId, setParentId] = useState(null);
+  const [folders, setFolders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (modalType) {
+      loadFolders();
+    }
+  }, [modalType]);
+
+  async function loadFolders() {
+    try {
+      const data = await getRootFiles();
+      const allFolders = Array.isArray(data) ? data.filter(f => f.type === "folder") : [];
+      setFolders(allFolders);
+    } catch (e) {
+      console.error("Failed to load folders:", e);
+    }
+  }
 
   function openCreate(type) {
     setParentId(null);
@@ -19,11 +38,32 @@ function CreateItem({ folders = [] }) {
     setModalType(null);
     setName("");
     setContent("");
+    setParentId(null);
   }
 
-  function onSaveClicked() {
-    alert("יש לממש");
-    closeModal();
+  async function onSaveClicked() {
+    if (!name.trim()) return;
+
+    setLoading(true);
+    try {
+      await createItem({
+        name: name.trim(),
+        type: modalType,
+        parentId: parentId || null,
+        content: modalType === "file" ? content : ""
+      });
+
+      closeModal();
+
+      // קרא ל-callback במקום window.location.reload()
+      if (onItemCreated) {
+        onItemCreated();
+      }
+    } catch (error) {
+      alert(`Failed to create ${modalType}: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -44,14 +84,14 @@ function CreateItem({ folders = [] }) {
             className="fab-menu-item"
             onClick={() => openCreate("folder")}
           >
-            New folder
+            📁 New folder
           </button>
           <button
             type="button"
             className="fab-menu-item"
             onClick={() => openCreate("file")}
           >
-            New file
+            📄 New file
           </button>
         </div>
       )}
@@ -68,7 +108,9 @@ function CreateItem({ folders = [] }) {
               className="modal-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={modalType === "folder" ? "Folder name" : "File title"}
+              placeholder={modalType === "folder" ? "Folder name" : "File name"}
+              disabled={loading}
+              autoFocus
             />
 
             <label className="modal-label">Destination</label>
@@ -76,11 +118,12 @@ function CreateItem({ folders = [] }) {
               className="modal-input"
               value={parentId ?? ""}
               onChange={(e) => setParentId(e.target.value || null)}
+              disabled={loading}
             >
               <option value="">/ (top level)</option>
               {folders.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {f.name}
+                  📁 {f.name}
                 </option>
               ))}
             </select>
@@ -92,23 +135,29 @@ function CreateItem({ folders = [] }) {
                   className="modal-textarea"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Write something..."
+                  placeholder="Write your content here..."
                   rows={8}
+                  disabled={loading}
                 />
               </>
             )}
 
             <div className="modal-actions">
-              <button type="button" className="btn secondary" onClick={closeModal}>
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={closeModal}
+                disabled={loading}
+              >
                 Cancel
               </button>
               <button
                 type="button"
                 className="btn primary"
                 onClick={onSaveClicked}
-                disabled={!name.trim()}
+                disabled={!name.trim() || loading}
               >
-                Save
+                {loading ? "Creating..." : "Create"}
               </button>
             </div>
           </div>
