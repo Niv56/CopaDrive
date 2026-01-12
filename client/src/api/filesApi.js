@@ -293,3 +293,21 @@ export async function getCurrentUser(userId) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, { method: "GET" });
 }
+export async function updateUserProfile(userId, patch) {
+  if (!userId) throw new Error("userId is required");
+  return request(`/api/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function changeUserPassword(userId, currentPassword, newPassword) {
+  if (!userId) throw new Error("userId is required");
+  return request(`/api/users/${userId}/password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
