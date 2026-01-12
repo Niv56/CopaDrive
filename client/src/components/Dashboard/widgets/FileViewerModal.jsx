@@ -3,7 +3,17 @@ import React from "react";
 function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
   if (!file) return null;
 
-  const canEdit = role === "owner" || role === "editor";
+  // אם ה-role לא הועבר כ-prop, ננסה לקחת אותו מהקובץ עצמו
+  const actualRole = role || file.role || "viewer";
+
+  // קביעת ההרשאות לפי תפקיד
+  const permissionLevel = {
+    owner: "all",
+    editor: "edit",
+    viewer: "read"
+  }[actualRole.toLowerCase()] || "read";
+
+  const canEdit = actualRole === "owner" || actualRole === "editor";
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -14,7 +24,7 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
               {file.name}
             </div>
             <div style={{ fontSize: 12, color: "#666" }}>
-              Mode: {canEdit ? "Read (editable)" : "Read-only"} · Role: {role}
+              Mode: <strong>{permissionLevel}</strong> · Role: <strong>{actualRole}</strong>
             </div>
           </div>
 

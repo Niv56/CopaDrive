@@ -15,11 +15,45 @@ const verifyOwnership = (ownerId, fileId) => {
 };
 
 
-exports.getPermissions = (ownerId, fileId) => {
-    verifyOwnership(ownerId, fileId);
-    return permissionRepository.findByFileId(fileId);
+const resolveRole = (userId, fileId) => {
+    let currentId = fileId;
+    let found = null;
+
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId); // ✅ בלי ownerId
+        if (!item) break;
+
+        if (item.ownerId === userId) return "owner";
+
+        const perms = permissionRepository.findByFileId(currentId) || [];
+        const userPerm = perms.find(p => p.userId === userId);
+
+        if (userPerm) {
+            if (userPerm.role === "editor") return "editor";
+            if (!found) found = "viewer";
+        }
+
+        currentId = item.parentId;
+    }
+
+    return found;
 };
 
+
+exports.getPermissions = (requesterId, fileId) => {
+    // allow anyone with at least viewer access to see the list
+    const role = resolveRole(requesterId, fileId);
+    if (!role) {
+        const err = new Error('File not found or access denied');
+        err.status = 404; // keep same behavior you had
+        throw err;
+    }
+
+    const permissions = permissionRepository.findByFileId(fileId);
+
+    // return both: list + myRole
+    return { myRole: role, permissions };
+};
 
 // Add a new permission entry
 exports.addPermission = (ownerId, fileId, payload) => {
@@ -36,7 +70,7 @@ exports.addPermission = (ownerId, fileId, payload) => {
     // Check for duplicates
     const existingPermissions = permissionRepository.findByFileId(fileId);
     const duplicate = existingPermissions.find(p => p.userId === payload.userId);
-    
+
     if (duplicate) {
         const err = new Error('Permission already exists for this user');
         err.status = 409;
@@ -44,7 +78,7 @@ exports.addPermission = (ownerId, fileId, payload) => {
     }
 
     const newPermission = {
-        id: generateId((id) => permissionRepository.findById(id)), 
+        id: generateId((id) => permissionRepository.findById(id)),
         fileId: fileId,
         userId: payload.userId,
         role: 'viewer'
@@ -57,7 +91,7 @@ exports.addPermission = (ownerId, fileId, payload) => {
 // Update an existing permission entry 
 exports.updatePermission = (ownerId, fileId, pId) => {
     verifyOwnership(ownerId, fileId);
-        const permission = permissionRepository.findById(pId);
+    const permission = permissionRepository.findById(pId);
 
     if (!permission || permission.fileId !== fileId) {
         const error = new Error('Permission not found');
@@ -70,7 +104,7 @@ exports.updatePermission = (ownerId, fileId, pId) => {
     return permissionRepository.update(pId, { role: newRole });
 };
 
- // Delete a permission entry
+// Delete a permission entry
 exports.deletePermission = (ownerId, fileId, pId) => {
     verifyOwnership(ownerId, fileId);
 
@@ -87,20 +121,16 @@ const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
     let currentId = fileId;
     let foundPermission = null;
 
-    // Iterate from the target file up to the root
     while (currentId !== null) {
-        const item = fileRepository.getById(currentId);
+        const item = fileRepository.findById(currentId, userId); // ✅ תיקון
         if (!item) break;
 
-        // Owner check If user owns any folder in the path, they have full access
         if (item.ownerId === userId) return true;
 
-        // Look for an explicit permission entry for this user at this level
         const permissions = permissionRepository.findByFileId(currentId) || [];
         const userPerm = permissions.find(p => p.userId === userId);
 
         if (userPerm) {
-            // If the user has 'editor' role at this level, it's the strongest possible
             if (userPerm.role === 'editor') return true;
             if (!foundPermission) foundPermission = userPerm.role;
         }
@@ -108,11 +138,7 @@ const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
         currentId = item.parentId;
     }
 
-    if (requiredRole === 'viewer') {
-        return foundPermission !== null;
-    } else if (requiredRole === 'editor') {
-        return foundPermission === 'editor';
-    }
-
+    if (requiredRole === 'viewer') return foundPermission !== null;
+    if (requiredRole === 'editor') return foundPermission === 'editor';
     return false;
 };
