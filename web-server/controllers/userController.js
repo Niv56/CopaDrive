@@ -52,3 +52,51 @@ exports.getUserByEmail = (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+exports.updateUser = (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    // ✅ self only
+    if (!req.user || String(req.user.id) !== String(userId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const allowed = ['firstName', 'lastName', 'phoneNumber', 'image', 'profilePicture'];
+    const patch = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) patch[k] = req.body[k];
+    }
+
+    // normalize image key
+    if (patch.profilePicture && !patch.image) {
+      patch.image = patch.profilePicture;
+      delete patch.profilePicture;
+    }
+
+    const updated = userService.updateUserProfile(userId, patch);
+    return res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.changePassword = (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    // ✅ self only
+    if (!req.user || String(req.user.id) !== String(userId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "currentPassword and newPassword are required" });
+    }
+
+    userService.changePassword(userId, currentPassword, newPassword);
+    return res.status(200).json({ message: "Password updated" });
+  } catch (err) {
+    next(err);
+  }
+};

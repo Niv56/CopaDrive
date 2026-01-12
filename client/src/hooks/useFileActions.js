@@ -1,100 +1,112 @@
 // client/src/hooks/useFileActions.js
 import { useState } from "react";
-import { setStarred, setImportant, deleteItem, openItem } from "../api/filesApi";
+import {
+  setStarred,
+  setImportant,
+  moveToTrash,
+  openItem,
+  getFilePermissions,
+} from "../api/filesApi";
 
 export function useFileActions(myUserId, onRefresh) {
-    const [sharingItem, setSharingItem] = useState(null);
-    const [openedFile, setOpenedFile] = useState(null);
-    const [openedRole, setOpenedRole] = useState("viewer");
-    const [loadingFile, setLoadingFile] = useState(false);
+  const [sharingItem, setSharingItem] = useState(null);
+  const [openedFile, setOpenedFile] = useState(null);
+  const [openedRole, setOpenedRole] = useState("viewer");
+  const [loadingFile, setLoadingFile] = useState(false);
 
-    // ✅ cache: fileId -> "viewer" | "editor" | "owner"
-    const [resolvedRoles, setResolvedRoles] = useState({});
+  // ✅ from your branch: cache fileId -> "viewer" | "editor" | "owner"
+  const [resolvedRoles, setResolvedRoles] = useState({});
 
-    const handleOpen = async (item, onFolderOpen) => {
-        if (!item) return;
+  const handleOpen = async (item, onFolderOpen) => {
+    if (!item) return;
+    setLoadingFile(true);
 
-        setLoadingFile(true);
+    try {
+      // MAIN4 default role
+      let role = item.ownerId === myUserId ? "owner" : "viewer";
 
+      // ✅ from your branch: if not owner, check permissions to detect editor/viewer
+      if (role !== "owner" && myUserId) {
         try {
-            let role = "viewer";
+          const data = await getFilePermissions(item.id);
 
-            if (item.ownerId === myUserId) {
-                role = "owner";
-            } else {
-                const token = localStorage.getItem("token");
-                const res = await fetch(
-                    `http://localhost:3000/api/files/${item.id}/permissions`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
+          const list = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.permissions)
+            ? data.permissions
+            : [];
 
-                if (res.ok) {
-                    const data = await res.json();
-                    const list = Array.isArray(data)
-                        ? data
-                        : Array.isArray(data?.permissions)
-                            ? data.permissions
-                            : [];
-
-                    const myPerm = list.find((p) => p.userId === myUserId);
-                    if (myPerm?.role) role = myPerm.role; // "editor" / "viewer"
-                }
-            }
-
-            // ✅ keep modal role
-            setOpenedRole(role);
-
-            // ✅ keep list role synced (cache by id)
-            setResolvedRoles((prev) => ({ ...prev, [item.id]: role }));
-
-            const file = await openItem(item, onFolderOpen);
-            if (file) setOpenedFile(file);
-        } catch (e) {
-            console.error("Failed to open item:", e);
-            alert("Failed to open item");
-        } finally {
-            setLoadingFile(false);
+          const myPerm = list.find((p) => p.userId === myUserId);
+          if (myPerm?.role) role = myPerm.role; // "editor" / "viewer"
+        } catch {
+          // אם נכשל — נשאר viewer (לא מפוצצים פתיחה)
         }
-    };
+      }
 
-    const handleToggleStar = async (item, val) => {
-        await setStarred(item.id, val);
-        if (onRefresh) onRefresh();
-    };
+      // ✅ keep modal role
+      setOpenedRole(role);
 
-    const handleToggleImportant = async (item, val) => {
-        await setImportant(item.id, val);
-        if (onRefresh) onRefresh();
-    };
+      // ✅ keep list role synced
+      setResolvedRoles((prev) => ({ ...prev, [item.id]: role }));
 
-    const handleDelete = async (item) => {
-        if (!window.confirm(`Delete "${item.name}"?`)) return;
+      // MAIN4 open logic
+      const fullFile = await openItem(item, (folder) => {
+        if (onFolderOpen) onFolderOpen(folder);
+      });
 
-        try {
-            await deleteItem(item.id);
-            if (onRefresh) onRefresh();
-        } catch (e) {
-            console.error("Delete failed:", e);
-            alert("Failed to delete item");
-        }
-    };
+      if (fullFile) setOpenedFile(fullFile);
+    } catch (e) {
+      alert("Error opening item: " + (e?.message || "unknown"));
+    } finally {
+      setLoadingFile(false);
+    }
+  };
 
-    return {
-        sharingItem,
-        setSharingItem,
+  const handleToggleStar = async (item, newValue) => {
+    try {
+      await setStarred(item.id, newValue);
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      alert("Failed to update star status: " + (e?.message || "unknown"));
+    }
+  };
 
-        openedFile,
-        setOpenedFile,
-        openedRole,
+  const handleToggleImportant = async (item, newValue) => {
+    try {
+      await setImportant(item.id, newValue);
+      if (onRefresh) onRefresh();
+    } catch (e) {
+      alert("Failed to update importance status: " + (e?.message || "unknown"));
+    }
+  };
 
-        loadingFile,
+  // ✅ MAIN4: Move to trash (soft delete) — without confirm
+  const handleDelete = async (item) => {
+    if (!item?.id) return;
 
-        // ✅ new
-        resolvedRoles,
+    try {
+      await moveToTrash(item.id); // DELETE /api/files/:id
+      if (onRefresh) onRefresh();
+      if (openedFile?.id === item.id) setOpenedFile(null);
+    } catch (e) {
+      alert("Move to trash failed: " + (e?.message || "unknown"));
+    }
+  };
 
-        handleOpen,
-        handleToggleStar,
-        handleToggleImportant,
-        handleDelete,
-    };
+  return {
+    sharingItem,
+    setSharingItem,
+    openedFile,
+    setOpenedFile,
+    openedRole,
+    loadingFile,
+
+    // ✅ from branch
+    resolvedRoles,
+
+    handleOpen,
+    handleToggleStar,
+    handleToggleImportant,
+    handleDelete,
+  };
 }

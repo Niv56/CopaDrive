@@ -1,125 +1,224 @@
 // client/src/components/Dashboard/widgets/FileListItem.jsx
+import "./FileListItem.css";
 import { formatBytes } from "../../../utils/formatBytes";
+
+function FileIcon({ isFolder }) {
+  if (isFolder) {
+    return (
+      <svg className="fli-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 4l2 2h8a2 2 0 012 2v1H2V6a2 2 0 012-2h6z" />
+        <path d="M2 9h20v9a2 2 0 01-2 2H4a2 2 0 01-2-2V9z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="fli-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
 
 function FileListItem({
   item,
   onOpen,
   onEdit,
   onShare,
-  onDelete,
+  onDelete, // Move to trash
   onToggleStar,
   onToggleImportant,
-  extraInfo, // optional (e.g. "Opened Just now")
+  mode = "default", // "default" | "trash"
+  onRestore,
+  onDeleteForever,
+  extraInfo,
+
+  // ✅ from your branch (optional)
   myUserId,
-  resolvedRole, // role from cache (viewer/editor/owner)
+  resolvedRole, // fileId -> role cache from hook
 }) {
   if (!item) return null;
 
+  const isTrash = mode === "trash";
   const isFolder = item.type === "folder";
+
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
 
-  const isOwner = myUserId && item.ownerId === myUserId;
-
-  // Prefer resolvedRole if provided; fallback:
-  const myRole = resolvedRole || (isOwner ? "owner" : "viewer");
-
   const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes);
 
-  const badgeStyle = {
+  const isOwner = myUserId && item.ownerId === myUserId;
+  const myRole = resolvedRole || (isOwner ? "owner" : "viewer");
+
+  const daysLeft =
+    typeof item.trashDaysLeft === "number" ? `${item.trashDaysLeft} days left` : "";
+
+  const trashInfo = [daysLeft, sizeLabel].filter(Boolean).join(" · ");
+
+  function stop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // tiny badge style (minimal impact, no CSS changes required)
+  const roleBadgeStyle = {
     marginLeft: 10,
     padding: "2px 10px",
     borderRadius: 999,
     fontSize: 12,
-    fontWeight: 600,
-    background:
-      myRole === "owner"
-        ? "#fef3c7"
-        : myRole === "editor"
-          ? "#dbeafe"
-          : "#f3f4f6",
-    color: "#111827",
+    fontWeight: 700,
     border: "1px solid #e5e7eb",
+    background:
+      myRole === "owner" ? "#fef3c7" : myRole === "editor" ? "#dbeafe" : "#f3f4f6",
+    color: "#111827",
     textTransform: "capitalize",
+    verticalAlign: "middle",
   };
 
   return (
     <div
-      className="list-group-item d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
-      style={{ cursor: "pointer", background: "#fff" }}
+      className={`fli-row ${isTrash ? "is-trash" : ""}`}
       onClick={() => onOpen?.(item)}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : -1}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && onOpen) onOpen?.(item);
+      }}
     >
-      <div className="d-flex align-items-center gap-3">
-        <div style={{ fontSize: 22 }}>{isFolder ? "📁" : "📄"}</div>
+      {/* LEFT */}
+      <div className="fli-left">
+        <div className={`fli-icon ${isFolder ? "is-folder" : "is-file"}`}>
+          <FileIcon isFolder={isFolder} />
+        </div>
 
-        <div className="d-flex flex-column">
-          <div className="fw-semibold text-truncate" style={{ maxWidth: 250 }}>
+        <div className="fli-meta">
+          <div className="fli-name" dir="auto" title={item.name}>
             {item.name}
-            {/* role badge */}
-            {myUserId && <span style={badgeStyle}>{myRole}</span>}
+            {/* ✅ role badge only in default mode */}
+            {!isTrash && myUserId ? <span style={roleBadgeStyle}>{myRole}</span> : null}
           </div>
-
-          <div className="text-muted small">
-            {isFolder ? "Folder" : "File"}
-            {extraInfo ? <span className="ms-2">· {extraInfo}</span> : null}
-          </div>
+          <div className="fli-sub">{isFolder ? "Folder" : "File"}</div>
         </div>
       </div>
 
-      <div
-        className="d-flex align-items-center gap-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Size */}
-        <div className="text-muted small" style={{ minWidth: 70, textAlign: "right" }}>
-          {sizeLabel}
-        </div>
+      {/* RIGHT */}
+      <div className="fli-right" onClick={stop}>
+        {(extraInfo || (isTrash && trashInfo)) && (
+          <div className="fli-extra">{extraInfo || trashInfo}</div>
+        )}
 
-        {/* STAR */}
-        <button
-          className="btn btn-light rounded-circle"
-          title={isStarred ? "Unstar" : "Star"}
-          onClick={() => onToggleStar?.(item, !isStarred)}
-        >
-          {isStarred ? "⭐" : "☆"}
-        </button>
+        {!isTrash && <div className="fli-size">{sizeLabel}</div>}
 
-        {/* IMPORTANT */}
-        <button
-          className="btn btn-light rounded-circle"
-          title={isImportant ? "Unmark important" : "Mark important"}
-          onClick={() => onToggleImportant?.(item, !isImportant)}
-        >
-          !
-        </button>
+        {!isTrash && (
+          <div className="fli-actions">
+            <button
+              type="button"
+              className={`fli-iconbtn ${isStarred ? "is-on" : ""}`}
+              title={isStarred ? "Remove from starred" : "Add to starred"}
+              aria-label={isStarred ? "Remove from starred" : "Add to starred"}
+              onClick={(e) => {
+                stop(e);
+                onToggleStar?.(item, !isStarred);
+              }}
+            >
+              {isStarred ? "★" : "☆"}
+            </button>
+
+            <button
+              type="button"
+              className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`}
+              title={isImportant ? "Remove from important" : "Add to important"}
+              aria-label={isImportant ? "Remove from important" : "Add to important"}
+              onClick={(e) => {
+                stop(e);
+                onToggleImportant?.(item, !isImportant);
+              }}
+            >
+              !
+            </button>
+          </div>
+        )}
 
         {/* MENU */}
-        <div className="dropdown">
-          <button className="btn btn-light rounded-circle" data-bs-toggle="dropdown" title="More">
+        <div className="dropdown" onClick={stop}>
+          <button
+            className="fli-menubtn"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            title="More options"
+            aria-label="More options"
+            type="button"
+          >
             ⋮
           </button>
 
-          <ul className="dropdown-menu dropdown-menu-end shadow border-0">
-            <li>
-              <button className="dropdown-item" onClick={() => onShare?.(item)}>
-                Share
-              </button>
-            </li>
-
-            {onEdit && (
-              <li>
-                <button className="dropdown-item" onClick={() => onEdit(item)}>
-                  Edit
-                </button>
-              </li>
-            )}
-
-            {isOwner && (
-              <li>
-                <button className="dropdown-item text-danger" onClick={() => onDelete?.(item)}>
-                  Delete
-                </button>
-              </li>
+          <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+            {isTrash ? (
+              <>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={(e) => {
+                      stop(e);
+                      onRestore?.(item);
+                    }}
+                  >
+                    Restore
+                  </button>
+                </li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={(e) => {
+                      stop(e);
+                      onDeleteForever?.(item);
+                    }}
+                  >
+                    Delete forever
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={(e) => {
+                      stop(e);
+                      onEdit?.(item);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={(e) => {
+                      stop(e);
+                      onShare?.(item);
+                    }}
+                  >
+                    Share
+                  </button>
+                </li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={(e) => {
+                      stop(e);
+                      onDelete?.(item);
+                    }}
+                  >
+                    Move to trash
+                  </button>
+                </li>
+              </>
             )}
           </ul>
         </div>

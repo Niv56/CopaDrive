@@ -1,0 +1,160 @@
+/* FileListItem.css */
+
+.fli-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 16px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid #eef1f4;
+  box-shadow: 0 2px 10px rgba(16,24,40,0.06);
+  transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
+  cursor:pointer;
+}
+
+.fli-row:hover{
+  background:#fafbfc;
+  box-shadow: 0 10px 26px rgba(16,24,40,0.12);
+  transform: translateY(-1px);
+}
+
+.fli-left{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-width:0;
+}
+
+.fli-icon{
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+}
+
+.fli-icon.is-folder{ background: rgba(250, 179, 62, 0.18); }
+.fli-icon.is-file{ background: rgba(99, 102, 241, 0.14); }
+
+.fli-svg{
+  width:22px;
+  height:22px;
+  fill:none;
+  stroke: currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.95;
+}
+
+.fli-icon.is-folder .fli-svg{ color:#b45309; }
+.fli-icon.is-file .fli-svg{ color:#4f46e5; }
+
+.fli-meta{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.fli-name{
+  font-weight:600;
+  color:#111827;
+  max-width: 420px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.fli-sub{
+  font-size:12px;
+  color:#6b7280;
+  margin-top:2px;
+}
+
+.fli-right{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex:0 0 auto;
+}
+
+.fli-extra{
+  font-size:12px;
+  color:#5f6368;
+  white-space:nowrap;
+}
+
+.fli-size{
+  width:72px;
+  text-align:right;
+  font-size:12px;
+  color:#6b7280;
+  white-space:nowrap;
+}
+
+/* Actions are ALWAYS visible */
+.fli-actions{
+  display:flex;
+  gap:10px;
+  opacity:1;
+  pointer-events:auto;
+}
+
+
+.fli-row:hover .fli-actions,
+.fli-row:focus-within .fli-actions{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.fli-iconbtn{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  border:1px solid #eef1f4;
+  background:#fff;
+  display:grid;
+  place-items:center;
+  color:#111827;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fli-iconbtn:hover{
+  background:#f6f7f9;
+  border-color:#e5e7eb;
+}
+
+.fli-iconbtn.is-on{
+  background: rgba(255, 213, 79, 0.35);
+  border-color: rgba(255, 213, 79, 0.55);
+}
+
+.fli-iconbtn.is-danger{
+  background: rgba(239, 83, 80, 0.12);
+  border-color: rgba(239, 83, 80, 0.25);
+  color:#b42318;
+}
+
+.fli-menubtn{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  border:1px solid #eef1f4;
+  background:#fff;
+  display:grid;
+  place-items:center;
+  color:#111827;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.fli-menubtn:hover{
+  background:#f6f7f9;
+  border-color:#e5e7eb;
+}
+
+/* Trash styling hint */
+.fli-row.is-trash{
+  background: #fff;
+}
