@@ -45,6 +45,7 @@ async function request(path, options = {}) {
     : null;
 
   if (!res.ok) {
+    // backend might return {error} or {message}
     const msg =
       (data && typeof data === "object" && (data.error || data.message)) || "Request failed";
     throw new Error(msg);
@@ -53,17 +54,33 @@ async function request(path, options = {}) {
   return data;
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Get the root files list (owned + shared as returned by backend).
+=======
+/* -----------------------------
+   Files / Drive
+------------------------------ */
+
+// ✅ Files list (My Drive + shared, as backend returns)
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function getRootFiles() {
   return request("/api/files", { method: "GET" });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Get storage usage for owned files only.
+=======
+// ✅ Backend usage (owned files only)
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function getStorageUsage() {
   return request("/api/files/usage", { method: "GET" });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Backward-compatible alias.
+=======
+// Backward compat (you had both names)
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function getUsage() {
   return getStorageUsage();
 }
@@ -129,12 +146,30 @@ export async function updateItem(fileId, patch) {
   });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // List items in the user's trash.
+=======
+/* -----------------------------
+   Trash
+------------------------------ */
+
+/**
+ * ✅ List trash
+ * GET /api/files/trash
+ */
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function getTrashFiles() {
   return request("/api/files/trash", { method: "GET" });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Restore an item from trash.
+=======
+/**
+ * ✅ Restore from trash
+ * PATCH /api/files/:id/trash  { trashed:false }
+ */
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function restoreFromTrash(fileId) {
   if (!fileId) throw new Error("fileId is required");
   return request(`/api/files/${fileId}/trash`, {
@@ -144,13 +179,27 @@ export async function restoreFromTrash(fileId) {
   });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Permanently delete an item (or remove-from-trash for non-owner).
+=======
+/**
+ * ✅ Delete forever
+ * DELETE /api/files/:id/forever
+ */
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function deleteForever(fileId) {
   if (!fileId) throw new Error("fileId is required");
   return request(`/api/files/${fileId}/forever`, { method: "DELETE" });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Empty the user's trash.
+=======
+/**
+ * ✅ Empty trash
+ * DELETE /api/files/trash/empty
+ */
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function emptyTrash() {
   return request("/api/files/trash/empty", { method: "DELETE" });
 }
@@ -185,8 +234,19 @@ export async function setImportant(fileId, important) {
   });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Get recent files (fallback: sort root files by lastAccessed).
+=======
+/* -----------------------------
+   Recent / Access tracking
+------------------------------ */
+
+// ✅ Recent files (prefer backend endpoint if exists; fallback to sorting root files)
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function getRecentFiles() {
+  // If you have backend route GET /api/files/recent, uncomment the next line and delete fallback:
+  // return request("/api/files/recent", { method: "GET" });
+
   const data = await getRootFiles();
   return Array.isArray(data)
     ? data
@@ -196,6 +256,7 @@ export async function getRecentFiles() {
     : [];
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 <<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Open an item: folders open locally; files update access time then fetch content.
 =======
@@ -215,6 +276,9 @@ export async function getFileData(fileId) {
 
 // 🎯 Open item: folders open locally; files update access time in background then fetch content
 >>>>>>> 16c8ff5 (about to finish):client/src/api/filesApi.js
+=======
+// 🎯 Open item: folders open locally; files update access time in background then fetch content
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 
@@ -223,6 +287,7 @@ export async function openItem(item, onFolderOpen = null) {
     return null;
   }
 
+  // fire-and-forget update access time
   request(`/api/files/${item.id}/access`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -243,7 +308,10 @@ export function formatLastAccessed(dateString) {
   return date.toLocaleDateString();
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Find a user by email (returns null if not found).
+=======
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 export async function findUserByEmail(email) {
   const token = getAuthToken();
   const response = await fetch(`http://localhost:3000/api/users/email/${email}`, {
@@ -256,6 +324,7 @@ export async function findUserByEmail(email) {
 // Add a viewer permission for a target user on a given file/folder.
 export async function addFilePermission(fileId, targetUserId) {
   const token = getAuthToken();
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
   const response = await fetch(`http://localhost:3000/api/files/${fileId}/permissions`, {
     method: "POST",
     headers: {
@@ -265,10 +334,24 @@ export async function addFilePermission(fileId, targetUserId) {
     body: JSON.stringify({ userId: targetUserId }),
   });
 
+=======
+  const response = await fetch(
+    `http://localhost:3000/api/files/${fileId}/permissions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId: targetUserId }), // השרת קובע תפקיד "viewer" כברירת מחדל
+    }
+  );
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
   if (!response.ok) {
     const err = await response.json();
     throw new Error(err.error || "Failed to share");
   }
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 
   return response.json();
 }
@@ -333,3 +416,44 @@ export async function deleteFilePermission(fileId, permissionId) {
   });
 }
 >>>>>>> 9993c1b (changes):client/src/api/filesApi.js
+=======
+  return response.json();
+}
+
+/* -----------------------------
+   Search
+------------------------------ */
+
+export async function searchItems(query) {
+  if (query === undefined || query === null) throw new Error("query is required");
+  const q = encodeURIComponent(String(query));
+  return request(`/api/search/${q}`, { method: "GET" });
+}
+
+/* -----------------------------
+   Users
+------------------------------ */
+
+export async function getCurrentUser(userId) {
+  if (!userId) throw new Error("userId is required");
+  return request(`/api/users/${userId}`, { method: "GET" });
+}
+export async function updateUserProfile(userId, patch) {
+  if (!userId) throw new Error("userId is required");
+  return request(`/api/users/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function changeUserPassword(userId, currentPassword, newPassword) {
+  if (!userId) throw new Error("userId is required");
+  return request(`/api/users/${userId}/password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js

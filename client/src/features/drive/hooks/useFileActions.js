@@ -11,7 +11,10 @@ export function useFileActions(myUserId, onRefresh) {
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
+<<<<<<< HEAD:client/src/features/drive/hooks/useFileActions.js
   // Handle opening a file or folder
+=======
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/hooks/useFileActions.js
   const handleOpen = async (item, onFolderOpen) => {
     if (!item) return;
     setLoadingFile(true);
@@ -50,7 +53,11 @@ export function useFileActions(myUserId, onRefresh) {
       alert("Failed to update importance status: " + (e?.message || "unknown"));
     }
   };
+// ✅ Move to trash (soft delete) — without confirm
+const handleDelete = async (item) => {
+  if (!item?.id) return;
 
+<<<<<<< HEAD:client/src/features/drive/hooks/useFileActions.js
   // Soft delete (Move to Trash) - No confirmation dialog required here
   const handleDelete = async (item) => {
     if (!item?.id) return;
@@ -65,6 +72,16 @@ export function useFileActions(myUserId, onRefresh) {
       alert("Move to trash failed: " + (e?.message || "unknown"));
     }
   };
+=======
+  try {
+    await moveToTrash(item.id); // DELETE /api/files/:id
+    if (onRefresh) onRefresh();
+    if (openedFile?.id === item.id) setOpenedFile(null);
+  } catch (e) {
+    alert("Move to trash failed: " + (e?.message || "unknown"));
+  }
+};
+>>>>>>> 9d61e09 (Revert "Register validation"):client/src/hooks/useFileActions.js
 
   return {
     sharingItem,
