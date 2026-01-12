@@ -1,102 +1,91 @@
 import React from "react";
+import ImageViewer from "./viewers/ImageViewer";
+import TextViewer from "./viewers/TextViewer";
+import BinaryViewer from "./viewers/BinaryViewer";
 
-function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
+function FileViewerModal({
+  file,
+  onClose,
+  onShare,
+  onDelete,
+  onToggleStar,
+  onToggleImportant,
+  onDownload
+}) {
   if (!file) return null;
 
-  const canEdit = role === "owner" || role === "editor";
-
-  // לוגיקת הורדה
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    if (file.mimeType && file.mimeType !== "text/plain") {
-      link.href = `data:${file.mimeType};base64,${file.content}`;
-    } else {
-      const blob = new Blob([file.content], { type: "text/plain" });
-      link.href = URL.createObjectURL(blob);
-    }
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // פונקציית עזר לעצירת אירועים כפי שמומשה ב-FileListItem
+  const stop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
+
+  const renderViewer = () => {
+    const mime = file.mimeType || "";
+    if (mime.startsWith("image/")) return <ImageViewer file={file} />;
+    if (mime === "text/plain" || file.type === "file") return <TextViewer file={file} />;
+    return <BinaryViewer file={file} onDownload={() => onDownload(file)} />;
+  };
+
+  // שליפת הערכים המעודכנים (שימוש בשמות השדות מה-API: starred/important)
+  const isStarred = !!file.starred;
+  const isImportant = !!file.important;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <div className="modal-title" style={{ marginBottom: 4 }}>
-              {file.name}
-            </div>
-            <div style={{ fontSize: 12, color: "#666" }}>
-              Role: {role}
-            </div>
+      <div className="modal-card viewer-modal" onClick={(e) => e.stopPropagation()}>
+        
+        <div className="modal-title-row d-flex align-items-center justify-content-between">
+          <div className="modal-title-text">
+            <h2 className="fw-bold m-0">{file.name}</h2>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            {/* 1. כפתור הורדה */}
-            <button type="button" className="btn secondary" onClick={handleDownload} title="Download">
-              📥
+          <div className="modal-action-buttons d-flex gap-2 align-items-center">
+            {/* כפתור כוכב עם עצירת אירוע ושינוי מצב */}
+            <button 
+              className="action-icon-btn" 
+              onClick={(e) => { stop(e); onToggleStar(file, !isStarred); }}
+              style={isStarred ? { color: "#FFD54F" } : {}}
+            >
+              {isStarred ? "★" : "☆"}
             </button>
 
-            {/* 2. כפתור עריכה (רק למי שיכול) */}
-            {canEdit && (
-              <button type="button" className="btn secondary" onClick={onEdit} title="Edit">
+            {/* כפתור חשוב עם עצירת אירוע ושינוי מצב */}
+            <button 
+              className="action-icon-btn" 
+              onClick={(e) => { stop(e); onToggleImportant(file, !isImportant); }}
+              style={isImportant ? { color: "#EF5350" } : {}}
+            >
+              {isImportant ? "🔖" : "🏷️"}
+            </button>
+
+            <button className="action-icon-btn" onClick={(e) => { stop(e); onShare(file); }}>
+              🔗
+            </button>
+
+            {(file.mimeType === "text/plain" || file.type === "file") && (
+              <button className="action-icon-btn" onClick={(e) => { stop(e); alert("Edit mode coming soon!"); }}>
                 ✏️
               </button>
             )}
 
-            {/* 3. כפתור שיתוף - הוחזר */}
-            <button type="button" className="btn secondary" onClick={() => onShare(file)} title="Share">
-              🔗
-            </button>
-
-            {/* 4. כפתור מחיקה - הוחזר */}
-            <button type="button" className="btn secondary" onClick={onDelete} title="Delete">
+            <button className="action-icon-btn delete" onClick={(e) => { stop(e); onDelete(file); }}>
               🗑️
             </button>
 
-            <button type="button" className="btn secondary" onClick={onClose}>
-              Close
+            <button className="share-btn close-x-btn ms-2" onClick={onClose}>
+              ✕
             </button>
           </div>
         </div>
 
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 20, minHeight: 300, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
-            Content:
-          </div>
+        <div className="modal-body mt-4">
+          {renderViewer()}
+        </div>
 
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-
-            {/* 1. מקרה של תמונה: מציגים את התמונה עצמה */}
-            {file.mimeType?.startsWith("image/") ? (
-              <img
-                src={`data:${file.mimeType};base64,${file.content}`}
-                alt={file.name}
-                style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: 8, objectFit: "contain" }}
-              />
-            ) :
-
-              /* 2. מקרה של טקסט: מציגים את הטקסט הנקי */
-              file.mimeType === "text/plain" ? (
-                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, width: "100%", alignSelf: "flex-start" }}>
-                  {file.content || "(Empty file)"}
-                </div>
-              ) :
-
-                /* 3. מקרה של קובץ בינארי (או כל סוג אחר): מציגים No Preview */
-                (
-                  <div className="text-center">
-                    <div style={{ fontSize: "3.5rem", marginBottom: 15 }}>🚫</div>
-                    <div className="fw-bold" style={{ fontSize: "1.2rem" }}>No preview available</div>
-                    <div className="text-muted mb-4">Please download the file to view its content.</div>
-                    <button className="btn primary" onClick={handleDownload} style={{ padding: "10px 25px" }}>
-                      📥 Download to View
-                    </button>
-                  </div>
-                )}
-          </div>
+        <div className="modal-actions mt-4 d-flex justify-content-end gap-2">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+          <button type="button" className="btn btn-primary" onClick={(e) => { stop(e); onDownload(file); }}>Download</button>
         </div>
       </div>
     </div>

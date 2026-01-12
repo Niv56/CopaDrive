@@ -3,7 +3,6 @@ import { getRootFiles } from "../../../api/filesApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useFileActions } from "../../../hooks/useFileActions";
 import FileListItem from "../widgets/FileListItem";
-import ShareModal from "../widgets/ShareModal";
 import FileViewerModal from "../widgets/FileViewerModal";
 import "./MyDrive.css";
 
@@ -31,12 +30,16 @@ function MyDrive() {
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
     handleOpen, handleToggleStar, handleToggleImportant, handleDelete,
-    loadingFile 
+    loadingFile
   } = useFileActions(myUserId, loadFiles);
+
+  const freshOpenedFile = useMemo(() => {
+    if (!openedFile) return null;
+    return allFiles.find(f => f.id === openedFile.id) || openedFile;
+  }, [allFiles, openedFile]);
 
   useEffect(() => { loadFiles(); }, []);
 
-  // ✅ האזנה לאירוע רענון מהכפתור הגלובלי ב-MainArea
   useEffect(() => {
     window.addEventListener("refresh-mydrive", loadFiles);
     return () => window.removeEventListener("refresh-mydrive", loadFiles);
@@ -57,10 +60,18 @@ function MyDrive() {
   const currentItems = useMemo(() => allFiles.filter(f => f.parentId === currentFolderId), [allFiles, currentFolderId]);
   const currentFolder = useMemo(() => allFiles.find(f => f.id === currentFolderId), [allFiles, currentFolderId]);
 
-  if (loading) return <div className="mainarea">Loading My Drive...</div>;
-
   return (
-    <div className="mainarea">
+    <div className="mainarea" style={{ position: "relative" }}> {/* הוספנו relative כדי שהעיגול יתמקם נכון */}
+      
+      {/* 🟢 השינוי המבוקש: אינדיקטור טעינה קטן בפינה שלא "מרצד" את המסך */}
+      {loading && !loadingFile && (
+        <div style={{ position: "absolute", top: "15px", right: "20px", zIndex: 10 }}>
+          <div className="spinner-border spinner-border-sm text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      )}
+
       {loadingFile && (
         <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
           <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
@@ -97,10 +108,18 @@ function MyDrive() {
         ))}
       </div>
 
-      
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} />
-      {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
+      <FileViewerModal
+        file={freshOpenedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onDelete={handleDelete}
+        onDownload={(file) => console.log("Downloading...", file)}
+      />
     </div>
   );
 }
+
 export default MyDrive;
