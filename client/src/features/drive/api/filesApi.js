@@ -12,8 +12,19 @@ function getAuthToken() {
 
 const BASE_URL = "http://localhost:3000";
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // Send an authenticated request, handle 401 via unauthorizedHandler, and parse JSON/empty bodies safely.
 async function request(path, options = {}) {
+=======
+/**
+ * Unified request helper:
+ * - Adds Authorization header
+ * - Triggers unauthorizedHandler on 401
+ * - Safely parses JSON / empty bodies
+ * - Returns: parsed JSON, or null for 204/empty body
+ */
+export async function request(path, options = {}) {
+>>>>>>> d20b577 (Permissions Added):client/src/api/filesApi.js
   const token = getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
@@ -36,12 +47,12 @@ async function request(path, options = {}) {
   const text = await res.text();
   const data = text
     ? (() => {
-        try {
-          return JSON.parse(text);
-        } catch {
-          return text;
-        }
-      })()
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    })()
     : null;
 
   if (!res.ok) {

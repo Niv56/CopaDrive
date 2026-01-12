@@ -3,7 +3,6 @@ const fileRepository = require('../repositories/fileRepository');
 const userRepository = require('../repositories/userRepository');
 const { generateId } = require('../utils/idGenerator');
 
-// Verifies that the user owns the file, throwing an error if access is denied
 const verifyOwnership = (ownerId, fileId) => {
     const file = fileRepository.findById(fileId, ownerId);
     if (!file) {
@@ -14,13 +13,42 @@ const verifyOwnership = (ownerId, fileId) => {
     return file;
 };
 
-// Retrieves all permissions associated with a specific file
-exports.getPermissions = (ownerId, fileId) => {
-    verifyOwnership(ownerId, fileId);
-    return permissionRepository.findByFileId(fileId);
+const resolveRole = (userId, fileId) => {
+    let currentId = fileId;
+    let found = null;
+
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId); 
+        if (!item) break;
+
+        if (item.ownerId === userId) return "owner";
+
+        const perms = permissionRepository.findByFileId(currentId) || [];
+        const userPerm = perms.find(p => p.userId === userId);
+
+        if (userPerm) {
+            if (userPerm.role === "editor") return "editor";
+            if (!found) found = "viewer";
+        }
+
+        currentId = item.parentId;
+    }
+    return found;
 };
 
-// Adds a new permission for a user, validating user existence and duplicates
+exports.getPermissions = (ownerId, fileId) => {
+    const role = resolveRole(ownerId, fileId);
+    if (!role) {
+        const err = new Error('File not found or access denied');
+        err.status = 404;
+        throw err;
+    }
+
+    const permissions = permissionRepository.findByFileId(fileId);
+    
+    return { myRole: role, permissions };
+};
+
 exports.addPermission = (ownerId, fileId, payload) => {
     verifyOwnership(ownerId, fileId);
 
@@ -50,7 +78,6 @@ exports.addPermission = (ownerId, fileId, payload) => {
     return permissionRepository.create(newPermission);
 };
 
-// Toggles the permission role between viewer and editor
 exports.updatePermission = (ownerId, fileId, pId) => {
     verifyOwnership(ownerId, fileId);
     const permission = permissionRepository.findById(pId);
@@ -62,11 +89,9 @@ exports.updatePermission = (ownerId, fileId, pId) => {
     }
 
     const newRole = (permission.role === 'viewer') ? 'editor' : 'viewer';
-
     return permissionRepository.update(pId, { role: newRole });
 };
 
-// Deletes a permission entry after verifying ownership
 exports.deletePermission = (ownerId, fileId, pId) => {
     verifyOwnership(ownerId, fileId);
 
@@ -79,13 +104,12 @@ exports.deletePermission = (ownerId, fileId, pId) => {
     return removed;
 };
 
-// Checks if a user has the required access role by traversing the file hierarchy
 const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
     let currentId = fileId;
     let foundPermission = null;
 
     while (currentId !== null) {
-        const item = fileRepository.getById(currentId);
+        const item = fileRepository.findById(currentId, userId); 
         if (!item) break;
 
         if (item.ownerId === userId) return true;
@@ -101,11 +125,9 @@ const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
         currentId = item.parentId;
     }
 
-    if (requiredRole === 'viewer') {
-        return foundPermission !== null;
-    } else if (requiredRole === 'editor') {
-        return foundPermission === 'editor';
-    }
-
+    if (requiredRole === 'viewer') return foundPermission !== null;
+    if (requiredRole === 'editor') return foundPermission === 'editor';
     return false;
 };
+
+exports.checkAccess = checkAccess;
