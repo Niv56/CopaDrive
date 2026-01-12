@@ -3,7 +3,6 @@ import { getRootFiles } from "../../../api/filesApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useFileActions } from "../../../hooks/useFileActions";
 import FileListItem from "../widgets/FileListItem";
-import CreateItem from "../widgets/CreateItem";
 import ShareModal from "../widgets/ShareModal";
 import FileViewerModal from "../widgets/FileViewerModal";
 import "./MyDrive.css";
@@ -29,7 +28,6 @@ function MyDrive() {
     } finally { setLoading(false); }
   };
 
-  // ✅ שינוי 1: חילוץ loadingFile מה-Hook
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
     handleOpen, handleToggleStar, handleToggleImportant, handleDelete,
@@ -37,6 +35,12 @@ function MyDrive() {
   } = useFileActions(myUserId, loadFiles);
 
   useEffect(() => { loadFiles(); }, []);
+
+  // ✅ האזנה לאירוע רענון מהכפתור הגלובלי ב-MainArea
+  useEffect(() => {
+    window.addEventListener("refresh-mydrive", loadFiles);
+    return () => window.removeEventListener("refresh-mydrive", loadFiles);
+  }, []);
 
   useEffect(() => {
     const onOpenFolder = (e) => {
@@ -57,7 +61,6 @@ function MyDrive() {
 
   return (
     <div className="mainarea">
-      {/* ✅ שינוי 2: הצגת גלגל הטעינה בזמן פתיחת קובץ */}
       {loadingFile && (
         <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
           <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
@@ -94,7 +97,7 @@ function MyDrive() {
         ))}
       </div>
 
-      <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
+      
       <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} />
       {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
