@@ -72,11 +72,10 @@ function MyDrive() {
       <div className="files-container">
         {currentItems.map(item => (
           <FileListItem
-            key={item.id} item={item}
-            onOpen={(it) => handleOpen(it, (folder) => {
-              setCurrentFolderId(folder.id);
-              setFolderPath(prev => [...prev, { id: folder.id, name: folder.name }]);
-            })}
+            key={item.id}
+            item={item}
+            myUserId={myUserId} // ✅ העברת ה-ID לחישוב ה-Role
+            onOpen={handleOpen}
             onShare={setSharingItem}
             onToggleStar={handleToggleStar}
             onToggleImportant={handleToggleImportant}

@@ -152,9 +152,9 @@ export async function getRecentFiles() {
   const data = await getRootFiles();
   return Array.isArray(data)
     ? data
-        .filter((f) => f.type === "file" && f.lastAccessed)
-        .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
-        .slice(0, 20)
+      .filter((f) => f.type === "file" && f.lastAccessed)
+      .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
+      .slice(0, 20)
     : [];
 }
 
@@ -171,7 +171,7 @@ export async function openItem(item, onFolderOpen = null) {
   request(`/api/files/${item.id}/access`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-  }).catch(() => {});
+  }).catch(() => { });
 
   return getFileById(item.id);
 }
@@ -229,4 +229,30 @@ export async function searchItems(query) {
 export async function getCurrentUser(userId) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, { method: "GET" });
+}
+
+/* -----------------------------
+   Permissions
+------------------------------ */
+
+export async function getFilePermissions(fileId) {
+  if (!fileId) throw new Error("fileId is required");
+  return request(`/api/files/${fileId}/permissions`, { method: "GET" });
+}
+
+export async function patchFilePermission(fileId, permissionId) {
+  if (!fileId) throw new Error("fileId is required");
+  if (!permissionId) throw new Error("permissionId is required");
+  return request(`/api/files/${fileId}/permissions/${permissionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function deleteFilePermission(fileId, permissionId) {
+  if (!fileId) throw new Error("fileId is required");
+  if (!permissionId) throw new Error("permissionId is required");
+  return request(`/api/files/${fileId}/permissions/${permissionId}`, {
+    method: "DELETE",
+  });
 }

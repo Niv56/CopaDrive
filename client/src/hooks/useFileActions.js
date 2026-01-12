@@ -1,3 +1,4 @@
+// client/src/hooks/useFileActions.js
 import { useState } from "react";
 import { setStarred, setImportant, deleteItem, openItem } from "../api/filesApi";
 
@@ -7,64 +8,93 @@ export function useFileActions(myUserId, onRefresh) {
     const [openedRole, setOpenedRole] = useState("viewer");
     const [loadingFile, setLoadingFile] = useState(false);
 
+    // ✅ cache: fileId -> "viewer" | "editor" | "owner"
+    const [resolvedRoles, setResolvedRoles] = useState({});
+
     const handleOpen = async (item, onFolderOpen) => {
         if (!item) return;
         setLoadingFile(true);
+
         try {
-            const role = item.ownerId === myUserId ? "owner" : "viewer";
+            let role = "viewer";
+
+            if (item.ownerId === myUserId) {
+                role = "owner";
+            } else {
+                const token = localStorage.getItem("token");
+                const res = await fetch(
+                    `http://localhost:3000/api/files/${item.id}/permissions`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = Array.isArray(data)
+                        ? data
+                        : Array.isArray(data?.permissions)
+                            ? data.permissions
+                            : [];
+
+                    const myPerm = list.find((p) => p.userId === myUserId);
+                    if (myPerm?.role) role = myPerm.role; // "editor" / "viewer"
+                }
+            }
+
+            // ✅ keep modal role
             setOpenedRole(role);
+
+            // ✅ keep list role synced (cache by id)
+            setResolvedRoles((prev) => ({ ...prev, [item.id]: role }));
 
             const fullFile = await openItem(item, (folder) => {
                 if (onFolderOpen) onFolderOpen(folder);
             });
 
-            if (fullFile) setOpenedFile(fullFile);
+            if (fullFile) {
+                setOpenedFile({
+                    ...fullFile,
+                    role, // optional: for other consumers
+                });
+            }
         } catch (e) {
-            alert("Error opening item: " + e.message);
+            alert("Error: " + e.message);
         } finally {
             setLoadingFile(false);
         }
     };
 
-    const handleToggleStar = async (item, newValue) => {
-        try {
-            await setStarred(item.id, newValue);
-            if (onRefresh) onRefresh();
-        } catch (e) {
-            alert("Failed to update star status");
-        }
+    const handleToggleStar = async (item, val) => {
+        await setStarred(item.id, val);
+        if (onRefresh) onRefresh();
     };
 
-    const handleToggleImportant = async (item, newValue) => {
-        try {
-            await setImportant(item.id, newValue);
-            if (onRefresh) onRefresh();
-        } catch (e) {
-            alert("Failed to update importance status");
-        }
+    const handleToggleImportant = async (item, val) => {
+        await setImportant(item.id, val);
+        if (onRefresh) onRefresh();
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm(`Are you sure you want to delete "${item.name}"?`)) return;
-        try {
-            await deleteItem(item.id);
-            if (onRefresh) onRefresh();
-            if (openedFile?.id === item.id) setOpenedFile(null);
-        } catch (e) {
-            alert("Delete failed: " + e.message);
-        }
+        if (!window.confirm(`Delete ${item.name}?`)) return;
+        await deleteItem(item.id);
+        if (onRefresh) onRefresh();
     };
 
     return {
         sharingItem,
         setSharingItem,
+
         openedFile,
         setOpenedFile,
         openedRole,
+
         loadingFile,
+
+        // ✅ new
+        resolvedRoles,
+
         handleOpen,
         handleToggleStar,
         handleToggleImportant,
-        handleDelete
+        handleDelete,
     };
 }
