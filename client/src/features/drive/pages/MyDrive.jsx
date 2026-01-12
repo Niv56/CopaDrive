@@ -28,36 +28,29 @@ function MyDrive() {
         window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
       );
       return payload.userId;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }, [token]);
 
-  // Load root files and keep a loading flag for the initial render.
   const loadFiles = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getRootFiles();
       setAllFiles(Array.isArray(data) ? data : []);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
+  // ה-loadingFile הוסר מה-Destructuring כאן לבקשתך
   const {
-    sharingItem,
-    setSharingItem,
-    openedFile,
-    setOpenedFile,
-    openedRole,
-    handleOpen,
-    handleToggleStar,
-    handleToggleImportant,
-    handleDelete,
+    sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
+    handleOpen, handleToggleStar, handleToggleImportant, handleDelete
   } = useFileActions(myUserId, loadFiles);
 
+  useEffect(() => { loadFiles(); }, [loadFiles]);
+
+  // האזנה לאירוע רענון גלובלי (נשאר כחלק מהלוגיקה שלך)
   useEffect(() => {
-    loadFiles();
+    window.addEventListener("refresh-mydrive", loadFiles);
+    return () => window.removeEventListener("refresh-mydrive", loadFiles);
   }, [loadFiles]);
 
   const currentItems = useMemo(
@@ -81,7 +74,6 @@ function MyDrive() {
     const onOpenFolder = (e) => {
       const folderId = e.detail.folderId;
       setCurrentFolderId(folderId);
-
       const folder = allFiles.find((f) => f.id === folderId);
       setFolderPath([{ id: folderId, name: folder?.name || "Folder" }]);
     };
@@ -93,7 +85,6 @@ function MyDrive() {
 
     window.addEventListener("open-folder", onOpenFolder);
     window.addEventListener("reset-mydrive", onResetMyDrive);
-
     return () => {
       window.removeEventListener("open-folder", onOpenFolder);
       window.removeEventListener("reset-mydrive", onResetMyDrive);
@@ -102,30 +93,20 @@ function MyDrive() {
 
   const ownersMap = useOwnersMap(currentItems);
 
-  // Return a display label for the item's owner.
-  const getOwnerLabel = useCallback(
-    (item) => {
-      if (!item?.ownerId) return "Unknown";
-      if (item.ownerId === myUserId) return "Me";
+  const getOwnerLabel = useCallback((item) => {
+    if (!item?.ownerId) return "Unknown";
+    if (item.ownerId === myUserId) return "Me";
+    const u = ownersMap[item.ownerId];
+    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || u?.email || "External";
+  }, [ownersMap, myUserId]);
 
-      const u = ownersMap[item.ownerId];
-      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-      return fullName || u?.email || "External";
-    },
-    [ownersMap, myUserId]
-  );
+  const getOwnerAvatar = useCallback((item) => {
+    if (!item?.ownerId) return "";
+    const u = ownersMap[item.ownerId];
+    return u?.image || "";
+  }, [ownersMap]);
 
-  // Return an avatar URL/base64 for the item's owner if available.
-  const getOwnerAvatar = useCallback(
-    (item) => {
-      if (!item?.ownerId) return "";
-      const u = ownersMap[item.ownerId];
-      return u?.image || "";
-    },
-    [ownersMap]
-  );
-
-  // Open an item and, if it's a folder, navigate into it.
   const openInsideMyDrive = (it) => {
     handleOpen(it, (folder) => {
       setCurrentFolderId(folder.id);
@@ -137,51 +118,38 @@ function MyDrive() {
 
   return (
     <div className="mainarea">
+      {/* הספינר הוסר מכאן בהתאם לבקשתך */}
+
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div className="d-flex align-items-center gap-2">
-          <h2
-            className="mb-0"
-            style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
-            onClick={() => {
-              setCurrentFolderId(null);
-              setFolderPath([]);
-            }}
-          >
+          <h2 className="mb-0" style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
+            onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>
             My Drive
           </h2>
-
           {currentFolderId && (
             <>
               <span className="text-muted">/</span>
-              <button className="btn btn-sm btn-outline-secondary" onClick={handleBack}>
-                ← Back
-              </button>
+              <button className="btn btn-sm btn-outline-secondary" onClick={handleBack}>← Back</button>
               <span className="fw-bold">{currentFolder?.name}</span>
             </>
           )}
         </div>
-
         <ViewModeToggle />
       </div>
 
       {viewMode === "list" ? (
         <>
-          <div
-            className="d-flex align-items-center text-muted px-3 pb-2 border-bottom mb-2"
-            style={{ fontSize: "13px", fontWeight: 600, gap: "10px" }}
-          >
+          <div className="d-flex align-items-center text-muted px-3 pb-2 border-bottom mb-2" style={{ fontSize: "13px", fontWeight: 600, gap: "10px" }}>
             <div style={{ flex: 1 }}>Name</div>
             <div style={{ width: "150px" }}>Owner</div>
             <div style={{ width: "150px" }}>Date created</div>
             <div style={{ width: "100px" }}>Size</div>
             <div style={{ width: "100px" }} />
           </div>
-
           <div className="files-container">
             {currentItems.map((item) => (
               <FileListItem
-                key={item.id}
-                item={item}
+                key={item.id} item={item}
                 ownerLabel={getOwnerLabel(item)}
                 ownerAvatar={getOwnerAvatar(item)}
                 dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
@@ -198,8 +166,7 @@ function MyDrive() {
         <div className="files-grid">
           {currentItems.map((item) => (
             <FileGridItem
-              key={item.id}
-              item={item}
+              key={item.id} item={item}
               ownerLabel={getOwnerLabel(item)}
               ownerAvatar={getOwnerAvatar(item)}
               dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
@@ -213,8 +180,7 @@ function MyDrive() {
       <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
 
       <FileViewerModal
-        file={openedFile}
-        role={openedRole}
+        file={openedFile} role={openedRole}
         onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onDelete={async () => {
@@ -224,7 +190,7 @@ function MyDrive() {
         }}
       />
 
-      {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
+      {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
   );
 }
