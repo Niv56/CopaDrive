@@ -1,15 +1,38 @@
 import React from "react";
+// Imports from the new sub-component architecture
+import ImageViewer from "./viewers/ImageViewer";
+import TextViewer from "./viewers/TextViewer";
+import BinaryViewer from "./viewers/BinaryViewer";
 
-function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
+function FileViewerModal({
+  file,
+  role,
+  onClose,
+  onEdit,
+  onShare,
+  onDelete,
+  onToggleStar,
+  onToggleImportant
+}) {
   if (!file) return null;
 
   const canEdit = role === "owner" || role === "editor";
+  const isStarred = !!file.starred;
+  const isImportant = !!file.important;
+
+  // Helper to stop event propagation
+  const stop = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   const handleDownload = () => {
     const link = document.createElement("a");
-    
-    // Logic check: Ensure downloaded text files don't contain socket placeholders
     let processedContent = file.content || "";
+
+    // Restoration of newlines from socket placeholders
     if (!file.mimeType || file.mimeType === "text/plain") {
       processedContent = processedContent.replaceAll("_@NL@_", "\n");
     }
@@ -27,79 +50,88 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
     document.body.removeChild(link);
   };
 
+  // Logic from HEAD: Selecting the correct sub-viewer
+  const renderViewer = () => {
+    const mime = file.mimeType || "";
+    if (mime.startsWith("image/")) return <ImageViewer file={file} />;
+    
+    // For text files, ensure we pass the content with restored newlines
+    if (mime === "text/plain" || file.type === "file") {
+      const displayFile = {
+        ...file,
+        content: file.content ? file.content.replaceAll("_@NL@_", "\n") : ""
+      };
+      return <TextViewer file={displayFile} />;
+    }
+
+    return <BinaryViewer file={file} onDownload={handleDownload} />;
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <div className="modal-title" style={{ marginBottom: 4 }}>
-              {file.name}
-            </div>
-            <div style={{ fontSize: 12, color: "#666" }}>
-              Role: {role}
-            </div>
+      <div className="modal-card viewer-modal" onClick={(e) => e.stopPropagation()}>
+        
+        <div className="modal-title-row d-flex align-items-center justify-content-between mb-3">
+          <div className="modal-title-text">
+            <h2 className="fw-bold m-0" style={{ fontSize: "1.25rem" }}>{file.name}</h2>
+            <div style={{ fontSize: 12, color: "#666" }}>Role: {role}</div>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button type="button" className="btn secondary" onClick={handleDownload} title="Download">
+          <div className="modal-action-buttons d-flex gap-2 align-items-center">
+            {/* 1. Star Toggle Button */}
+            <button 
+              className="btn secondary" 
+              onClick={(e) => { stop(e); onToggleStar(file, !isStarred); }}
+              style={isStarred ? { color: "#FFD54F" } : {}}
+              title="Toggle Star"
+            >
+              {isStarred ? "★" : "☆"}
+            </button>
+
+            {/* 2. Important Toggle Button */}
+            <button 
+              className="btn secondary" 
+              onClick={(e) => { stop(e); onToggleImportant(file, !isImportant); }}
+              style={isImportant ? { color: "#EF5350" } : {}}
+              title="Mark as Important"
+            >
+              {isImportant ? "🔖" : "🏷️"}
+            </button>
+
+            {/* 3. Download Button */}
+            <button type="button" className="btn secondary" onClick={(e) => { stop(e); handleDownload(); }} title="Download">
               📥
             </button>
 
+            {/* 4. Edit Button (Role Protected) */}
             {canEdit && (
-              <button type="button" className="btn secondary" onClick={onEdit} title="Edit">
+              <button type="button" className="btn secondary" onClick={(e) => { stop(e); onEdit(file); }} title="Edit">
                 ✏️
               </button>
             )}
 
-            <button type="button" className="btn secondary" onClick={() => onShare(file)} title="Share">
+            {/* 5. Share Button */}
+            <button className="btn secondary" onClick={(e) => { stop(e); onShare(file); }} title="Share">
               🔗
             </button>
 
-            <button type="button" className="btn secondary" onClick={onDelete} title="Delete">
+            {/* 6. Delete Button */}
+            <button className="btn secondary text-danger" onClick={(e) => { stop(e); onDelete(file); }} title="Delete">
               🗑️
             </button>
 
-            <button type="button" className="btn secondary" onClick={onClose}>
-              Close
-            </button>
+            <button className="btn secondary ms-2" onClick={onClose}>✕</button>
           </div>
         </div>
 
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 20, minHeight: 300, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
-            Content:
-          </div>
+        {/* Content Area calling the sub-viewers */}
+        <div className="modal-body" style={{ border: "1px solid #eee", borderRadius: 12, padding: 20, minHeight: 300, backgroundColor: "#fafafa" }}>
+          {renderViewer()}
+        </div>
 
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {/* 1. Image Case */}
-            {file.mimeType?.startsWith("image/") ? (
-              <img
-                src={`data:${file.mimeType};base64,${file.content}`}
-                alt={file.name}
-                style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: 8, objectFit: "contain" }}
-              />
-            ) :
-              /* 2. Text Case */
-              (file.mimeType === "text/plain" || !file.mimeType) ? (
-                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, width: "100%", alignSelf: "flex-start" }}>
-                  {/* Logic: Convert placeholders back to newlines for the UI */}
-                  {file.content 
-                    ? file.content.replaceAll("_@NL@_", "\n") 
-                    : "(Empty file)"}
-                </div>
-              ) :
-                /* 3. Binary/Other Case */
-                (
-                  <div className="text-center">
-                    <div style={{ fontSize: "3.5rem", marginBottom: 15 }}>🚫</div>
-                    <div className="fw-bold" style={{ fontSize: "1.2rem" }}>No preview available</div>
-                    <div className="text-muted mb-4">Please download the file to view its content.</div>
-                    <button className="btn primary" onClick={handleDownload} style={{ padding: "10px 25px" }}>
-                      📥 Download to View
-                    </button>
-                  </div>
-                )}
-          </div>
+        <div className="modal-footer-actions mt-3 d-flex justify-content-end gap-2">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+          <button type="button" className="btn btn-primary" onClick={handleDownload}>Download</button>
         </div>
       </div>
     </div>

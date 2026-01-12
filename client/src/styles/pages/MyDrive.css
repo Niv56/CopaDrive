@@ -63,7 +63,9 @@
 }
 
 /* Modal */
+
 .modal-overlay {
+<<<<<<< HEAD:client/src/styles/pages/MyDrive.css
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
@@ -72,6 +74,18 @@
   justify-content: center;
   padding: 18px;
   z-index: 9999;
+=======
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* וודא שזה מספר גבוה מאוד */
+>>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/main/MyDrive.css
 }
 
 .modal-card {
@@ -150,6 +164,32 @@
   color: var(--text-primary);
 }
 
+<<<<<<< HEAD:client/src/styles/pages/MyDrive.css
 .btn.secondary:hover {
   background: var(--border-color);
+=======
+
+.loading-indicator-mini {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-size: 12px;
+  color: #5f6368;
+  border: 1px solid #eee;
+}
+
+/* ביטול הריצוד - אם אין קבצים בטעינה ראשונה, נציג הודעה יפה במקום מסך ריק */
+.files-container:empty:not(:loading) {
+  text-align: center;
+  margin-top: 50px;
+  color: #aaa;
+>>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/main/MyDrive.css
 }
