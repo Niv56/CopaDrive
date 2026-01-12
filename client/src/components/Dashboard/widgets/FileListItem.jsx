@@ -4,66 +4,98 @@ import { formatBytes } from "../../../utils/formatBytes";
 function FileListItem({
   item,
   onOpen,
+  onEdit,
   onShare,
+  onDelete,
   onToggleStar,
   onToggleImportant,
-  onDelete,
+  extraInfo, // optional (e.g. "Opened Just now")
   myUserId,
-  resolvedRole, // ✅ new: role from cache
+  resolvedRole, // role from cache (viewer/editor/owner)
 }) {
   if (!item) return null;
 
-  const isOwner = item.ownerId === myUserId;
+  const isFolder = item.type === "folder";
+  const isStarred = !!item.starred;
+  const isImportant = !!item.important;
 
-  // prefer resolvedRole -> item.role -> default viewer
-  const rawRole = isOwner ? "owner" : (resolvedRole || item.role || "viewer");
-  const myRole = isOwner ? "OWNER" : String(rawRole).toUpperCase();
+  const isOwner = myUserId && item.ownerId === myUserId;
+
+  // Prefer resolvedRole if provided; fallback:
+  const myRole = resolvedRole || (isOwner ? "owner" : "viewer");
+
+  const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes);
 
   const badgeStyle = {
-    fontSize: "10px",
-    padding: "2px 6px",
-    borderRadius: "4px",
-    marginLeft: "8px",
-    fontWeight: "bold",
-    verticalAlign: "middle",
-    backgroundColor: isOwner ? "#e6f4ea" : (myRole === "EDITOR" ? "#e8f0fe" : "#f1f3f4"),
-    color: isOwner ? "#137333" : (myRole === "EDITOR" ? "#1a73e8" : "#5f6368"),
-    border: `1px solid ${isOwner ? "#ceead6" : (myRole === "EDITOR" ? "#d2e3fc" : "#dadce0")}`,
+    marginLeft: 10,
+    padding: "2px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 600,
+    background:
+      myRole === "owner"
+        ? "#fef3c7"
+        : myRole === "editor"
+          ? "#dbeafe"
+          : "#f3f4f6",
+    color: "#111827",
+    border: "1px solid #e5e7eb",
+    textTransform: "capitalize",
   };
 
   return (
     <div
-      className="list-group-item d-flex justify-content-between align-items-center rounded-4 shadow-sm py-3 px-3 mb-2 bg-white border-0"
+      className="list-group-item d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
+      style={{ cursor: "pointer", background: "#fff" }}
       onClick={() => onOpen?.(item)}
-      style={{ cursor: "pointer" }}
     >
       <div className="d-flex align-items-center gap-3">
-        <span style={{ fontSize: 22 }}>{item.type === "folder" ? "📁" : "📄"}</span>
+        <div style={{ fontSize: 22 }}>{isFolder ? "📁" : "📄"}</div>
 
         <div className="d-flex flex-column">
-          <div className="fw-semibold text-truncate" style={{ maxWidth: "250px" }}>
+          <div className="fw-semibold text-truncate" style={{ maxWidth: 250 }}>
             {item.name}
-            <span style={badgeStyle}>{myRole}</span>
+            {/* role badge */}
+            {myUserId && <span style={badgeStyle}>{myRole}</span>}
           </div>
-          <div className="text-muted small">{item.type === "folder" ? "Folder" : "File"}</div>
+
+          <div className="text-muted small">
+            {isFolder ? "Folder" : "File"}
+            {extraInfo ? <span className="ms-2">· {extraInfo}</span> : null}
+          </div>
         </div>
       </div>
 
-      <div className="d-flex align-items-center gap-3" onClick={(e) => e.stopPropagation()}>
-        <div className="text-muted small">
-          {item.type === "folder" ? "—" : formatBytes(item.sizeBytes)}
+      <div
+        className="d-flex align-items-center gap-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Size */}
+        <div className="text-muted small" style={{ minWidth: 70, textAlign: "right" }}>
+          {sizeLabel}
         </div>
 
-        <button className="btn btn-light rounded-circle" onClick={() => onToggleStar?.(item, !item.starred)}>
-          {item.starred ? "★" : "☆"}
+        {/* STAR */}
+        <button
+          className="btn btn-light rounded-circle"
+          title={isStarred ? "Unstar" : "Star"}
+          onClick={() => onToggleStar?.(item, !isStarred)}
+        >
+          {isStarred ? "⭐" : "☆"}
         </button>
 
-        <button className="btn btn-light rounded-circle" onClick={() => onToggleImportant?.(item, !item.important)}>
+        {/* IMPORTANT */}
+        <button
+          className="btn btn-light rounded-circle"
+          title={isImportant ? "Unmark important" : "Mark important"}
+          onClick={() => onToggleImportant?.(item, !isImportant)}
+        >
           !
         </button>
 
+        {/* MENU */}
         <div className="dropdown">
-          <button className="btn btn-light rounded-circle" data-bs-toggle="dropdown">
+          <button className="btn btn-light rounded-circle" data-bs-toggle="dropdown" title="More">
             ⋮
           </button>
 
@@ -73,6 +105,14 @@ function FileListItem({
                 Share
               </button>
             </li>
+
+            {onEdit && (
+              <li>
+                <button className="dropdown-item" onClick={() => onEdit(item)}>
+                  Edit
+                </button>
+              </li>
+            )}
 
             {isOwner && (
               <li>

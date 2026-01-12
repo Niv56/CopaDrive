@@ -8,42 +8,21 @@ import {
     deleteFilePermission,
 } from "../api/filesApi";
 
+/**
+ * usePermissionsManager Hook
+ * מנהל את כל הלוגיקה של הרשאות - שליפה, הוספה, עדכון, מחיקה
+ *
+ * @param {string} itemId - מזהה הקובץ/תיקייה
+ * @returns {Object} - פונקציות ומצבים לניהול הרשאות
+ */
 export function usePermissionsManager(itemId) {
     const [permissions, setPermissions] = useState([]);
-    const [myRole, setMyRole] = useState(null); // "owner" | "editor" | "viewer" (או null)
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const enrichPermissionsWithUserData = async (permissionsList) => {
-        const token = localStorage.getItem("token");
-        const enriched = [];
-
-        for (const perm of permissionsList) {
-            try {
-                const userResponse = await fetch(`http://localhost:3000/api/users/${perm.userId}`, {
-                    method: "GET",
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    enriched.push({
-                        ...perm,
-                        userName: `${userData.firstName || ""} ${userData.lastName || ""}`.trim(),
-                        userEmail: userData.email,
-                        userImage: userData.image,
-                    });
-                } else {
-                    enriched.push(perm);
-                }
-            } catch {
-                enriched.push(perm);
-            }
-        }
-
-        return enriched;
-    };
-
+    /**
+     * טעינת רשימת ההרשאות
+     */
     const loadPermissions = useCallback(async () => {
         if (!itemId) return;
 
@@ -51,30 +30,18 @@ export function usePermissionsManager(itemId) {
         setError(null);
 
         try {
-            const data = await getFilePermissions(itemId);
+            const res = await getFilePermissions(itemId);
 
-            // תומך בשני פורמטים:
-            // ישן: [ ... ]
-            // חדש: { myRole, permissions: [ ... ] }
-            let list = [];
-            let role = null;
+            // backend might return array directly OR {permissions: []}
+            const list = Array.isArray(res)
+                ? res
+                : Array.isArray(res?.permissions)
+                    ? res.permissions
+                    : [];
 
-            if (Array.isArray(data)) {
-                list = data;
-                role = null;
-            } else {
-                list = Array.isArray(data?.permissions) ? data.permissions : [];
-                role = data?.myRole || null;
-            }
-
-            setMyRole(role);
-
-            const enriched = await enrichPermissionsWithUserData(list);
-            setPermissions(enriched);
+            setPermissions(list);
         } catch (err) {
             setError(err.message || "Failed to load permissions");
-            setPermissions([]);
-            setMyRole(null);
         } finally {
             setLoading(false);
         }
@@ -84,31 +51,43 @@ export function usePermissionsManager(itemId) {
         loadPermissions();
     }, [loadPermissions]);
 
+    /**
+     * חיפוש משתמש לפי אימייל
+     */
     const searchUser = async (email) => {
-        const user = await findUserByEmail(email);
-        if (!user) throw new Error("User not found");
-        return user;
+        if (!email?.trim()) return null;
+        return await findUserByEmail(email.trim());
     };
 
+    /**
+     * שיתוף - הוספת הרשאה חדשה (POST)
+     */
     const shareWithUser = async (targetUserId) => {
+        if (!itemId) return;
         await addFilePermission(itemId, targetUserId);
         await loadPermissions();
     };
 
-    // אצלך ב-UI אתה מעביר permission.id — אז נקבל permissionId
+    /**
+     * Toggle Role (PATCH)
+     */
     const toggleRole = async (permissionId) => {
+        if (!itemId) return;
         await patchFilePermission(itemId, permissionId);
         await loadPermissions();
     };
 
+    /**
+     * מחיקת הרשאה (DELETE)
+     */
     const deletePermission = async (permissionId) => {
+        if (!itemId) return;
         await deleteFilePermission(itemId, permissionId);
         await loadPermissions();
     };
 
     return {
         permissions,
-        myRole,
         loading,
         error,
         loadPermissions,

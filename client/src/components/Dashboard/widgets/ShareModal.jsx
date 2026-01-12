@@ -19,40 +19,32 @@ function ShareModal({ item, onClose }) {
     const {
         permissions,
         loading,
+        error,
         searchUser,
         shareWithUser,
         toggleRole,
         deletePermission,
     } = usePermissionsManager(item?.id);
 
-    const isOwner = currentUserId === item?.ownerId;
+    const isOwner = item?.ownerId === currentUserId;
 
     if (!item) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div
-                className="modal-card shadow-lg p-4"
+                className="modal-card share-modal"
                 onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: 560, width: "95%" }}
             >
-                {/* Header */}
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h5 className="m-0 fw-bold" style={{ color: "#111827" }}>
-                            Share “{item.name}”
-                        </h5>
-                        <div className="share-muted" style={{ fontSize: 13, marginTop: 4 }}>
-                        </div>
+                <div className="share-header">
+                    <div className="d-flex flex-column">
+                        <h5 className="m-0 fw-bold">Share “{item.name}”</h5>
+                        <span className="share-muted small">
+                            Manage access for this item
+                        </span>
                     </div>
 
-                    <button
-                        className="btn share-btn-outline"
-                        onClick={onClose}
-                        type="button"
-                        style={{ borderRadius: 10, padding: "6px 10px", lineHeight: 1 }}
-                        title="Close"
-                    >
+                    <button className="btn btn-light rounded-circle" onClick={onClose}>
                         ✕
                     </button>
                 </div>
@@ -68,21 +60,27 @@ function ShareModal({ item, onClose }) {
 
                 {/* Bottom section: Permissions list */}
                 {loading ? (
-                    <div className="text-center py-4 share-muted small">Loading permissions...</div>
+                    <div className="text-center py-4 share-muted small">
+                        Loading permissions...
+                    </div>
                 ) : (
                     <PermissionsList
-                        permissions={permissions}
                         isOwner={isOwner}
-                        currentUserId={currentUserId}
-                        itemOwnerId={item.ownerId}
+                        permissions={permissions}
                         onToggleRole={toggleRole}
-                        onDeletePermission={deletePermission}
+                        onDelete={deletePermission}
                     />
                 )}
 
-                <div className="text-end mt-4">
+                {error && (
+                    <div className="alert alert-danger py-2 px-3 mt-3 small">
+                        {error}
+                    </div>
+                )}
+
+                <div className="d-flex justify-content-end mt-4">
                     <button
-                        className="btn share-btn-neutral rounded-pill px-5"
+                        className="btn share-btn-primary rounded-pill px-4"
                         onClick={onClose}
                         type="button"
                     >

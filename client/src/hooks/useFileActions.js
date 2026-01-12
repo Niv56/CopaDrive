@@ -13,6 +13,7 @@ export function useFileActions(myUserId, onRefresh) {
 
     const handleOpen = async (item, onFolderOpen) => {
         if (!item) return;
+
         setLoadingFile(true);
 
         try {
@@ -46,18 +47,11 @@ export function useFileActions(myUserId, onRefresh) {
             // ✅ keep list role synced (cache by id)
             setResolvedRoles((prev) => ({ ...prev, [item.id]: role }));
 
-            const fullFile = await openItem(item, (folder) => {
-                if (onFolderOpen) onFolderOpen(folder);
-            });
-
-            if (fullFile) {
-                setOpenedFile({
-                    ...fullFile,
-                    role, // optional: for other consumers
-                });
-            }
+            const file = await openItem(item, onFolderOpen);
+            if (file) setOpenedFile(file);
         } catch (e) {
-            alert("Error: " + e.message);
+            console.error("Failed to open item:", e);
+            alert("Failed to open item");
         } finally {
             setLoadingFile(false);
         }
@@ -74,9 +68,15 @@ export function useFileActions(myUserId, onRefresh) {
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm(`Delete ${item.name}?`)) return;
-        await deleteItem(item.id);
-        if (onRefresh) onRefresh();
+        if (!window.confirm(`Delete "${item.name}"?`)) return;
+
+        try {
+            await deleteItem(item.id);
+            if (onRefresh) onRefresh();
+        } catch (e) {
+            console.error("Delete failed:", e);
+            alert("Failed to delete item");
+        }
     };
 
     return {
