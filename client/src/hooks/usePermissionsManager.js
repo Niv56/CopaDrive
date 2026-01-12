@@ -1,27 +1,47 @@
-// client/src/hooks/usePermissionsManager.js
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
     findUserByEmail,
     addFilePermission,
     getFilePermissions,
     patchFilePermission,
     deleteFilePermission,
+    getCurrentUser,
 } from "../api/filesApi";
 
 /**
  * usePermissionsManager Hook
- * מנהל את כל הלוגיקה של הרשאות - שליפה, הוספה, עדכון, מחיקה
- *
- * @param {string} itemId - מזהה הקובץ/תיקייה
- * @returns {Object} - פונקציות ומצבים לניהול הרשאות
+ * מנהל את כל הלוגיקה של הרשאות - שליפה, הוספה, עדכון (toggle), מחיקה
+ * + enrichment: מביא email/image לכל permission דרך getCurrentUser(userId)
  */
 export function usePermissionsManager(itemId) {
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Cache כדי לא לקרוא שוב ושוב ל /api/users/:id
+    const userCacheRef = useRef(new Map());
+
+    const getUserCached = useCallback(async (userId) => {
+        if (!userId) return null;
+
+        const cache = userCacheRef.current;
+        if (cache.has(userId)) return cache.get(userId);
+
+        try {
+            const user = await getCurrentUser(userId); // uses request() + token
+            cache.set(userId, user);
+            return user;
+        } catch (e) {
+            // לא שוברים את המסך אם אין משתמש/אין הרשאה
+            cache.set(userId, null);
+            return null;
+        }
+    }, []);
+
     /**
      * טעינת רשימת ההרשאות
+     * - backend יכול להחזיר array או { permissions: [] }
+     * - enrichment: מוסיף userEmail/userImage
      */
     const loadPermissions = useCallback(async () => {
         if (!itemId) return;
@@ -32,35 +52,54 @@ export function usePermissionsManager(itemId) {
         try {
             const res = await getFilePermissions(itemId);
 
-            // backend might return array directly OR {permissions: []}
             const list = Array.isArray(res)
                 ? res
                 : Array.isArray(res?.permissions)
                     ? res.permissions
                     : [];
 
-            setPermissions(list);
+            const enriched = await Promise.all(
+                list.map(async (perm) => {
+                    const user = await getUserCached(perm.userId);
+
+                    const firstName = user?.firstName || "";
+                    const lastName = user?.lastName || "";
+                    const fullName = `${firstName} ${lastName}`.trim();
+
+                    return {
+                        ...perm,
+                        userName: fullName || null,
+                        userEmail: user?.email || null,
+                        userImage: user?.image || null,
+                    };
+                })
+            );
+
+            setPermissions(enriched);
         } catch (err) {
-            setError(err.message || "Failed to load permissions");
+            setError(err?.message || "Failed to load permissions");
+            setPermissions([]);
         } finally {
             setLoading(false);
         }
-    }, [itemId]);
+    }, [itemId, getUserCached]);
 
     useEffect(() => {
         loadPermissions();
     }, [loadPermissions]);
 
     /**
-     * חיפוש משתמש לפי אימייל
+     * חיפוש משתמש לפי אימייל (משמש את ה-form למעלה)
      */
     const searchUser = async (email) => {
         if (!email?.trim()) return null;
-        return await findUserByEmail(email.trim());
+        const user = await findUserByEmail(email.trim());
+        if (!user) throw new Error("User not found");
+        return user;
     };
 
     /**
-     * שיתוף - הוספת הרשאה חדשה (POST)
+     * שיתוף - הוספת הרשאה (viewer ברירת מחדל בשרת)
      */
     const shareWithUser = async (targetUserId) => {
         if (!itemId) return;
@@ -69,7 +108,7 @@ export function usePermissionsManager(itemId) {
     };
 
     /**
-     * Toggle Role (PATCH)
+     * Toggle Role (PATCH) - מחליף viewer <-> editor
      */
     const toggleRole = async (permissionId) => {
         if (!itemId) return;

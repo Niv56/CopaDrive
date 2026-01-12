@@ -1,4 +1,3 @@
-// client/src/components/Dashboard/widgets/ShareModal.jsx
 import React, { useMemo } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { usePermissionsManager } from "../../../hooks/usePermissionsManager";
@@ -11,9 +10,13 @@ function ShareModal({ item, onClose }) {
 
     const currentUserId = useMemo(() => {
         if (!token) return null;
-        return JSON.parse(
-            window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-        ).userId;
+        try {
+            return JSON.parse(
+                window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+            ).userId;
+        } catch {
+            return null;
+        }
     }, [token]);
 
     const {
@@ -26,7 +29,7 @@ function ShareModal({ item, onClose }) {
         deletePermission,
     } = usePermissionsManager(item?.id);
 
-    const isOwner = item?.ownerId === currentUserId;
+    const isOwner = currentUserId === item?.ownerId;
 
     if (!item) return null;
 
@@ -39,22 +42,21 @@ function ShareModal({ item, onClose }) {
                 <div className="share-header">
                     <div className="d-flex flex-column">
                         <h5 className="m-0 fw-bold">Share “{item.name}”</h5>
-                        <span className="share-muted small">
-                            Manage access for this item
-                        </span>
+                        <span className="share-muted small">Manage access for this item</span>
                     </div>
 
-                    <button className="btn btn-light rounded-circle" onClick={onClose}>
+                    <button
+                        className="btn btn-light rounded-circle"
+                        onClick={onClose}
+                        type="button"
+                        aria-label="Close"
+                    >
                         ✕
                     </button>
                 </div>
 
-                {/* Top section: Add users */}
-                <AddPermissionForm
-                    isOwner={isOwner}
-                    onSearch={searchUser}
-                    onShare={shareWithUser}
-                />
+                {/* Top section: Add users / warning for non-owner */}
+                <AddPermissionForm isOwner={isOwner} onSearch={searchUser} onShare={shareWithUser} />
 
                 <hr className="my-4" style={{ borderColor: "#e5e7eb" }} />
 
@@ -64,23 +66,24 @@ function ShareModal({ item, onClose }) {
                         Loading permissions...
                     </div>
                 ) : (
-                    <PermissionsList
-                        isOwner={isOwner}
-                        permissions={permissions}
-                        onToggleRole={toggleRole}
-                        onDelete={deletePermission}
-                    />
+                    <>
+                        {error ? (
+                            <div className="alert alert-danger py-2">{error}</div>
+                        ) : null}
+
+                        <PermissionsList
+                            permissions={permissions}
+                            isOwner={isOwner}
+                            itemOwnerId={item.ownerId}
+                            onToggleRole={toggleRole}
+                            onDelete={deletePermission}
+                        />
+                    </>
                 )}
 
-                {error && (
-                    <div className="alert alert-danger py-2 px-3 mt-3 small">
-                        {error}
-                    </div>
-                )}
-
-                <div className="d-flex justify-content-end mt-4">
+                <div className="text-end mt-4">
                     <button
-                        className="btn share-btn-primary rounded-pill px-4"
+                        className="btn share-btn-neutral rounded-pill px-5"
                         onClick={onClose}
                         type="button"
                     >

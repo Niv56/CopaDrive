@@ -1,89 +1,82 @@
-// client/src/components/Dashboard/widgets/PermissionsList.jsx
 import React, { useMemo } from "react";
 
 /**
- * PermissionsList - Bottom section (GET/PATCH/DELETE)
- * Shows list of permissions with role badge + actions (owner only)
+ * PermissionsList
+ * - מציג avatar (תמונה כמו שהיא) + email בלבד
+ * - role הוא כפתור Toggle: לחיצה על Editor תהפוך ל-Viewer ולהפך
+ * - Remove נשאר כפתור נפרד (רק לבעלים)
  */
-function PermissionsList({ isOwner, permissions, onToggleRole, onDelete }) {
-    const sorted = useMemo(() => {
-        const list = Array.isArray(permissions) ? [...permissions] : [];
-        // keep owner at top if exists
-        list.sort((a, b) => {
-            if (a.role === "owner") return -1;
-            if (b.role === "owner") return 1;
-            return String(a.email || "").localeCompare(String(b.email || ""));
+function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDelete }) {
+    const normalized = useMemo(() => {
+        return (permissions || []).map((p) => {
+            const role = (p.role || "").toLowerCase();
+            const isOwnerRow = p.userId === itemOwnerId;
+
+            const label = isOwnerRow ? "Owner" : role === "editor" ? "Editor" : "Viewer";
+            const cls =
+                isOwnerRow ? "share-role-owner" : role === "editor" ? "share-role-editor" : "share-role-viewer";
+
+            const email = p.userEmail || p.email || "Unknown";
+            const image = p.userImage || p.image || null;
+
+            return { ...p, _ui: { label, cls, isOwnerRow, email, image } };
         });
-        return list;
-    }, [permissions]);
+    }, [permissions, itemOwnerId]);
 
-    if (!sorted.length) {
-        return (
-            <div className="text-center py-4 share-muted small">
-                No permissions yet.
-            </div>
-        );
-    }
-
-    const roleChip = (role) => {
-        const r = (role || "viewer").toLowerCase();
-        const map = {
-            owner: { label: "Owner", cls: "share-role-owner" },
-            editor: { label: "Editor", cls: "share-role-editor" },
-            viewer: { label: "Viewer", cls: "share-role-viewer" },
-        };
-        return map[r] || map.viewer;
+    const initialsFromEmail = (email) => {
+        const safe = (email || "").trim();
+        if (!safe || safe === "Unknown") return "?";
+        const first = safe[0]?.toUpperCase() || "?";
+        const second = safe.includes("@") ? safe.split("@")[0]?.[1]?.toUpperCase() : "";
+        return (first + (second || "")).slice(0, 2);
     };
 
     return (
-        <div className="d-flex flex-column gap-2">
-            {sorted.map((p) => {
-                const chip = roleChip(p.role);
+        <div className="share-list">
+            {normalized.map((p) => {
+                const { label, cls, isOwnerRow, email, image } = p._ui;
 
-                const initials = (p.email || "?").trim().charAt(0).toUpperCase();
+                const canManageThisRow = isOwner && !isOwnerRow;
 
                 return (
-                    <div
-                        key={p.id}
-                        className="share-row"
-                    >
-                        <div className="d-flex align-items-center gap-2">
+                    <div className="share-row" key={p.id}>
+                        {/* Left: Avatar + Email */}
+                        <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
                             <div className="share-avatar">
-                                {p.image ? (
-                                    <img src={p.image} alt="user" />
+                                {image ? (
+                                    <img src={image} alt={email} />
                                 ) : (
-                                    <span className="share-avatar-initials">{initials}</span>
+                                    <div className="share-avatar-initials">{initialsFromEmail(email)}</div>
                                 )}
                             </div>
 
-                            <div className="d-flex flex-column">
-                                <span className="small fw-bold">{p.email || "Unknown"}</span>
-                                <span className="small share-muted">{p.userId}</span>
-                            </div>
+                            <div className="share-email text-truncate">{email}</div>
                         </div>
 
+                        {/* Right: Role (toggle) + Remove */}
                         <div className="d-flex align-items-center gap-2">
-                            <span className={`share-role ${chip.cls}`}>{chip.label}</span>
+                            <button
+                                type="button"
+                                className={`share-role ${cls} ${canManageThisRow ? "share-role-clickable" : ""}`}
+                                disabled={!canManageThisRow}
+                                title={canManageThisRow ? "Click to toggle Viewer/Editor" : "Role"}
+                                onClick={() => {
+                                    if (!canManageThisRow) return;
+                                    onToggleRole?.(p.id);
+                                }}
+                            >
+                                {label}
+                            </button>
 
-                            {isOwner && p.role !== "owner" && (
-                                <>
-                                    <button
-                                        className="btn share-btn-neutral btn-sm rounded-pill px-3"
-                                        onClick={() => onToggleRole?.(p.id)}
-                                        type="button"
-                                    >
-                                        Toggle
-                                    </button>
-
-                                    <button
-                                        className="btn share-btn-danger btn-sm rounded-pill px-3"
-                                        onClick={() => onDelete?.(p.id)}
-                                        type="button"
-                                    >
-                                        Remove
-                                    </button>
-                                </>
-                            )}
+                            {canManageThisRow ? (
+                                <button
+                                    className="btn share-btn-danger btn-sm rounded-pill px-3"
+                                    type="button"
+                                    onClick={() => onDelete?.(p.id)}
+                                >
+                                    Remove
+                                </button>
+                            ) : null}
                         </div>
                     </div>
                 );
