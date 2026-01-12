@@ -1,9 +1,23 @@
 import React, { useEffect, useState } from "react";
 import StorageIndicator from "../widgets/StorageIndicator";
 import { getUsage } from "../../../api/filesApi";
+import "./SideBar.css";
+
+import {
+  FiFolder,
+  FiClock,
+  FiStar,
+  FiAlertCircle,
+  FiUsers,
+  FiTrash2,
+  FiHardDrive,
+} from "react-icons/fi";
 
 function SideBar({ activeView, onChangeView }) {
-  const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
+  const [usage, setUsage] = useState({
+    usedBytes: 0,
+    quotaBytes: 15 * 1024 * 1024 * 1024,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -17,84 +31,101 @@ function SideBar({ activeView, onChangeView }) {
           quotaBytes: u?.quotaBytes ?? 15 * 1024 * 1024 * 1024,
         });
       } catch {
-        // שקט תעשייתי במקרה של שגיאה
+        // ignore
       }
     }
 
     loadUsage();
-   const t = setInterval(loadUsage, 3000);
+    const t = setInterval(loadUsage, 3000);
+
     return () => {
       alive = false;
       clearInterval(t);
     };
   }, []);
 
-  // חישוב GB עבור האינדיקטור
-  const usedGB = usage.usedBytes / (1024 * 1024 * 1024);
+  const Item = ({ id, icon: Icon, text, onClick }) => (
+    <li
+      className={`sb-item ${activeView === id ? "active" : ""}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick?.();
+      }}
+    >
+      <span className="sb-icon" aria-hidden="true">
+        <Icon />
+      </span>
+      <span className="sb-text">{text}</span>
+    </li>
+  );
 
   return (
     <aside className="dashboard-side">
       <ul className="side-list">
-        {/* הוספת Important/Priority בראש הרשימה כמקובל */}
-        <li
-          className={activeView === "mydrive" ? "active" : ""}
+        <Item
+          id="mydrive"
+          icon={FiFolder}
+          text="My Drive"
           onClick={() => {
             onChangeView("mydrive");
             window.dispatchEvent(new CustomEvent("reset-mydrive"));
           }}
-        >
-          📁 My Drive
-        </li>
+        />
 
-        <li
-          className={activeView === "recent" ? "active" : ""}
+        <Item
+          id="recent"
+          icon={FiClock}
+          text="Recent"
           onClick={() => {
             onChangeView("recent");
             window.dispatchEvent(new CustomEvent("reset-recent"));
           }}
-        >
-          🕒 Recent
-        </li>
+        />
 
-        <li
-          className={activeView === "starred" ? "active" : ""}
-          onClick={() => onChangeView("starred")}>
-          ⭐ Starred
-        </li>
+        <Item
+          id="starred"
+          icon={FiStar}
+          text="Starred"
+          onClick={() => onChangeView("starred")}
+        />
 
-        <li
-          className={activeView === "important" ? "active" : ""}
+        <Item
+          id="important"
+          icon={FiAlertCircle}
+          text="Important"
           onClick={() => onChangeView("important")}
-        >
-          ❗ Important
-        </li>
+        />
 
-        <li
-          className={activeView === "shared" ? "active" : ""}
+        <Item
+          id="shared"
+          icon={FiUsers}
+          text="Shared with me"
           onClick={() => {
-            onChangeView("shared")
+            onChangeView("shared");
             window.dispatchEvent(new CustomEvent("reset-shared"));
           }}
-        >
-          👥 Shared with me
-        </li>
+        />
 
-        <li
-          className={activeView === "trash" ? "active" : ""}
-          onClick={() => onChangeView("trash")}>
-          🗑️ Trash
-        </li>
+        <Item
+          id="trash"
+          icon={FiTrash2}
+          text="Trash"
+          onClick={() => onChangeView("trash")}
+        />
 
-        <li
-          className={activeView === "storage" ? "active" : ""}
+        <Item
+          id="storage"
+          icon={FiHardDrive}
+          text="Storage"
           onClick={() => onChangeView("storage")}
-        >
-          💾 Storage
-        </li>
+        />
       </ul>
 
-      {/* שימוש במידע האמיתי מהשרת */}
-      <StorageIndicator usedBytes={usage.usedBytes} quotaBytes={usage.quotaBytes} />
+      <div className="sb-storage">
+        <StorageIndicator usedBytes={usage.usedBytes} quotaBytes={usage.quotaBytes} />
+      </div>
     </aside>
   );
 }
