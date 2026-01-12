@@ -28,6 +28,7 @@ const findById = (id, ownerId) => {
 
 const create = (fileData) => {
   const newFileData = {
+    mimeType:"",
     trashed: false,
     trashedAt: null,
     originalParentId: null,

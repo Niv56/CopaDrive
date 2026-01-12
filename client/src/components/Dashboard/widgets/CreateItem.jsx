@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getRootFiles, createItem } from "../../../api/filesApi";
+import FileUploadHandler from "./FileUploadHandler";
 import './CreateItem.css'
 
 function CreateItem({ onItemCreated, currentFolderId }) {
@@ -10,6 +11,9 @@ function CreateItem({ onItemCreated, currentFolderId }) {
   const [parentId, setParentId] = useState(currentFolderId || null);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const uploadHandlerRef = useRef(null);
+  const [mimeType, setMimeType] = useState("");
 
   useEffect(() => {
     if (modalType) {
@@ -52,6 +56,7 @@ function CreateItem({ onItemCreated, currentFolderId }) {
     setModalType(null);
     setName("");
     setContent("");
+    setMimeType("");
     setParentId(null);
   }
 
@@ -60,27 +65,34 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     setLoading(true);
     try {
+      const typeForServer = modalType === "upload" ? "file" : modalType;
+
       const created = await createItem({
         name: name.trim(),
-        type: modalType,
+        type: typeForServer,
         parentId: parentId || null,
-        content: modalType === "file" ? content : ""
+        content: typeForServer === "file" ? content : "",
+        // התיקון: אם mimeType ריק (ביצירה ידנית), נגדיר אותו כ-text/plain
+        mimeType: typeForServer === "file" ? (mimeType || "text/plain") : ""
       });
 
-
       closeModal();
-
-      // קרא ל-callback במקום window.location.reload()
-     if (onItemCreated) {
-  onItemCreated(created);
-}
+      if (onItemCreated) onItemCreated(created);
 
     } catch (error) {
-      alert(`Failed to create ${modalType}: ${error.message}`);
+      alert(`Failed to create item: ${error.message}`);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleFileProcessed = (fileData) => {
+    setName(fileData.name);
+    setContent(fileData.content);
+    setMimeType(fileData.mimeType);
+    setModalType("upload"); // פותח את המודל
+    setMenuOpen(false);   // סוגר את התפריט
+  };
 
   return (
     <>
@@ -109,15 +121,32 @@ function CreateItem({ onItemCreated, currentFolderId }) {
           >
             📄 New file
           </button>
+          <button
+            type="button"
+            className="fab-menu-item"
+            onClick={() => openCreate("upload")}
+          >
+            📤 Upload file
+          </button>
         </div>
       )}
 
       {modalType && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            {/* כאן נכנס הקוד החדש */}
+            {loading && (
+              <div className="spinner-overlay">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            )}
+
             <div className="modal-title-row">
               <div className="modal-title-text">
-                {modalType === "folder" ? "Create new folder" : "Create new file"}
+                {modalType === "folder" ? "Create new folder" :
+                  modalType === "upload" ? "Upload file from computer" : "Create new file"}
               </div>
 
               <button
@@ -162,17 +191,66 @@ function CreateItem({ onItemCreated, currentFolderId }) {
               ))}
             </select>
 
-            {modalType === "file" && (
+            {(modalType === "file" || modalType === "upload") && (
               <>
                 <label className="modal-label">Content</label>
-                <textarea
-                  className="modal-textarea"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Write your content here..."
-                  rows={8}
-                  disabled={loading}
-                />
+
+                {/* 1. מצב התחלתי: עוד לא נבחר קובץ */}
+                {!content ? (
+                  <div
+                    className="text-center p-5 border rounded mb-3 bg-light"
+                    style={{ cursor: "pointer", borderStyle: "dashed" }}
+                    onClick={() => uploadHandlerRef.current.triggerUpload()}
+                  >
+                    <div style={{ fontSize: "2rem" }}>☁️</div>
+                    <button type="button" className="btn btn-link">
+                      Click to browse files from computer
+                    </button>
+                  </div>
+                ) :
+                  /* 2. קובץ תמונה: מציגים Preview (חשוב: mimeType חייב להתחיל ב-image/) */
+                  (mimeType && mimeType.startsWith("image/")) ? (
+                    <div className="text-center p-3 border rounded mb-3 bg-light position-relative">
+                      <img
+                        src={content.startsWith('data:') ? content : `data:${mimeType};base64,${content}`}
+                        alt="Preview"
+                        style={{ maxHeight: "200px", maxWidth: "100%", borderRadius: "4px", display: "block", margin: "0 auto" }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-secondary position-absolute top-0 end-0 m-2"
+                        onClick={() => uploadHandlerRef.current.triggerUpload()}
+                      >
+                        🔄 Change
+                      </button>
+                    </div>
+                  ) :
+                    /* 3. קובץ טקסט: רק אם זה טקסט נקי או יצירה חדשה (ללא mimeType) */
+                    (mimeType === "text/plain" || mimeType === "") ? (
+                      <textarea
+                        className="modal-textarea"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="Write your content here..."
+                        rows={8}
+                        disabled={loading}
+                      />
+                    ) :
+                      /* 4. קובץ בינארי (Word, PDF, וכו'): מציגים "No Preview" */
+                      (
+                        <div className="text-center p-5 border rounded mb-3 bg-light d-flex flex-column align-items-center">
+                          <div style={{ fontSize: "3rem", opacity: 0.5 }}>🚫</div>
+                          <div className="mt-2 fw-bold text-truncate" style={{ maxWidth: "100%" }}>{name}</div>
+                          <div className="text-muted small">No preview available for this file type</div>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm mt-3"
+                            onClick={() => uploadHandlerRef.current.triggerUpload()}
+                          >
+                            🔄 Change file
+                          </button>
+                        </div>
+                      )}
               </>
             )}
 
@@ -197,6 +275,10 @@ function CreateItem({ onItemCreated, currentFolderId }) {
           </div>
         </div>
       )}
+      <FileUploadHandler
+        ref={uploadHandlerRef}
+        onFileProcessed={handleFileProcessed}
+      />
     </>
   );
 }

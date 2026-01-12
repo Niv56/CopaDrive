@@ -29,15 +29,15 @@ function MyDrive() {
     } finally { setLoading(false); }
   };
 
-  // ✅ שימוש ב-Hook לריכוז כל הפעולות
+  // ✅ שינוי 1: חילוץ loadingFile מה-Hook
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
-    handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+    handleOpen, handleToggleStar, handleToggleImportant, handleDelete,
+    loadingFile 
   } = useFileActions(myUserId, loadFiles);
 
   useEffect(() => { loadFiles(); }, []);
 
-  // האזנה לאירועי ניווט חיצוניים (למשל מתוך ה-Storage)
   useEffect(() => {
     const onOpenFolder = (e) => {
       const folderId = e.detail.folderId;
@@ -57,6 +57,15 @@ function MyDrive() {
 
   return (
     <div className="mainarea">
+      {/* ✅ שינוי 2: הצגת גלגל הטעינה בזמן פתיחת קובץ */}
+      {loadingFile && (
+        <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
+          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+            <span className="visually-hidden">Opening file...</span>
+          </div>
+        </div>
+      )}
+
       <div className="d-flex align-items-center gap-2 mb-4">
         <h2 style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
           onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>My Drive</h2>

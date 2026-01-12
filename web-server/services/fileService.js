@@ -168,7 +168,8 @@ const getById = async (userId, id) => {
 };
 
 const createItem = async (ownerId, payload) => {
-  const { name, type, parentId = null, content = "" } = payload;
+
+  const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     throw { status: 400, message: 'Name is required' };
@@ -201,9 +202,10 @@ const createItem = async (ownerId, payload) => {
     createdAt: ts,
     updatedAt: ts,
     sizeBytes,
+    mimeType,
     starredBy: [],
     importantBy: [],
-    trashedBy: [] // ✅ חדש
+    trashedBy: [] 
   });
 
   // give owner an explicit "owner" permission entry (if your system expects it)
@@ -265,6 +267,7 @@ const updateItem = async (userId, id, patch) => {
               await sendTcpCommand(`POST ${id} ${patch.content}`);
               updates.sizeBytes = contentSizeBytes(patch.content);
 
+              if (patch.mimeType !== undefined) updates.mimeType = patch.mimeType;
 
           } catch (err) {
               throw err; 
