@@ -1,4 +1,4 @@
-// client/src/components/Dashboard/widgets/FileListItem.jsx
+// FileListItem.jsx
 import "./FileListItem.css";
 import { formatBytes } from "../../../utils/formatBytes";
 
@@ -31,10 +31,6 @@ function FileListItem({
   onRestore,
   onDeleteForever,
   extraInfo,
-
-  // ✅ from your branch (optional)
-  myUserId,
-  resolvedRole, // fileId -> role cache from hook
 }) {
   if (!item) return null;
 
@@ -44,10 +40,7 @@ function FileListItem({
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
 
-  const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes);
-
-  const isOwner = myUserId && item.ownerId === myUserId;
-  const myRole = resolvedRole || (isOwner ? "owner" : "viewer");
+  const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes ?? 0);
 
   const daysLeft =
     typeof item.trashDaysLeft === "number" ? `${item.trashDaysLeft} days left` : "";
@@ -58,21 +51,6 @@ function FileListItem({
     e.preventDefault();
     e.stopPropagation();
   }
-
-  // tiny badge style (minimal impact, no CSS changes required)
-  const roleBadgeStyle = {
-    marginLeft: 10,
-    padding: "2px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    border: "1px solid #e5e7eb",
-    background:
-      myRole === "owner" ? "#fef3c7" : myRole === "editor" ? "#dbeafe" : "#f3f4f6",
-    color: "#111827",
-    textTransform: "capitalize",
-    verticalAlign: "middle",
-  };
 
   return (
     <div
@@ -93,8 +71,6 @@ function FileListItem({
         <div className="fli-meta">
           <div className="fli-name" dir="auto" title={item.name}>
             {item.name}
-            {/* ✅ role badge only in default mode */}
-            {!isTrash && myUserId ? <span style={roleBadgeStyle}>{myRole}</span> : null}
           </div>
           <div className="fli-sub">{isFolder ? "Folder" : "File"}</div>
         </div>
@@ -155,27 +131,13 @@ function FileListItem({
             {isTrash ? (
               <>
                 <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={(e) => {
-                      stop(e);
-                      onRestore?.(item);
-                    }}
-                  >
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onRestore?.(item); }}>
                     Restore
                   </button>
                 </li>
+                <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <hr className="dropdown-divider" />
-                </li>
-                <li>
-                  <button
-                    className="dropdown-item text-danger"
-                    onClick={(e) => {
-                      stop(e);
-                      onDeleteForever?.(item);
-                    }}
-                  >
+                  <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDeleteForever?.(item); }}>
                     Delete forever
                   </button>
                 </li>
@@ -183,38 +145,18 @@ function FileListItem({
             ) : (
               <>
                 <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={(e) => {
-                      stop(e);
-                      onEdit?.(item);
-                    }}
-                  >
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onEdit?.(item); }}>
                     Edit
                   </button>
                 </li>
                 <li>
-                  <button
-                    className="dropdown-item"
-                    onClick={(e) => {
-                      stop(e);
-                      onShare?.(item);
-                    }}
-                  >
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onShare?.(item); }}>
                     Share
                   </button>
                 </li>
+                <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <hr className="dropdown-divider" />
-                </li>
-                <li>
-                  <button
-                    className="dropdown-item text-danger"
-                    onClick={(e) => {
-                      stop(e);
-                      onDelete?.(item);
-                    }}
-                  >
+                  <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDelete?.(item); }}>
                     Move to trash
                   </button>
                 </li>

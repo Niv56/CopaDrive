@@ -55,6 +55,7 @@ async function request(path, options = {}) {
     : null;
 
   if (!res.ok) {
+    // backend might return {error} or {message}
     const msg =
       (data && typeof data === "object" && (data.error || data.message)) ||
       "Request failed";
@@ -68,14 +69,17 @@ async function request(path, options = {}) {
    Files / Drive
 ------------------------------ */
 
+// ✅ Files list (My Drive + shared, as backend returns)
 export async function getRootFiles() {
   return request("/api/files", { method: "GET" });
 }
 
+// ✅ Backend usage (owned files only)
 export async function getStorageUsage() {
   return request("/api/files/usage", { method: "GET" });
 }
 
+// Backward compat (you had both names)
 export async function getUsage() {
   return getStorageUsage();
 }
@@ -127,10 +131,18 @@ export async function updateItem(fileId, patch) {
    Trash
 ------------------------------ */
 
+/**
+ * ✅ List trash
+ * GET /api/files/trash
+ */
 export async function getTrashFiles() {
   return request("/api/files/trash", { method: "GET" });
 }
 
+/**
+ * ✅ Restore from trash
+ * PATCH /api/files/:id/trash  { trashed:false }
+ */
 export async function restoreFromTrash(fileId) {
   if (!fileId) throw new Error("fileId is required");
   return request(`/api/files/${fileId}/trash`, {
@@ -140,11 +152,19 @@ export async function restoreFromTrash(fileId) {
   });
 }
 
+/**
+ * ✅ Delete forever
+ * DELETE /api/files/:id/forever
+ */
 export async function deleteForever(fileId) {
   if (!fileId) throw new Error("fileId is required");
   return request(`/api/files/${fileId}/forever`, { method: "DELETE" });
 }
 
+/**
+ * ✅ Empty trash
+ * DELETE /api/files/trash/empty
+ */
 export async function emptyTrash() {
   return request("/api/files/trash/empty", { method: "DELETE" });
 }
@@ -183,7 +203,11 @@ export async function setImportant(fileId, important) {
    Recent / Access tracking
 ------------------------------ */
 
+// ✅ Recent files (prefer backend endpoint if exists; fallback to sorting root files)
 export async function getRecentFiles() {
+  // If you have backend route GET /api/files/recent, uncomment the next line and delete fallback:
+  // return request("/api/files/recent", { method: "GET" });
+
   const data = await getRootFiles();
   return Array.isArray(data)
     ? data
@@ -193,6 +217,7 @@ export async function getRecentFiles() {
     : [];
 }
 
+// 🎯 Open item: folders open locally; files update access time in background then fetch content
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 
@@ -201,6 +226,7 @@ export async function openItem(item, onFolderOpen = null) {
     return null;
   }
 
+  // fire-and-forget update access time
   request(`/api/files/${item.id}/access`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -220,56 +246,33 @@ export function formatLastAccessed(dateString) {
   return date.toLocaleDateString();
 }
 
-/* -----------------------------
-   Sharing (by email) - keep your logic, but via request()
------------------------------- */
-
 export async function findUserByEmail(email) {
-  if (!email) throw new Error("email is required");
-  try {
-    return await request(`/api/users/email/${encodeURIComponent(email)}`, {
-      method: "GET",
-    });
-  } catch {
-    return null;
-  }
+  const token = getAuthToken();
+  const response = await fetch(`http://localhost:3000/api/users/email/${email}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) return null;
+  return response.json();
 }
 
 export async function addFilePermission(fileId, targetUserId) {
-  if (!fileId) throw new Error("fileId is required");
-  if (!targetUserId) throw new Error("targetUserId is required");
-
-  return request(`/api/files/${fileId}/permissions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: targetUserId }),
-  });
-}
-
-/* -----------------------------
-   Permissions (from your branch)
------------------------------- */
-
-export async function getFilePermissions(fileId) {
-  if (!fileId) throw new Error("fileId is required");
-  return request(`/api/files/${fileId}/permissions`, { method: "GET" });
-}
-
-export async function patchFilePermission(fileId, permissionId) {
-  if (!fileId) throw new Error("fileId is required");
-  if (!permissionId) throw new Error("permissionId is required");
-  return request(`/api/files/${fileId}/permissions/${permissionId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-export async function deleteFilePermission(fileId, permissionId) {
-  if (!fileId) throw new Error("fileId is required");
-  if (!permissionId) throw new Error("permissionId is required");
-  return request(`/api/files/${fileId}/permissions/${permissionId}`, {
-    method: "DELETE",
-  });
+  const token = getAuthToken();
+  const response = await fetch(
+    `http://localhost:3000/api/files/${fileId}/permissions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId: targetUserId }), // השרת קובע תפקיד "viewer" כברירת מחדל
+    }
+  );
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || "Failed to share");
+  }
+  return response.json();
 }
 
 /* -----------------------------
@@ -290,8 +293,6 @@ export async function getCurrentUser(userId) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, { method: "GET" });
 }
-
-// from MAIN4
 export async function updateUserProfile(userId, patch) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, {
@@ -309,3 +310,4 @@ export async function changeUserPassword(userId, currentPassword, newPassword) {
     body: JSON.stringify({ currentPassword, newPassword }),
   });
 }
+
