@@ -203,7 +203,8 @@ const getById = async (userId, id) => {
 
 // Create a file/folder (and persist file content in the TCP storage for files).
 const createItem = async (ownerId, payload) => {
-  const { name, type, parentId = null, content = "" } = payload;
+
+  const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     throw { status: 400, message: 'Name is required' };
@@ -236,6 +237,7 @@ const createItem = async (ownerId, payload) => {
     createdAt: ts,
     updatedAt: ts,
     sizeBytes,
+    mimeType,
     starredBy: [],
     importantBy: [],
     trashedBy: [],
@@ -285,7 +287,7 @@ const updateItem = async (userId, id, patch) => {
       throw err;
     }
 
-    if (current.type === 'file') {
+   if (current.type === 'file') {
       try {
         try {
           await sendTcpCommand(`DELETE ${id}`);
@@ -293,8 +295,15 @@ const updateItem = async (userId, id, patch) => {
           console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
         }
 
+        // Post the new content reusing the existing ID
         await sendTcpCommand(`POST ${id} ${patch.content}`);
         updates.sizeBytes = contentSizeBytes(patch.content);
+
+        // שילוב הלוגיקה שלך: עדכון סוג הקובץ אם הוא סופק ב-Patch
+        if (patch.mimeType !== undefined) {
+          updates.mimeType = patch.mimeType;
+        }
+
       } catch (err) {
         throw err;
       }
