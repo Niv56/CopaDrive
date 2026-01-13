@@ -8,13 +8,13 @@ function FileViewerModal({
   onDelete,
   onToggleStar,
   onToggleImportant,
-  role // ✅ מוסיף prop מ-main4
+  role // ✅ prop מ-main4
 }) {
   if (!file) return null;
 
   const stop = (e) => { e.stopPropagation(); };
 
-  // ✅ מוסיף מ-main4 - לוגיקת הרשאות
+  // ✅ מ-main4: לוגיקת הרשאות
   const actualRole = role || file.role || "viewer";
   const permissionLevel = {
     owner: "all",
@@ -23,13 +23,13 @@ function FileViewerModal({
   }[actualRole.toLowerCase()] || "read";
   const canEdit = actualRole === "owner" || actualRole === "editor";
 
-  // ✅ מוסיף מ-task4-patch - בדיקות UI
+  // ✅ מ-task4-patch: בדיקות UI
   const isStarred = !!file.starred;
   const isImportant = !!file.important;
   const isEditable = file.mimeType?.startsWith("text/") || file.mimeType === "application/json";
   const isFileLoading = file.type === "file" && file.content === undefined;
 
-  // ✅ מוסיף מ-task4-patch - פונקציית הורדה
+  // ✅ מ-task4-patch: פונקציית הורדה
   const handleDownload = () => {
     if (!file || !file.content) {
       alert("אין תוכן זמין להורדה.");
@@ -61,21 +61,21 @@ function FileViewerModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card viewer-modal" onClick={stop}>
-        {/* ... rest of component */}
-        
+
         <div className="modal-title-row d-flex align-items-center justify-content-between">
           <div className="modal-title-text" style={{ overflow: "hidden", flex: 1 }}>
             <h2 className="fw-bold m-0 text-truncate" title={file.name}>
               {file.name}
             </h2>
+            {/* ✅ מ-main4: הצגת Mode/Role */}
             <div style={{ fontSize: 12, color: "#666" }}>
               Mode: <strong>{permissionLevel}</strong> · Role: <strong>{actualRole}</strong>
             </div>
           </div>
 
           <div className="modal-action-buttons d-flex gap-2 align-items-center ms-3">
-            <button 
-              className="action-icon-btn" 
+            <button
+              className="action-icon-btn"
               onClick={() => onToggleStar(file, !isStarred)}
               style={isStarred ? { color: "#FFD54F" } : {}}
               title="Star"
@@ -83,8 +83,8 @@ function FileViewerModal({
               {isStarred ? "★" : "☆"}
             </button>
 
-            <button 
-              className="action-icon-btn" 
+            <button
+              className="action-icon-btn"
               onClick={() => onToggleImportant(file, !isImportant)}
               style={isImportant ? { color: "#EF5350" } : {}}
               title="Mark Important"
@@ -92,11 +92,20 @@ function FileViewerModal({
               {isImportant ? "🔖" : "🏷️"}
             </button>
 
-            <button className="action-icon-btn" onClick={() => onShare(file)} title="Share">🔗</button>
+            <button
+              className="action-icon-btn"
+              onClick={(e) => {
+                stop(e);
+                onShare?.(file);
+              }}
+              title="Share"
+            >
+              🔗
+            </button>
 
             {isEditable && (
-              <button 
-                className="action-icon-btn" 
+              <button
+                className="action-icon-btn"
                 onClick={() => alert("Edit mode coming soon!")}
                 title="Edit"
               >
@@ -122,11 +131,11 @@ function FileViewerModal({
 
         <div className="modal-actions mt-4 d-flex justify-content-end gap-2">
           <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
-          <button 
-            type="button" 
-            className="btn btn-primary" // הכפתור הכחול שראינו ב-Mockup
-            disabled={isFileLoading} 
-            onClick={handleDownload} // חיבור הפונקציה החדשה
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={isFileLoading}
+            onClick={handleDownload}
           >
             Download
           </button>
