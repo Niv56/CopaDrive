@@ -29,7 +29,7 @@ function RecentView() {
 
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile,
-    openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+    openedRole, handleOpen, handleToggleStar,loadingFile, handleToggleImportant, handleDelete
   } = useFileActions(myUserId, loadRecent);
 
   useEffect(() => {
@@ -42,6 +42,13 @@ function RecentView() {
 
   return (
     <div className="mainarea">
+      {loadingFile && (
+        <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
+          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+            <span className="visually-hidden">Opening file...</span>
+          </div>
+        </div>
+      )}
       <h2 className="mb-4">Recent</h2>
       <div className="files-container">
         {recentFiles.length === 0 ? (

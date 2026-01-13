@@ -29,7 +29,7 @@ function ImportantView({ onChangeView }) {
 
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile,
-    openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+    openedRole, handleOpen, handleToggleStar, loadingFile, handleToggleImportant, handleDelete
   } = useFileActions(myUserId, loadData);
 
   useEffect(() => { loadData(); }, []);
@@ -38,6 +38,13 @@ function ImportantView({ onChangeView }) {
 
   return (
     <div className="mainarea">
+      {loadingFile && (
+        <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
+          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+            <span className="visually-hidden">Opening file...</span>
+          </div>
+        </div>
+      )}
       <h2 className="mb-4">Important</h2>
       <div className="files-container">
         {items.length === 0 ? (

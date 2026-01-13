@@ -1,202 +1,175 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getRootFiles, createItem } from "../../../api/filesApi";
-import './CreateItem.css'
+import FileUploadHandler from "./FileUploadHandler";
+import { encodeTextToBase64 } from "../../../utils/base64Utils";
+import ImageImporter from "./creation/ImageImporter";
+import './CreateItem.css';
+
+import FolderCreator from "./creation/FolderCreator";
+import TextFileCreator from "./creation/TextFileCreator";
+import FileImporter from "./creation/FileImporter";
 
 function CreateItem({ onItemCreated, currentFolderId }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modalType, setModalType] = useState(null);
+  const [modalType, setModalType] = useState(null); 
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [parentId, setParentId] = useState(currentFolderId || null);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [mimeType, setMimeType] = useState("");
+  const uploadHandlerRef = useRef(null);
+
+  const loadFolders = useCallback(async () => {
+    try {
+      const data = await getRootFiles();
+      setFolders(Array.isArray(data) ? data.filter(f => f.type === "folder") : []);
+    } catch (e) {
+      console.error("Failed to load folders:", e);
+    }
+  }, []);
 
   useEffect(() => {
     if (modalType) {
       loadFolders();
+      setParentId(currentFolderId || "");
     }
-  }, [modalType]);
+  }, [modalType, currentFolderId, loadFolders]);
 
-  useEffect(() => {
-    if (!modalType) return;
-
-    function onKeyDown(e) {
-      if (e.key === "Escape") {
-        closeModal();
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [modalType]);
-
-  async function loadFolders() {
-    try {
-      const data = await getRootFiles();
-      const allFolders = Array.isArray(data) ? data.filter(f => f.type === "folder") : [];
-      setFolders(allFolders);
-    } catch (e) {
-      console.error("Failed to load folders:", e);
-    }
-  }
-
-  function openCreate(type) {
-    setParentId(currentFolderId || null);
-    setModalType(type);
-    setMenuOpen(false);
-    setName("");
-    setContent("");
-  }
-
-  function closeModal() {
+  const closeModal = () => {
     setModalType(null);
     setName("");
     setContent("");
-    setParentId(null);
-  }
+    setMimeType("");
+  };
 
-  async function onSaveClicked() {
+  const onSaveClicked = async () => {
     if (!name.trim()) return;
-
     setLoading(true);
+
     try {
-      const created = await createItem({
+      const typeForServer = modalType === "folder" ? "folder" : "file";
+      
+      // 🎯 הפתרון הפשוט: הזרקת "no content" אם השדה ריק
+      let rawContent = content;
+      if (!rawContent || rawContent.trim() === "") {
+        rawContent = "no content";
+      }
+
+      let finalContent = rawContent;
+      let finalMime = mimeType;
+      const isTxtFile = name.toLowerCase().endsWith('.txt');
+
+      // קידוד ל-Base64 עבור קבצי טקסט (כולל ה-"no content")
+      if (modalType === "file" || isTxtFile || rawContent === "no content") {
+        finalContent = encodeTextToBase64(rawContent);
+        finalMime = "text/plain";
+      }
+
+      const newItem = {
         name: name.trim(),
-        type: modalType,
+        type: typeForServer,
         parentId: parentId || null,
-        content: modalType === "file" ? content : ""
-      });
+        content: finalContent,
+        mimeType: finalMime || "application/octet-stream"
+      };
 
-
+      const created = await createItem(newItem);
       closeModal();
-
-      // קרא ל-callback במקום window.location.reload()
-     if (onItemCreated) {
-  onItemCreated(created);
-}
-
+      if (onItemCreated) onItemCreated(created);
     } catch (error) {
-      alert(`Failed to create ${modalType}: ${error.message}`);
+      console.error("Save error:", error);
+      alert(`Failed to save: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const handleFileProcessed = (fileData) => {
+    const isTxt = fileData.name.toLowerCase().endsWith('.txt') || fileData.mimeType === 'text/plain';
+    const isImg = fileData.mimeType.startsWith('image/');
+
+    if (isTxt && modalType === "file") {
+      try {
+        setContent(window.atob(fileData.content));
+      } catch (e) {
+        setContent(fileData.content);
+      }
+    } else {
+      setContent(fileData.content);
+      setMimeType(fileData.mimeType);
+    }
+    setName(fileData.name);
+    setMenuOpen(false);
+  };
+
+  // 🛠️ וידוא שהכותרת קיימת ומוגדרת נכון
+  const getModalTitle = () => {
+    switch (modalType) {
+      case "folder": return "Create New Folder";
+      case "file": return "Text Editor"; // זו הכותרת שחיפשת
+      case "image": return "Upload Picture";
+      case "upload": return "Import File";
+      default: return "Create Item";
+    }
+  };
 
   return (
     <>
-      <button
-        className="fab"
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-label="Create"
-        type="button"
-      >
-        +
-      </button>
+      <button className="fab" onClick={() => setMenuOpen(!menuOpen)} type="button">+</button>
 
       {menuOpen && (
         <div className="fab-menu">
-          <button
-            type="button"
-            className="fab-menu-item"
-            onClick={() => openCreate("folder")}
-          >
-            📁 New folder
-          </button>
-          <button
-            type="button"
-            className="fab-menu-item"
-            onClick={() => openCreate("file")}
-          >
-            📄 New file
-          </button>
+          <button type="button" className="fab-menu-item" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>📁 New folder</button>
+          <button type="button" className="fab-menu-item" onClick={() => { setModalType("file"); setMenuOpen(false); }}>📄 New file</button>
+          <button type="button" className="fab-menu-item" onClick={() => { setModalType("image"); setMenuOpen(false); }}>🖼️ Upload Pic</button>
+          <button type="button" className="fab-menu-item" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>📥 Import File</button>
         </div>
       )}
 
       {modalType && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            
+            {/* 🟢 כאן נמצאת הכותרת שנעלמה */}
             <div className="modal-title-row">
-              <div className="modal-title-text">
-                {modalType === "folder" ? "Create new folder" : "Create new file"}
-              </div>
-
-              <button
-                type="button"
-                className="share-btn"
-                title="Share (TODO)"
-                onClick={() => alert("צריך לממש שיתוף")}
-                disabled={loading}
-              >
-                🔗
-              </button>
+              <div className="modal-title-text">{getModalTitle()}</div>
+              <button type="button" className="share-btn" onClick={closeModal}>✕</button>
             </div>
 
-
-            <label className="modal-label">Name</label>
-            <input
-              className="modal-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={modalType === "folder" ? "Folder name" : "File name"}
-              disabled={loading}
-              autoFocus
-            />
-
-            <label className="modal-label">Location</label>
-            <select
-              className="modal-input"
-              value={parentId ?? ""}
-              onChange={(e) => setParentId(e.target.value || null)}
-              disabled={loading}
-            >
-              {currentFolderId && (
-                <option value={currentFolderId}>📌 Current folder</option>
+            <div className="modal-body">
+              {modalType === "folder" && <FolderCreator name={name} setName={setName} loading={loading} />}
+              {modalType === "file" && (
+                <TextFileCreator name={name} setName={setName} content={content} setContent={setContent} loading={loading} />
+              )}
+              {modalType === "image" && (
+                <ImageImporter name={name} setName={setName} content={content} 
+                  triggerUpload={() => uploadHandlerRef.current.triggerUpload("image/*")} 
+                />
+              )}
+              {modalType === "upload" && (
+                <FileImporter name={name} setName={setName} content={content} mimeType={mimeType} loading={loading}
+                  triggerUpload={() => uploadHandlerRef.current.triggerUpload("*/*")} 
+                />
               )}
 
-              <option value="">My Drive</option>
-
-              {folders.map((f) => (
-                <option key={f.id} value={f.id}>
-                  📁 {f.name}
-                </option>
-              ))}
-            </select>
-
-            {modalType === "file" && (
-              <>
-                <label className="modal-label">Content</label>
-                <textarea
-                  className="modal-textarea"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Write your content here..."
-                  rows={8}
-                  disabled={loading}
-                />
-              </>
-            )}
+              <label className="modal-label mt-3">Location</label>
+              <select className="modal-input" value={parentId ?? ""} onChange={(e) => setParentId(e.target.value || null)}>
+                <option value="">My Drive</option>
+                {folders.map((f) => <option key={f.id} value={f.id}>📁 {f.name}</option>)}
+              </select>
+            </div>
 
             <div className="modal-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={closeModal}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={onSaveClicked}
-                disabled={!name.trim() || loading}
-              >
-                {loading ? "Creating..." : "Create"}
+              <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
+              <button type="button" className="btn primary" onClick={onSaveClicked} disabled={!name.trim() || loading}>
+                {loading ? "Creating..." : "Save to Drive"}
               </button>
             </div>
           </div>
         </div>
       )}
+      <FileUploadHandler ref={uploadHandlerRef} onFileProcessed={handleFileProcessed} />
     </>
   );
 }

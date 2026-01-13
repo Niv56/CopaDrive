@@ -1,14 +1,19 @@
 import React from "react";
-
 import MyDrive from "../main/MyDrive";
 import RecentView from "../main/RecentView";
 import StarredView from "../main/StarredView";
 import ImportantView from "../main/ImportantView";
 import SharedView from "../main/SharedView";
 import TrashView from "../main/TrashView";
-import StorageView from "../main/StorageView"; // ✅
+import StorageView from "../main/StorageView";
+import CreateItem from "../widgets/CreateItem"; 
 
 function MainArea({ activeView, onChangeView }) {
+  
+  const handleItemCreated = () => {
+    window.dispatchEvent(new CustomEvent("refresh-mydrive"));
+  };
+
   return (
     <main className="dashboard-main">
       {activeView === "mydrive" && <MyDrive />}
@@ -25,6 +30,8 @@ function MainArea({ activeView, onChangeView }) {
       {activeView === "storage" && (
         <StorageView onChangeView={onChangeView} />
       )}
+
+      <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
     </main>
   );
 }

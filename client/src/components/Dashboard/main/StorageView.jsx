@@ -25,7 +25,7 @@ export default function StorageView({ onChangeView }) {
 
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
-    handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+    handleOpen, handleToggleStar,loadingFile, handleToggleImportant, handleDelete
   } = useFileActions(myUserId, load);
 
   useEffect(() => { load(); }, []);
@@ -33,8 +33,14 @@ export default function StorageView({ onChangeView }) {
   const sortedFiles = useMemo(() => [...files].filter(f => f.type === "file").sort((a, b) => b.sizeBytes - a.sizeBytes), [files]);
 
   return (
-    <div className="mainarea">
-      <h2 className="mb-2">Storage</h2>
+<div className="mainarea">
+      {loadingFile && (
+        <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
+          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+            <span className="visually-hidden">Opening file...</span>
+          </div>
+        </div>
+      )}      <h2 className="mb-2">Storage</h2>
       <div className="text-muted mb-4">{formatBytes(usage.usedBytes)} of {formatBytes(usage.quotaBytes)} used</div>
 
       <div className="files-container">

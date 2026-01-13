@@ -185,7 +185,8 @@ const listTopLevel = async (userId) => {
 const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
-
+  console.log(`GET_DEBUG 1: Metadata found for ID ${id}:`, item);
+  
   if (!(await checkAccess(userId, id, 'viewer'))) {
     throw { status: 403, message: 'Access denied' };
   }
@@ -194,7 +195,9 @@ const getById = async (userId, id) => {
 
   if (item.type === 'file') {
     try {
+      console.log(`GET_DEBUG 2: Sending TCP GET for ID: ${id}`);
       const content = await sendTcpCommand(`GET ${id}`);
+      console.log(`GET_DEBUG 3: Content received from TCP (first 20 chars):`, content?.substring(0, 20));
       result.content = content;
     } catch (err) {
       result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
@@ -205,7 +208,9 @@ const getById = async (userId, id) => {
 };
 
 const createItem = async (ownerId, payload) => {
-  const { name, type, parentId = null, content = "" } = payload;
+  console.log("SERVER DEBUG 1: Received payload:", payload);
+
+  const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     throw { status: 400, message: 'Name is required' };
@@ -238,6 +243,7 @@ const createItem = async (ownerId, payload) => {
     createdAt: ts,
     updatedAt: ts,
     sizeBytes,
+    mimeType,
     starredBy: [],
     importantBy: [],
     trashedBy: [],
@@ -247,7 +253,7 @@ const createItem = async (ownerId, payload) => {
   try {
     permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
   } catch (_) { }
-
+console.log("SERVER DEBUG 2: Created object in DB:", created);
   return created;
 };
 
@@ -288,14 +294,21 @@ const updateItem = async (userId, id, patch) => {
 
     if (current.type === 'file') {
       try {
+        // Attempt to delete the old physical file
         try {
           await sendTcpCommand(`DELETE ${id}`);
         } catch (deleteErr) {
           console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
         }
 
+        // Post the new content reusing the existing ID
         await sendTcpCommand(`POST ${id} ${patch.content}`);
         updates.sizeBytes = contentSizeBytes(patch.content);
+
+        // ✅ מוסיף תמיכה ב-mimeType מ-task4-patch
+        if (patch.mimeType !== undefined) {
+          updates.mimeType = patch.mimeType;
+        }
       } catch (err) {
         throw err;
       }
