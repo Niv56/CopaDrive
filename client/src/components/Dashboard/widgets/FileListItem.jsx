@@ -53,13 +53,13 @@ function FileListItem({
   }
 
   function pillStyle(active, kind) {
-  if (!active) return { borderColor: "#eee" }; // צבע ברירת מחדל כשהכפתור כבוי
-  
-  if (kind === "star") {
-    return { backgroundColor: "#FFD54F", borderColor: "#FFD54F", color: "#111" };
+    if (!active) return { borderColor: "#eee" }; // צבע ברירת מחדל כשהכפתור כבוי
+
+    if (kind === "star") {
+      return { backgroundColor: "#FFD54F", borderColor: "#FFD54F", color: "#111" };
+    }
+    return { backgroundColor: "#EF5350", borderColor: "#EF5350", color: "#fff" };
   }
-  return { backgroundColor: "#EF5350", borderColor: "#EF5350", color: "#fff" };
-}
 
   return (
     <div
