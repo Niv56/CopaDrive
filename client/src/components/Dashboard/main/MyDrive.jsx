@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { getRootFiles } from "../../../api/filesApi";
+import { getRootFiles, updateItem ,getFileData } from "../../../api/filesApi"; //
 import { useAuth } from "../../../contexts/AuthContext";
 import { useFileActions } from "../../../hooks/useFileActions";
 import FileListItem from "../widgets/FileListItem";
 import FileViewerModal from "../widgets/FileViewerModal";
-import ShareModal from "../widgets/ShareModal"; // ✅ הוסף את ה-import!
+import ShareModal from "../widgets/ShareModal";
 import "./MyDrive.css";
 
 function MyDrive() {
@@ -12,12 +12,15 @@ function MyDrive() {
   const [loading, setLoading] = useState(true);
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
+  const [startInEditMode, setStartInEditMode] = useState(false);
   const { token } = useAuth();
 
   const myUserId = useMemo(() => {
     if (!token) return null;
-    const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload.userId;
+    try {
+      const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return payload.userId;
+    } catch (e) { return null; }
   }, [token]);
 
   const loadFiles = async () => {
@@ -34,14 +37,58 @@ function MyDrive() {
     loadingFile
   } = useFileActions(myUserId, loadFiles);
 
+  // --- handlers עם מנגנון Exclusivity (מניעת פתיחת כפל מודלים) ---
+
+  const handleEditClick = async (item) => {
+    setSharingItem(null); // סוגרת מודל שיתוף אם פתוח
+    setStartInEditMode(true);
+    if (item.type === "folder") {
+      setOpenedFile(item);
+    } else {
+      await handleOpen(item); // טעינת תוכן הקובץ (Base64) מה-C++ Core
+    }
+  };
+
+  const handleShareClick = (item) => {
+    setOpenedFile(null); // סוגרת ה-Viewer אם פתוח
+    setSharingItem(item);
+  };
+
+  const handleUpdateInServer = async (fileId, patch) => {
+  try {
+    // 1. ביצוע העדכון בשרת (PATCH)
+    const updatedMetadata = await updateItem(fileId, patch); 
+    
+    // 2. רענון רשימת הקבצים הכללית ברקע
+    await loadFiles(); 
+
+    /**
+     * 3. ניהול מצב ה-Viewer:
+     * אם זו תיקייה - סוגרים את המודל כי אין לה Preview.
+     * אם זה קובץ - מושכים את המידע המלא מחדש כדי לסנכרן שם, מיקום ותוכן.
+     */
+    if (updatedMetadata.type === "folder") {
+      setOpenedFile(null); 
+    } else {
+      // שימוש במסלול ה-GET הנקי שהצעת
+      const freshFile = await getFileData(fileId); 
+      setOpenedFile(freshFile); // המודל יתעדכן עם המידע המלא והנכון
+    }
+  } catch (err) {
+    console.error("Update failed:", err);
+    alert("העדכון נכשל.");
+  }
+};
+
+  // --- לוגיקה משלימה ---
+
   const freshOpenedFile = useMemo(() => {
     if (!openedFile) return null;
-    if (openedFile.content !== undefined) {
-      return openedFile;
-    }
-
+    if (openedFile.content !== undefined) return openedFile;
     return allFiles.find(f => f.id === openedFile.id) || openedFile;
   }, [allFiles, openedFile]);
+
+  const allFolders = useMemo(() => allFiles.filter(f => f.type === "folder"), [allFiles]);
 
   useEffect(() => { loadFiles(); }, []);
 
@@ -67,23 +114,20 @@ function MyDrive() {
 
   return (
     <div className="mainarea" style={{ position: "relative" }}>
-
+      {/* Loading Spinners */}
       {loading && !loadingFile && (
         <div style={{ position: "absolute", top: "15px", right: "20px", zIndex: 10 }}>
-          <div className="spinner-border spinner-border-sm text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+          <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
         </div>
       )}
 
       {loadingFile && (
         <div className="spinner-overlay" style={{ position: 'fixed', zIndex: 9999 }}>
-          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
-            <span className="visually-hidden">Opening file...</span>
-          </div>
+          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status"></div>
         </div>
       )}
 
+      {/* Header & Navigation */}
       <div className="d-flex align-items-center gap-2 mb-4">
         <h2 style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
           onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>My Drive</h2>
@@ -96,12 +140,15 @@ function MyDrive() {
         )}
       </div>
 
+      {/* Files List */}
       <div className="files-container">
         {currentItems.map(item => (
           <FileListItem
             key={item.id}
             item={item}
             onOpen={async (it) => {
+              setSharingItem(null); // סגירת שיתוף
+              setStartInEditMode(false);
               if (it.type === "folder") {
                 setCurrentFolderId(it.id);
                 setFolderPath(prev => [...prev, { id: it.id, name: it.name }]);
@@ -109,7 +156,8 @@ function MyDrive() {
                 await handleOpen(it);
               }
             }}
-            onShare={setSharingItem}
+            onEdit={handleEditClick}
+            onShare={handleShareClick}
             onToggleStar={handleToggleStar}
             onToggleImportant={handleToggleImportant}
             onDelete={handleDelete}
@@ -117,18 +165,23 @@ function MyDrive() {
         ))}
       </div>
 
+      {/* Modals - ניהול תצוגה בלעדית */}
       <FileViewerModal
         file={freshOpenedFile}
         role={openedRole}
-        onClose={() => setOpenedFile(null)}
-        onShare={setSharingItem}
+        startInEditMode={startInEditMode}
+        folders={allFolders}
+        onUpdate={handleUpdateInServer} //
+        onClose={() => {
+          setOpenedFile(null);
+          setStartInEditMode(false);
+        }}
+        onShare={handleShareClick}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onDelete={handleDelete}
-        onDownload={(file) => console.log("Downloading...", file)}
       />
 
-      {/* ✅ זה החלק שחסר! */}
       {sharingItem && (
         <ShareModal
           item={sharingItem}

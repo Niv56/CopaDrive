@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { setStarred, setImportant, moveToTrash, openItem } from "../api/filesApi";
+// החלפת openItem ב-getFileData לצורך הפרדת מסלול הקריאה מהעדכון
+import { setStarred, setImportant, moveToTrash, getFileData } from "../api/filesApi";
 import { getPermissions } from "../api/permissionsApi";
 
 export function useFileActions(myUserId, onRefresh) {
@@ -12,20 +13,15 @@ export function useFileActions(myUserId, onRefresh) {
     if (!item) return;
     setLoadingFile(true);
     try {
-      // קביעת role ראשונית לפי ownership
+      // 1. קביעת Role (נשאר ללא שינוי)
       let role = item.ownerId === myUserId ? "owner" : "viewer";
 
-      // אם לא owner, נבדוק את ההרשאות האמיתיות
       if (role !== "owner" && item.id) {
         try {
           const permsData = await getPermissions(item.id);
-          console.log("Permissions data for file:", permsData);
-
-          // אם יש myRole בתגובה, נשתמש בו
           if (permsData.myRole) {
             role = permsData.myRole;
           } else {
-            // אם אין, ננסה למצוא את ההרשאה שלי ברשימה
             const myPerm = permsData.permissions?.find(p => p.userId === myUserId);
             if (myPerm?.role) {
               role = myPerm.role;
@@ -33,19 +29,21 @@ export function useFileActions(myUserId, onRefresh) {
           }
         } catch (e) {
           console.error("Failed to get permissions, defaulting to viewer:", e);
-          // אם יש שגיאה, נשאר עם viewer כברירת מחדל
         }
       }
 
-      console.log("Final role determined:", role);
       setOpenedRole(role);
 
-      const fullFile = await openItem(item, (folder) => {
-        if (onFolderOpen) onFolderOpen(folder);
-      });
-
-      if (fullFile) {
-        setOpenedFile({ ...fullFile, role }); // נוסיף את ה-role גם לקובץ
+      // 2. טיפול בנתיב הקריאה (Clean Read Path)
+      if (item.type === "folder") {
+        // עבור תיקיות, נפעיל רק את ה-callback המקומי
+        if (onFolderOpen) onFolderOpen(item);
+      } else {
+        // עבור קבצים, נשתמש ב-getFileData שמבצע GET בלבד ללא PATCH ל-access
+        const fullFile = await getFileData(item.id);
+        if (fullFile) {
+          setOpenedFile({ ...fullFile, role });
+        }
       }
     } catch (e) {
       alert("Error opening item: " + (e?.message || "unknown"));
@@ -74,7 +72,6 @@ export function useFileActions(myUserId, onRefresh) {
 
   const handleDelete = async (item) => {
     if (!item?.id) return;
-
     try {
       await moveToTrash(item.id);
       if (onRefresh) onRefresh();

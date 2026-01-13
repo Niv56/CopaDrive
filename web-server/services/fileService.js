@@ -285,6 +285,7 @@ const updateItem = async (userId, id, patch) => {
 
   const updates = {};
 
+  // 1. עדכון תוכן פיזי ב-C++ Core
   if (patch.content !== undefined) {
     if (current.type === 'folder') {
       const err = new Error('Cannot update content of a folder');
@@ -294,27 +295,26 @@ const updateItem = async (userId, id, patch) => {
 
     if (current.type === 'file') {
       try {
-        // Attempt to delete the old physical file
         try {
           await sendTcpCommand(`DELETE ${id}`);
         } catch (deleteErr) {
-          console.warn(`[Update] Physical delete failed for id ${id} (proceeding to create):`, deleteErr.message);
+          console.warn(`[Update] Physical delete failed for id ${id}:`, deleteErr.message);
         }
 
-        // Post the new content reusing the existing ID
         await sendTcpCommand(`POST ${id} ${patch.content}`);
         updates.sizeBytes = contentSizeBytes(patch.content);
-
-        // ✅ מוסיף תמיכה ב-mimeType מ-task4-patch
-        if (patch.mimeType !== undefined) {
-          updates.mimeType = patch.mimeType;
-        }
       } catch (err) {
         throw err;
       }
     }
   }
 
+  // 2. עדכון mimeType (הועבר לכאן כדי שיפעל תמיד)
+  if (patch.mimeType !== undefined) {
+    updates.mimeType = patch.mimeType;
+  }
+
+  // 3. עדכון שם הקובץ/תיקייה
   if (patch.name !== undefined) {
     if (typeof patch.name !== 'string' || patch.name.trim() === '') {
       const err = new Error('Name must be a non-empty string');
@@ -324,9 +324,9 @@ const updateItem = async (userId, id, patch) => {
     updates.name = patch.name.trim();
   }
 
+  // 4. עדכון מיקום (parentId) ומניעת מחזוריות
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
-
     if (newParentId === id) {
       const err = new Error('parentId cannot be the same as id');
       err.status = 400;
@@ -335,30 +335,23 @@ const updateItem = async (userId, id, patch) => {
 
     if (newParentId !== null) {
       const parent = fileRepository.findById(newParentId);
-
-      if (!parent) {
-        const err = new Error('Parent folder not found');
-        err.status = 404;
-        throw err;
-      }
-      if (parent.type !== 'folder') {
+      if (!parent || parent.type !== 'folder') {
         const err = new Error('Parent must be a folder');
         err.status = 400;
         throw err;
       }
-
       if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
         const err = new Error('Cannot move a folder into its own descendant');
         err.status = 409;
         throw err;
       }
     }
-
     updates.parentId = newParentId;
   }
 
   updates.updatedAt = nowIso();
 
+  // שמירה סופית ב-Repository והחזרת האובייקט המעודכן
   const updated = fileRepository.update(id, updates);
   return updated;
 };

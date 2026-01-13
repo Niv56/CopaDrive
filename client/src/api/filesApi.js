@@ -296,19 +296,14 @@ export async function getRecentFiles() {
 
 /**
  * Clean GET Flow: Fetches only the file metadata and content.
- * No access tracking (PATCH) involved.
  */
 export async function getFileData(fileId) {
   if (!fileId) throw new Error("fileId is required");
-  
-  // קריאה ישירה ל-GET /api/files/:id
-  // הפונקציה הזו כבר מוגדרת אצלך ב-API ומשתמשת ב-method: "GET"
   return getFileById(fileId);
 }
 
 // 🎯 Open item:
 // - folders open locally
-// - files: update local recent immediately + try PATCH to server (if exists) + fetch file content
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 

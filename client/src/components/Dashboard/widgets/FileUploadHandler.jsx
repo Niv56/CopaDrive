@@ -2,12 +2,12 @@ import React, { useRef, useImperativeHandle, forwardRef } from "react";
 
 /**
  * FileUploadHandler - אחראי על ממשק בחירת הקבצים מהמחשב.
- * משתמש ב-forwardRef כדי לאפשר לאבא (CreateItem) להפעיל את הבחירה מרחוק.
+ * מעודכן לתמיכה בקבצים ריקים (0 bytes) והפרדה בין טקסט לבינארי.
  */
 const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
     const fileInputRef = useRef(null);
 
-    // 🛠️ חשיפת פונקציית ה-trigger לאבא דרך ה-Ref
+    // חשיפת פונקציית ה-trigger לאבא דרך ה-Ref
     useImperativeHandle(ref, () => ({
         triggerUpload: (filter = "*/*") => {
             if (fileInputRef.current) {
@@ -22,30 +22,43 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // 🔍 לוג בדיקה: האם הדפדפן רואה גודל קובץ? (לפתרון בעיית ה-0 בייטים)
-        console.log(`[HANDLER] Selected file: ${file.name}, Size: ${file.size} bytes`);
+        console.log(`[HANDLER] Selected: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
 
         const reader = new FileReader();
 
+        // בדיקה האם הקובץ הוא טקסט (לפי MIME type או סיומת)
+        const isTextFile = file.type === "text/plain" || file.name.endsWith(".txt");
+
         reader.onload = () => {
+            // 🛠️ תיקון: אם הקובץ ריק, ה-result הוא מחרוזת ריקה ("")
+            // אנחנו מוודאים שזה לא null (שגיאה) אלא פשוט תוכן ריק
             const result = reader.result;
-            if (!result) {
-                console.error("[HANDLER] Error: reader.result is empty!");
+            
+            if (result === null) {
+                console.error("[HANDLER] Error: reader.result is null!");
                 return;
             }
 
-            // חילוץ ה-Base64 בצורה בטוחה מה-DataURL
-            const base64Parts = result.split(',');
-            const base64Content = base64Parts.length > 1 ? base64Parts[1] : "";
+            let finalContent = "";
 
-            // לוג לווידוא שהקריאה לזיכרון הצליחה
-            console.log(`[HANDLER] Read complete. Base64 length: ${base64Content.length}`);
+            if (isTextFile) {
+                // עבור קבצי טקסט (גם אם הם ריקים), נשמור את המחרוזת כפי שהיא
+                finalContent = result;
+                console.log(`[HANDLER] Read Text. Content Length: ${finalContent.length}`);
+            } else {
+                // עבור קבצים בינאריים, נחלץ את ה-Base64
+                const base64Parts = result.split(',');
+                finalContent = base64Parts.length > 1 ? base64Parts[1] : result;
+                console.log(`[HANDLER] Read Base64. Data Length: ${finalContent.length}`);
+            }
 
+            // שליחת המידע המלא לאבא (CreateItem)
             onFileProcessed({
                 name: file.name,
-                content: base64Content,
-                mimeType: file.type || "application/octet-stream",
-                size: file.size
+                content: finalContent, // עשוי להיות "" אם הקובץ ריק
+                mimeType: file.type || (isTextFile ? "text/plain" : "application/octet-stream"),
+                size: file.size,
+                isText: isTextFile
             });
         };
 
@@ -53,9 +66,13 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
             console.error("[HANDLER] FileReader error:", err);
             alert("Failed to read file from local disk.");
         };
-        
-        // התחלת קריאת הקובץ לזיכרון כ-Base64
-        reader.readAsDataURL(file);
+
+        // בחירת מתודת הקריאה המתאימה
+        if (isTextFile) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsDataURL(file);
+        }
 
         // איפוס האינפוט כדי לאפשר בחירה חוזרת של אותו קובץ
         e.target.value = "";
@@ -71,5 +88,4 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
     );
 });
 
-// 🟢 קריטי: ייצוא Default כדי ש-CreateItem יוכל לייבא אותו ללא סוגריים מסולסלים
 export default FileUploadHandler;

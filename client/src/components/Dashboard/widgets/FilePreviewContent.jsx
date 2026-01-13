@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { decodeBase64ToText } from "../../../utils/base64Utils";
 import TextViewer from "./viewers/TextViewer";
 import ImageViewer from "./viewers/ImageViewer";
 import BinaryViewer from "./viewers/BinaryViewer";
@@ -7,8 +6,10 @@ import BinaryViewer from "./viewers/BinaryViewer";
 function FilePreviewContent({ file, onDownload }) {
   const mime = file.mimeType || "";
 
+  // פונקציה לבדיקה אם מדובר בקובץ טקסט
   const isTextFile = (mimeType) => {
     return (
+      mimeType === "text/plain" ||
       mimeType.startsWith("text/") || 
       mimeType === "application/json" ||
       mimeType === "application/javascript" ||
@@ -16,37 +17,40 @@ function FilePreviewContent({ file, onDownload }) {
     );
   };
 
-  const decodedContent = useMemo(() => {
-    // 🛡️ הגנה: אם אין תוכן עדיין, אל תנסה לפענח
-    if (!file.content || !isTextFile(mime)) return null;
-    try {
-      return decodeBase64ToText(file.content);
-    } catch (err) {
-      console.error("Failed to decode base64:", err);
-      return "Error decoding content";
+  /**
+   * 🛠️ התיקון הקריטי:
+   * עבור קבצי טקסט, אנחנו לא מבצעים שום Decode.
+   * השרת מחזיר לנו Raw String, ואנחנו מעבירים אותו כפי שהוא ל-TextViewer.
+   */
+  const processedContent = useMemo(() => {
+    if (!file.content) return null;
+
+    if (isTextFile(mime)) {
+      // אם זה טקסט - החזר את התוכן נקי ללא פענוח Base64
+      return file.content;
     }
+
+    // עבור קבצים אחרים (כמו תמונות), התוכן נשאר כ-Base64
+    return file.content;
   }, [file.content, mime]);
 
-  // 1. תמונות
+  // 1. טיפול בתמונות (נשאר כ-Base64)
   if (mime.startsWith("image/")) {
     const imgSrc = `data:${mime};base64,${file.content}`;
     return <ImageViewer file={{ ...file, content: imgSrc }} />;
   }
 
-  // 2. טקסט - 🛠️ התיקון כאן: העברת אובייקט file עקבי
+  // 2. טיפול בטקסט
   if (isTextFile(mime)) {
-    // אם התוכן עוד לא פוענח, נחכה ל-useMemo
-    if (!decodedContent && file.content) return <div>Decoding...</div>;
-    
     return (
       <TextViewer 
-        file={{ ...file, content: decodedContent }} 
+        file={{ ...file, content: processedContent }} 
         onDownload={onDownload} 
       />
     );
   }
 
-  // 3. קבצים אחרים
+  // 3. קבצים אחרים (בינאריים)
   return <BinaryViewer file={file} onDownload={onDownload} />;
 }
 
