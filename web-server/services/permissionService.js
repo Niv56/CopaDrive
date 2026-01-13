@@ -36,17 +36,58 @@ const resolveRole = (userId, fileId) => {
     return found;
 };
 
+<<<<<<< HEAD
 exports.getPermissions = (ownerId, fileId) => {
     const role = resolveRole(ownerId, fileId);
+=======
+
+exports.getPermissions = (requesterId, fileId) => {
+    // ✅ תיקון: אפשר לכל משתמש עם גישה (לפחות viewer) לראות את כל רשימת ההרשאות
+    const role = resolveRole(requesterId, fileId);
+>>>>>>> 282a37b (BUGS FIXED)
     if (!role) {
         const err = new Error('File not found or access denied');
         err.status = 404;
         throw err;
     }
 
+<<<<<<< HEAD
     const permissions = permissionRepository.findByFileId(fileId);
     
     return { myRole: role, permissions };
+=======
+    // ✅ שליפת כל ההרשאות - כולל הרשאות שעוברות בירושה מתיקיות אב
+    const allPermissions = new Map(); // userId -> permission (to avoid duplicates)
+
+    // התחל מהקובץ הנוכחי ועלה עד השורש
+    let currentId = fileId;
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId);
+        if (!item) break;
+
+        // שלוף את ההרשאות של הרמה הנוכחית
+        const perms = permissionRepository.findByFileId(currentId) || [];
+
+        // הוסף רק הרשאות שעוד לא ראינו (ההרשאות הכי קרובות לקובץ מנצחות)
+        for (const perm of perms) {
+            if (!allPermissions.has(perm.userId)) {
+                allPermissions.set(perm.userId, perm);
+            }
+        }
+
+        currentId = item.parentId;
+    }
+
+    // המר את ה-Map חזרה למערך
+    const permissions = Array.from(allPermissions.values());
+
+    // ✅ שלוף את blockedBy מהקובץ (כדי שה-Frontend יוכל לסנן)
+    const file = fileRepository.findById(fileId);
+    const blockedBy = file?.blockedBy && Array.isArray(file.blockedBy) ? file.blockedBy : [];
+
+    // return: list + myRole + blockedBy
+    return { myRole: role, permissions, blockedBy };
+>>>>>>> 282a37b (BUGS FIXED)
 };
 
 exports.addPermission = (ownerId, fileId, payload) => {
@@ -59,6 +100,20 @@ exports.addPermission = (ownerId, fileId, payload) => {
         throw err;
     }
 
+<<<<<<< HEAD
+=======
+    // ✅ Unblock user if they were blocked (allow re-sharing)
+    const file = fileRepository.findById(fileId);
+    if (file && file.blockedBy && Array.isArray(file.blockedBy)) {
+        const blockedBy = file.blockedBy.filter(uid => uid !== payload.userId);
+        if (blockedBy.length !== file.blockedBy.length) {
+            // User was blocked, unblock them
+            fileRepository.update(fileId, { blockedBy });
+        }
+    }
+
+    // Check for duplicates
+>>>>>>> 282a37b (BUGS FIXED)
     const existingPermissions = permissionRepository.findByFileId(fileId);
     const duplicate = existingPermissions.find(p => p.userId === payload.userId);
 
@@ -128,6 +183,10 @@ const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
     if (requiredRole === 'viewer') return foundPermission !== null;
     if (requiredRole === 'editor') return foundPermission === 'editor';
     return false;
+<<<<<<< HEAD
 };
 
 exports.checkAccess = checkAccess;
+=======
+};
+>>>>>>> 282a37b (BUGS FIXED)

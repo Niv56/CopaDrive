@@ -111,12 +111,12 @@ export async function createItem({ name, type, parentId = null, content = "" }) 
  * Creates a new file or folder in the system.
  * Sends the data to the Node.js backend, which interacts with the C++ server via TCP.
  */
-export async function createItem({ 
-  name, 
-  type, 
-  parentId = null, 
-  content = "", 
-  mimeType = "" 
+export async function createItem({
+  name,
+  type,
+  parentId = null,
+  content = "",
+  mimeType = ""
 }) {
 >>>>>>> 16c8ff5 (about to finish):client/src/api/filesApi.js
   const body = {
@@ -124,13 +124,13 @@ export async function createItem({
     type,
     parentId,
     content: type === "file" ? content : "",
-    mimeType: type === "file" ? mimeType : "" 
+    mimeType: type === "file" ? mimeType : ""
   };
 
   return request("/api/files", {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json" 
+    headers: {
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(body),
   });
@@ -250,9 +250,9 @@ export async function setImportant(fileId, important) {
 =======
 /* -----------------------------
    Recent / Access tracking
-   (NO new files. Purely inside filesApi.js)
 ------------------------------ */
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 <<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // ✅ Recent files (prefer backend endpoint if exists; fallback to sorting root files)
 >>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
@@ -332,35 +332,14 @@ function touchRecentLocal(fileId) {
 }
 
 // ✅ Recent files: merge local recent timestamps into server list
+=======
+// ✅ Recent files: fetch from server only (per-user)
+>>>>>>> 282a37b (BUGS FIXED):client/src/api/filesApi.js
 export async function getRecentFiles() {
-  const data = await getRootFiles();
-  const files = Array.isArray(data) ? data : [];
-
-  const recentMap = readRecentMap();
-
-  // merge local timestamps into items (only for files)
-  const merged = files.map((f) => {
-    if (f?.type !== "file") return f;
-
-    const localIso = recentMap?.[f.id];
-    if (!localIso) return f;
-
-    // if server has lastAccessed, take the latest between server/local
-    const serverIso = f.lastAccessed;
-    if (!serverIso) return { ...f, lastAccessed: localIso };
-
-    const best =
-      new Date(localIso) > new Date(serverIso) ? localIso : serverIso;
-
-    return { ...f, lastAccessed: best };
-  });
-
-  return merged
-    .filter((f) => f.type === "file" && f.lastAccessed)
-    .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
-    .slice(0, 20);
+  return request("/api/files/recent", { method: "GET" });
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 <<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // 🎯 Open item:
 // - folders open locally
@@ -368,6 +347,8 @@ export async function getRecentFiles() {
 >>>>>>> 7194425 (RECENT ADDED):client/src/api/filesApi.js
 =======
 
+=======
+>>>>>>> 282a37b (BUGS FIXED):client/src/api/filesApi.js
 /**
  * Clean GET Flow: Fetches only the file metadata and content.
  */
@@ -378,7 +359,11 @@ export async function getFileData(fileId) {
 
 // 🎯 Open item:
 // - folders open locally
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 >>>>>>> daea503 (fiinish edit branch):client/src/api/filesApi.js
+=======
+// - files: PATCH to server for access tracking + fetch file content
+>>>>>>> 282a37b (BUGS FIXED):client/src/api/filesApi.js
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 
@@ -387,17 +372,20 @@ export async function openItem(item, onFolderOpen = null) {
     return null;
   }
 
-  // 1) update local recent immediately (so Recent screen ALWAYS works)
-  touchRecentLocal(item.id);
-  window.dispatchEvent(new CustomEvent("reset-recent"));
+  // ✅ עדכון per-user בשרת בלבד
+  try {
+    await request(`/api/files/${item.id}/access`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    });
 
-  // 2) try update access time in backend (optional)
-  request(`/api/files/${item.id}/access`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-  }).catch(() => { });
+    // ✅ רענן את Recent מהשרת
+    window.dispatchEvent(new CustomEvent("reset-recent"));
+  } catch (err) {
+    console.error("Failed to record access:", err);
+  }
 
-  // 3) fetch file
+  // שלוף את הקובץ
   return getFileById(item.id);
 }
 
@@ -451,7 +439,7 @@ export async function addFilePermission(fileId, targetUserId) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ userId: targetUserId }), // השרת קובע תפקיד "viewer" כברירת מחדל
+      body: JSON.stringify({ userId: targetUserId }),
     }
   );
 >>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
@@ -547,6 +535,7 @@ export async function getCurrentUser(userId) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, { method: "GET" });
 }
+
 export async function updateUserProfile(userId, patch) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, {
@@ -563,9 +552,13 @@ export async function changeUserPassword(userId, currentPassword, newPassword) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ currentPassword, newPassword }),
   });
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 }
 <<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 
 >>>>>>> 9d61e09 (Revert "Register validation"):client/src/api/filesApi.js
 =======
 >>>>>>> 7194425 (RECENT ADDED):client/src/api/filesApi.js
+=======
+}
+>>>>>>> 282a37b (BUGS FIXED):client/src/api/filesApi.js

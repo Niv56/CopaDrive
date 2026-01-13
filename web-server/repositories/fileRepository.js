@@ -26,11 +26,13 @@ const findById = (id, ownerId) => {
 // Creates a new file entry
 const create = (fileData) => {
   const newFileData = {
-    mimeType:"",
+    mimeType: "",
     trashed: false,
     trashedAt: null,
     originalParentId: null,
-    ...fileData,
+    lastAccessedBy: {},
+    blockedBy: [],
+    ...fileData
   };
 
   files.push(newFileData);
