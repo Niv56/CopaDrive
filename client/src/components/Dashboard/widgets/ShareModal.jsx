@@ -1,5 +1,5 @@
 // client/src/components/Dashboard/widgets/ShareModal.jsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
@@ -20,6 +20,11 @@ function ShareModal({ item, onClose }) {
     const ownerId = item?.ownerId || item?.owner?.id || null;
     const isOwner = !!ownerId && !!myUserId && ownerId === myUserId;
     const fileId = item?.id;
+
+    // ✅ רענן את refreshTrigger כל פעם שה-Modal נפתח (כש-fileId משתנה)
+    useEffect(() => {
+        setRefreshTrigger(prev => prev + 1);
+    }, [fileId]);
 
     if (!fileId) return null;
 

@@ -1,3 +1,5 @@
+// client/src/components/Dashboard/views/RecentView.jsx
+
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { getRecentFiles, formatLastAccessed } from "../../../api/filesApi";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -29,7 +31,8 @@ function RecentView() {
 
   const {
     sharingItem, setSharingItem, openedFile, setOpenedFile,
-    openedRole, handleOpen, handleToggleStar,loadingFile, handleToggleImportant, handleDelete
+    openedRole, handleOpen, handleToggleStar, loadingFile,
+    handleToggleImportant, handleDelete
   } = useFileActions(myUserId, loadRecent);
 
   useEffect(() => {
@@ -70,8 +73,22 @@ function RecentView() {
         )}
       </div>
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} />
-      {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onDelete={handleDelete}
+      />
+
+      {sharingItem && (
+        <ShareModal
+          item={sharingItem}
+          onClose={() => setSharingItem(null)}
+        />
+      )}
     </div>
   );
 }
