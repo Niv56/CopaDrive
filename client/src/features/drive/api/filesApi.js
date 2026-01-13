@@ -361,10 +361,24 @@ export async function getRecentFiles() {
     .slice(0, 20);
 }
 
+<<<<<<< HEAD:client/src/features/drive/api/filesApi.js
 // 🎯 Open item:
 // - folders open locally
 // - files: update local recent immediately + try PATCH to server (if exists) + fetch file content
 >>>>>>> 7194425 (RECENT ADDED):client/src/api/filesApi.js
+=======
+
+/**
+ * Clean GET Flow: Fetches only the file metadata and content.
+ */
+export async function getFileData(fileId) {
+  if (!fileId) throw new Error("fileId is required");
+  return getFileById(fileId);
+}
+
+// 🎯 Open item:
+// - folders open locally
+>>>>>>> daea503 (fiinish edit branch):client/src/api/filesApi.js
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 

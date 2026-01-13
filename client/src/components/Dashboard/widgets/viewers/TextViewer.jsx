@@ -1,51 +1,58 @@
 import React, { useState, useEffect } from "react";
 
+// 🛠️ הקפדה על אותו רצף תווים שהגדרנו בשמירה
+const NEWLINE_PLACEHOLDER = "_@NL@_";
+
+/**
+ * TextViewer - מציג תוכן של קבצי טקסט.
+ * מבצע המרה של Placeholders חזרה לירידות שורה לצורך תצוגה.
+ */
 function TextViewer({ file }) {
-  const [decodedContent, setDecodedContent] = useState(null); // null מייצג מצב טעינה
+  const [content, setContent] = useState(null);
 
   useEffect(() => {
     if (!file) return;
 
-    // 🛡️ בדיקה: האם הקובץ ריק (0 בייטים או תוכן ריק)
-    if (file.sizeBytes === 0 || !file.content || file.content.trim() === "") {
-      setDecodedContent(""); // מסמנים שהתוכן הוא מחרוזת ריקה
+    // בדיקה אם הקובץ ריק
+    if (file.sizeBytes === 0 || !file.content) {
+      setContent(""); 
       return;
     }
 
-    try {
-      // ניסיון פענוח ה-Base64 מהשרת
-      const text = window.atob(file.content);
-      setDecodedContent(text);
-    } catch (e) {
-      console.error("Decoding failed, displaying raw content:", e);
-      setDecodedContent(file.content); // גיבוי למקרה של תקלה
-    }
+    /**
+     * 🛠️ התיקון:
+     * אנחנו לוקחים את התוכן מהשרת ומחליפים את ה-Placeholder
+     * בירידת שורה אמיתית (\n) כדי שה-textarea יציג אותה נכון.
+     */
+    const processed = file.content.replaceAll(NEWLINE_PLACEHOLDER, "\n");
+    
+    console.log(`[TEXT-VIEWER] Formatting file: ${file.name}`);
+    setContent(processed);
   }, [file]);
 
-  // 1. מצב טעינה: יוצג רק אם התוכן עדיין null (כלומר הפענוח עוד לא הסתיים)
-  if (decodedContent === null) {
-    return <div className="p-3 text-center">Decoding...</div>;
+  if (content === null) {
+    return <div className="p-3 text-center text-muted">Loading content...</div>;
   }
 
-  // 2. תצוגה מקדימה:
   return (
     <div className="text-viewer-container p-3">
-      {decodedContent === "" ? (
-        /* 🎯 התיקון שביקשת: במקום Decoding יוצג "No content" */
+      {content.trim() === "" ? (
         <div className="no-content-message p-5 text-center text-muted border rounded bg-light">
-           No content
+           File is empty
         </div>
       ) : (
         <textarea
           className="form-control"
-          rows="10"
-          value={decodedContent}
+          rows="15"
+          value={content}
           readOnly
           style={{ 
-            backgroundColor: "#fff", 
-            fontFamily: "monospace", 
+            backgroundColor: "#f9f9f9", 
+            fontFamily: "'Courier New', Courier, monospace", 
+            fontSize: "14px",
             resize: "none",
-            border: "1px solid #ddd" 
+            border: "1px solid #dee2e6",
+            lineHeight: "1.5"
           }}
         />
       )}

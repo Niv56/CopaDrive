@@ -144,7 +144,6 @@ const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
 
-  // Logic Injection: Your debug logs from "about to finish"
   console.log(`GET_DEBUG 1: Metadata found for ID ${id}:`, item);
 
   if (!(await checkAccess(userId, id, 'viewer'))) {
@@ -207,6 +206,7 @@ const createItem = async (ownerId, payload) => {
   return created;
 };
 
+// --- כאן נמצא המיזוג המתוקן ---
 const updateItem = async (userId, id, patch) => {
   if (!patch || typeof patch !== 'object') throw { status: 400, message: 'Invalid JSON body' };
   if (patch.type !== undefined) throw { status: 400, message: 'Type cannot be updated' };
@@ -216,25 +216,48 @@ const updateItem = async (userId, id, patch) => {
   if (!(await checkAccess(userId, id, 'editor'))) throw { status: 403, message: 'Editor access required' };
 
   const updates = {};
+
+  // 1. עדכון תוכן פיזי
   if (patch.content !== undefined) {
     if (current.type === 'folder') throw { status: 400, message: 'Cannot update content of a folder' };
     try {
       try { await sendTcpCommand(`DELETE ${id}`); } catch (e) { console.warn(`[Update] Physical delete failed for ${id}:`, e.message); }
       await sendTcpCommand(`POST ${id} ${patch.content}`);
       updates.sizeBytes = contentSizeBytes(patch.content);
-      // Integration: Support mimeType updates from your logic
-      if (patch.mimeType !== undefined) updates.mimeType = patch.mimeType;
     } catch (err) { throw err; }
   }
-  if (patch.name !== undefined) updates.name = patch.name.trim();
+
+  // 2. עדכון mimeType
+  if (patch.mimeType !== undefined) {
+    updates.mimeType = patch.mimeType;
+  }
+
+  // 3. עדכון שם
+  if (patch.name !== undefined) {
+    const trimmedName = patch.name.trim();
+    if (trimmedName === '') throw { status: 400, message: 'Name must be a non-empty string' };
+    updates.name = trimmedName;
+  }
+
+  // 4. עדכון מיקום ומניעת מחזוריות
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
-    if (newParentId === id) throw { status: 400, message: 'parentId cannot be id' };
+    if (newParentId === id) throw { status: 400, message: 'parentId cannot be the same as id' };
+
+    if (newParentId !== null) {
+      const parent = fileRepository.findById(newParentId);
+      if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Parent must be a folder' };
+      if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
+        throw { status: 409, message: 'Cannot move a folder into its own descendant' };
+      }
+    }
     updates.parentId = newParentId;
   }
+
   updates.updatedAt = nowIso();
   return fileRepository.update(id, updates);
 };
+// -----------------------------
 
 const setTrashed = async (userId, id, trashed) => {
   const item = fileRepository.findById(id);
