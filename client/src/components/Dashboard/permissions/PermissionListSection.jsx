@@ -27,7 +27,7 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
                 setMyRole(data.myRole);
             }
 
-            // שלוף פרטים מלאים של כל משתמש
+            // שליפת פרטים מלאים של כל משתמש
             const permissionsWithFullData = await Promise.all(
                 data.permissions.map(async (perm) => {
                     try {
@@ -58,9 +58,17 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
 
             console.log("Final permissions with full data:", permissionsWithFullData);
 
-            // כעת הבעלים נשאר ברשימה - לא מסננים אותו
-            // הוא יוצג עם עיצוב מיוחד ב-PermissionRow
-            setPermissions(permissionsWithFullData);
+            // ✅ סנן משתמשים שחסומים (blockedBy)
+            // רק Owner יכול לראות אותם (כדי לדעת שהם היו ברשימה)
+            const filtered = permissionsWithFullData.filter(perm => {
+                // אם אין blockedBy, תציג את כולם
+                if (!data.blockedBy || !Array.isArray(data.blockedBy)) return true;
+
+                // הצג רק משתמשים שלא חסמו את הקובץ
+                return !data.blockedBy.includes(perm.userId);
+            });
+
+            setPermissions(filtered);
         } catch (e) {
             console.error("Load permissions error:", e);
             setErr(e.message || "Failed to load permissions");
@@ -105,17 +113,19 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
 
     return (
         <div>
+            {/* ✅ כותרת מותאמת לפי תפקיד */}
             <div className="perm-section-title mb-3">
-                {isOwner ? "People with access" : "Your access"}
+                {isOwner ? "Who has access" : "People with access"}
             </div>
 
             {loading && permissions.length === 0 ? (
                 <div className="text-muted small">Loading permissions...</div>
             ) : permissions.length === 0 && !myRole ? (
                 <div className="text-muted small">
-                    {isOwner ? "No other users have access." : "Access information unavailable."}
+                    {isOwner ? "No other users have access yet." : "Access information unavailable."}
                 </div>
             ) : permissions.length === 0 && myRole ? (
+                /* ✅ הודעה ברורה יותר למשתמש שאינו owner */
                 <div className="alert alert-info py-2 px-3" style={{ fontSize: '14px', borderRadius: '10px' }}>
                     You have <strong>{myRole}</strong> access to this file
                 </div>

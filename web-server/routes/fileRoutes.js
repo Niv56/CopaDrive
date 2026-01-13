@@ -15,21 +15,21 @@ router.get('/usage', requireAuth, fileController.getUsage);
 router.get('/starred', requireAuth, fileController.listStarred);
 router.get('/important', requireAuth, fileController.listImportant);
 
-// ✅ Trash routes (must be before "/:id")
+// Trash routes (must be before "/:id")
 router.get('/trash', requireAuth, fileController.listTrash);
 
-// ✅ Empty trash (support both)
+// Empty trash (support both)
 router.delete('/trash/empty', requireAuth, fileController.emptyTrash);
 router.delete('/trash', requireAuth, fileController.emptyTrash);
 
-// ✅ Recent + access (must be before "/:id")
+// Recent + access (must be before "/:id")
 router.get('/recent', requireAuth, fileController.listRecent);
 router.patch('/:id/access', requireAuth, fileController.recordAccess);
 
 // Create
 router.post('/', requireAuth, fileController.createItem);
 
-// ✅ Delete forever (permanent)
+// Delete forever (permanent)
 router.delete('/:id/forever', requireAuth, fileController.deleteForever);
 
 // Read by id
@@ -39,7 +39,7 @@ router.get('/:id', requireAuth, fileController.getById);
 router.patch('/:id/star', requireAuth, fileController.setStarred);
 router.patch('/:id/important', requireAuth, fileController.setImportant);
 
-// ✅ set/unset trash
+// set/unset trash
 router.patch('/:id/trash', requireAuth, fileController.setTrashed);
 
 // Update

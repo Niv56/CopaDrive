@@ -16,6 +16,7 @@ const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
 /**
  * RECURSIVE Access Check
  * Checks permissions from the item up to the root.
+ * Also respects blockedBy list (users who deleted the file permanently).
  */
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   let currentId = fileId;
@@ -24,6 +25,10 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   while (currentId !== null) {
     const item = fileRepository.findById(currentId);
     if (!item) break;
+
+    // Check if user blocked this item
+    const blockedBy = ensureArray(item.blockedBy);
+    if (blockedBy.includes(userId)) return false;
 
     // Owner always has full access
     if (item.ownerId === userId) return true;
@@ -108,6 +113,11 @@ const decorateFlagsForUser = (item, userId) => {
   const trashed = trashedBy.includes(userId);
   const trashedAt = trashed ? getTrashedAtForUser(item, userId) : null;
 
+  const lastAccessedBy = item.lastAccessedBy && typeof item.lastAccessedBy === 'object'
+    ? item.lastAccessedBy
+    : {};
+  const lastAccessed = lastAccessedBy[userId] || null;
+
   return {
     ...item,
     starred: starredBy.includes(userId),
@@ -115,6 +125,7 @@ const decorateFlagsForUser = (item, userId) => {
     trashed,
     trashedAt,
     trashDaysLeft: trashed ? calcDaysLeft(trashedAt) : null,
+    lastAccessed
   };
 };
 
@@ -186,7 +197,7 @@ const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
   console.log(`GET_DEBUG 1: Metadata found for ID ${id}:`, item);
-  
+
   if (!(await checkAccess(userId, id, 'viewer'))) {
     throw { status: 403, message: 'Access denied' };
   }
@@ -248,12 +259,14 @@ const createItem = async (ownerId, payload) => {
     importantBy: [],
     trashedBy: [],
     trashedAtBy: {},
+    lastAccessedBy: {},
+    blockedBy: []
   });
 
   try {
     permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
   } catch (_) { }
-console.log("SERVER DEBUG 2: Created object in DB:", created);
+  console.log("SERVER DEBUG 2: Created object in DB:", created);
   return created;
 };
 
@@ -362,6 +375,7 @@ const updateItem = async (userId, id, patch) => {
   const updated = fileRepository.update(id, updates);
   return updated;
 };
+
 // --- Trash core ---
 
 const setTrashed = async (userId, id, trashed) => {
@@ -441,8 +455,8 @@ const deleteItem = async (userId, id) => {
 
 /**
  * DELETE FOREVER (per-user):
- * - Owner: physical delete + remove from repository (and subtree for folder)
- * - Not owner: remove from user's trash, and (best-effort) revoke permission so it disappears
+ * - Owner: physical delete + remove from repository
+ * - Not owner: remove from user's trash, add to blockedBy AND revoke permission
  */
 const deleteForever = async (userId, id) => {
   const item = fileRepository.findById(id);
@@ -467,10 +481,16 @@ const deleteForever = async (userId, id) => {
   if (item.ownerId !== userId) {
     await setTrashed(userId, id, false);
 
-    if (typeof permissionRepository.revokeUserAccess === 'function') {
-      try { permissionRepository.revokeUserAccess(id, userId); } catch (_) {}
-    } else if (typeof permissionService.removePermission === 'function') {
-      try { permissionService.removePermission(userId, id, userId); } catch (_) {}
+    const blockedBy = ensureArray(item.blockedBy);
+    if (!blockedBy.includes(userId)) {
+      fileRepository.update(id, { blockedBy: [...blockedBy, userId] });
+    }
+
+    const filePermissions = permissionRepository.findByFileId(id);
+    const myPermission = filePermissions.find(p => p.userId === userId);
+
+    if (myPermission) {
+      permissionRepository.remove(myPermission.id);
     }
 
     return { id };
@@ -483,9 +503,13 @@ const deleteForever = async (userId, id) => {
     if (!target) continue;
 
     if (target.type === 'file') {
-      await sendTcpCommand(`DELETE ${dId}`).catch(() => {});
+      await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
     }
+
     fileRepository.remove(dId);
+
+    const allPerms = permissionRepository.findByFileId(dId);
+    allPerms.forEach(p => permissionRepository.remove(p.id));
   }
 
   return { id };
@@ -571,7 +595,7 @@ const searchItems = async (userId, query) => {
   try {
     const response = await sendTcpCommand(`SEARCH ${query}`);
     if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
-  } catch (err) {}
+  } catch (err) { }
 
   const contentMatches = contentMatchIds
     .map(id => fileRepository.findById(id))
@@ -584,7 +608,7 @@ const searchItems = async (userId, query) => {
 
 const getOwnedStorageUsage = async (userId) => {
   const all = fileRepository.findAll();
-const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
+  const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
 
   const usedBytes = ownedFiles.reduce((sum, f) => {
     const s = typeof f.sizeBytes === 'number' ? f.sizeBytes : 0;
@@ -600,6 +624,41 @@ const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
   };
 };
 
+const updateAccessTime = async (userId, id) => {
+  const item = fileRepository.findById(id);
+  if (!item) {
+    const err = new Error("File or folder not found");
+    err.status = 404;
+    throw err;
+  }
+
+  if (!(await checkAccess(userId, id, "viewer"))) {
+    const err = new Error("Access denied");
+    err.status = 403;
+    throw err;
+  }
+
+  const lastAccessedBy = item.lastAccessedBy && typeof item.lastAccessedBy === "object"
+    ? { ...item.lastAccessedBy }
+    : {};
+
+  lastAccessedBy[userId] = nowIso();
+
+  const updated = fileRepository.update(id, { lastAccessedBy });
+  return decorateFlagsForUser(updated, userId);
+};
+
+const listRecent = async (userId) => {
+  const all = await listAllAccessible(userId, { includeTrashed: false });
+
+  const withAccess = all
+    .filter(item => item.type === "file" && item.lastAccessed);
+
+  withAccess.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
+
+  return withAccess.slice(0, 20);
+};
+
 module.exports = {
   listTopLevel,
   createItem,
@@ -607,7 +666,7 @@ module.exports = {
   updateItem,
   deleteItem,
   deleteForever,
-  emptyTrash, // ✅ חדש
+  emptyTrash,
 
   searchItems,
 
@@ -620,4 +679,7 @@ module.exports = {
   listTrash,
 
   getOwnedStorageUsage,
+
+  updateAccessTime,
+  listRecent
 };
