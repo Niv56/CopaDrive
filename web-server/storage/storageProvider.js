@@ -1,8 +1,13 @@
-const mode = process.env.STORAGE_MODE || "tcp";
+// web-server/storage/storageProvider.js
 
+const store = require('../utils/storage');
+
+/**
+ * Returns the active storage provider.
+ * For now we use an in-memory store (users/files/permissions).
+ */
 function getProvider() {
-  if (mode === "local") return require("./localProvider");
-  return require("./tcpProvider");
+  return { name: 'in-memory', store };
 }
 
-module.exports = { getProvider, mode };
+module.exports = { getProvider };

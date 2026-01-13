@@ -1,22 +1,51 @@
+// FileListItem.jsx
+import "./FileListItem.css";
 import { formatBytes } from "../../../utils/formatBytes";
+
+function FileIcon({ isFolder }) {
+  if (isFolder) {
+    return (
+      <svg className="fli-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 4l2 2h8a2 2 0 012 2v1H2V6a2 2 0 012-2h6z" />
+        <path d="M2 9h20v9a2 2 0 01-2 2H4a2 2 0 01-2-2V9z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="fli-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V8l-5-6z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
 
 function FileListItem({
   item,
   onOpen,
   onEdit,
   onShare,
-  onDelete,
+  onDelete, // Move to trash
   onToggleStar,
   onToggleImportant,
-  extraInfo, // 🎯 פרופ חדש להצגת מידע נוסף (כמו זמן פתיחה)
+  mode = "default", // "default" | "trash"
+  onRestore,
+  onDeleteForever,
+  extraInfo,
 }) {
   if (!item) return null;
 
+  const isTrash = mode === "trash";
   const isFolder = item.type === "folder";
+
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
 
   const sizeLabel = isFolder ? "—" : formatBytes(item.sizeBytes ?? 0);
+
+  const daysLeft =
+    typeof item.trashDaysLeft === "number" ? `${item.trashDaysLeft} days left` : "";
+
+  const trashInfo = [daysLeft, sizeLabel].filter(Boolean).join(" · ");
 
   function stop(e) {
     e.preventDefault();
@@ -34,95 +63,114 @@ function FileListItem({
 
   return (
     <div
-      className="list-group-item d-flex justify-content-between align-items-center rounded-4 shadow-sm py-3 px-3 mb-2"
-      style={{ cursor: "pointer", border: "none", background: "#fff" }}
+      className={`fli-row ${isTrash ? "is-trash" : ""}`}
       onClick={() => onOpen?.(item)}
-      role="button"
-      tabIndex={0}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : -1}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onOpen?.(item);
+        if ((e.key === "Enter" || e.key === " ") && onOpen) onOpen?.(item);
       }}
     >
-      {/* Left side: Icon & Name */}
-      <div className="d-flex align-items-center gap-3">
-        <span style={{ fontSize: 22 }}>{isFolder ? "📁" : "📄"}</span>
-        <div className="d-flex flex-column">
-          <div className="fw-semibold text-truncate" style={{ maxWidth: "250px" }}>{item.name}</div>
-          <div className="text-muted small">{isFolder ? "Folder" : "File"}</div>
+      {/* LEFT */}
+      <div className="fli-left">
+        <div className={`fli-icon ${isFolder ? "is-folder" : "is-file"}`}>
+          <FileIcon isFolder={isFolder} />
+        </div>
+
+        <div className="fli-meta">
+          <div className="fli-name" dir="auto" title={item.name}>
+            {item.name}
+          </div>
+          <div className="fli-sub">{isFolder ? "Folder" : "File"}</div>
         </div>
       </div>
 
-      {/* Right side: Info & Actions */}
-      <div className="d-flex align-items-center gap-3" onClick={stop}>
-
-        {/* 🎯 המידע הנוסף (כמו "Opened Just now") מוצג כאן כחלק מה-Flex */}
-        {extraInfo && (
-          <div style={{ fontSize: "12px", color: "#5f6368", whiteSpace: "nowrap" }}>
-            {extraInfo}
-          </div>
+      {/* RIGHT */}
+      <div className="fli-right" onClick={stop}>
+        {(extraInfo || (isTrash && trashInfo)) && (
+          <div className="fli-extra">{extraInfo || trashInfo}</div>
         )}
 
-        {/* Size */}
-        <div className="text-muted small" style={{ minWidth: 70, textAlign: "right" }}>
-          {sizeLabel}
-        </div>
+        {!isTrash && <div className="fli-size">{sizeLabel}</div>}
 
-        {/* STAR */}
-        <button
-          type="button"
-          className="btn btn-light rounded-circle d-flex align-items-center justify-content-center"
-          title={isStarred ? "Remove from starred" : "Add to starred"}
-          style={{ width: 36, height: 36, ...pillStyle(isStarred, "star"), border: "1px solid #eee" }}
-          onClick={(e) => {
-            stop(e);
-            onToggleStar?.(item, !isStarred);
-          }}
-        >
-          {isStarred ? "★" : "☆"}
-        </button>
+        {!isTrash && (
+          <div className="fli-actions">
+            <button
+              type="button"
+              className={`fli-iconbtn ${isStarred ? "is-on" : ""}`}
+              title={isStarred ? "Remove from starred" : "Add to starred"}
+              aria-label={isStarred ? "Remove from starred" : "Add to starred"}
+              onClick={(e) => {
+                stop(e);
+                onToggleStar?.(item, !isStarred);
+              }}
+            >
+              {isStarred ? "★" : "☆"}
+            </button>
 
-        {/* IMPORTANT */}
-        <button
-          type="button"
-          className="btn btn-light rounded-circle d-flex align-items-center justify-content-center"
-          title={isImportant ? "Remove from important" : "Add to important"}
-          style={{ width: 36, height: 36, ...pillStyle(isImportant, "important"), border: "1px solid #eee" }}
-          onClick={(e) => {
-            stop(e);
-            onToggleImportant?.(item, !isImportant);
-          }}
-        >
-          !
-        </button>
+            <button
+              type="button"
+              className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`}
+              title={isImportant ? "Remove from important" : "Add to important"}
+              aria-label={isImportant ? "Remove from important" : "Add to important"}
+              onClick={(e) => {
+                stop(e);
+                onToggleImportant?.(item, !isImportant);
+              }}
+            >
+              !
+            </button>
+          </div>
+        )}
 
         {/* MENU */}
         <div className="dropdown" onClick={stop}>
           <button
-            className="btn btn-light rounded-circle d-flex align-items-center justify-content-center"
+            className="fli-menubtn"
             data-bs-toggle="dropdown"
             aria-expanded="false"
-            style={{ width: 36, height: 36, border: "1px solid #eee" }}
+            title="More options"
+            aria-label="More options"
+            type="button"
           >
             ⋮
           </button>
 
           <ul className="dropdown-menu dropdown-menu-end shadow-sm">
-            <li>
-              <button className="dropdown-item" onClick={(e) => { stop(e); onEdit?.(item); }}>
-                Edit
-              </button>
-            </li>
-            <li>
-              <button className="dropdown-item" onClick={(e) => { stop(e); onShare?.(item); }}>
-                Share
-              </button>
-            </li>
-            <li><hr className="dropdown-divider" /></li>
-            <li>
-              <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDelete?.(item); }}>
-                Delete
-              </button>
-            </li>
+            {isTrash ? (
+              <>
+                <li>
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onRestore?.(item); }}>
+                    Restore
+                  </button>
+                </li>
+                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDeleteForever?.(item); }}>
+                    Delete forever
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onEdit?.(item); }}>
+                    Edit
+                  </button>
+                </li>
+                <li>
+                  <button className="dropdown-item" onClick={(e) => { stop(e); onShare?.(item); }}>
+                    Share
+                  </button>
+                </li>
+                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <button className="dropdown-item text-danger" onClick={(e) => { stop(e); onDelete?.(item); }}>
+                    Move to trash
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
