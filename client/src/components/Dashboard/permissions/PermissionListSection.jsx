@@ -79,7 +79,12 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             await deletePermission(fileId, p.id);
             await load();
         } catch (e) {
-            setErr(e.message || "Delete failed");
+            const errorMessage = e.message || "Delete failed";
+            if (errorMessage.includes("permission") || errorMessage.includes("403")) {
+                setErr("You don't have permission to remove this user.");
+            } else {
+                setErr("Unable to remove user access. Please try again.");
+            }
         }
     }
 
@@ -89,7 +94,12 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             await togglePermissionRole(fileId, p.id);
             await load();
         } catch (e) {
-            setErr(e.message || "Toggle failed");
+            const errorMessage = e.message || "Toggle failed";
+            if (errorMessage.includes("permission") || errorMessage.includes("403")) {
+                setErr("You don't have permission to change user roles.");
+            } else {
+                setErr("Unable to change user role. Please try again.");
+            }
         }
     }
 
@@ -126,7 +136,14 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
                 </div>
             )}
 
-            {err && <div className="perm-error mt-2">{err}</div>}
+            {err && (
+                <div className="perm-error-box mt-3">
+                    <svg className="perm-error-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>{err}</span>
+                </div>
+            )}
         </div>
     );
 }
