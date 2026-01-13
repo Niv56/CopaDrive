@@ -201,23 +201,87 @@ export async function setImportant(fileId, important) {
 
 /* -----------------------------
    Recent / Access tracking
+   (NO new files. Purely inside filesApi.js)
 ------------------------------ */
 
-// ✅ Recent files (prefer backend endpoint if exists; fallback to sorting root files)
-export async function getRecentFiles() {
-  // If you have backend route GET /api/files/recent, uncomment the next line and delete fallback:
-  // return request("/api/files/recent", { method: "GET" });
+const RECENT_KEY = "copa_recent_v1";
+const RECENT_LIMIT = 50;
 
-  const data = await getRootFiles();
-  return Array.isArray(data)
-    ? data
-      .filter((f) => f.type === "file" && f.lastAccessed)
-      .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
-      .slice(0, 20)
-    : [];
+function safeJsonParse(str, fallback) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return fallback;
+  }
 }
 
-// 🎯 Open item: folders open locally; files update access time in background then fetch content
+function readRecentMap() {
+  // map: { [fileId]: isoDateString }
+  const raw = localStorage.getItem(RECENT_KEY);
+  const obj = raw ? safeJsonParse(raw, {}) : {};
+  return obj && typeof obj === "object" ? obj : {};
+}
+
+function writeRecentMap(map) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(map));
+  } catch {
+    // ignore storage quota / privacy mode
+  }
+}
+
+function touchRecentLocal(fileId) {
+  if (!fileId) return;
+
+  const nowIso = new Date().toISOString();
+  const map = readRecentMap();
+  map[fileId] = nowIso;
+
+  // keep last RECENT_LIMIT by sorting keys by date
+  const entries = Object.entries(map)
+    .filter(([, v]) => !!v)
+    .sort((a, b) => new Date(b[1]) - new Date(a[1]));
+
+  const trimmed = entries.slice(0, RECENT_LIMIT);
+  const next = {};
+  for (const [id, iso] of trimmed) next[id] = iso;
+
+  writeRecentMap(next);
+}
+
+// ✅ Recent files: merge local recent timestamps into server list
+export async function getRecentFiles() {
+  const data = await getRootFiles();
+  const files = Array.isArray(data) ? data : [];
+
+  const recentMap = readRecentMap();
+
+  // merge local timestamps into items (only for files)
+  const merged = files.map((f) => {
+    if (f?.type !== "file") return f;
+
+    const localIso = recentMap?.[f.id];
+    if (!localIso) return f;
+
+    // if server has lastAccessed, take the latest between server/local
+    const serverIso = f.lastAccessed;
+    if (!serverIso) return { ...f, lastAccessed: localIso };
+
+    const best =
+      new Date(localIso) > new Date(serverIso) ? localIso : serverIso;
+
+    return { ...f, lastAccessed: best };
+  });
+
+  return merged
+    .filter((f) => f.type === "file" && f.lastAccessed)
+    .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
+    .slice(0, 20);
+}
+
+// 🎯 Open item:
+// - folders open locally
+// - files: update local recent immediately + try PATCH to server (if exists) + fetch file content
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 
@@ -226,12 +290,17 @@ export async function openItem(item, onFolderOpen = null) {
     return null;
   }
 
-  // fire-and-forget update access time
+  // 1) update local recent immediately (so Recent screen ALWAYS works)
+  touchRecentLocal(item.id);
+  window.dispatchEvent(new CustomEvent("reset-recent"));
+
+  // 2) try update access time in backend (optional)
   request(`/api/files/${item.id}/access`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
   }).catch(() => { });
 
+  // 3) fetch file
   return getFileById(item.id);
 }
 
@@ -248,9 +317,12 @@ export function formatLastAccessed(dateString) {
 
 export async function findUserByEmail(email) {
   const token = getAuthToken();
-  const response = await fetch(`http://localhost:3000/api/users/email/${email}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(
+    `http://localhost:3000/api/users/email/${email}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   if (!response.ok) return null;
   return response.json();
 }
@@ -280,7 +352,8 @@ export async function addFilePermission(fileId, targetUserId) {
 ------------------------------ */
 
 export async function searchItems(query) {
-  if (query === undefined || query === null) throw new Error("query is required");
+  if (query === undefined || query === null)
+    throw new Error("query is required");
   const q = encodeURIComponent(String(query));
   return request(`/api/search/${q}`, { method: "GET" });
 }
@@ -310,4 +383,3 @@ export async function changeUserPassword(userId, currentPassword, newPassword) {
     body: JSON.stringify({ currentPassword, newPassword }),
   });
 }
-

@@ -1821,11 +1821,21 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
         setLoading(true);
         try {
             const basic = await findUserByEmail(email.trim());
-            if (!basic?.id) throw new Error("User not found");
+            if (!basic?.id) {
+                setError("User not found. Please check the email address.");
+                return;
+            }
             const full = await getCurrentUser(basic.id);
             setFoundUser({ ...basic, ...full });
         } catch (err) {
-            setError(err.message || "Search failed");
+            const errorMessage = err.message || "Search failed";
+            if (errorMessage.includes("not found") || errorMessage.includes("404")) {
+                setError("User not found. Please check the email address.");
+            } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+                setError("Connection error. Please check your internet connection.");
+            } else {
+                setError("Unable to search for user. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -1834,13 +1844,21 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
     async function onShare() {
         if (!isOwner || !foundUser?.id) return;
         setLoading(true);
+        setError("");
         try {
             await addPermission(fileId, foundUser.id);
             setEmail("");
             setFoundUser(null);
-            onChanged?.(); // ׳׳¢׳“׳›׳ ׳׳× ׳”׳¨׳©׳™׳׳” ׳׳׳˜׳” ׳׳™׳™׳“׳™׳×
+            onChanged?.();
         } catch (err) {
-            setError(err.message || "Share failed");
+            const errorMessage = err.message || "Share failed";
+            if (errorMessage.includes("already exists") || errorMessage.includes("409")) {
+                setError("This user already has access to this file.");
+            } else if (errorMessage.includes("permission") || errorMessage.includes("403")) {
+                setError("You don't have permission to share this file.");
+            } else {
+                setError("Unable to share file. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -1874,12 +1892,12 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
             {foundUser && (
                 <div className="perm-profile-row mt-3">
                     <div className="perm-profile-left">
-                        <div className="perm-avatar" style={{ width: '40px', height: '40px' }}>
+                        <div className="perm-avatar">
                             {avatarUrl ? <img className="perm-avatar-img" src={avatarUrl} alt="av" /> : avatarInitial}
                         </div>
                         <div className="perm-profile-text">
                             <div className="perm-profile-name">{displayName}</div>
-                            <div className="perm-profile-email text-muted">{foundUser.email}</div>
+                            <div className="perm-profile-email">{foundUser.email}</div>
                         </div>
                     </div>
 
@@ -1889,7 +1907,14 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
                 </div>
             )}
 
-            {error && <div className="perm-error mt-2">{error}</div>}
+            {error && (
+                <div className="perm-error-box mt-3">
+                    <svg className="perm-error-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>{error}</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -1901,11 +1926,13 @@ import {
     getPermissions,
     togglePermissionRole,
 } from "../../../api/permissionsApi";
+import { getCurrentUser } from "../../../api/filesApi";
 import PermissionRow from "./PermissionRow";
 
-export default function PermissionListSection({ fileId, isOwner, myUserId, refreshTrigger }) {
+export default function PermissionListSection({ fileId, isOwner, myUserId, ownerId, refreshTrigger }) {
     const [loading, setLoading] = useState(true);
     const [permissions, setPermissions] = useState([]);
+    const [myRole, setMyRole] = useState(null);
     const [err, setErr] = useState("");
 
     async function load() {
@@ -1913,26 +1940,72 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, refre
         setLoading(true);
         try {
             const data = await getPermissions(fileId);
-            setPermissions(data.permissions);
+            console.log("Raw permissions data:", data);
+            console.log("File ownerId:", ownerId);
+
+            // ׳©׳׳™׳¨׳× ׳”-role ׳©׳׳™
+            if (data.myRole) {
+                setMyRole(data.myRole);
+            }
+
+            // ׳©׳׳•׳£ ׳₪׳¨׳˜׳™׳ ׳׳׳׳™׳ ׳©׳ ׳›׳ ׳׳©׳×׳׳©
+            const permissionsWithFullData = await Promise.all(
+                data.permissions.map(async (perm) => {
+                    try {
+                        const fullUser = await getCurrentUser(perm.userId);
+                        console.log("Full user data for", perm.userId, ":", fullUser);
+
+                        // ׳–׳™׳”׳•׳™ ׳”׳‘׳¢׳׳™׳ - ׳׳ ׳”-userId ׳©׳ ׳”׳”׳¨׳©׳׳” ׳©׳•׳•׳” ׳-ownerId, ׳–׳” ׳”׳‘׳¢׳׳™׳
+                        const isFileOwner = ownerId && perm.userId === ownerId;
+                        const correctedRole = isFileOwner ? "owner" : (perm.role || "viewer");
+
+                        const enrichedPerm = {
+                            ...perm,
+                            role: correctedRole, // ׳×׳™׳§׳•׳ ׳”-role
+                            email: perm.email || fullUser?.email || "",
+                            firstName: fullUser?.firstName || "",
+                            lastName: fullUser?.lastName || "",
+                            image: fullUser?.image || "",
+                        };
+
+                        console.log("Enriched permission:", enrichedPerm);
+                        return enrichedPerm;
+                    } catch (e) {
+                        console.error("Failed to get user details:", e);
+                        return perm;
+                    }
+                })
+            );
+
+            console.log("Final permissions with full data:", permissionsWithFullData);
+
+            // ׳›׳¢׳× ׳”׳‘׳¢׳׳™׳ ׳ ׳©׳׳¨ ׳‘׳¨׳©׳™׳׳” - ׳׳ ׳׳¡׳ ׳ ׳™׳ ׳׳•׳×׳•
+            // ׳”׳•׳ ׳™׳•׳¦׳’ ׳¢׳ ׳¢׳™׳¦׳•׳‘ ׳׳™׳•׳—׳“ ׳‘-PermissionRow
+            setPermissions(permissionsWithFullData);
         } catch (e) {
+            console.error("Load permissions error:", e);
             setErr(e.message || "Failed to load permissions");
         } finally {
             setLoading(false);
         }
     }
 
-    // ׳˜׳¢׳™׳ ׳” ׳¨׳׳©׳•׳ ׳™׳× ׳•׳’׳ ׳‘׳›׳ ׳₪׳¢׳ ׳©׳™׳© ׳©׳™׳ ׳•׳™ (׳”׳•׳¡׳₪׳” ׳׳׳׳¢׳׳”)
     useEffect(() => {
         if (fileId) load();
-    }, [fileId, refreshTrigger]);
+    }, [fileId, refreshTrigger, ownerId]);
 
     async function onDelete(p) {
         if (!p?.id) return;
         try {
             await deletePermission(fileId, p.id);
-            await load(); // ׳¨׳¢׳ ׳•׳ ׳׳™׳™׳“׳™
+            await load();
         } catch (e) {
-            setErr(e.message || "Delete failed");
+            const errorMessage = e.message || "Delete failed";
+            if (errorMessage.includes("permission") || errorMessage.includes("403")) {
+                setErr("You don't have permission to remove this user.");
+            } else {
+                setErr("Unable to remove user access. Please try again.");
+            }
         }
     }
 
@@ -1940,35 +2013,58 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, refre
         if (!p?.id) return;
         try {
             await togglePermissionRole(fileId, p.id);
-            await load(); // ׳¨׳¢׳ ׳•׳ ׳׳™׳™׳“׳™
+            await load();
         } catch (e) {
-            setErr(e.message || "Toggle failed");
+            const errorMessage = e.message || "Toggle failed";
+            if (errorMessage.includes("permission") || errorMessage.includes("403")) {
+                setErr("You don't have permission to change user roles.");
+            } else {
+                setErr("Unable to change user role. Please try again.");
+            }
         }
     }
 
     return (
         <div>
-            <div className="perm-section-title mb-3">People with access</div>
+            <div className="perm-section-title mb-3">
+                {isOwner ? "People with access" : "Your access"}
+            </div>
 
             {loading && permissions.length === 0 ? (
                 <div className="text-muted small">Loading permissions...</div>
-            ) : permissions.length === 0 ? (
-                <div className="text-muted small">No other users have access.</div>
+            ) : permissions.length === 0 && !myRole ? (
+                <div className="text-muted small">
+                    {isOwner ? "No other users have access." : "Access information unavailable."}
+                </div>
+            ) : permissions.length === 0 && myRole ? (
+                <div className="alert alert-info py-2 px-3" style={{ fontSize: '14px', borderRadius: '10px' }}>
+                    You have <strong>{myRole}</strong> access to this file
+                </div>
             ) : (
                 <div className="d-flex flex-column">
-                    {permissions.map((p) => (
-                        <PermissionRow
-                            key={p.id || p.userId}
-                            permission={p}
-                            canManage={isOwner}
-                            onDelete={onDelete}
-                            onToggle={onToggle}
-                        />
-                    ))}
+                    {permissions.map((p) => {
+                        console.log("Rendering permission row:", p);
+                        return (
+                            <PermissionRow
+                                key={p.id || p.userId}
+                                permission={p}
+                                canManage={isOwner}
+                                onDelete={onDelete}
+                                onToggle={onToggle}
+                            />
+                        );
+                    })}
                 </div>
             )}
 
-            {err && <div className="perm-error mt-2">{err}</div>}
+            {err && (
+                <div className="perm-error-box mt-3">
+                    <svg className="perm-error-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>{err}</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -1979,56 +2075,79 @@ import React from "react";
 const BASE_URL = "http://localhost:3000";
 
 export default function PermissionRow({ permission, canManage, onDelete, onToggle }) {
-    const role = (permission.role || "viewer").toLowerCase();
+    console.log("PermissionRow received:", permission);
 
-    // ׳‘׳ ׳™׳™׳× ׳”׳©׳ ׳•׳”׳×׳׳•׳ ׳” ׳‘׳“׳™׳•׳§ ׳›׳׳• ׳‘׳—׳™׳₪׳•׳© ׳”׳¢׳׳™׳•׳
+    const role = (permission.role || "viewer").toLowerCase();
+    const isOwner = role === "owner";
+
+    // ׳‘׳ ׳™׳™׳× ׳©׳ ׳׳׳ ׳׳”׳ ׳×׳•׳ ׳™׳ ׳©׳ ׳©׳׳₪׳•
     const displayName = `${permission.firstName || ""} ${permission.lastName || ""}`.trim()
         || (permission.email ? permission.email.split('@')[0] : "User");
 
+    // ׳˜׳™׳₪׳•׳ ׳‘׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳
     const rawImg = permission.image || "";
-    const avatarUrl = rawImg ? (rawImg.startsWith("data:") || rawImg.startsWith("http")
-        ? rawImg : `${BASE_URL}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`) : "";
+    const avatarUrl = rawImg
+        ? (rawImg.startsWith("data:") || rawImg.startsWith("http")
+            ? rawImg
+            : `${BASE_URL}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`)
+        : "";
 
     const initial = displayName[0]?.toUpperCase() || "?";
 
+    console.log("Display values:", { displayName, email: permission.email, avatarUrl, role, isOwner });
+
     return (
-        <div className="perm-profile-row">
+        <div className={`perm-profile-row ${isOwner ? 'is-owner' : ''}`}>
             <div className="perm-profile-left">
+                {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ */}
                 <div className="perm-avatar">
                     {avatarUrl ? (
                         <img className="perm-avatar-img" src={avatarUrl} alt="avatar" />
                     ) : (
-                        initial
+                        <span>{initial}</span>
                     )}
                 </div>
 
+                {/* ׳©׳ ׳•׳׳™׳׳™׳™׳ */}
                 <div className="perm-profile-text">
-                    <div className="perm-profile-name">{displayName}</div>
-                    <div className="perm-profile-email">{permission.email}</div>
+                    <div className="perm-profile-name">
+                        {displayName}
+                        {isOwner && <span className="owner-badge">Owner</span>}
+                    </div>
+                    <div className="perm-profile-email">
+                        {permission.email || "No email"}
+                    </div>
                 </div>
             </div>
 
+            {/* ׳›׳₪׳×׳•׳¨׳™׳ ׳׳• ׳×׳¦׳•׳’׳× ׳”׳¨׳©׳׳” */}
             <div className="d-flex align-items-center gap-2">
-                {/* ׳›׳₪׳×׳•׳¨ ׳”-Role: ׳׳¢׳•׳¦׳‘ ׳›-Badge ׳׳—׳™׳¥ ׳¢׳‘׳•׳¨ ׳”-Owner */}
-                <button
-                    className={`perm-role-badge ${canManage ? 'is-editable' : ''}`}
-                    onClick={() => canManage && onToggle?.(permission)}
-                    disabled={!canManage}
-                    title={canManage ? "Click to change role" : ""}
-                >
-                    {role}
-                </button>
+                {isOwner ? (
+                    /* ׳”׳‘׳¢׳׳™׳ ׳¨׳•׳׳” ׳¨׳§ ׳×׳’ owner ׳׳׳ ׳׳₪׳©׳¨׳•׳× ׳¢׳¨׳™׳›׳” */
+                    <span className="perm-role-owner">{role}</span>
+                ) : canManage ? (
+                    <>
+                        {/* ׳›׳₪׳×׳•׳¨ Toggle Role */}
+                        <button
+                            className="perm-role-toggle-btn"
+                            onClick={() => onToggle?.(permission)}
+                            title="Click to change role"
+                        >
+                            {role}
+                        </button>
 
-                {/* ׳›׳₪׳×׳•׳¨ ׳׳—׳™׳§׳” ׳׳©׳•׳₪׳¨ */}
-                {canManage && (
-                    <button
-                        className="perm-delete-btn"
-                        onClick={() => onDelete?.(permission)}
-                        title="Remove access"
-                        aria-label="Delete permission"
-                    >
-                        נ—‘ן¸
-                    </button>
+                        {/* ׳›׳₪׳×׳•׳¨ Delete */}
+                        <button
+                            className="perm-delete-text-btn"
+                            onClick={() => onDelete?.(permission)}
+                            title="Remove access"
+                        >
+                            Delete
+                        </button>
+                    </>
+                ) : (
+                    /* ׳×׳¦׳•׳’׳” ׳‘׳׳‘׳“ ׳׳׳©׳×׳׳©׳™׳ ׳©׳׳™׳ ׳ ׳‘׳¢׳׳™׳ */
+                    <span className="perm-role-display">{role}</span>
                 )}
             </div>
         </div>
@@ -2050,18 +2169,27 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
     margin-top: 10px;
 }
 
-/* ׳©׳•׳¨׳” ׳׳—׳™׳“׳” ׳¢׳‘׳•׳¨ ׳¨׳©׳™׳׳× ׳”׳”׳¨׳©׳׳•׳× ׳•׳×׳•׳¦׳׳•׳× ׳”׳—׳™׳₪׳•׳© */
+/* ׳©׳•׳¨׳” ׳׳—׳™׳“׳” ׳¢׳‘׳•׳¨ ׳¨׳©׳™׳׳× ׳”׳¨׳©׳׳•׳× ׳•׳׳©׳×׳׳© ׳—׳“׳© */
 .perm-row,
 .perm-profile-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 0;
+    padding: 12px 8px;
     border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
 }
 
-.perm-row:last-child {
+/* ׳¨׳§׳¢ ׳¦׳”׳•׳‘ ׳׳‘׳¢׳׳™׳ */
+.perm-profile-row.is-owner {
+    background: linear-gradient(to right, #fff9e6, #fffcf0);
+    border-left: 3px solid #ffd54f;
+    padding-left: 13px;
+}
+
+.perm-row:last-child,
+.perm-profile-row:last-child {
     border-bottom: none;
 }
 
@@ -2070,83 +2198,168 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
     align-items: center;
     gap: 12px;
     min-width: 0;
+    flex: 1;
 }
 
 .perm-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     display: grid;
     place-items: center;
     background: #f0f2f5;
     color: #333;
     font-weight: 600;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.perm-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .perm-profile-text {
     min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: 3px;
+    flex: 1;
 }
 
 .perm-profile-name {
     font-size: 15px;
     font-weight: 500;
-    /* ׳׳׳’׳ ׳˜׳™ ׳™׳•׳×׳¨ */
-    line-height: 1.2;
+    line-height: 1.3;
     color: #202124;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ׳×׳’ Owner ׳׳™׳“ ׳”׳©׳ */
+.owner-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: #ffd54f;
+    color: #8b6914;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
 }
 
 .perm-profile-email {
-    font-size: 12px;
+    font-size: 13px;
     color: #5f6368;
+    line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.perm-avatar-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 999px;
-    object-fit: cover;
-}
-
-/* ׳›׳₪׳×׳•׳¨ ׳”-Toggle ׳©׳”׳•׳₪׳ ׳׳×׳•׳•׳™׳× ׳”׳”׳¨׳©׳׳” */
-.perm-role-label {
-    text-transform: capitalize;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 8px;
+/* ׳›׳₪׳×׳•׳¨ Toggle Role ׳׳¢׳•׳¦׳‘ */
+.perm-role-toggle-btn {
+    padding: 6px 16px;
     border: 1px solid #dadce0;
+    border-radius: 20px;
     background: #fff;
+    color: #202124;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: capitalize;
     cursor: pointer;
-    transition: all 0.2s;
-    min-width: 80px;
-    text-align: center;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.perm-role-label:hover:not(:disabled) {
+.perm-role-toggle-btn:hover {
     background: #f8f9fa;
     border-color: #c6c6c6;
 }
 
-.perm-role-label:disabled {
-    cursor: default;
-    border: none;
-    background: transparent;
-    color: #70757a;
-    font-weight: 500;
+.perm-role-toggle-btn:active {
+    background: #e8eaed;
 }
 
-.perm-error {
+/* ׳›׳₪׳×׳•׳¨ Delete ׳׳¢׳•׳¦׳‘ */
+.perm-delete-text-btn {
+    padding: 6px 16px;
+    border: 1px solid #dadce0;
+    border-radius: 20px;
+    background: #fff;
     color: #d93025;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.perm-delete-text-btn:hover {
+    background: #fce8e6;
+    border-color: #d93025;
+}
+
+.perm-delete-text-btn:active {
+    background: #f6c9c6;
+}
+
+/* ׳×׳¦׳•׳’׳× Role ׳׳׳©׳×׳׳©׳™׳ ׳©׳׳™׳ ׳ ׳‘׳¢׳׳™׳ */
+.perm-role-display {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: #e8f0fe;
+    color: #1967d2;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: capitalize;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ׳×׳¦׳•׳’׳× Role ׳׳™׳•׳—׳“׳× ׳׳‘׳¢׳׳™׳ */
+.perm-role-owner {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: #ffd54f;
+    color: #8b6914;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid #ffca28;
+}
+
+/* ׳§׳•׳₪׳¡׳× ׳©׳’׳™׳׳” ׳׳¢׳•׳¦׳‘׳× */
+.perm-error-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #991b1b;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.perm-error-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #dc2626;
 }
 
 .perm-divider {
@@ -3191,7 +3404,17 @@ import React from "react";
 function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
   if (!file) return null;
 
-  const canEdit = role === "owner" || role === "editor";
+  // ׳׳ ׳”-role ׳׳ ׳”׳•׳¢׳‘׳¨ ׳›-prop, ׳ ׳ ׳¡׳” ׳׳§׳—׳× ׳׳•׳×׳• ׳׳”׳§׳•׳‘׳¥ ׳¢׳¦׳׳•
+  const actualRole = role || file.role || "viewer";
+
+  // ׳§׳‘׳™׳¢׳× ׳”׳”׳¨׳©׳׳•׳× ׳׳₪׳™ ׳×׳₪׳§׳™׳“
+  const permissionLevel = {
+    owner: "all",
+    editor: "edit",
+    viewer: "read"
+  }[actualRole.toLowerCase()] || "read";
+
+  const canEdit = actualRole === "owner" || actualRole === "editor";
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -3202,7 +3425,7 @@ function FileViewerModal({ file, role, onClose, onEdit, onShare, onDelete }) {
               {file.name}
             </div>
             <div style={{ fontSize: 12, color: "#666" }}>
-              Mode: {canEdit ? "Read (editable)" : "Read-only"} ֲ· Role: {role}
+              Mode: <strong>{permissionLevel}</strong> ֲ· Role: <strong>{actualRole}</strong>
             </div>
           </div>
 
@@ -3408,20 +3631,32 @@ function ShareModal({ item, onClose }) {
             <div className="modal-card" onMouseDown={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
                 <div className="modal-title mb-4">Share "{item?.name}"</div>
 
-                <PermissionAddSection
-                    fileId={fileId}
-                    isOwner={isOwner}
-                    onChanged={() => setRefreshTrigger(prev => prev + 1)}
-                />
+                {/* ׳¨׳§ ׳‘׳¢׳׳™׳ ׳™׳›׳•׳׳™׳ ׳׳”׳•׳¡׳™׳£ ׳׳©׳×׳׳©׳™׳ */}
+                {isOwner && (
+                    <>
+                        <PermissionAddSection
+                            fileId={fileId}
+                            isOwner={isOwner}
+                            onChanged={() => setRefreshTrigger(prev => prev + 1)}
+                        />
+                        <div className="perm-divider" />
+                    </>
+                )}
 
-                <div className="perm-divider" />
-
+                {/* ׳›׳•׳׳ ׳¨׳•׳׳™׳ ׳׳× ׳¨׳©׳™׳׳× ׳”׳”׳¨׳©׳׳•׳× (׳׳• ׳׳₪׳—׳•׳× ׳׳× ׳©׳׳”׳) */}
                 <PermissionListSection
                     fileId={fileId}
                     isOwner={isOwner}
                     myUserId={myUserId}
+                    ownerId={ownerId}
                     refreshTrigger={refreshTrigger}
                 />
+
+                {!isOwner && (
+                    <div className="perm-owner-note">
+                        Only the owner can manage sharing settings for this file.
+                    </div>
+                )}
 
                 <div className="modal-actions mt-4">
                     <button className="btn btn-light px-4" onClick={onClose} style={{ borderRadius: '10px' }}>
@@ -4477,6 +4712,7 @@ export function useAuth() {
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\hooks\useFileActions.js =====
 import { useState } from "react";
 import { setStarred, setImportant, moveToTrash, openItem } from "../api/filesApi";
+import { getPermissions } from "../api/permissionsApi";
 
 export function useFileActions(myUserId, onRefresh) {
   const [sharingItem, setSharingItem] = useState(null);
@@ -4488,14 +4724,41 @@ export function useFileActions(myUserId, onRefresh) {
     if (!item) return;
     setLoadingFile(true);
     try {
-      const role = item.ownerId === myUserId ? "owner" : "viewer";
+      // ׳§׳‘׳™׳¢׳× role ׳¨׳׳©׳•׳ ׳™׳× ׳׳₪׳™ ownership
+      let role = item.ownerId === myUserId ? "owner" : "viewer";
+
+      // ׳׳ ׳׳ owner, ׳ ׳‘׳“׳•׳§ ׳׳× ׳”׳”׳¨׳©׳׳•׳× ׳”׳׳׳™׳×׳™׳•׳×
+      if (role !== "owner" && item.id) {
+        try {
+          const permsData = await getPermissions(item.id);
+          console.log("Permissions data for file:", permsData);
+
+          // ׳׳ ׳™׳© myRole ׳‘׳×׳’׳•׳‘׳”, ׳ ׳©׳×׳׳© ׳‘׳•
+          if (permsData.myRole) {
+            role = permsData.myRole;
+          } else {
+            // ׳׳ ׳׳™׳, ׳ ׳ ׳¡׳” ׳׳׳¦׳•׳ ׳׳× ׳”׳”׳¨׳©׳׳” ׳©׳׳™ ׳‘׳¨׳©׳™׳׳”
+            const myPerm = permsData.permissions?.find(p => p.userId === myUserId);
+            if (myPerm?.role) {
+              role = myPerm.role;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to get permissions, defaulting to viewer:", e);
+          // ׳׳ ׳™׳© ׳©׳’׳™׳׳”, ׳ ׳©׳׳¨ ׳¢׳ viewer ׳›׳‘׳¨׳™׳¨׳× ׳׳—׳“׳
+        }
+      }
+
+      console.log("Final role determined:", role);
       setOpenedRole(role);
 
       const fullFile = await openItem(item, (folder) => {
         if (onFolderOpen) onFolderOpen(folder);
       });
 
-      if (fullFile) setOpenedFile(fullFile);
+      if (fullFile) {
+        setOpenedFile({ ...fullFile, role }); // ׳ ׳•׳¡׳™׳£ ׳׳× ׳”-role ׳’׳ ׳׳§׳•׳‘׳¥
+      }
     } catch (e) {
       alert("Error opening item: " + (e?.message || "unknown"));
     } finally {
@@ -4520,18 +4783,18 @@ export function useFileActions(myUserId, onRefresh) {
       alert("Failed to update importance status: " + (e?.message || "unknown"));
     }
   };
-// ג… Move to trash (soft delete) ג€” without confirm
-const handleDelete = async (item) => {
-  if (!item?.id) return;
 
-  try {
-    await moveToTrash(item.id); // DELETE /api/files/:id
-    if (onRefresh) onRefresh();
-    if (openedFile?.id === item.id) setOpenedFile(null);
-  } catch (e) {
-    alert("Move to trash failed: " + (e?.message || "unknown"));
-  }
-};
+  const handleDelete = async (item) => {
+    if (!item?.id) return;
+
+    try {
+      await moveToTrash(item.id);
+      if (onRefresh) onRefresh();
+      if (openedFile?.id === item.id) setOpenedFile(null);
+    } catch (e) {
+      alert("Move to trash failed: " + (e?.message || "unknown"));
+    }
+  };
 
   return {
     sharingItem,
