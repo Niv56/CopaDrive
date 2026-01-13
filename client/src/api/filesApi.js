@@ -94,25 +94,25 @@ export async function getFileById(fileId) {
  * Creates a new file or folder in the system.
  * Sends the data to the Node.js backend, which interacts with the C++ server via TCP.
  */
-export async function createItem({ 
-  name, 
-  type, 
-  parentId = null, 
-  content = "", 
-  mimeType = "" 
+export async function createItem({
+  name,
+  type,
+  parentId = null,
+  content = "",
+  mimeType = ""
 }) {
   const body = {
     name,
     type,
     parentId,
     content: type === "file" ? content : "",
-    mimeType: type === "file" ? mimeType : "" 
+    mimeType: type === "file" ? mimeType : ""
   };
 
   return request("/api/files", {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json" 
+    headers: {
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(body),
   });
@@ -215,84 +215,12 @@ export async function setImportant(fileId, important) {
 
 /* -----------------------------
    Recent / Access tracking
-   (NO new files. Purely inside filesApi.js)
 ------------------------------ */
 
-const RECENT_KEY = "copa_recent_v1";
-const RECENT_LIMIT = 50;
-
-function safeJsonParse(str, fallback) {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return fallback;
-  }
-}
-
-function readRecentMap() {
-  // map: { [fileId]: isoDateString }
-  const raw = localStorage.getItem(RECENT_KEY);
-  const obj = raw ? safeJsonParse(raw, {}) : {};
-  return obj && typeof obj === "object" ? obj : {};
-}
-
-function writeRecentMap(map) {
-  try {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(map));
-  } catch {
-    // ignore storage quota / privacy mode
-  }
-}
-
-function touchRecentLocal(fileId) {
-  if (!fileId) return;
-
-  const nowIso = new Date().toISOString();
-  const map = readRecentMap();
-  map[fileId] = nowIso;
-
-  // keep last RECENT_LIMIT by sorting keys by date
-  const entries = Object.entries(map)
-    .filter(([, v]) => !!v)
-    .sort((a, b) => new Date(b[1]) - new Date(a[1]));
-
-  const trimmed = entries.slice(0, RECENT_LIMIT);
-  const next = {};
-  for (const [id, iso] of trimmed) next[id] = iso;
-
-  writeRecentMap(next);
-}
-
-// ✅ Recent files: merge local recent timestamps into server list
+// ✅ Recent files: fetch from server only (per-user)
 export async function getRecentFiles() {
-  const data = await getRootFiles();
-  const files = Array.isArray(data) ? data : [];
-
-  const recentMap = readRecentMap();
-
-  // merge local timestamps into items (only for files)
-  const merged = files.map((f) => {
-    if (f?.type !== "file") return f;
-
-    const localIso = recentMap?.[f.id];
-    if (!localIso) return f;
-
-    // if server has lastAccessed, take the latest between server/local
-    const serverIso = f.lastAccessed;
-    if (!serverIso) return { ...f, lastAccessed: localIso };
-
-    const best =
-      new Date(localIso) > new Date(serverIso) ? localIso : serverIso;
-
-    return { ...f, lastAccessed: best };
-  });
-
-  return merged
-    .filter((f) => f.type === "file" && f.lastAccessed)
-    .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed))
-    .slice(0, 20);
+  return request("/api/files/recent", { method: "GET" });
 }
-
 
 /**
  * Clean GET Flow: Fetches only the file metadata and content.
@@ -300,15 +228,12 @@ export async function getRecentFiles() {
  */
 export async function getFileData(fileId) {
   if (!fileId) throw new Error("fileId is required");
-  
-  // קריאה ישירה ל-GET /api/files/:id
-  // הפונקציה הזו כבר מוגדרת אצלך ב-API ומשתמשת ב-method: "GET"
   return getFileById(fileId);
 }
 
 // 🎯 Open item:
 // - folders open locally
-// - files: update local recent immediately + try PATCH to server (if exists) + fetch file content
+// - files: PATCH to server for access tracking + fetch file content
 export async function openItem(item, onFolderOpen = null) {
   if (!item) throw new Error("No item provided");
 
@@ -317,17 +242,20 @@ export async function openItem(item, onFolderOpen = null) {
     return null;
   }
 
-  // 1) update local recent immediately (so Recent screen ALWAYS works)
-  touchRecentLocal(item.id);
-  window.dispatchEvent(new CustomEvent("reset-recent"));
+  // ✅ עדכון per-user בשרת בלבד
+  try {
+    await request(`/api/files/${item.id}/access`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    });
 
-  // 2) try update access time in backend (optional)
-  request(`/api/files/${item.id}/access`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-  }).catch(() => { });
+    // ✅ רענן את Recent מהשרת
+    window.dispatchEvent(new CustomEvent("reset-recent"));
+  } catch (err) {
+    console.error("Failed to record access:", err);
+  }
 
-  // 3) fetch file
+  // שלוף את הקובץ
   return getFileById(item.id);
 }
 
@@ -364,7 +292,7 @@ export async function addFilePermission(fileId, targetUserId) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ userId: targetUserId }), // השרת קובע תפקיד "viewer" כברירת מחדל
+      body: JSON.stringify({ userId: targetUserId }),
     }
   );
   if (!response.ok) {
@@ -393,6 +321,7 @@ export async function getCurrentUser(userId) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, { method: "GET" });
 }
+
 export async function updateUserProfile(userId, patch) {
   if (!userId) throw new Error("userId is required");
   return request(`/api/users/${userId}`, {

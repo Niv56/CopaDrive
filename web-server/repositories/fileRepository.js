@@ -28,11 +28,13 @@ const findById = (id, ownerId) => {
 
 const create = (fileData) => {
   const newFileData = {
-    mimeType:"",
+    mimeType: "",
     trashed: false,
     trashedAt: null,
     originalParentId: null,
-    ...fileData,
+    lastAccessedBy: {},
+    blockedBy: [],
+    ...fileData
   };
 
   files.push(newFileData);
