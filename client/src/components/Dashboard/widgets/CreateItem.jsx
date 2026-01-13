@@ -49,17 +49,20 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     try {
       const typeForServer = modalType === "folder" ? "folder" : "file";
-      let finalContent = content;
-      let finalMime = mimeType;
+      
+      // 🎯 הפתרון הפשוט: הזרקת "no content" אם השדה ריק
+      let rawContent = content;
+      if (!rawContent || rawContent.trim() === "") {
+        rawContent = "no content";
+      }
 
+      let finalContent = rawContent;
+      let finalMime = mimeType;
       const isTxtFile = name.toLowerCase().endsWith('.txt');
 
-      if (modalType === "file") {
-        finalContent = encodeTextToBase64(content);
-        finalMime = "text/plain";
-      } 
-      // 🟢 המרה סופית לטקסט בזמן השמירה עבור קבצים מיובאים
-      else if (modalType === "upload" && isTxtFile) {
+      // קידוד ל-Base64 עבור קבצי טקסט (כולל ה-"no content")
+      if (modalType === "file" || isTxtFile || rawContent === "no content") {
+        finalContent = encodeTextToBase64(rawContent);
         finalMime = "text/plain";
       }
 
@@ -72,14 +75,11 @@ function CreateItem({ onItemCreated, currentFolderId }) {
       };
 
       const created = await createItem(newItem);
-
       closeModal();
-      if (onItemCreated) {
-        onItemCreated(created);
-      }
+      if (onItemCreated) onItemCreated(created);
     } catch (error) {
       console.error("Save error:", error);
-      alert(`Failed to save: ${error.message || "Unknown error"}`);
+      alert(`Failed to save: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -88,39 +88,29 @@ function CreateItem({ onItemCreated, currentFolderId }) {
   const handleFileProcessed = (fileData) => {
     const isTxt = fileData.name.toLowerCase().endsWith('.txt') || fileData.mimeType === 'text/plain';
     const isImg = fileData.mimeType.startsWith('image/');
-    const isImportFlow = modalType === "upload";
 
-    // 🎯 חזרה ללוגיקה הקודמת: קובץ טקסט ב-Import נשאר ב-FileImporter
-    if (isTxt && !isImportFlow) {
-      setModalType("file");
-      setMimeType("text/plain");
+    if (isTxt && modalType === "file") {
       try {
         setContent(window.atob(fileData.content));
       } catch (e) {
         setContent(fileData.content);
       }
-    } else if (isImg && modalType === "image") {
-      setModalType("image");
-      setMimeType(fileData.mimeType);
-      setContent(fileData.content);
     } else {
-      // נשארים במודל ה-upload המקורי (מאפשר Change file)
-      setModalType("upload");
-      setMimeType(fileData.mimeType);
       setContent(fileData.content);
+      setMimeType(fileData.mimeType);
     }
-
     setName(fileData.name);
     setMenuOpen(false);
   };
 
+  // 🛠️ וידוא שהכותרת קיימת ומוגדרת נכון
   const getModalTitle = () => {
     switch (modalType) {
       case "folder": return "Create New Folder";
-      case "file": return "Text Editor";
+      case "file": return "Text Editor"; // זו הכותרת שחיפשת
       case "image": return "Upload Picture";
       case "upload": return "Import File";
-      default: return "";
+      default: return "Create Item";
     }
   };
 
@@ -133,18 +123,15 @@ function CreateItem({ onItemCreated, currentFolderId }) {
           <button type="button" className="fab-menu-item" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>📁 New folder</button>
           <button type="button" className="fab-menu-item" onClick={() => { setModalType("file"); setMenuOpen(false); }}>📄 New file</button>
           <button type="button" className="fab-menu-item" onClick={() => { setModalType("image"); setMenuOpen(false); }}>🖼️ Upload Pic</button>
-          <button type="button" className="fab-menu-item" onClick={() => {
-            setModalType("upload");
-            const nonImageTypes = [".pdf", ".doc", ".docx", ".txt", ".zip", ".js", ".cpp", ".py", ".sql"].join(",");
-            setMimeType(nonImageTypes);
-            setMenuOpen(false);
-          }}>📥 Import File</button>
+          <button type="button" className="fab-menu-item" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>📥 Import File</button>
         </div>
       )}
 
       {modalType && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            
+            {/* 🟢 כאן נמצאת הכותרת שנעלמה */}
             <div className="modal-title-row">
               <div className="modal-title-text">{getModalTitle()}</div>
               <button type="button" className="share-btn" onClick={closeModal}>✕</button>
@@ -152,7 +139,9 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
             <div className="modal-body">
               {modalType === "folder" && <FolderCreator name={name} setName={setName} loading={loading} />}
-              {modalType === "file" && <TextFileCreator name={name} setName={setName} content={content} setContent={setContent} loading={loading} />}
+              {modalType === "file" && (
+                <TextFileCreator name={name} setName={setName} content={content} setContent={setContent} loading={loading} />
+              )}
               {modalType === "image" && (
                 <ImageImporter name={name} setName={setName} content={content} 
                   triggerUpload={() => uploadHandlerRef.current.triggerUpload("image/*")} 
@@ -160,7 +149,7 @@ function CreateItem({ onItemCreated, currentFolderId }) {
               )}
               {modalType === "upload" && (
                 <FileImporter name={name} setName={setName} content={content} mimeType={mimeType} loading={loading}
-                  triggerUpload={() => uploadHandlerRef.current.triggerUpload(mimeType)} 
+                  triggerUpload={() => uploadHandlerRef.current.triggerUpload("*/*")} 
                 />
               )}
 
