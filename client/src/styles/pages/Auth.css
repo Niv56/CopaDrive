@@ -1,0 +1,309 @@
+/* ==========================================================================
+   AUTH (Login + Register) - Compact & Glassmorphism
+   ========================================================================== */
+
+/* ✅ NEW: Animation Keyframes 
+   Card slides up and fades in on load 
+*/
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Color variables for Day/Night modes */
+:root {
+  --auth-bg-overlay: rgba(255, 255, 255, 0);
+  
+  /* Glass Background */
+  --auth-card-bg: rgba(255, 255, 255, 0.15);
+  
+  /* Base border (will be overridden for 3D effect) */
+  --auth-card-border: rgba(255, 255, 255, 0.3);
+  
+  /* ✅ CHANGED: Deep Navy Blue instead of harsh Black */
+  --auth-text-main: #0b2b38; 
+  --auth-text-sub: #495057;
+  
+  /* Inputs */
+  --auth-input-bg: rgba(255, 255, 255, 0.8);
+  --auth-input-text: #0b2b38;
+}
+
+[data-theme="dark"] {
+  --auth-bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  --auth-card-bg: rgba(0, 0, 0, 0.4);
+  --auth-card-border: rgba(255, 255, 255, 0.1);
+  
+  --auth-text-main: #e8eaed;
+  --auth-text-sub: #b0b3b8;
+  
+  --auth-input-bg: rgba(32, 33, 36, 0.6);
+  --auth-input-text: #e8eaed;
+}
+
+.copa-auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: url("../../assets/photos/back.png") center/cover no-repeat;
+  position: relative;
+  z-index: 1;
+}
+
+/* Dark overlay for night mode */
+.copa-auth-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--auth-bg-overlay);
+  z-index: -1;
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+.copa-auth-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 36px 34px;
+  
+  /* Background & Blur with !important to override Bootstrap */
+  background: var(--auth-card-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  
+  /* ✅ NEW: 3D Glass Borders (Top/Left are lighter) */
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.6) !important;
+  
+  color: var(--auth-text-main);
+  border-radius: 24px;
+  
+  /* Deeper shadow for depth */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  
+  /* ✅ NEW: Apply the animation */
+  animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Text color adjustments inside the card */
+.copa-auth-card h1, 
+.copa-auth-card .h4, 
+.copa-brand-text {
+  color: var(--auth-text-main) !important;
+}
+
+.copa-auth-card .text-secondary {
+  color: var(--auth-text-sub) !important;
+}
+
+.copa-brand-text {
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+.copa-link {
+  color: var(--auth-text-main);
+  text-decoration: none;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+[data-theme="dark"] .copa-link {
+  color: #8ab4f8; 
+}
+
+.copa-link:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   ✅ NEW: Gradient Button Styling
+   ========================================================================== */
+
+/* Primary Button (Sign In) */
+.copa-auth-card :where(.btn-primary) {
+  /* Gradient from Blue to Cyan/Teal */
+  background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%) !important;
+  border: none !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  /* Glowing shadow matching the button color */
+  box-shadow: 0 4px 15px rgba(13, 202, 240, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.copa-auth-card :where(.btn-primary:hover) {
+  /* Slightly brighter gradient on hover */
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13, 202, 240, 0.45);
+}
+
+.copa-auth-card :where(.btn-primary:active) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(13, 202, 240, 0.35);
+}
+
+/* Secondary Button (Outline) - Adapted for glass */
+.copa-auth-card :where(.btn-outline-secondary) {
+    color: var(--auth-text-main);
+    border-color: rgba(0,0,0,0.15); /* Subtle border */
+    background: transparent;
+}
+
+.copa-auth-card :where(.btn-outline-secondary:hover) {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(0,0,0,0.25);
+  color: #000;
+}
+
+[data-theme="dark"] .copa-auth-card :where(.btn-outline-secondary) {
+    color: #e8eaed;
+    border-color: rgba(255,255,255,0.3);
+}
+
+[data-theme="dark"] .copa-auth-card :where(.btn-outline-secondary:hover) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* ==========================================================================
+   Input Styling
+   ========================================================================== */
+.copa-auth-card :where(.form-control, .form-select) {
+  transition: all .2s ease-in-out;
+  
+  /* Semi-transparent white */
+  background-color: var(--auth-input-bg) !important;
+  color: var(--auth-input-text);
+  
+  /* Remove default border */
+  border: 1px solid transparent; 
+}
+
+/* Placeholder color fix */
+.copa-auth-card :where(.form-control)::placeholder {
+  color: var(--auth-text-sub);
+  opacity: 0.7;
+}
+
+.copa-auth-card :where(.form-control, .form-select):hover:not(:focus):not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+.copa-auth-card :where(.form-control, .form-select):focus {
+  /* Solid white on focus */
+  background-color: #fff !important; 
+  color: #000;
+  border-color: transparent;
+  
+  /* Soft blue glow */
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .copa-auth-card :where(.form-control, .form-select):focus {
+   background-color: #303134 !important;
+   color: #e8eaed;
+}
+
+.copa-auth-card :where(.form-control.is-invalid):hover {
+  box-shadow: none;
+}
+
+
+/* ==========================================================================
+   Avatar Preview (Register)
+   ========================================================================== */
+.copa-avatar-preview {
+  width: 110px;
+  height: 110px;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 2px dashed rgba(0, 0, 0, .25);
+  background: rgba(255, 255, 255, .55);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .16s, transform .16s;
+}
+
+[data-theme="dark"] .copa-avatar-preview {
+    border-color: rgba(255, 255, 255, .25);
+    background: rgba(255, 255, 255, .1);
+}
+
+.copa-avatar-preview:hover {
+  border-color: rgba(0, 0, 0, .45);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .copa-avatar-preview:hover {
+    border-color: rgba(255, 255, 255, .6);
+}
+
+.copa-avatar-preview.copa-avatar-error {
+  border-color: #dc3545;
+}
+
+.copa-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.copa-avatar-icon {
+  font-size: 44px;
+  opacity: .85;
+}
+
+.copa-logo {
+  width: 110px;
+  height: auto;
+}
+
+/* ==========================================================================
+   Icons inside inputs
+   ========================================================================== */
+.copa-auth-card .input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.copa-auth-card .input-wrapper .input-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 2;
+  font-size: 18px;
+  color: var(--auth-text-sub);
+  opacity: 0.8;
+}
+
+.copa-auth-card .input-wrapper .form-control {
+  padding-left: 52px !important;
+}
+
+[data-theme="dark"] .copa-auth-card .input-wrapper .input-icon {
+  color: var(--auth-text-sub);
+}

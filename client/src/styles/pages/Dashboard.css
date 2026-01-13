@@ -1,0 +1,125 @@
+/* משתנים לאחידות מושלמת (חובה כדי שזה יראה מחובר) */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+  --top-height: 60px;
+}
+
+[data-theme='dark'] {
+  --glass-bg: rgba(30, 30, 30, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Page layout */
+.dashboard-root {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Background Video */
+.background-video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Content Overlay */
+.content-overlay {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent; 
+}
+
+/* Dark Mode Overlay */
+body[data-theme='dark'] .content-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* ==========================================================================
+   TOP BAR - Seamless Fix
+   ========================================================================== */
+.dashboard-top {
+  position: sticky;
+  top: 0;
+  z-index: 100; /* חייב להיות מעל ה-Sidebar */
+  height: var(--top-height);
+  
+  /* רקע אחיד */
+  background: var(--glass-bg); 
+  backdrop-filter: blur(12px); 
+  
+  /* ✅ השינוי החשוב: ביטול הקו התחתון */
+  border-bottom: none;
+  
+  padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+body[data-theme='dark'] .dashboard-top {
+  background: var(--glass-bg);
+  border-bottom: none;
+  color: white;
+}
+
+/* ==========================================================================
+   SIDE BAR - Seamless Fix
+   ========================================================================== */
+.dashboard-side {
+  width: 240px;
+  
+  /* ✅ השינוי החשוב: משיכה למעלה */
+  height: 100vh;
+  margin-top: calc(var(--top-height) * -1); /* משיכה למעלה בגובה ה-Top Bar */
+  padding-top: calc(var(--top-height) + 20px); /* דחיפת התוכן פנימה */
+  position: sticky;
+  top: 0;
+  z-index: 90; /* שכבה אחת מתחת ל-Top Bar */
+
+  /* עיצוב אחיד */
+  background: var(--glass-bg); 
+  backdrop-filter: blur(12px);
+  border-right: var(--glass-border); /* גבול צדדי אחיד */
+  
+  padding-left: 15px;
+  padding-right: 15px;
+  display: flex; flex-direction: column;
+}
+
+body[data-theme='dark'] .dashboard-side {
+  background: var(--glass-bg);
+  border-right: var(--glass-border);
+}
+
+.dashboard-side ul { list-style: none; padding: 0; margin: 0; }
+.dashboard-side li { padding: 10px 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+.dashboard-side li:hover { background: rgba(0,0,0,0.05); }
+body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,0.1); }
+
+/* Elements (ללא שינוי) */
+.dashboard-top-left { display: flex; align-items: center; gap: 10px; }
+.app-logo { width: 48px; height: 48px; object-fit: contain; }
+.app-title { margin: 0; font-size: 32px; }
+.dashboard-top-center { display: flex; justify-content: center; flex: 1; }
+.dashboard-search {
+  width: 320px; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; background: rgba(255,255,255,0.9);
+}
+.dashboard-top-right { display: flex; align-items: center; gap: 10px; }
+
+/* Main Area */
+.dashboard-body { flex: 1; display: flex; background: transparent; }
+.dashboard-main { flex: 1; padding: 20px; overflow-y: auto; }
+
+/* User Menu */
+.user-menu { position: relative; display: flex; align-items: center; gap: 10px; }
+.user-avatar-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e8eaed; background: #fff; cursor: pointer; }
+.user-dropdown { position: absolute; right: 0; top: 52px; width: 240px; background: #fff; border: 1px solid #e8eaed; border-radius: 14px; box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15); padding: 10px; z-index: 99999; }
+.user-dropdown-item { width: 100%; border: none; background: transparent; text-align: left; padding: 10px 10px; border-radius: 10px; cursor: pointer; }
+.user-dropdown-item:hover { background: #f6f8fc; }
+.user-dropdown-divider { height: 1px; background: #eee; margin: 8px 0; }

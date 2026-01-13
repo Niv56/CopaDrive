@@ -1,18 +1,18 @@
-const { users } = require('../utils/storage'); // Accessing the initialized store
+const { users } = require('../utils/storage');
 
 // Find a user by their unique ID
 const findById = (id) => users.find(u => u.id === id);
 
-// Find user by email
+// Find a user by email
 const findByEmail = (email) => users.find(u => u.email === email);
 
-// Add a new user entity to the memory store
+// Create a new user
 const create = (userData) => {
   users.push(userData);
   return userData;
 };
 
-// ✅ NEW: Update existing user in the in-memory store
+// Update an existing user
 const update = (id, patch) => {
   const idx = users.findIndex(u => u.id === id);
   if (idx === -1) return null;

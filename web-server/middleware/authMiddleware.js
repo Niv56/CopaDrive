@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 
+// Validate JWT from Authorization header and attach the user to req.user.
 const requireAuth = (req, res, next) => {
-
   try {
     const authHeader = req.headers['authorization'];
 
@@ -44,7 +44,6 @@ const requireAuth = (req, res, next) => {
 
     req.user = user;
     next();
-
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
       err.status = 401;

@@ -1,8 +1,6 @@
 const fileService = require('../services/fileService');
 
-/**
- * GET /api/files
- */
+// Handle GET /api/files.
 exports.listAll = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -13,6 +11,7 @@ exports.listAll = async (req, res, next) => {
   }
 };
 
+// Handle POST /api/files.
 exports.createItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
@@ -27,6 +26,7 @@ exports.createItem = async (req, res, next) => {
   }
 };
 
+// Handle GET /api/files/:id.
 exports.getById = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -37,6 +37,7 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+// Handle PATCH /api/files/:id.
 exports.updateItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
@@ -47,10 +48,7 @@ exports.updateItem = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE /api/files/:id
- * Move to Trash (soft delete)
- */
+// Handle DELETE /api/files/:id (soft delete to trash).
 exports.deleteItem = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
@@ -61,10 +59,7 @@ exports.deleteItem = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE /api/files/:id/forever
- * Permanent delete (or remove-from-trash for non-owner)
- */
+// Handle DELETE /api/files/:id/forever.
 exports.deleteForever = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -75,6 +70,7 @@ exports.deleteForever = async (req, res, next) => {
   }
 };
 
+// Handle GET /api/files/starred.
 exports.listStarred = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -85,6 +81,7 @@ exports.listStarred = async (req, res, next) => {
   }
 };
 
+// Handle GET /api/files/important.
 exports.listImportant = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -95,6 +92,7 @@ exports.listImportant = async (req, res, next) => {
   }
 };
 
+// Handle PUT/PATCH starred flag for a file/folder.
 exports.setStarred = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -111,6 +109,7 @@ exports.setStarred = async (req, res, next) => {
   }
 };
 
+// Handle PUT/PATCH important flag for a file/folder.
 exports.setImportant = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -127,7 +126,7 @@ exports.setImportant = async (req, res, next) => {
   }
 };
 
-// ✅ Trash
+// Handle GET /api/files/trash.
 exports.listTrash = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -138,6 +137,7 @@ exports.listTrash = async (req, res, next) => {
   }
 };
 
+// Handle PUT/PATCH trashed flag for a file/folder.
 exports.setTrashed = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -154,10 +154,7 @@ exports.setTrashed = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE /api/files/trash/empty  (וגם /api/files/trash כ-alias)
- * Empty Trash for this user (hard delete owned items that are in trash; non-owned just disappears)
- */
+// Handle DELETE /api/files/trash/empty (and /api/files/trash as alias).
 exports.emptyTrash = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -168,6 +165,7 @@ exports.emptyTrash = async (req, res, next) => {
   }
 };
 
+// Handle GET /api/files/usage.
 exports.getUsage = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -178,6 +176,7 @@ exports.getUsage = async (req, res, next) => {
   }
 };
 
+// Handle GET /api/files/recent.
 exports.listRecent = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -188,6 +187,7 @@ exports.listRecent = async (req, res, next) => {
   }
 };
 
+// Handle POST/PUT /api/files/:id/access (record last access time).
 exports.recordAccess = async (req, res, next) => {
   try {
     const userId = req.user.id;

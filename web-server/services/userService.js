@@ -1,15 +1,14 @@
 const userRepository = require('../repositories/userRepository');
 const { generateId } = require('../utils/idGenerator');
 
+// Register a new user and return a safe (password-free) response.
 const registerUser = (userData) => {
-  // Conflict Check: Email
   if (userRepository.findByEmail(userData.email)) {
     const error = new Error("Email already registered");
     error.status = 409;
     throw error;
   }
 
-  // Enrich Data: Generate ID and ISO Timestamp
   const newUser = {
     id: generateId((id) => userRepository.findById(id)),
     firstName: userData.firstName,
@@ -24,12 +23,13 @@ const registerUser = (userData) => {
   };
 
   userRepository.create(newUser);
+
   const safeResponse = { ...newUser };
   delete safeResponse.password;
-
   return safeResponse;
 };
 
+// Get a user by id and return a safe (password-free) DTO.
 const getSafeUserById = (userId) => {
   const user = userRepository.findById(userId);
 
@@ -44,11 +44,12 @@ const getSafeUserById = (userId) => {
   return userDto;
 };
 
+// Get a user by email (raw repository result).
 const getByEmail = (email) => {
   return userRepository.findByEmail(email);
 };
 
-// ✅ NEW: update profile fields (self)
+// Update allowed profile fields for the given user and return a safe user object.
 const updateUserProfile = (userId, patch) => {
   const user = userRepository.findById(userId);
   if (!user) {
@@ -62,8 +63,6 @@ const updateUserProfile = (userId, patch) => {
   if (patch.firstName !== undefined) cleanPatch.firstName = String(patch.firstName).trim();
   if (patch.lastName !== undefined) cleanPatch.lastName = String(patch.lastName).trim();
   if (patch.phoneNumber !== undefined) cleanPatch.phoneNumber = String(patch.phoneNumber).trim();
-
-  // allow "image" only (base64/url)
   if (patch.image !== undefined) cleanPatch.image = String(patch.image);
 
   const updated = userRepository.update(userId, cleanPatch);
@@ -78,7 +77,7 @@ const updateUserProfile = (userId, patch) => {
   return safe;
 };
 
-// ✅ NEW: change password (self)
+// Change the user's password after validating current and new passwords.
 const changePassword = (userId, currentPassword, newPassword) => {
   const user = userRepository.findById(userId);
   if (!user) {
@@ -87,7 +86,6 @@ const changePassword = (userId, currentPassword, newPassword) => {
     throw error;
   }
 
-  // must provide passwords (basic sanity only)
   if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
     const error = new Error("Current password is required");
     error.status = 400;
@@ -100,14 +98,12 @@ const changePassword = (userId, currentPassword, newPassword) => {
     throw error;
   }
 
-  // current password must match
   if (String(user.password) !== String(currentPassword)) {
     const error = new Error("Current password is incorrect");
     error.status = 400;
     throw error;
   }
 
-  // new password must be different from current
   if (String(newPassword) === String(currentPassword)) {
     const error = new Error("New password cannot be the same as current password");
     error.status = 400;

@@ -6,6 +6,7 @@ const {
   validateGender
 } = require('../utils/validation');
 
+// Registers a new user with required field validation
 exports.registerUser = (req, res, next) => {
   try {
     const required = ['firstName', 'email', 'phoneNumber', 'password', 'dateOfBirth', 'gender'];
@@ -16,7 +17,6 @@ exports.registerUser = (req, res, next) => {
       validateNonEmptyString(req.body, 'profilePicture', 'profilePicture must be a non-empty string');
     }
 
-    // ✅ DOB + Gender validations (moved to utils)
     validateDateOfBirth(req.body, 'dateOfBirth');
     validateGender(req.body, 'gender');
 
@@ -27,6 +27,7 @@ exports.registerUser = (req, res, next) => {
   }
 };
 
+// Retrieves a user object by ID
 exports.getUserById = (req, res, next) => {
   try {
     const userId = req.params.id;
@@ -37,13 +38,14 @@ exports.getUserById = (req, res, next) => {
   }
 };
 
+// Retrieves public user details by email
 exports.getUserByEmail = (req, res, next) => {
   try {
     const { email } = req.params;
     const user = userService.getByEmail(email);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // חשיפת פרטים ציבוריים בלבד
+    // Return only public details
     res.status(200).json({
       id: user.id,
       firstName: user.firstName,
@@ -52,11 +54,12 @@ exports.getUserByEmail = (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+
+// Updates user profile information (restricted to self)
 exports.updateUser = (req, res, next) => {
   try {
     const userId = req.params.id;
 
-    // ✅ self only
     if (!req.user || String(req.user.id) !== String(userId)) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -67,7 +70,7 @@ exports.updateUser = (req, res, next) => {
       if (req.body[k] !== undefined) patch[k] = req.body[k];
     }
 
-    // normalize image key
+    // Normalize image key
     if (patch.profilePicture && !patch.image) {
       patch.image = patch.profilePicture;
       delete patch.profilePicture;
@@ -80,11 +83,11 @@ exports.updateUser = (req, res, next) => {
   }
 };
 
+// Changes the user's password (restricted to self)
 exports.changePassword = (req, res, next) => {
   try {
     const userId = req.params.id;
 
-    // ✅ self only
     if (!req.user || String(req.user.id) !== String(userId)) {
       return res.status(403).json({ error: "Forbidden" });
     }

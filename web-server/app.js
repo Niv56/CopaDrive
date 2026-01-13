@@ -15,17 +15,18 @@ const authRoutes = require('./routes/authRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 
 app.use(cors());
-// Global middleware to parse JSON bodies. Required for all API endpoints.
+
+// Parse JSON and URL-encoded bodies for all endpoints.
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
-// Basic Request Logging. Logs the HTTP Method and Path to the console for every incoming request.
+// Log method + path for every incoming request.
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
 });
 
-// Basic test route from previous story
+// Health check route.
 app.get('/', (req, res) => {
     res.json({ message: "CopaDrive Web Server is running" });
 });
@@ -35,40 +36,30 @@ app.use('/api/tokens', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/search', searchRoutes);
 
-/**
- * Global 404 Not Found handler.
- * Ensures that undefined routes return a 404 status with a JSON body,
- * as required by the API standardization rules.
- */
+// Return 404 JSON for undefined routes.
 app.use((req, res) => {
     res.status(404).json({ error: "Resource not found" });
 });
 
-// Global Error Middleware.
+// Global error handler (always returns JSON).
 app.use((err, req, res, next) => {
-    // Log the full error stack for developer debugging
     console.error(err.stack);
 
-    // Determine status code. Use 400 for JSON errors, or 500 as default.
     let statusCode = err.status || 500;
     let errorMessage = err.message || "Internal Server Error";
 
-    // Malformed JSON
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
         statusCode = 400;
         errorMessage = "Invalid JSON format";
     }
 
-    // Ensure response is ALWAYS a JSON object
     res.status(statusCode).json({
         error: errorMessage,
         status: statusCode
     });
 });
 
-
-
-
+// Start the web server.
 app.listen(port, () => {
     console.log(`Web server listening at http://localhost:${port}`);
 });

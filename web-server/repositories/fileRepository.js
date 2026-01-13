@@ -2,13 +2,11 @@ const { files } = require('../utils/storage');
 
 const normalizeParentId = (parentId) => (parentId === undefined ? null : parentId);
 
-/**
- * מחזיר קבצים/תיקיות תחת parentId, אבל **לא מחזיר trashed**
- */
+// Finds non-trashed files within a specific folder
 const findByParent = (parentId, ownerId) => {
   const p = normalizeParentId(parentId);
   return files.filter(f => {
-    if (f.trashed === true) return false; // ⭐️ חשוב ל-Trash
+    if (f.trashed === true) return false;
     const fp = normalizeParentId(f.parentId);
     const parentMatch = fp === p;
     const ownerMatch = ownerId ? f.ownerId === ownerId : true;
@@ -16,16 +14,16 @@ const findByParent = (parentId, ownerId) => {
   });
 };
 
+// Returns all files in storage
 const findAll = () => files;
 
-/**
- * findById משאיר כולל trashed (כי צריך את זה ל-restore / delete forever)
- */
+// Finds a file by ID (including trashed files)
 const findById = (id, ownerId) => {
   if (!ownerId) return files.find(f => f.id === id);
   return files.find(f => f.id === id && f.ownerId === ownerId);
 };
 
+// Creates a new file entry
 const create = (fileData) => {
   const newFileData = {
     trashed: false,
@@ -38,6 +36,7 @@ const create = (fileData) => {
   return newFileData;
 };
 
+// Updates an existing file entry
 const update = (id, updates, ownerId) => {
   const idx = files.findIndex(f => {
     if (!ownerId) return f.id === id;
@@ -50,6 +49,7 @@ const update = (id, updates, ownerId) => {
   return files[idx];
 };
 
+// Removes a file entry from storage
 const remove = (id, ownerId) => {
   const idx = files.findIndex(f => {
     if (!ownerId) return f.id === id;
@@ -60,26 +60,22 @@ const remove = (id, ownerId) => {
   return files.splice(idx, 1)[0];
 };
 
-/**
- * ילדים “פעילים” בלבד (לא trashed), אחרת תיקייה trashed תיחשב שיש לה ילדים ותתקע דברים
- */
+// Checks if a folder contains any non-trashed files
 const hasChildren = (parentId, ownerId) => {
   return files.some(f => {
-    if (f.trashed === true) return false; // ⭐️ חשוב ל-Trash
+    if (f.trashed === true) return false;
     const ownerMatch = ownerId ? f.ownerId === ownerId : true;
     return ownerMatch && (f.parentId ?? null) === parentId;
   });
 };
 
-/**
- * חיפוש “פעיל” בלבד (לא trashed) – ה-Trash יקבל endpoint משלו
- */
+// Searches for non-trashed files by name or content
 const searchFiles = (userId, query) => {
   const normalizedQuery = query.toLowerCase();
 
   return files.filter(file =>
     file.ownerId === userId &&
-    file.trashed !== true && // ⭐️ חשוב ל-Trash
+    file.trashed !== true &&
     (
       file.name.toLowerCase().includes(normalizedQuery) ||
       (file.content && file.content.toLowerCase().includes(normalizedQuery))
@@ -87,14 +83,12 @@ const searchFiles = (userId, query) => {
   );
 };
 
-/**
- * ⭐️ חדש: רשימת Trash
- */
+// Finds all files marked as trashed for a specific user
 const findTrashed = (ownerId) => {
   return files.filter(f => f.ownerId === ownerId && f.trashed === true);
 };
 
-// Find multiple files by their IDs
+// Finds multiple files by an array of IDs
 const findByIds = (idsArray) => files.filter(f => idsArray.includes(f.id));
 
 module.exports = {
@@ -107,5 +101,5 @@ module.exports = {
   searchFiles,
   findByIds,
   findAll,
-  findTrashed, // ⭐️ חדש
+  findTrashed,
 };

@@ -1,0 +1,95 @@
+/* SideBar.css - Force Glass Effect */
+
+.dashboard-side {
+  width: 260px;
+  padding: 20px 12px;
+  
+  /* ✅ FORCE GLASS: דריסת משתני ה-bg-paper */
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.4) !important;
+  
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px);
+  position: sticky;
+  top: 70px;
+  transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .dashboard-side {
+  background: rgba(30, 30, 30, 0.5) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.side-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+/* --- Items --- */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 16px;
+  
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  
+  /* צבע כהה יותר לקריאות על גבי זכוכית */
+  color: #333 !important; 
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: transparent; /* Reset */
+}
+
+[data-theme="dark"] .sb-item {
+  color: #e8eaed !important;
+}
+
+.sb-item:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+  transform: translateX(2px);
+}
+
+[data-theme="dark"] .sb-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --- Active State --- */
+.sb-item.active {
+  background: rgba(13, 110, 253, 0.15) !important;
+  color: #0d6efd !important;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .sb-item.active {
+  background: rgba(13, 110, 253, 0.3) !important;
+  color: #6ea8fe !important;
+}
+
+.sb-icon {
+  width: 20px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  opacity: 0.85;
+}
+
+.sb-text {
+  font-size: 14px;
+}
+
+/* --- Storage Section --- */
+.sb-storage {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}

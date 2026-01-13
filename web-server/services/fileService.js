@@ -11,12 +11,9 @@ const assertValidType = (type) => type === 'file' || type === 'folder';
 const TRASH_TTL_DAYS = 30;
 const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
 
-// --- Internal Helpers ---
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
-/**
- * RECURSIVE Access Check
- * Checks permissions from the item up to the root.
- */
+// Check access recursively up to the root (owner always allowed).
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   let currentId = fileId;
   let highestRoleFound = null;
@@ -25,7 +22,6 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
     const item = fileRepository.findById(currentId);
     if (!item) break;
 
-    // Owner always has full access
     if (item.ownerId === userId) return true;
 
     const permissions = permissionRepository.findByFileId(currentId) || [];
@@ -37,17 +33,18 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
     }
     currentId = item.parentId;
   }
+
   return requiredRole === 'viewer' ? highestRoleFound !== null : false;
 };
 
+// Compute UTF-8 byte length for content.
 const contentSizeBytes = (content) => {
   if (content === undefined || content === null) return 0;
   const s = typeof content === 'string' ? content : String(content);
   return Buffer.byteLength(s, 'utf8');
 };
 
-const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
-
+// Check whether fileId is inside folderId subtree.
 const isDescendant = (fileId, folderId) => {
   let current = fileRepository.findById(fileId);
   while (current && current.parentId) {
@@ -57,6 +54,7 @@ const isDescendant = (fileId, folderId) => {
   return false;
 };
 
+// Detect cycles when moving folders.
 const wouldCreateCycle = (itemId, newParentId) => {
   let cursor = newParentId ?? null;
   while (cursor !== null) {
@@ -68,6 +66,7 @@ const wouldCreateCycle = (itemId, newParentId) => {
   return false;
 };
 
+// Collect all ids in a subtree (including root).
 const collectSubtreeIds = (rootId) => {
   const stack = [rootId];
   const visited = new Set();
@@ -83,13 +82,16 @@ const collectSubtreeIds = (rootId) => {
   return ids;
 };
 
+// Normalize an input to an array.
 const ensureArray = (v) => Array.isArray(v) ? v : [];
 
+// Get per-user trashedAt value from item.trashedAtBy map.
 const getTrashedAtForUser = (item, userId) => {
   const map = item?.trashedAtBy && typeof item.trashedAtBy === 'object' ? item.trashedAtBy : {};
   return map[userId] || null;
 };
 
+// Calculate remaining trash TTL days for a given trashedAt timestamp.
 const calcDaysLeft = (trashedAt) => {
   if (!trashedAt) return null;
   const t = new Date(trashedAt).getTime();
@@ -100,6 +102,7 @@ const calcDaysLeft = (trashedAt) => {
   return daysLeft;
 };
 
+// Add user-specific flags (starred/important/trashed + TTL) to an item.
 const decorateFlagsForUser = (item, userId) => {
   const starredBy = ensureArray(item.starredBy);
   const importantBy = ensureArray(item.importantBy);
@@ -118,21 +121,19 @@ const decorateFlagsForUser = (item, userId) => {
   };
 };
 
+// Decorate a list of items with user-specific flags.
 const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
 
+// Check whether an item is trashed for a given user.
 const isTrashedForUser = (item, userId) => {
   const trashedBy = ensureArray(item?.trashedBy);
   return trashedBy.includes(userId);
 };
 
-/**
- * Internal: returns all accessible items (owned + shared expanded),
- * and optionally includes trashed items (per-user).
- */
+// List all accessible items (owned + shared expanded), optionally including trashed items per-user.
 const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
   const provider = getProvider();
 
-  // Local provider: keep behavior, but decorate & filter per-user
   if (provider.name === "local") {
     const db = provider.readDB();
     const items = db.files.filter(f => f.ownerId === userId);
@@ -140,16 +141,13 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
     return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
   }
 
-  // 1) roots: owned top-level
   const ownedRoots = fileRepository.findByParent(null, userId);
 
-  // 2) roots: shared items (directly shared to user)
   const userPermissions = permissionRepository.findByUserId(userId) || [];
   const sharedRoots = userPermissions
     .map(perm => fileRepository.findById(perm.fileId))
     .filter(Boolean);
 
-  // 3) merge unique roots (avoid duplicates + avoid nested shared duplicates)
   const roots = [...ownedRoots];
   for (const item of sharedRoots) {
     const already = roots.some(r => r.id === item.id);
@@ -159,8 +157,7 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
     if (!already && !hasAncestorInShared) roots.push(item);
   }
 
-  // 4) EXPAND: return all accessible items under each root (including the root itself)
-  const result = new Map(); // id -> item
+  const result = new Map();
 
   for (const root of roots) {
     const ids = collectSubtreeIds(root.id);
@@ -176,12 +173,12 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
   return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
 };
 
-// --- Exported Methods ---
-
+// List top-level accessible items (excluding trash).
 const listTopLevel = async (userId) => {
   return listAllAccessible(userId, { includeTrashed: false });
 };
 
+// Get a file/folder by id (including file content for files) and decorate for user.
 const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
@@ -204,6 +201,7 @@ const getById = async (userId, id) => {
   return decorateFlagsForUser(result, userId);
 };
 
+// Create a file/folder (and persist file content in the TCP storage for files).
 const createItem = async (ownerId, payload) => {
   const { name, type, parentId = null, content = "" } = payload;
 
@@ -251,6 +249,7 @@ const createItem = async (ownerId, payload) => {
   return created;
 };
 
+// Update file/folder metadata (and file content via TCP storage when patch.content is provided).
 const updateItem = async (userId, id, patch) => {
   if (!patch || typeof patch !== 'object') {
     const err = new Error('Invalid JSON body');
@@ -349,8 +348,8 @@ const updateItem = async (userId, id, patch) => {
   const updated = fileRepository.update(id, updates);
   return updated;
 };
-// --- Trash core ---
 
+// Mark/unmark an item as trashed for the user (folders apply to subtree on trash).
 const setTrashed = async (userId, id, trashed) => {
   const item = fileRepository.findById(id);
   if (!item) {
@@ -365,7 +364,6 @@ const setTrashed = async (userId, id, trashed) => {
     throw err;
   }
 
-  // ✅ Folder: trash -> whole subtree, restore -> only folder itself (rest stays in trash)
   const ids =
     item.type === "folder"
       ? (trashed ? collectSubtreeIds(id) : [id])
@@ -393,7 +391,6 @@ const setTrashed = async (userId, id, trashed) => {
       delete trashedAtBy[userId];
     }
 
-    // ✅ restore: if parent is missing / not a folder / still trashed -> move to root permanently
     const patch = { trashedBy: next, trashedAtBy };
 
     if (!trashed && target.ownerId === userId) {
@@ -415,22 +412,19 @@ const setTrashed = async (userId, id, trashed) => {
   return decorateFlagsForUser(fileRepository.findById(id), userId);
 };
 
+// List trashed items for the user.
 const listTrash = async (userId) => {
   const all = await listAllAccessible(userId, { includeTrashed: true });
   return all.filter(i => i.trashed === true);
 };
 
-// DELETE becomes "move to trash"
+// Soft-delete an item by moving it to trash.
 const deleteItem = async (userId, id) => {
   await setTrashed(userId, id, true);
   return { id };
 };
 
-/**
- * DELETE FOREVER (per-user):
- * - Owner: physical delete + remove from repository (and subtree for folder)
- * - Not owner: remove from user's trash, and (best-effort) revoke permission so it disappears
- */
+// Permanently delete for this user (owner hard-deletes; non-owner removes from their view).
 const deleteForever = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) {
@@ -478,33 +472,19 @@ const deleteForever = async (userId, id) => {
   return { id };
 };
 
-/**
- * EMPTY TRASH (per-user):
- * - For every trashed item of this user:
- *   - If owner: hard delete forever (includes subtree for folders)
- *   - Else: remove from user's trash (and best-effort revoke permission)
- *
- * Important: process folders first (so we don't double-delete children).
- */
+// Empty the user's trash (folders processed first to avoid double deletes).
 const emptyTrash = async (userId) => {
-  // get full trash view (decorated)
   const trashedItems = await listTrash(userId);
-
-  // work on raw items (by id) and de-duplicate
   const uniqueIds = Array.from(new Set(trashedItems.map(i => i.id)));
 
-  // sort: folders first to avoid double work
   const items = uniqueIds
     .map(id => fileRepository.findById(id))
     .filter(Boolean)
     .sort((a, b) => (a.type === 'folder' && b.type !== 'folder' ? -1 : a.type !== 'folder' && b.type === 'folder' ? 1 : 0));
 
   for (const it of items) {
-    // guard: might already be deleted as part of a folder subtree
     const stillThere = fileRepository.findById(it.id);
     if (!stillThere) continue;
-
-    // only act if still trashed for this user
     if (!isTrashedForUser(stillThere, userId)) continue;
 
     await deleteForever(userId, stillThere.id);
@@ -513,6 +493,7 @@ const emptyTrash = async (userId) => {
   return { ok: true };
 };
 
+// Set/unset a per-user list-based flag on an item.
 const setUserFlag = async (userId, id, flagKey, enabled) => {
   const item = fileRepository.findById(id);
   if (!item) {
@@ -538,19 +519,25 @@ const setUserFlag = async (userId, id, flagKey, enabled) => {
   return decorateFlagsForUser(updated, userId);
 };
 
+// Mark/unmark as starred for the user.
 const setStarred = async (userId, id, starred) => setUserFlag(userId, id, 'starredBy', starred);
+
+// Mark/unmark as important for the user.
 const setImportant = async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important);
 
+// List starred items for the user (excluding trash).
 const listStarred = async (userId) => {
   const all = await listAllAccessible(userId, { includeTrashed: false });
   return all.filter(i => i.starred === true);
 };
 
+// List important items for the user (excluding trash).
 const listImportant = async (userId) => {
   const all = await listAllAccessible(userId, { includeTrashed: false });
   return all.filter(i => i.important === true);
 };
 
+// Search accessible items by name and by content (excluding items trashed by the user).
 const searchItems = async (userId, query) => {
   const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
 
@@ -569,9 +556,10 @@ const searchItems = async (userId, query) => {
   return decorateListForUser(unique, userId).filter(i => !i.trashed);
 };
 
+// Calculate storage usage for files owned by the user.
 const getOwnedStorageUsage = async (userId) => {
   const all = fileRepository.findAll();
-const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
+  const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
 
   const usedBytes = ownedFiles.reduce((sum, f) => {
     const s = typeof f.sizeBytes === 'number' ? f.sizeBytes : 0;
@@ -594,7 +582,7 @@ module.exports = {
   updateItem,
   deleteItem,
   deleteForever,
-  emptyTrash, // ✅ חדש
+  emptyTrash,
 
   searchItems,
 

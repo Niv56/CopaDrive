@@ -1,8 +1,4 @@
-/**
- * Implement Input Validation.
- * Validates that required fields exist in the request body.
- * If missing, throws a 400 Bad Request error.
- */
+// Validates that required fields exist in the request body
 const validateFields = (body, requiredFields) => {
   for (const field of requiredFields) {
     if (!body[field]) {
@@ -13,10 +9,7 @@ const validateFields = (body, requiredFields) => {
   }
 };
 
-/**
- * Validates that a given field is a non-empty string (after trim).
- * Throws 400 if invalid.
- */
+// Validates that a field is a non-empty string, throwing 400 if invalid
 const validateNonEmptyString = (body, field, message) => {
   const value = body?.[field];
   if (typeof value !== 'string' || value.trim() === '') {
@@ -26,11 +19,7 @@ const validateNonEmptyString = (body, field, message) => {
   }
 };
 
-/**
- * Implement Existence Checkers.
- * Checks if a resource exists in the repository.
- * If not found, throws a 404 Not Found error.
- */
+// Checks if a resource exists, throwing 404 if not found
 const validateExistence = (resource, resourceName) => {
   if (!resource) {
     const error = new Error(`${resourceName} not found`);
@@ -38,9 +27,8 @@ const validateExistence = (resource, resourceName) => {
     throw error;
   }
 };
-/**
- * Validates dateOfBirth in YYYY-MM-DD format (simple check).
- */
+
+// Validates that the date of birth follows the YYYY-MM-DD format
 const validateDateOfBirth = (body, field = 'dateOfBirth') => {
   validateNonEmptyString(body, field, `${field} must be a non-empty string`);
 
@@ -54,9 +42,7 @@ const validateDateOfBirth = (body, field = 'dateOfBirth') => {
   }
 };
 
-/**
- * Validates gender against allowed values.
- */
+// Validates that the gender field contains an allowed value
 const validateGender = (body, field = 'gender') => {
   validateNonEmptyString(body, field, `${field} must be a non-empty string`);
 

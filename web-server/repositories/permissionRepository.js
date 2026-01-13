@@ -1,19 +1,18 @@
 const { permissions } = require('../utils/storage');
 
-// Find all associated with a specific file
+// Find all permissions for a given file/folder id.
 const findByFileId = (fileId) => permissions.filter(p => p.fileId === fileId);
 
-// Find a specific permission entry by ID
+// Find a permission entry by its id.
 const findById = (id) => permissions.find(p => p.id === id);
 
-// Add new permission to the file / folder
+// Create a new permission entry.
 const create = (permissionData) => {
     permissions.push(permissionData);
     return permissionData;
 };
 
-
-// Upadate permission to file / folder
+// Update an existing permission entry.
 const update = (id, updates) => {
     const idx = permissions.findIndex(p => p.id === id);
     if (idx === -1) return null;
@@ -21,13 +20,14 @@ const update = (id, updates) => {
     return permissions[idx];
 };
 
-// Remove permission from file / folder
+// Remove a permission entry by id.
 const remove = (id) => {
     const idx = permissions.findIndex(p => p.id === id);
     if (idx === -1) return null;
     return permissions.splice(idx, 1)[0];
 };
 
+// Find all permissions for a given user id.
 const findByUserId = (userId) => permissions.filter(p => p.userId === userId);
 
-module.exports = { findByFileId, findById, create, update, remove, findByUserId};
+module.exports = { findByFileId, findById, create, update, remove, findByUserId };

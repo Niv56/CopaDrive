@@ -1,0 +1,98 @@
+/* TopBar.css - Force Glass Effect */
+
+:root {
+  --topbar-height: 70px;
+  --brand-blue: #0d6efd;
+}
+
+.dashboard-top {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  
+  /* ✅ FORCE GLASS: שימוש ב-important כדי לדרוס רקעים קודמים */
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+  
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+/* Dark Mode Override */
+[data-theme="dark"] .dashboard-top {
+  background: rgba(30, 30, 30, 0.65) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* --- Left Section --- */
+.dashboard-top-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+}
+
+.app-logo {
+  height: 40px;
+  width: auto;
+}
+
+.app-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0b2b38;
+  margin: 0;
+}
+
+[data-theme="dark"] .app-title {
+  color: #e8eaed;
+}
+
+/* --- Search Bar Styling --- */
+.dashboard-top-center {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 20px;
+  position: relative;
+}
+
+.dashboard-search {
+  width: 100%;
+  height: 46px;
+  border-radius: 99px !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  
+  /* שקוף למחצה כדי שישתלב */
+  background: rgba(255, 255, 255, 0.4) !important; 
+  padding: 0 20px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.dashboard-search:focus {
+  background: #fff !important;
+  border-color: var(--brand-blue) !important;
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15) !important;
+  outline: none;
+}
+
+[data-theme="dark"] .dashboard-search {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: white;
+}
+
+/* --- Right Section --- */
+.dashboard-top-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

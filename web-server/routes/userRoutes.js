@@ -3,18 +3,19 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { requireAuth } = require('../middleware/authMiddleware');
 
-
-// Both routes start with /api/users
+// Register a new user
 router.post('/', userController.registerUser);
 
+// Get user details by ID
 router.get('/:id', userController.getUserById);
 
+// Get user details by email
 router.get('/email/:email', userController.getUserByEmail);
 
-// ✅ NEW: Update profile (self only)
+// Update user profile
 router.patch('/:id', requireAuth, userController.updateUser);
 
-// ✅ NEW: Change password (self only)
+// Change user password
 router.patch('/:id/password', requireAuth, userController.changePassword);
 
 module.exports = router;
