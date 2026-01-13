@@ -117,3 +117,57 @@
 .action-icon-btn:hover {
   background: #f0f0f0;
 }
+
+
+/* --- עיצוב תצוגה מקדימה לטקסט ב-Import --- */
+
+.text-preview-wrapper {
+    width: 100%;
+    height: 220px; /* גובה קבוע לאזור התצוגה */
+    background-color: #fcfcfc; /* רקע עדין מאוד */
+    border: 1px solid #e0e6ed; /* גבול דק ומודרני */
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+    display: flex;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); /* עומק עדין פנימה */
+}
+
+.text-preview-content {
+    width: 100%;
+    height: 100%;
+    border: none;
+    resize: none;
+    background: transparent;
+    outline: none;
+    cursor: default;
+    
+    /* טיפוגרפיה */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #444;
+    
+    /* ניהול טקסט */
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+}
+
+/* עיצוב פס גלילה מודרני (Chrome/Edge/Safari) */
+.text-preview-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.text-preview-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.text-preview-content::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+.text-preview-content::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}

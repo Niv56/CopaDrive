@@ -81,17 +81,31 @@ export async function getFileById(fileId) {
   return request(`/api/files/${fileId}`, { method: "GET" });
 }
 
-export async function createItem({ name, type, parentId = null, content = "" }) {
+
+/**
+ * Creates a new file or folder in the system.
+ * Sends the data to the Node.js backend, which interacts with the C++ server via TCP.
+ */
+export async function createItem({ 
+  name, 
+  type, 
+  parentId = null, 
+  content = "", 
+  mimeType = "" 
+}) {
   const body = {
     name,
     type,
     parentId,
     content: type === "file" ? content : "",
+    mimeType: type === "file" ? mimeType : "" 
   };
 
   return request("/api/files", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json" 
+    },
     body: JSON.stringify(body),
   });
 }
@@ -157,6 +171,20 @@ export async function getRecentFiles() {
         .slice(0, 20)
     : [];
 }
+
+
+/**
+ * Clean GET Flow: Fetches only the file metadata and content.
+ * No access tracking (PATCH) involved.
+ */
+export async function getFileData(fileId) {
+  if (!fileId) throw new Error("fileId is required");
+  
+  // קריאה ישירה ל-GET /api/files/:id
+  // הפונקציה הזו כבר מוגדרת אצלך ב-API ומשתמשת ב-method: "GET"
+  return getFileById(fileId);
+}
+
 
 // 🎯 Open item: folders open locally; files update access time in background then fetch content
 export async function openItem(item, onFolderOpen = null) {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getRootFiles } from "../../../api/filesApi";
+import { getRootFiles, getFileData } from "../../../api/filesApi";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useFileActions } from "../../../hooks/useFileActions";
 import FileListItem from "../widgets/FileListItem";
@@ -34,9 +34,13 @@ function MyDrive() {
   } = useFileActions(myUserId, loadFiles);
 
   const freshOpenedFile = useMemo(() => {
-    if (!openedFile) return null;
-    return allFiles.find(f => f.id === openedFile.id) || openedFile;
-  }, [allFiles, openedFile]);
+  if (!openedFile) return null;
+  if (openedFile.content !== undefined) {
+    return openedFile;
+  }
+
+  return allFiles.find(f => f.id === openedFile.id) || openedFile;
+}, [allFiles, openedFile]);
 
   useEffect(() => { loadFiles(); }, []);
 
@@ -62,7 +66,7 @@ function MyDrive() {
 
   return (
     <div className="mainarea" style={{ position: "relative" }}> {/* הוספנו relative כדי שהעיגול יתמקם נכון */}
-      
+
       {/* 🟢 השינוי המבוקש: אינדיקטור טעינה קטן בפינה שלא "מרצד" את המסך */}
       {loading && !loadingFile && (
         <div style={{ position: "absolute", top: "15px", right: "20px", zIndex: 10 }}>
@@ -95,11 +99,25 @@ function MyDrive() {
       <div className="files-container">
         {currentItems.map(item => (
           <FileListItem
-            key={item.id} item={item}
-            onOpen={(it) => handleOpen(it, (folder) => {
-              setCurrentFolderId(folder.id);
-              setFolderPath(prev => [...prev, { id: folder.id, name: folder.name }]);
-            })}
+            key={item.id}
+            item={item}
+            onOpen={async (it) => {
+              if (it.type === "folder") {
+                // --- Flow תיקיות: פתיחה לוקאלית בלבד ---
+                setCurrentFolderId(it.id);
+                setFolderPath(prev => [...prev, { id: it.id, name: it.name }]);
+              } else {
+                // --- Flow קבצים: GET נקי בלבד ---
+                try {
+                  // שימוש בסטייט הקיים מה-Hook כדי להציג את הספינר
+                  // (בהנחה ו-useFileActions מספק דרך לעדכן את loadingFile)
+                  const data = await getFileData(it.id);
+                  setOpenedFile(data); // מעדכן את המודל במידע שנשלף (כולל content ו-mimeType)
+                } catch (err) {
+                  console.error("נכשל בטעינת הקובץ:", err.message);
+                }
+              }
+            }}
             onShare={setSharingItem}
             onToggleStar={handleToggleStar}
             onToggleImportant={handleToggleImportant}

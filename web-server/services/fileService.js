@@ -149,7 +149,7 @@ if (provider.name === "local") {
 const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
-
+  console.log(`GET_DEBUG 1: Metadata found for ID ${id}:`, item);
   if (!(await checkAccess(userId, id, 'viewer'))) {
     throw { status: 403, message: 'Access denied' };
   }
@@ -157,7 +157,9 @@ const getById = async (userId, id) => {
     const result = { ...item };
     if (item.type === 'file') {
         try {
+          console.log(`GET_DEBUG 2: Sending TCP GET for ID: ${id}`);
             const content = await sendTcpCommand(`GET ${id}`);
+            console.log(`GET_DEBUG 3: Content received from TCP (first 20 chars):`, content?.substring(0, 20));
             result.content = content;
         } catch (err) {
             result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
@@ -168,6 +170,7 @@ const getById = async (userId, id) => {
 };
 
 const createItem = async (ownerId, payload) => {
+  console.log("SERVER DEBUG 1: Received payload:", payload);
 
   const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
@@ -212,7 +215,7 @@ const createItem = async (ownerId, payload) => {
   try {
     permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
   } catch (_) { }
-
+console.log("SERVER DEBUG 2: Created object in DB:", created);
   return created;
 };
 
