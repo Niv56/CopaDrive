@@ -1,24 +1,17 @@
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
-import { useState, useEffect, useRef } from "react"; 
-import { getRootFiles, createItem } from "features/drive/api/filesApi"; 
-import FileUploadHandler from "./FileUploadHandler"; 
-import "styles/widgets/CreateItem.css"; 
-=======
 import { useState, useEffect, useRef } from "react";
-import { getRootFiles, createItem } from "../../../api/filesApi";
+// 1. שימוש בנתיבים של הארכיטקטורה החדשה (Feature-based)
+import { getRootFiles, createItem } from "features/drive/api/filesApi";
 import FileUploadHandler from "./FileUploadHandler";
-import './CreateItem.css';
+import "styles/widgets/CreateItem.css";
 
-// ייבוא הקומפוננטות הפיזיות החדשות שיצרנו
+// 2. שמירה על הקומפוננטות המופרדות שיצרת לניהול נקי של ה-UI
 import FolderCreator from "./creation/FolderCreator";
 import TextFileCreator from "./creation/TextFileCreator";
 import FileImporter from "./creation/FileImporter";
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
 
-// Component handling the creation of new Files and Folders via a Floating Action Button (FAB)
 function CreateItem({ onItemCreated, currentFolderId }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // 'folder' | 'file' | null
+  const [modalType, setModalType] = useState(null); 
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [parentId, setParentId] = useState(currentFolderId || null);
@@ -27,29 +20,18 @@ function CreateItem({ onItemCreated, currentFolderId }) {
   const [mimeType, setMimeType] = useState("");
   const uploadHandlerRef = useRef(null);
 
-  // Load available folders for the location dropdown when modal opens
   useEffect(() => {
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
-    if (modalType) {
-      loadFolders();
-    }
+    if (modalType) loadFolders();
   }, [modalType]);
 
-  // Handle Escape key to close modal
+  // לוגיקה מה-HEAD: סגירת המודאל בלחיצה על Escape (UX טוב יותר)
   useEffect(() => {
     if (!modalType) return;
-
     function onKeyDown(e) {
-      if (e.key === "Escape") {
-        closeModal();
-      }
+      if (e.key === "Escape") closeModal();
     }
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-=======
-    if (modalType) loadFolders();
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
   }, [modalType]);
 
   async function loadFolders() {
@@ -74,41 +56,29 @@ function CreateItem({ onItemCreated, currentFolderId }) {
     setModalType(null);
   }
 
- async function onSaveClicked() {
+  async function onSaveClicked() {
     if (!name.trim()) return;
     setLoading(true);
 
     try {
       const typeForServer = modalType === "upload" ? "file" : modalType;
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
 
+      // לוגיקה קריטית מה-HEAD: המרת ירידות שורה עבור שרת ה-TCP ב-C++
       let finalContent = content;
       if (typeForServer === "file") {
         finalContent = content.replaceAll('\n', "_@NL@_"); 
       }
 
-=======
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
       const created = await createItem({
         name: name.trim(),
         type: typeForServer,
         parentId: parentId || null,
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
         content: typeForServer === "file" ? finalContent : "",
-=======
-        content: content,
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
         mimeType: typeForServer === "file" ? (mimeType || "text/plain") : ""
       });
-      closeModal();
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
 
-      if (onItemCreated) {
-        onItemCreated(created);
-      }
-=======
+      closeModal();
       if (onItemCreated) onItemCreated(created);
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
     } catch (error) {
       alert(`Failed to create item: ${error.message}`);
     } finally {
@@ -120,15 +90,10 @@ function CreateItem({ onItemCreated, currentFolderId }) {
     setName(fileData.name);
     setContent(fileData.content);
     setMimeType(fileData.mimeType);
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
-    setModalType("upload"); 
-    setMenuOpen(false);   
-=======
     setModalType("upload");
     setMenuOpen(false);
   };
 
-  // משימה 2: פונקציית עזר לקבלת כותרת דינמית
   const getModalTitle = () => {
     switch (modalType) {
       case "folder": return "Create New Folder";
@@ -136,7 +101,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
       case "upload": return "Import File from Computer";
       default: return "";
     }
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
   };
 
   return (
@@ -163,52 +127,14 @@ function CreateItem({ onItemCreated, currentFolderId }) {
             )}
 
             <div className="modal-title-row">
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
-              <div className="modal-title-text">
-                {modalType === "folder" ? "Create new folder" :
-                  modalType === "upload" ? "Upload file from computer" : "Create new file"}
-              </div>
-
-              <button
-                type="button"
-                className="share-btn"
-                title="Share (Feature pending)"
-                onClick={() => alert("Share functionality to be implemented")}
-                disabled={loading}
-              >
-                🔗
-              </button>
-            </div>
-
-            <label className="modal-label">Name</label>
-            <input
-              className="modal-input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={modalType === "folder" ? "Folder name" : "File name"}
-              disabled={loading}
-              autoFocus
-            />
-
-            <label className="modal-label">Location</label>
-            <select
-              className="modal-input"
-              value={parentId ?? ""}
-              onChange={(e) => setParentId(e.target.value || null)}
-              disabled={loading}
-            >
-              {currentFolderId && (
-                <option value={currentFolderId}>📌 Current folder</option>
-=======
               <div className="modal-title-text">{getModalTitle()}</div>
               <button type="button" className="share-btn" onClick={closeModal}>✕</button>
             </div>
 
             <div className="modal-body">
-              {/* משימה 1: החלפה דינמית של הקומפוננטות */}
+              {/* שימוש בקומפוננטות ה-Creation הנקיות שלך */}
               {modalType === "folder" && (
                 <FolderCreator name={name} setName={setName} loading={loading} />
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
               )}
 
               {modalType === "file" && (
@@ -228,78 +154,11 @@ function CreateItem({ onItemCreated, currentFolderId }) {
                 />
               )}
 
-<<<<<<< HEAD:client/src/features/drive/widgets/CreateItem.jsx
-            {(modalType === "file" || modalType === "upload") && (
-              <>
-                <label className="modal-label">Content</label>
-
-                {!content ? (
-                  <div
-                    className="text-center p-5 border rounded mb-3 bg-light"
-                    style={{ cursor: "pointer", borderStyle: "dashed" }}
-                    onClick={() => uploadHandlerRef.current.triggerUpload()}
-                  >
-                    <div style={{ fontSize: "2rem" }}>☁️</div>
-                    <button type="button" className="btn btn-link">
-                      Click to browse files from computer
-                    </button>
-                  </div>
-                ) :
-                  (mimeType && mimeType.startsWith("image/")) ? (
-                    <div className="text-center p-3 border rounded mb-3 bg-light position-relative">
-                      <img
-                        src={content.startsWith('data:') ? content : `data:${mimeType};base64,${content}`}
-                        alt="Preview"
-                        style={{ maxHeight: "200px", maxWidth: "100%", borderRadius: "4px", display: "block", margin: "0 auto" }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-secondary position-absolute top-0 end-0 m-2"
-                        onClick={() => uploadHandlerRef.current.triggerUpload()}
-                      >
-                        🔄 Change
-                      </button>
-                    </div>
-                  ) :
-                    (mimeType === "text/plain" || mimeType === "") ? (
-                      <textarea
-                        className="modal-textarea"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Write your content here..."
-                        rows={8}
-                        disabled={loading}
-                      />
-                    ) :
-                      (
-                        <div className="text-center p-5 border rounded mb-3 bg-light d-flex flex-column align-items-center">
-                          <div style={{ fontSize: "3rem", opacity: 0.5 }}>🚫</div>
-                          <div className="mt-2 fw-bold text-truncate" style={{ maxWidth: "100%" }}>{name}</div>
-                          <div className="text-muted small">No preview available for this file type</div>
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm mt-3"
-                            onClick={() => uploadHandlerRef.current.triggerUpload()}
-                          >
-                            🔄 Change file
-                          </button>
-                        </div>
-                      )}
-              </>
-            )}
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={closeModal}
-=======
               <label className="modal-label mt-3">Location</label>
               <select
                 className="modal-input"
                 value={parentId ?? ""}
                 onChange={(e) => setParentId(e.target.value || null)}
->>>>>>> a2a7222 (stared from viewer works):client/src/components/Dashboard/widgets/CreateItem.jsx
                 disabled={loading}
               >
                 <option value="">My Drive</option>
