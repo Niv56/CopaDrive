@@ -13,6 +13,10 @@ import Step5 from "./steps/Step5";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
 
+// ✅ ייבואים חדשים
+import { FiMusic } from "react-icons/fi";
+import songFile from "assets/videos/Song.mp3"; 
+
 const STEP_CONFIG = {
   1: {
     title: "Create a Copa Account",
@@ -63,6 +67,12 @@ const Register = () => {
     password: "",
     verifyPassword: "",
   });
+
+  // ✅ פונקציית ניגון
+  const playSong = () => {
+    const audio = new Audio(songFile);
+    audio.play().catch(e => console.log(e));
+  };
 
   // Validate the current step and store field errors.
   const validateCurrentStep = () => {
@@ -161,7 +171,20 @@ const Register = () => {
 
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
-      <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10 }}>
+      
+      {/* ✅ כאן השינוי: הוספת הכפתור ליד ThemeToggle */}
+      <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
+        
+        {/* כפתור PlaySong מנצנץ */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
+            <FiMusic style={{ marginRight: "6px" }} />
+            <span className="sparkle-text">PlaySong</span>
+            <div className="sparkle-stars">
+              <div className="s-star s-1"></div>
+              <div className="s-star s-2"></div>
+            </div>
+        </button>
+
         <ThemeToggle />
       </div>
 
@@ -183,12 +206,20 @@ const Register = () => {
 
           <div className="d-flex justify-content-between align-items-center mt-2">
             {step === 5 ? (
+              /* ✅ כפתור סיום עם אפקט Sparkle (נשאר כפי שהיה) */
               <button
                 type="button"
-                className="btn btn-primary btn-lg rounded-pill w-100"
+                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle"
                 onClick={() => navigate("/login")}
               >
-                Proceed to Login
+                <span className="sparkle-text">Proceed to Login</span>
+                
+                {/* אלמנטים של הכוכבים שנוספו לאנימציה */}
+                <div className="sparkle-stars">
+                  <div className="s-star s-1"></div>
+                  <div className="s-star s-2"></div>
+                  <div className="s-star s-3"></div>
+                </div>
               </button>
             ) : (
               <>

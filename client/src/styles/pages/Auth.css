@@ -140,12 +140,21 @@
 .copa-auth-card :where(.btn-primary) {
   /* Gradient from Blue to Cyan/Teal */
   background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%) !important;
+  
+  /* ✅ FIX: Force white text explicitly */
+  color: #ffffff !important;
+  
   border: none !important;
   font-weight: 600;
   letter-spacing: 0.3px;
   /* Glowing shadow matching the button color */
   box-shadow: 0 4px 15px rgba(13, 202, 240, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+/* וידוא שגם האלמנטים הפנימיים לבנים */
+.copa-auth-card :where(.btn-primary) * {
+    color: #ffffff !important;
 }
 
 .copa-auth-card :where(.btn-primary:hover) {
@@ -306,4 +315,90 @@
 
 [data-theme="dark"] .copa-auth-card .input-wrapper .input-icon {
   color: var(--auth-text-sub);
+}
+
+/* ==========================================================================
+   Sparkle Button Effect (Step 5) - NEW SECTION
+   ========================================================================== */
+
+/* אנימציית נצנוץ */
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
+}
+
+/* מיקום הכפתור המיוחד */
+.btn-sparkle {
+  position: relative;
+  overflow: visible !important; /* חשוב כדי שנראה את ה-Glow */
+  transition: all 0.3s ease;
+  z-index: 1;
+  
+  /* ✅ FIX: חובה צבע לבן גם פה כדי לגבור על הגדרות אחרות */
+  color: #ffffff !important;
+}
+
+/* טקסט הכפתור */
+.btn-sparkle .sparkle-text {
+  position: relative;
+  z-index: 2;
+  /* ✅ FIX: וידוא שהטקסט הפנימי לבן */
+  color: #ffffff !important;
+}
+
+/* קונטיינר לכוכבים - שלא יפריע ללחיצה */
+.btn-sparkle .sparkle-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* עיצוב הכוכב עצמו באמצעות CSS בלבד (צורת יהלום) */
+.s-star {
+  position: absolute;
+  background-color: white;
+  width: 16px;
+  height: 16px;
+  
+  /* יצירת צורת כוכב 4 קצוות */
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+/* מיקומים שונים וזמנים שונים לכל כוכב */
+.s-star.s-1 {
+  top: 10%;
+  left: 15%;
+  width: 12px;
+  height: 12px;
+  animation-delay: 0s;
+}
+
+.s-star.s-2 {
+  bottom: 15%;
+  right: 15%;
+  width: 14px;
+  height: 14px;
+  animation-delay: 0.7s;
+}
+
+.s-star.s-3 {
+  top: 20%;
+  right: 25%;
+  width: 8px;
+  height: 8px;
+  animation-delay: 1.2s;
+}
+
+/* אפקט Hover מחוזק לכפתור הזה ספציפית */
+.btn-sparkle:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(13, 202, 240, 0.5); /* צל זוהר בצבע התכלת של הכפתור */
+}
+
+/* בהובר הכוכבים מסתובבים קצת יותר מהר */
+.btn-sparkle:hover .s-star {
+  animation-duration: 1s;
 }

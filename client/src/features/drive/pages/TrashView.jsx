@@ -95,23 +95,38 @@ function TrashView() {
   }, [ownersMap, myUserId, currentUser]);
 
   async function onRestore(item) { await restoreFromTrash(item.id); await refresh(); }
-  // שינוי בפונקציות בתוך TrashView.jsx
+  
   async function onDeleteForever(item) {
-    // הסרנו את ה-if(window.confirm)
     await deleteForever(item.id);
     await refresh();
   }
 
   async function onEmptyTrash() {
-    // הסרנו את ה-if(window.confirm)
     await emptyTrash();
     await refresh();
   }
 
   return (
-    <div className="p-4" style={{ height: "100%", overflowY: "auto" }}>
-      <div className="page-title-container">
-        <h2>Trash</h2>
+    <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
+      
+      {/* ✅ טעינת הפונט */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
+      </style>
+
+      {/* ✅ כותרת מעוצבת אחידה */}
+      <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <h2 style={{ 
+            fontFamily: "'Bruno Ace SC', sans-serif", 
+            fontSize: "2.5rem", 
+            fontWeight: "400",
+            margin: 0,
+            color: "var(--text-primary)", 
+            letterSpacing: "2px", 
+            textTransform: "uppercase" 
+        }}>
+          Trash
+        </h2>
         <div className="d-flex align-items-center gap-2">
           <ViewModeToggle />
           {hasItems && (
@@ -126,7 +141,7 @@ function TrashView() {
         </div>
       </div>
 
-      {/* הודעה עדינה על מחיקה אחרי 30 יום */}
+      {/* הודעה עדינה */}
       <div className="d-inline-flex align-items-center gap-2 mb-4 px-3 py-2 rounded-pill"
         style={{
           background: "rgba(255, 255, 255, 0.25)",

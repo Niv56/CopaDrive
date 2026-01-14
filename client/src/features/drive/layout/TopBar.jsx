@@ -11,10 +11,13 @@ import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
 
-// ✅ ייבוא אייקון חיפוש נקי
-import { FiSearch } from "react-icons/fi";
+// ✅ הוספתי FiMusic
+import { FiSearch, FiMusic } from "react-icons/fi";
 
 import "styles/layout/TopBar.css";
+
+// ✅ ייבוא השיר
+import songFile from "assets/videos/Song.mp3";
 
 export default function TopBar() {
   const [userData, setUserData] = useState(null);
@@ -29,6 +32,12 @@ export default function TopBar() {
   const searchRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // ✅ פונקציית נגינה
+  const playSong = () => {
+    const audio = new Audio(songFile);
+    audio.play().catch(e => console.log("Play error:", e));
+  };
 
   const handleLogout = () => {
     logout();
@@ -100,11 +109,34 @@ export default function TopBar() {
 
   return (
     <>
+      {/* ✅ טעינת הפונט */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
+      </style>
+
       <header className="dashboard-top">
         {/* Left: Logo */}
-        <div className="dashboard-top-left">
-          <img src={appLogo} alt="CopaDrive logo" className="app-logo" />
-          <h2 className="app-title">CopaDrive</h2>
+        <div className="dashboard-top-left" style={{ gap: '15px', alignItems: 'center' }}>
+          {/* ✅ לוגו מוגדל */}
+          <img 
+            src={appLogo} 
+            alt="CopaDrive logo" 
+            className="app-logo" 
+            style={{ width: "48px", height: "48px" }} 
+          />
+          
+          {/* ✅ טקסט בפונט המותאם */}
+          <h2 className="app-title" style={{ 
+              fontFamily: "'Bruno Ace SC', sans-serif",
+              fontSize: "1.8rem", 
+              fontWeight: "400",
+              margin: 0,
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              paddingTop: "4px" // יישור קל מול הלוגו
+          }}>
+            CopaDrive
+          </h2>
         </div>
 
         {/* Center: Search Bar - Wide & Clean */}
@@ -113,7 +145,6 @@ export default function TopBar() {
           className="dashboard-top-center"
         >
           <div className="search-wrapper">
-            {/* האייקון ממוקם כאן ולא ב-CSS כדי למנוע שכפולים */}
             <FiSearch className="search-icon" />
             <input
               type="text"
@@ -163,6 +194,17 @@ export default function TopBar() {
 
         {/* Right: Actions & Profile */}
         <div className="dashboard-top-right">
+          
+          {/* ✅ כפתור שיר מנצנץ */}
+          <button className="btn-sparkle-sm" onClick={playSong}>
+            <FiMusic style={{ color: 'white' }} />
+            <span className="sparkle-text">PlaySong</span>
+            <div className="sparkle-stars">
+                <div className="s-star s-1"></div>
+                <div className="s-star s-2"></div>
+            </div>
+          </button>
+
           <ThemeToggle />
 
           <UserMenu

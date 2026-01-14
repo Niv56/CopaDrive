@@ -7,7 +7,7 @@ import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
-import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
+import FileEditorView from "components/Dashboard/widgets/FileEditorView";
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import { FiAlertCircle } from "react-icons/fi";
@@ -39,7 +39,6 @@ function ImportantView({ onChangeView }) {
     finally { setLoading(false); }
   }, []);
 
-  // ✅ Destructuring כולל את פונקציות העריכה
   const {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
@@ -82,11 +81,25 @@ function ImportantView({ onChangeView }) {
 
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <div className="page-title-container">
-          <h2>Important</h2>
-          <ViewModeToggle />
-        </div>
+      
+      {/* ✅ טעינת הפונט Bruno Ace SC */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
+      </style>
+
+      {/* ✅ כותרת מעוצבת אחידה (בדיוק כמו ב-Home) */}
+      <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <h2 style={{ 
+            fontFamily: "'Bruno Ace SC', sans-serif", 
+            fontSize: "2.5rem", 
+            fontWeight: "400",
+            margin: 0,
+            color: "var(--text-primary)", 
+            letterSpacing: "2px", 
+            textTransform: "uppercase" 
+        }}>
+          Important
+        </h2>
         <ViewModeToggle />
       </div>
 
@@ -128,7 +141,7 @@ function ImportantView({ onChangeView }) {
                 dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                 onOpen={openFromImportant} onShare={setSharingItem}
                 onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant}
-                onDelete={handleDelete} onEdit={handleEdit} // ✅ חיבור עריכה
+                onDelete={handleDelete} onEdit={handleEdit}
               />
             ))}
           </div>
@@ -152,11 +165,10 @@ function ImportantView({ onChangeView }) {
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
-        onEdit={handleEdit} // ✅ חיבור עריכה למודל צפייה
+        onEdit={handleEdit}
         onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
 
-      {/* ✅ מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
@@ -165,7 +177,7 @@ function ImportantView({ onChangeView }) {
               <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
-                folders={[]} // בדף זה אין לנו את עץ התיקיות המלא, אז מעבירים ריק
+                folders={[]}
                 onSave={handleSaveEdit}
                 onCancel={() => setEditingFile(null)}
               />

@@ -7,7 +7,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
-import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
+import FileEditorView from "components/Dashboard/widgets/FileEditorView";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
@@ -43,7 +43,6 @@ export default function HomeView({ onChangeView }) {
     }
   }, []);
 
-  // ✅ Destructuring מלא כולל עריכה
   const {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
@@ -64,21 +63,20 @@ export default function HomeView({ onChangeView }) {
   }, [loadAll]);
 
   const ownersMap = useOwnersMap(allItems);
-  // כאן אנחנו כן טוענים את כל הקבצים, אז אפשר לחשב תיקיות עבור העורך
   const allFolders = useMemo(() => allItems.filter(f => f.type === 'folder'), [allItems]);
 
   const getOwnerLabel = useCallback((item) => {
-    if (!item?.ownerId) return "Unknown";
-    if (item.ownerId === myUserId) return "Me";
-    const u = ownersMap[item.ownerId];
-    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-    return fullName || u?.email || "External";
+      if (!item?.ownerId) return "Unknown";
+      if (item.ownerId === myUserId) return "Me";
+      const u = ownersMap[item.ownerId];
+      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+      return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
   const getOwnerAvatar = useCallback((item) => {
-    if (!item?.ownerId) return "";
-    const u = ownersMap[item.ownerId];
-    return u?.image || "";
+      if (!item?.ownerId) return "";
+      const u = ownersMap[item.ownerId];
+      return u?.image || "";
   }, [ownersMap]);
 
   const suggestedFolders = useMemo(() => allItems.filter((x) => x.type === "folder").slice(0, 6), [allItems]);
@@ -95,33 +93,59 @@ export default function HomeView({ onChangeView }) {
 
   return (
     <div className="mainarea">
-      <div className="page-title-container">
-        <h2 style={{ fontSize: 44 }}>Home</h2>
+      {/* טעינת הפונט Bruno Ace SC */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
+      </style>
+
+      {/* הכותרת המעודכנת */}
+      <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <h2 style={{ 
+            fontFamily: "'Bruno Ace SC', sans-serif", 
+            fontSize: "2.5rem", 
+            fontWeight: "400",
+            margin: 0,
+            color: "var(--text-primary)", 
+            letterSpacing: "2px",
+            textTransform: "uppercase" 
+        }}>
+          Home
+        </h2>
         <ViewModeToggle />
       </div>
 
       {/* Suggested Folders Section */}
       <div className="mb-5">
-        <div className="d-flex align-items-center gap-2 mb-2">
-          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>Suggested folders</div>
+        {/* ✅ כותרת מעוצבת כמו ב-Storage */}
+        <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4" 
+             style={{ 
+                 background: "rgba(255, 255, 255, 0.2)", 
+                 backdropFilter: "blur(10px)", 
+                 border: "1px solid var(--border-color)",
+                 boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
+             }}>
+          <FiFolder size={20} style={{ color: "var(--text-primary)" }} />
+          <div style={{ color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, textShadow: "var(--text-shadow-global)" }}>
+            Suggested folders
+          </div>
         </div>
 
         {suggestedFolders.length === 0 ? (
           <div className="d-flex align-items-center justify-content-center py-4">
-            <div className="d-flex align-items-center justify-content-center"
-              style={{
-                width: "80px", height: "80px", borderRadius: "50%",
-                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
-              }}>
-              <FiFolder size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
-            </div>
+             <div className="d-flex align-items-center justify-content-center" 
+                  style={{ 
+                      width: "80px", height: "80px", borderRadius: "50%", 
+                      background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
+                      border: "1px solid var(--border-color)", 
+                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
+                  }}>
+                <FiFolder size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
+             </div>
           </div>
         ) : viewMode === "list" ? (
           <div className="files-container">
             <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-              style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+                 style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
               <div style={{ flex: 1 }}>Name</div>
               <div style={{ width: "150px" }}>Owner</div>
               <div style={{ width: "150px" }}>Date created</div>
@@ -148,26 +172,36 @@ export default function HomeView({ onChangeView }) {
 
       {/* Suggested Files Section */}
       <div className="mb-5">
-        <div className="d-flex align-items-center gap-2 mb-2">
-          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>Suggested files</div>
+        {/* ✅ כותרת מעוצבת כמו ב-Storage */}
+        <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4" 
+             style={{ 
+                 background: "rgba(255, 255, 255, 0.2)", 
+                 backdropFilter: "blur(10px)", 
+                 border: "1px solid var(--border-color)",
+                 boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
+             }}>
+          <FiFile size={20} style={{ color: "var(--text-primary)" }} />
+          <div style={{ color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, textShadow: "var(--text-shadow-global)" }}>
+            Suggested files
+          </div>
         </div>
 
         {suggestedFiles.length === 0 ? (
           <div className="d-flex align-items-center justify-content-center py-4">
-            <div className="d-flex align-items-center justify-content-center"
-              style={{
-                width: "80px", height: "80px", borderRadius: "50%",
-                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
-              }}>
-              <FiFile size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
-            </div>
+             <div className="d-flex align-items-center justify-content-center" 
+                  style={{ 
+                      width: "80px", height: "80px", borderRadius: "50%", 
+                      background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
+                      border: "1px solid var(--border-color)", 
+                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
+                  }}>
+                <FiFile size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
+             </div>
           </div>
         ) : viewMode === "list" ? (
           <div className="files-container">
             <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-              style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+                 style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
               <div style={{ flex: 1 }}>Name</div>
               <div style={{ width: "150px" }}>Owner</div>
               <div style={{ width: "150px" }}>Date created</div>
@@ -192,27 +226,27 @@ export default function HomeView({ onChangeView }) {
         )}
       </div>
 
-      <FileViewerModal
-        file={openedFile}
-        role={openedRole}
-        onClose={() => setOpenedFile(null)}
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
-        onEdit={handleEdit} // ✅
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
+        onEdit={handleEdit}
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
       />
-
-      {/* ✅ מודל העריכה */}
+      
+      {/* מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView
+              <FileEditorView 
                 file={editingFile}
                 initialData={editingFile}
-                folders={allFolders} // בבית יש לנו את כל התיקיות
+                folders={allFolders} 
                 onSave={handleSaveEdit}
                 onCancel={() => setEditingFile(null)}
               />

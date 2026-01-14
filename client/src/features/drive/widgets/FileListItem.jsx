@@ -18,7 +18,7 @@ import {
   BsFileEarmarkFill 
 } from "react-icons/bs";
 
-// 🛠️ פונקציית עזר לשימוש גם בקבצים אחרים (אפשר להעתיק אותה או לייצא אותה)
+// 🛠️ פונקציית עזר
 export const getFileIcon = (name, mimeType, isFolder, size = 24) => {
   if (isFolder) return <BsFolderFill size={size} color="#5f6368" />; 
 
@@ -138,12 +138,38 @@ function FileListItem({
       <div className="fli-right" onClick={stop} style={{ width: '80px', display: 'flex', justifyContent: 'flex-end' }}>
         {!isTrash && (
           <div className="fli-actions">
-            <button className={`fli-iconbtn ${isStarred ? "is-on" : ""}`} onClick={(e) => { stop(e); onToggleStar?.(item, !isStarred); }} style={{ color: isStarred ? '#fbbc04' : 'var(--text-secondary)' }}>{isStarred ? "★" : "☆"}</button>
-            <button className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`} onClick={(e) => { stop(e); onToggleImportant?.(item, !isImportant); }} style={{ color: isImportant ? '#ff5252' : 'var(--text-secondary)' }}>!</button>
+            {/* ✅ נוסף title לכפתור הכוכב */}
+            <button 
+                className={`fli-iconbtn ${isStarred ? "is-on" : ""}`} 
+                onClick={(e) => { stop(e); onToggleStar?.(item, !isStarred); }} 
+                title={isStarred ? "Remove star" : "Toggle star"} // או "Toggle star" כפי שביקשת
+                style={{ color: isStarred ? '#fbbc04' : 'var(--text-secondary)' }}
+            >
+                {isStarred ? "★" : "☆"}
+            </button>
+
+            {/* ✅ נוסף title לכפתור החשיבות */}
+            <button 
+                className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`} 
+                onClick={(e) => { stop(e); onToggleImportant?.(item, !isImportant); }} 
+                title={isImportant ? "Mark as not important" : "Mark as important"}
+                style={{ color: isImportant ? '#ff5252' : 'var(--text-secondary)' }}
+            >
+                !
+            </button>
           </div>
         )}
         <div className="dropdown" onClick={stop} ref={menuRef}>
-          <button className={`fli-menubtn ${isMenuOpen ? "show" : ""}`} onClick={(e) => { stop(e); setIsMenuOpen(!isMenuOpen); }} style={{ color: 'var(--text-secondary)' }}>⋮</button>
+          {/* ✅ נוסף title לכפתור התפריט */}
+          <button 
+            className={`fli-menubtn ${isMenuOpen ? "show" : ""}`} 
+            onClick={(e) => { stop(e); setIsMenuOpen(!isMenuOpen); }} 
+            title="More options"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            ⋮
+          </button>
+          
           <ul className={`dropdown-menu dropdown-menu-end shadow-sm ${isMenuOpen ? "show" : ""}`} style={{ display: isMenuOpen ? "block" : "none", position: "absolute", inset: "0px 0px auto auto", transform: "translate3d(0px, 30px, 0px)" }}>
             {isTrash ? (
               <>

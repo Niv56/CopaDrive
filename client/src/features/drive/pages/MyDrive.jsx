@@ -5,7 +5,7 @@ import { useFileActions } from "features/drive/hooks/useFileActions";
 import FileListItem from "features/drive/widgets/FileListItem";
 import CreateItem from "features/drive/widgets/CreateItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
-import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; 
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import "styles/pages/MyDrive.css";
 import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
@@ -40,17 +40,16 @@ function MyDrive() {
     } finally { setLoading(false); }
   }, []);
 
-  // ✅ Destructuring כולל את פונקציות העריכה החדשות
   const {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
-    editingFile, setEditingFile, // State לעריכה
+    editingFile, setEditingFile,
     openedRole,
     handleOpen,
     handleToggleStar,
     handleToggleImportant,
-    handleEdit,      // פונקציית פתיחת עריכה
-    handleSaveEdit,  // פונקציית שמירה
+    handleEdit,
+    handleSaveEdit,
     handleDelete
   } = useFileActions(myUserId, loadFiles);
 
@@ -71,7 +70,6 @@ function MyDrive() {
     });
   }, [allFiles, currentFolderId]);
 
-  // יצירת רשימת תיקיות עבור ה-Dropdown בעורך
   const allFolders = useMemo(() => allFiles.filter(f => f.type === 'folder'), [allFiles]);
 
   const currentFolder = useMemo(
@@ -86,7 +84,6 @@ function MyDrive() {
     setFolderPath((prev) => (parentId ? prev.slice(0, -1) : []));
   };
 
-  // ... (המשך קוד הלוגיקה של תיקיות ו-ownersMap נשאר זהה) ...
   useEffect(() => {
     const onOpenFolder = (e) => {
       const folderId = e.detail.folderId;
@@ -131,18 +128,33 @@ function MyDrive() {
 
   return (
     <div className="mainarea">
-      {/* Header logic ... */}
-      <div className="page-title-container">
+      
+      {/* טעינת הפונט */}
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
+      </style>
+
+      {/* ✅ כותרת מעוצבת אחידה */}
+      <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div className="d-flex align-items-center gap-2">
-          <h2 style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "inherit" }}
+          <h2 style={{ 
+              fontFamily: "'Bruno Ace SC', sans-serif", 
+              fontSize: "2.5rem", 
+              fontWeight: "400",
+              margin: 0,
+              color: currentFolderId ? "#1a73e8" : "var(--text-primary)", 
+              letterSpacing: "2px", 
+              textTransform: "uppercase",
+              cursor: "pointer"
+            }}
             onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>
             My Drive
           </h2>
           {currentFolderId && (
             <>
-              <span className="text-muted">/</span>
+              <span className="text-muted" style={{ fontSize: "1.5rem" }}>/</span>
               <button className="btn btn-sm btn-outline-secondary" onClick={handleBack}>← Back</button>
-              <span className="fw-bold">{currentFolder?.name}</span>
+              <span className="fw-bold" style={{ fontSize: "1.2rem" }}>{currentFolder?.name}</span>
             </>
           )}
         </div>
@@ -172,7 +184,7 @@ function MyDrive() {
                 onToggleStar={handleToggleStar}
                 onToggleImportant={handleToggleImportant}
                 onDelete={handleDelete}
-                onEdit={handleEdit} // ✅ העברת פונקציית העריכה לתפריט 3 הנקודות
+                onEdit={handleEdit}
               />
             ))}
           </div>
@@ -194,15 +206,14 @@ function MyDrive() {
 
       <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
 
-      {/* Viewer Modal */}
       <FileViewerModal
         file={openedFile}
         role={openedRole}
         onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
-        onToggleStar={handleToggleStar}          // ✅ חיבור הכוכב
-        onToggleImportant={handleToggleImportant} // ✅ חיבור החשיבות
-        onEdit={handleEdit}                       // ✅ חיבור לחצן העיפרון בתוך המודל
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit}
         onDelete={async () => {
           if (!openedFile) return;
           await handleDelete(openedFile);
@@ -210,13 +221,12 @@ function MyDrive() {
         }}
       />
 
-      {/* ✅ Editor Modal - עטיפה של FileEditorView במודל */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView
+              <FileEditorView 
                 file={editingFile}
                 initialData={editingFile}
                 folders={allFolders}

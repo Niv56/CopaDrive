@@ -83,3 +83,9 @@
   background-color: var(--main-bg-dark);
   box-shadow: -5px 0 20px rgba(0,0,0,0.2);
 }
+/* תיקון כדי שהתוכן הראשי לא יוסתר מתחת לסרגל הצד הסגור */
+.dashboard-body {
+  padding-left: 110px; /* 78px רוחב סרגל + מרווחים */
+  display: flex;
+  width: 100%;
+}
