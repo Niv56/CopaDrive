@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FiMail, FiLock, FiLogIn } from "react-icons/fi"; // ✅ Elegant Icons
+import { FiMail, FiLock, FiLogIn, FiMusic } from "react-icons/fi"; // ✅ הוספתי FiMusic
 
 import { useAuth } from "app/providers/AuthContext";
 import "styles/pages/Auth.css";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
+import songFile from "assets/videos/Song.mp3"; // ✅ ייבוא שיר
 
 const Login = () => {
   const { login } = useAuth();
@@ -13,6 +14,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // ✅ פונקציית ניגון
+  const playSong = () => {
+    const audio = new Audio(songFile);
+    audio.play().catch(e => console.log(e));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,7 +46,20 @@ const Login = () => {
 
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
-      <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10 }}>
+      
+      {/* ✅ כאן השינוי: הוספת הכפתור ליד ThemeToggle */}
+      <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
+        
+        {/* כפתור PlaySong מנצנץ */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
+            <FiMusic style={{ marginRight: "6px" }} />
+            <span className="sparkle-text">PlaySong</span>
+            <div className="sparkle-stars">
+              <div className="s-star s-1"></div>
+              <div className="s-star s-2"></div>
+            </div>
+        </button>
+
         <ThemeToggle />
       </div>
 

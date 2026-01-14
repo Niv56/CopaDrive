@@ -32,7 +32,7 @@
   /* שימוש באותו משתנה בדיוק */
   background: var(--glass-bg) !important;
   border-bottom: none !important;
-}/* ... שאר הקוד ב-TopBar.css ... */
+}
 
 /* ✅ עיצוב כפתור ה-Log out (Danger) */
 .user-dropdown-item.danger {
@@ -46,6 +46,7 @@
   /* אדום טיפה כהה יותר לקריאות */
   color: #b02a37 !important; 
 }
+
 /* שאר האלמנטים (לוגו, חיפוש) ללא שינוי... */
 .dashboard-top-left { display: flex; align-items: center; gap: 12px; min-width: 220px; }
 .app-logo { height: 40px; width: auto; }
@@ -64,6 +65,7 @@
 .user-menu:hover { background-color: rgba(0, 0, 0, 0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 [data-theme="dark"] .user-menu { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.1); }
 [data-theme="dark"] .user-menu:hover { background-color: rgba(255, 255, 255, 0.15); }
+
 /* Dropdowns... (same as before) */
 .search-dropdown-results { position: absolute; top: 110%; left: 0; right: 0; background: var(--bg-paper); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; max-height: 300px; overflow-y: auto; }
 .user-dropdown { position: absolute; top: 60px; right: 0; width: 240px; background: var(--bg-paper); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 8px; z-index: 1000; }
@@ -71,3 +73,60 @@
 .user-dropdown-item { display: flex; align-items: center; gap: 16px; width: 100%; padding: 10px 12px; background: transparent; border: none; text-align: left; font-size: 14px; font-weight: 500; color: var(--text-primary); cursor: pointer; border-radius: 8px; transition: background 0.2s; }
 .user-dropdown-item:hover { background-color: var(--hover-bg); }
 .user-dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+
+/* ==========================================================================
+   Sparkle Button Specific for TopBar (Play Song)
+   ========================================================================== */
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
+}
+
+.btn-sparkle-sm {
+  position: relative;
+  background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+  border: none;
+  color: white !important;
+  padding: 8px 16px; 
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(13, 202, 240, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  margin-right: 8px; /* מרווח קטן מהאלמנט הבא */
+}
+
+.btn-sparkle-sm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(13, 202, 240, 0.4);
+}
+
+.btn-sparkle-sm .sparkle-text {
+  position: relative;
+  z-index: 2;
+  color: white !important;
+}
+
+.sparkle-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.s-star {
+  position: absolute;
+  background-color: white;
+  width: 8px;
+  height: 8px;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+.s-star.s-1 { top: 15%; left: 10%; animation-delay: 0s; }
+.s-star.s-2 { bottom: 15%; right: 10%; animation-delay: 0.8s; }

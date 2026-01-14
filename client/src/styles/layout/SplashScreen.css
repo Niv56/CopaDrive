@@ -1,0 +1,146 @@
+/* SplashScreen.css */
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  /* אותו גרדיאנט חוף נקי */
+  background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+}
+
+.splash-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* מצב לילה */
+@media (prefers-color-scheme: dark) {
+  .splash-screen {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
+  }
+  .splash-title {
+    color: #fff !important;
+  }
+}
+
+.splash-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* אנימציית קוקוס קופץ */
+@keyframes bounceCoconut {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-30px) scale(1.1) rotate(5deg); }
+}
+
+.coconut-bounce {
+  animation: bounceCoconut 1.4s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  filter: drop-shadow(0 15px 20px rgba(0,0,0,0.15));
+}
+
+.splash-title {
+  font-family: "Poppins", sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #0b2b38;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease forwards 0.3s;
+}
+
+/* פס טעינה */
+.loading-bar {
+  width: 180px;
+  height: 6px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+  border-radius: 10px;
+  animation: loadBar 2s infinite ease-in-out;
+}
+
+@keyframes loadBar {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Sparkle Button Styles (Used for Skip) --- */
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
+}
+
+.btn-sparkle {
+  position: relative;
+  background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+  border: none;
+  color: white !important;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(13, 202, 240, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 20px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sparkle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13, 202, 240, 0.45);
+}
+
+.sparkle-text {
+  position: relative;
+  z-index: 2;
+  color: white !important;
+}
+
+.sparkle-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.s-star {
+  position: absolute;
+  background-color: white;
+  width: 10px;
+  height: 10px;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  animation: twinkle 2s infinite ease-in-out;
+}
+
+.s-star.s-1 { top: 10%; left: 15%; animation-delay: 0s; }
+.s-star.s-2 { bottom: 15%; right: 15%; animation-delay: 0.7s; }
+.s-star.s-3 { top: 20%; right: 25%; animation-delay: 1.2s; }
