@@ -9,7 +9,7 @@ const findByParent = (parentId, ownerId) => {
     if (f.trashed === true) return false;
     const fp = normalizeParentId(f.parentId);
     const parentMatch = fp === p;
-    const ownerMatch = ownerId ? f.ownerId === ownerId : true;
+    const ownerMatch = ownerId ? f.ownerId === ownerId : true; 
     return parentMatch && ownerMatch;
   });
 };

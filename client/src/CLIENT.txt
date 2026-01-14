@@ -3246,7 +3246,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
-
+import { formatBytes } from "shared/utils/formatBytes";
 function MyDrive() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3287,10 +3287,16 @@ function MyDrive() {
     return () => window.removeEventListener("refresh-mydrive", loadFiles);
   }, [loadFiles]);
 
-  const currentItems = useMemo(
-    () => allFiles.filter((f) => f.parentId === currentFolderId),
-    [allFiles, currentFolderId]
-  );
+const currentItems = useMemo(() => {
+  return allFiles.filter((f) => {
+    if (currentFolderId) {
+      return f.parentId === currentFolderId;
+    }
+    // ׳§׳•׳‘׳¥ ׳™׳•׳¦׳’ ׳‘-Root ׳׳ ׳”׳׳‘׳ ׳©׳׳• ׳”׳•׳ null ׳׳• ׳׳ ׳”׳׳‘׳ ׳©׳׳• ׳׳ ׳ ׳׳¦׳ ׳‘׳¨׳©׳™׳׳× ׳”׳§׳‘׳¦׳™׳ ׳©׳™׳© ׳׳™ ׳’׳™׳©׳” ׳׳׳™׳”׳
+    const parentIsAccessible = allFiles.some(other => other.id === f.parentId);
+    return f.parentId === null || !parentIsAccessible;
+  });
+}, [allFiles, currentFolderId]);
 
   const currentFolder = useMemo(
     () => allFiles.find((f) => f.id === currentFolderId),
@@ -3381,19 +3387,22 @@ function MyDrive() {
             <div style={{ width: "100px" }} />
           </div>
           <div className="files-container">
-            {currentItems.map((item) => (
-              <FileListItem
-                key={item.id} item={item}
-                ownerLabel={getOwnerLabel(item)}
-                ownerAvatar={getOwnerAvatar(item)}
-                dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "ג€”"}
-                onOpen={openInsideMyDrive}
-                onShare={setSharingItem}
-                onToggleStar={handleToggleStar}
-                onToggleImportant={handleToggleImportant}
-                onDelete={handleDelete}
-              />
-            ))}
+          {currentItems.map((item) => (
+            <FileListItem
+              key={item.id}
+              item={item}
+              ownerLabel={getOwnerLabel(item)}
+              ownerAvatar={getOwnerAvatar(item)}
+              dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "ג€”"}
+              // ׳”׳•׳¡׳£ ׳׳× ׳”׳©׳•׳¨׳” ׳”׳–׳•:
+              sizeLabel={item.type === "folder" ? "ג€”" : formatBytes(item.sizeBytes ?? 0)}
+              onOpen={openInsideMyDrive}
+              onShare={setSharingItem}
+              onToggleStar={handleToggleStar}
+              onToggleImportant={handleToggleImportant}
+              onDelete={handleDelete}
+            />
+          ))}
           </div>
         </>
       ) : (
@@ -3626,10 +3635,25 @@ function SharedView() {
     loadFiles();
   }, []);
 
-  const displayItems = useMemo(() => {
-    if (!selectedOwnerId) return [];
-    return allFiles.filter((f) => f.ownerId === selectedOwnerId && f.parentId === currentFolderId);
-  }, [allFiles, selectedOwnerId, currentFolderId]);
+const displayItems = useMemo(() => {
+  if (!selectedOwnerId) return [];
+
+  return allFiles.filter((f) => {
+    // 1. ׳—׳™׳™׳‘ ׳׳”׳™׳•׳× ׳©׳™׳™׳ ׳׳‘׳¢׳׳™׳ ׳©׳ ׳‘׳—׳¨
+    if (f.ownerId !== selectedOwnerId) return false;
+
+    // 2. ׳׳ ׳׳ ׳—׳ ׳• ׳‘׳×׳•׳ ׳×׳™׳§׳™׳™׳” ׳©׳©׳•׳×׳₪׳” ׳׳™׳×׳ ׳•, ׳”׳¦׳’ ׳¨׳§ ׳׳× ׳”׳™׳׳“׳™׳ ׳©׳׳”
+    if (currentFolderId) {
+      return f.parentId === currentFolderId;
+    }
+
+    // 3. ׳׳ ׳׳ ׳—׳ ׳• ׳‘׳©׳•׳¨׳© ׳©׳ "Shared with me" (׳×׳¦׳•׳’׳× ׳”׳‘׳¢׳׳™׳):
+    // ׳”׳¦׳’ ׳§׳‘׳¦׳™׳ ׳©׳©׳•׳×׳₪׳• ׳׳™׳×׳™ ׳™׳©׳™׳¨׳•׳× (׳׳•׳₪׳™׳¢׳™׳ ׳‘-permissions) 
+    // ׳׳• ׳§׳‘׳¦׳™׳ ׳©׳”׳׳‘׳ ׳©׳׳”׳ ׳׳ ׳ ׳׳¦׳ ׳‘׳¨׳©׳™׳׳× ׳”׳׳©׳•׳×׳₪׳™׳ ׳©׳׳™
+    const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
+    return !parentIsAlsoShared;
+  });
+}, [allFiles, selectedOwnerId, currentFolderId]);
 
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
