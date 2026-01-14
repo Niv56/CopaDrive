@@ -1,3 +1,4 @@
+import React, { useMemo, useState } from "react";
 import { addPermission, findUserByEmail } from "../../api/permissionsApi";
 import { getCurrentUser } from "../../api/filesApi";
 
@@ -25,6 +26,7 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
         e?.preventDefault?.();
         if (!isOwner || !email.trim()) return;
         setError("");
+        setFoundUser(null);
         setLoading(true);
         try {
             const user = await findUserByEmail(email.trim());
@@ -43,33 +45,43 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
             setFoundUser(null);
             onChanged?.();
         } catch (err) {
-            setError("Unable to share file. User might already have access.");
+            setError("Unable to share file.");
         } finally { setLoading(false); }
     }
 
     return (
         <div className="mb-4">
-            <div className="perm-section-title mb-2">Share with people</div>
+            <div className="perm-section-title">Add people</div>
             <form onSubmit={onSearch} className="d-flex gap-2">
                 <input 
-                    className="form-control" 
-                    placeholder="Enter user email..." 
+                    className="perm-add-input w-100" 
+                    placeholder="Enter email address..." 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                 />
-                <button className="btn btn-primary" type="submit" disabled={loading}>Search</button>
+                <button className="perm-search-submit" type="submit" disabled={loading || !email.trim()}>
+                    {loading ? '...' : 'Search'}
+                </button>
             </form>
+
             {foundUser && (
-                <div className="perm-profile-row mt-3 d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-2">
-                        <div className="perm-avatar">{avatarUrl ? <img src={avatarUrl} alt="av" /> : displayName[0]}</div>
-                        <div>{displayName}</div>
+                <div className="perm-profile-row mt-3">
+                    <div className="perm-profile-left">
+                        <div className="perm-avatar">
+                            {avatarUrl ? <img className="perm-avatar-img" src={avatarUrl} alt="av" /> : displayName[0]?.toUpperCase()}
+                        </div>
+                        <div className="perm-profile-text">
+                            <div className="perm-profile-name">{displayName}</div>
+                            <div className="perm-profile-email">{foundUser.email}</div>
+                        </div>
                     </div>
-                    <button className="btn btn-success btn-sm" onClick={onShare}>Share</button>
+                    <button className="perm-role-toggle-btn" style={{borderColor: '#34a853', color: '#34a853'}} onClick={onShare}>
+                        Share
+                    </button>
                 </div>
             )}
-            {error && <div className="text-danger small mt-2">{error}</div>}
+            {error && <div className="text-danger small mt-2 opacity-75">{error}</div>}
         </div>
     );
 }
