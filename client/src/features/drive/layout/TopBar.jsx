@@ -11,8 +11,8 @@ import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
 
-// ✅ הוספתי FiMusic
-import { FiSearch, FiMusic } from "react-icons/fi";
+// ✅ הוספנו FiPause לשינוי האייקון
+import { FiSearch, FiMusic, FiPause } from "react-icons/fi";
 
 import "styles/layout/TopBar.css";
 
@@ -33,11 +33,38 @@ export default function TopBar() {
 
   const navigate = useNavigate();
 
-  // ✅ פונקציית נגינה
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log("Play error:", e));
+  // --- 🎵 לוגיקת נגינה מתוקנת ---
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    // אם הנגן עדיין לא נוצר, יוצרים אותו פעם אחת בלבד
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      // איפוס הסטייט כשהשיר נגמר מעצמו
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log("Play error:", e));
+      setIsPlaying(false); // נועד למנוע בעיות במקרה שהדפדפן חוסם
+      setIsPlaying(true);
+    }
   };
+
+  // ניקוי הזיכרון אם עוזבים את הדף
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+  // --------------------------
 
   const handleLogout = () => {
     logout();
@@ -109,23 +136,18 @@ export default function TopBar() {
 
   return (
     <>
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
       <header className="dashboard-top">
-        {/* Left: Logo */}
         <div className="dashboard-top-left" style={{ gap: '15px', alignItems: 'center' }}>
-          {/* ✅ לוגו מוגדל */}
           <img 
             src={appLogo} 
             alt="CopaDrive logo" 
             className="app-logo" 
             style={{ width: "48px", height: "48px" }} 
           />
-          
-          {/* ✅ טקסט בפונט המותאם */}
           <h2 className="app-title" style={{ 
               fontFamily: "'Bruno Ace SC', sans-serif",
               fontSize: "1.8rem", 
@@ -133,17 +155,13 @@ export default function TopBar() {
               margin: 0,
               letterSpacing: "1px",
               textTransform: "uppercase",
-              paddingTop: "4px" // יישור קל מול הלוגו
+              paddingTop: "4px"
           }}>
             CopaDrive
           </h2>
         </div>
 
-        {/* Center: Search Bar - Wide & Clean */}
-        <div
-          ref={searchRef}
-          className="dashboard-top-center"
-        >
+        <div ref={searchRef} className="dashboard-top-center">
           <div className="search-wrapper">
             <FiSearch className="search-icon" />
             <input
@@ -192,13 +210,21 @@ export default function TopBar() {
           )}
         </div>
 
-        {/* Right: Actions & Profile */}
         <div className="dashboard-top-right">
           
-          {/* ✅ כפתור שיר מנצנץ */}
-          <button className="btn-sparkle-sm" onClick={playSong}>
-            <FiMusic style={{ color: 'white' }} />
-            <span className="sparkle-text">PlaySong</span>
+          {/* ✅ כפתור שיר מעודכן - Play/Pause */}
+          <button className="btn-sparkle-sm" onClick={toggleSong}>
+            {isPlaying ? (
+              <>
+                <FiPause style={{ color: 'white' }} />
+                <span className="sparkle-text">PauseSong</span>
+              </>
+            ) : (
+              <>
+                <FiMusic style={{ color: 'white' }} />
+                <span className="sparkle-text">PlaySong</span>
+              </>
+            )}
             <div className="sparkle-stars">
                 <div className="s-star s-1"></div>
                 <div className="s-star s-2"></div>
