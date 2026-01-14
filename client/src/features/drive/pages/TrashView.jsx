@@ -28,7 +28,6 @@ function getDaysLeft(trashedAt) {
 
 function TrashView() {
   const [items, setItems] = useState([]);
-  // Loading state exists for internal logic but won't block UI
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
@@ -153,7 +152,6 @@ function TrashView() {
       {err && <div className="alert alert-danger py-2">{err}</div>}
 
       {!hasItems ? (
-        /* ✅ Empty State - Glass Icon Only (No Text) */
         <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
           <div className="d-flex align-items-center justify-content-center"
             style={{

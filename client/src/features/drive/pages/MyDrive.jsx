@@ -5,6 +5,7 @@ import { useFileActions } from "features/drive/hooks/useFileActions";
 import FileListItem from "features/drive/widgets/FileListItem";
 import CreateItem from "features/drive/widgets/CreateItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import "styles/pages/MyDrive.css";
 import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
@@ -12,6 +13,7 @@ import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import { formatBytes } from "shared/utils/formatBytes";
+
 function MyDrive() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,30 +40,39 @@ function MyDrive() {
     } finally { setLoading(false); }
   }, []);
 
-  // ה-loadingFile הוסר מה-Destructuring כאן לבקשתך
+  // ✅ Destructuring כולל את פונקציות העריכה החדשות
   const {
-    sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole,
-    handleOpen, handleToggleStar, handleToggleImportant, handleDelete
+    sharingItem, setSharingItem, 
+    openedFile, setOpenedFile, 
+    editingFile, setEditingFile, // State לעריכה
+    openedRole,
+    handleOpen, 
+    handleToggleStar, 
+    handleToggleImportant, 
+    handleEdit,      // פונקציית פתיחת עריכה
+    handleSaveEdit,  // פונקציית שמירה
+    handleDelete
   } = useFileActions(myUserId, loadFiles);
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
-  // האזנה לאירוע רענון גלובלי (נשאר כחלק מהלוגיקה שלך)
   useEffect(() => {
     window.addEventListener("refresh-mydrive", loadFiles);
     return () => window.removeEventListener("refresh-mydrive", loadFiles);
   }, [loadFiles]);
 
-const currentItems = useMemo(() => {
-  return allFiles.filter((f) => {
-    if (currentFolderId) {
-      return f.parentId === currentFolderId;
-    }
-    // קובץ יוצג ב-Root אם האבא שלו הוא null או אם האבא שלו לא נמצא ברשימת הקבצים שיש לי גישה אליהם
-    const parentIsAccessible = allFiles.some(other => other.id === f.parentId);
-    return f.parentId === null || !parentIsAccessible;
-  });
-}, [allFiles, currentFolderId]);
+  const currentItems = useMemo(() => {
+    return allFiles.filter((f) => {
+      if (currentFolderId) {
+        return f.parentId === currentFolderId;
+      }
+      const parentIsAccessible = allFiles.some(other => other.id === f.parentId);
+      return f.parentId === null || !parentIsAccessible;
+    });
+  }, [allFiles, currentFolderId]);
+
+  // יצירת רשימת תיקיות עבור ה-Dropdown בעורך
+  const allFolders = useMemo(() => allFiles.filter(f => f.type === 'folder'), [allFiles]);
 
   const currentFolder = useMemo(
     () => allFiles.find((f) => f.id === currentFolderId),
@@ -75,6 +86,7 @@ const currentItems = useMemo(() => {
     setFolderPath((prev) => (parentId ? prev.slice(0, -1) : []));
   };
 
+  // ... (המשך קוד הלוגיקה של תיקיות ו-ownersMap נשאר זהה) ...
   useEffect(() => {
     const onOpenFolder = (e) => {
       const folderId = e.detail.folderId;
@@ -82,12 +94,10 @@ const currentItems = useMemo(() => {
       const folder = allFiles.find((f) => f.id === folderId);
       setFolderPath([{ id: folderId, name: folder?.name || "Folder" }]);
     };
-
     const onResetMyDrive = () => {
       setCurrentFolderId(null);
       setFolderPath([]);
     };
-
     window.addEventListener("open-folder", onOpenFolder);
     window.addEventListener("reset-mydrive", onResetMyDrive);
     return () => {
@@ -102,14 +112,12 @@ const currentItems = useMemo(() => {
     if (!item?.ownerId) return "Unknown";
     if (item.ownerId === myUserId) return "Me";
     const u = ownersMap[item.ownerId];
-    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-    return fullName || u?.email || "External";
+    return [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim() || u?.email || "External";
   }, [ownersMap, myUserId]);
 
   const getOwnerAvatar = useCallback((item) => {
     if (!item?.ownerId) return "";
-    const u = ownersMap[item.ownerId];
-    return u?.image || "";
+    return ownersMap[item.ownerId]?.image || "";
   }, [ownersMap]);
 
   const openInsideMyDrive = (it) => {
@@ -123,8 +131,7 @@ const currentItems = useMemo(() => {
 
   return (
     <div className="mainarea">
-      {/* הספינר הוסר מכאן בהתאם לבקשתך */}
-
+      {/* Header logic ... */}
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div className="d-flex align-items-center gap-2">
           <h2 className="mb-0" style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
@@ -159,13 +166,13 @@ const currentItems = useMemo(() => {
               ownerLabel={getOwnerLabel(item)}
               ownerAvatar={getOwnerAvatar(item)}
               dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
-              // הוסף את השורה הזו:
               sizeLabel={item.type === "folder" ? "—" : formatBytes(item.sizeBytes ?? 0)}
               onOpen={openInsideMyDrive}
               onShare={setSharingItem}
               onToggleStar={handleToggleStar}
               onToggleImportant={handleToggleImportant}
               onDelete={handleDelete}
+              onEdit={handleEdit} // ✅ העברת פונקציית העריכה לתפריט 3 הנקודות
             />
           ))}
           </div>
@@ -187,16 +194,39 @@ const currentItems = useMemo(() => {
 
       <CreateItem onItemCreated={loadFiles} currentFolderId={currentFolderId} />
 
+      {/* Viewer Modal */}
       <FileViewerModal
-        file={openedFile} role={openedRole}
+        file={openedFile} 
+        role={openedRole}
         onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
+        onToggleStar={handleToggleStar}          // ✅ חיבור הכוכב
+        onToggleImportant={handleToggleImportant} // ✅ חיבור החשיבות
+        onEdit={handleEdit}                       // ✅ חיבור לחצן העיפרון בתוך המודל
         onDelete={async () => {
           if (!openedFile) return;
           await handleDelete(openedFile);
           setOpenedFile(null);
         }}
       />
+
+      {/* ✅ Editor Modal - עטיפה של FileEditorView במודל */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={allFolders}
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
