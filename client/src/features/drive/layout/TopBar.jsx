@@ -11,6 +11,9 @@ import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
 
+// ✅ ייבוא אייקון חיפוש נקי
+import { FiSearch } from "react-icons/fi";
+
 import "styles/layout/TopBar.css";
 
 export default function TopBar() {
@@ -32,7 +35,6 @@ export default function TopBar() {
     navigate("/login");
   };
 
-  // Fetch current user details
   useEffect(() => {
     if (isAuthenticated && token) {
       try {
@@ -51,7 +53,6 @@ export default function TopBar() {
     }
   }, [isAuthenticated, token]);
 
-  // Search debounce
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q) {
@@ -106,51 +107,29 @@ export default function TopBar() {
           <h2 className="app-title">CopaDrive</h2>
         </div>
 
-        {/* Center: Search Bar */}
+        {/* Center: Search Bar - Wide & Clean */}
         <div
           ref={searchRef}
           className="dashboard-top-center"
-          style={{ position: "relative" }}
         >
-          <input
-            type="text"
-            placeholder="Search in CopaDrive"
-            className="dashboard-search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="search-wrapper">
+            {/* האייקון ממוקם כאן ולא ב-CSS כדי למנוע שכפולים */}
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search in CopaDrive"
+              className="dashboard-search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
           {searchQuery.trim() && (
-            <div
-              className="search-dropdown"
-              style={{
-                position: "absolute",
-                top: "110%",
-                left: 0,
-                right: 0,
-                background: "var(--bg-paper)",
-                color: "var(--text-primary)",
-                border: "1px solid var(--border-color)",
-                borderRadius: 12,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                padding: 10,
-                zIndex: 9999,
-                maxHeight: 280,
-                overflowY: "auto",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
+            <div className="search-dropdown-results">
+              <div className="search-header">
                 <div style={{ fontWeight: 600 }}>Results</div>
                 <button
-                  className="btn btn-light"
-                  style={{ padding: "2px 10px", borderRadius: 10 }}
+                  className="btn btn-light btn-sm"
                   onClick={() => {
                     setSearchQuery("");
                     setSearchResults([]);
@@ -162,28 +141,12 @@ export default function TopBar() {
 
               <div className="d-flex flex-column gap-2">
                 {searchResults.length === 0 ? (
-                  <div
-                    style={{
-                      padding: "16px",
-                      textAlign: "center",
-                      color: "var(--text-secondary)",
-                      fontSize: 14,
-                    }}
-                  >
-                    No results
-                  </div>
+                  <div className="no-results">No results</div>
                 ) : (
                   searchResults.map((item) => (
                     <div
                       key={item.id}
-                      className="list-group-item d-flex align-items-center gap-2 rounded-3"
-                      style={{
-                        cursor: "pointer",
-                        padding: "10px 12px",
-                        background: "var(--bg-paper)",
-                        color: "var(--text-primary)",
-                        border: "1px solid var(--border-color)"
-                      }}
+                      className="search-result-item"
                       onClick={() => handleSearchOpen(item)}
                     >
                       <span style={{ fontSize: 18 }}>
@@ -199,7 +162,7 @@ export default function TopBar() {
         </div>
 
         {/* Right: Actions & Profile */}
-        <div className="dashboard-top-right d-flex align-items-center gap-3">
+        <div className="dashboard-top-right">
           <ThemeToggle />
 
           <UserMenu
@@ -219,7 +182,6 @@ export default function TopBar() {
         </div>
       </header>
 
-      {/* ✅ Modals are now OUTSIDE the header to prevent z-index/clipping issues */}
       <EditUserModal
         show={isEditUserOpen}
         onClose={() => setIsEditUserOpen(false)}

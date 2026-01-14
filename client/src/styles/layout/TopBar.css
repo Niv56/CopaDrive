@@ -1,98 +1,73 @@
-/* TopBar.css - Force Glass Effect */
+/* TopBar.css */
 
 :root {
   --topbar-height: 70px;
-  --brand-blue: #0d6efd;
 }
 
 .dashboard-top {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   height: var(--topbar-height);
+  width: 100%;
+  
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   
-  /* ✅ FORCE GLASS: שימוש ב-important כדי לדרוס רקעים קודמים */
-  background: rgba(255, 255, 255, 0.65) !important;
+  /* ✅ שימוש במשתנה האחיד - מבטיח זהות ל-SideBar */
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
   
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: all 0.3s ease;
+  /* ביטול הגבול התחתון לחיבור מושלם */
+  border-bottom: none !important;
+  box-shadow: none !important;
+  
+  transition: background 0.3s ease;
 }
 
-/* Dark Mode Override */
 [data-theme="dark"] .dashboard-top {
-  background: rgba(30, 30, 30, 0.65) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  /* שימוש באותו משתנה בדיוק */
+  background: var(--glass-bg) !important;
+  border-bottom: none !important;
+}/* ... שאר הקוד ב-TopBar.css ... */
+
+/* ✅ עיצוב כפתור ה-Log out (Danger) */
+.user-dropdown-item.danger {
+  color: #dc3545; /* צבע טקסט אדום כברירת מחדל */
 }
 
-/* --- Left Section --- */
-.dashboard-top-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 240px;
-}
-
-.app-logo {
-  height: 40px;
-  width: auto;
-}
-
-.app-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #0b2b38;
-  margin: 0;
-}
-
-[data-theme="dark"] .app-title {
-  color: #e8eaed;
-}
-
-/* --- Search Bar Styling --- */
-.dashboard-top-center {
-  flex: 1;
-  max-width: 600px;
-  margin: 0 20px;
-  position: relative;
-}
-
-.dashboard-search {
-  width: 100%;
-  height: 46px;
-  border-radius: 99px !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
+.user-dropdown-item.danger:hover {
+  /* ✅ רקע אדום שקוף ועדין בריחוף */
+  background-color: rgba(220, 53, 69, 0.12) !important;
   
-  /* שקוף למחצה כדי שישתלב */
-  background: rgba(255, 255, 255, 0.4) !important; 
-  padding: 0 20px;
-  font-size: 15px;
-  transition: all 0.2s ease;
+  /* אדום טיפה כהה יותר לקריאות */
+  color: #b02a37 !important; 
 }
-
-.dashboard-search:focus {
-  background: #fff !important;
-  border-color: var(--brand-blue) !important;
-  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15) !important;
-  outline: none;
-}
-
-[data-theme="dark"] .dashboard-search {
-  background: rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(255,255,255,0.1) !important;
-  color: white;
-}
-
-/* --- Right Section --- */
-.dashboard-top-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+/* שאר האלמנטים (לוגו, חיפוש) ללא שינוי... */
+.dashboard-top-left { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.app-logo { height: 40px; width: auto; }
+.app-title { font-size: 22px; font-weight: 700; margin: 0; color: var(--text-primary); }
+.dashboard-top-center { flex: 1; display: flex; justify-content: center; padding: 0 20px; }
+.search-wrapper { position: relative; width: 100%; max-width: 700px; }
+.search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #666; pointer-events: none; z-index: 2; }
+[data-theme="dark"] .search-icon { color: #ccc; }
+.dashboard-search { width: 100%; height: 48px; border-radius: 24px; padding: 0 20px 0 52px; font-size: 16px; border: 1px solid rgba(0,0,0,0.1) !important; background-color: #f0f4f8 !important; color: var(--text-primary); transition: all 0.2s ease; }
+.dashboard-search:focus { background-color: #ffffff !important; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: transparent !important; outline: none; }
+[data-theme="dark"] .dashboard-search { background-color: rgba(255, 255, 255, 0.1) !important; border-color: rgba(255, 255, 255, 0.1) !important; color: #fff; }
+[data-theme="dark"] .dashboard-search:focus { background-color: #303030 !important; }
+.dashboard-top-right { display: flex; align-items: center; gap: 16px; min-width: 220px; justify-content: flex-end; }
+/* User Menu Pill */
+.user-menu { position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; background-color: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.05); padding: 4px 6px 4px 16px; border-radius: 32px; transition: background 0.2s ease, box-shadow 0.2s ease; }
+.user-menu:hover { background-color: rgba(0, 0, 0, 0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+[data-theme="dark"] .user-menu { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.1); }
+[data-theme="dark"] .user-menu:hover { background-color: rgba(255, 255, 255, 0.15); }
+/* Dropdowns... (same as before) */
+.search-dropdown-results { position: absolute; top: 110%; left: 0; right: 0; background: var(--bg-paper); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; max-height: 300px; overflow-y: auto; }
+.user-dropdown { position: absolute; top: 60px; right: 0; width: 240px; background: var(--bg-paper); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 8px; z-index: 1000; }
+.user-dropdown-email { padding: 8px 12px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
+.user-dropdown-item { display: flex; align-items: center; gap: 16px; width: 100%; padding: 10px 12px; background: transparent; border: none; text-align: left; font-size: 14px; font-weight: 500; color: var(--text-primary); cursor: pointer; border-radius: 8px; transition: background 0.2s; }
+.user-dropdown-item:hover { background-color: var(--hover-bg); }
+.user-dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
