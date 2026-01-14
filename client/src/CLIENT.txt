@@ -2129,10 +2129,11 @@ import CreateItem from "../widgets/CreateItem";
  */
 function MainArea({ activeView, onChangeView }) {
   
-  // Handlers for global item creation
+  // ׳₪׳•׳ ׳§׳¦׳™׳” ׳©׳׳¨׳¢׳ ׳ ׳× ׳׳× ׳›׳ ׳”׳׳¢׳¨׳›׳× ׳›׳©׳”׳›׳₪׳×׳•׳¨ ׳”׳’׳׳•׳‘׳׳™ ׳™׳•׳¦׳¨ ׳§׳•׳‘׳¥
   const handleItemCreated = () => {
-    // Dispatches a global event that MyDrive.jsx listens for to trigger a refresh
-    window.dispatchEvent(new CustomEvent("refresh-mydrive"));
+    // ׳©׳•׳׳— ׳׳™׳¨׳•׳¢׳™׳ ׳©׳’׳ ׳”-Home ׳•׳’׳ ׳”-MyDrive ׳׳׳–׳™׳ ׳™׳ ׳׳”׳
+    window.dispatchEvent(new Event("reset-home"));
+    window.dispatchEvent(new Event("refresh-mydrive"));
   };
 
   return (
@@ -2155,8 +2156,14 @@ function MainArea({ activeView, onChangeView }) {
         <StorageView onChangeView={onChangeView} />
       )}
 
-      {/* Global Create button from your logic flow */}
-      <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
+      {/* ג… ׳”׳›׳₪׳×׳•׳¨ ׳”׳’׳׳•׳‘׳׳™ 
+          ׳׳ ׳—׳ ׳• ׳׳¦׳™׳’׳™׳ ׳׳•׳×׳• ׳‘׳›׳ ׳”׳¢׳׳•׳“׳™׳ **׳—׳•׳¥** ׳-MyDrive.
+          ׳׳׳”? ׳›׳™ MyDrive ׳׳ ׳”׳ ׳›׳₪׳×׳•׳¨ ׳׳©׳׳• ׳©׳™׳•׳“׳¢ ׳׳™׳¦׳•׳¨ ׳§׳‘׳¦׳™׳ ׳‘׳×׳•׳ ׳×׳™׳§׳™׳•׳× ׳¡׳₪׳¦׳™׳₪׳™׳•׳×.
+          ׳‘׳›׳ ׳©׳׳¨ ׳”׳¢׳׳•׳“׳™׳ (Home, Starred, ׳•׳›׳•') ׳”׳›׳₪׳×׳•׳¨ ׳™׳™׳¦׳•׳¨ ׳‘׳×׳™׳§׳™׳™׳” ׳”׳¨׳׳©׳™׳×.
+      */}
+      {activeView !== "mydrive" && (
+        <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
+      )}
     </main>
   );
 }
@@ -2549,6 +2556,7 @@ export default function TopBar() {
   );
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\PermissionAddSection.jsx =====
+import React, { useMemo, useState } from "react";
 import { addPermission, findUserByEmail } from "../../api/permissionsApi";
 import { getCurrentUser } from "../../api/filesApi";
 
@@ -2601,36 +2609,65 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
     return (
         <div className="mb-4">
             <div className="perm-section-title mb-2">Share with people</div>
-            <form onSubmit={onSearch} className="d-flex gap-2">
-                <input 
-                    className="form-control" 
-                    placeholder="Enter user email..." 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                />
-                <button className="btn btn-primary" type="submit" disabled={loading}>Search</button>
-            </form>
+<form onSubmit={onSearch} className="d-flex gap-2">
+    <input 
+        className="dashboard-search w-100" // ׳©׳™׳׳•׳© ׳‘-class ׳©׳ ׳”-TopBar
+        placeholder="Enter user email..." 
+        style={{ height: '40px' }}
+        value={email} 
+        onChange={(e) => setEmail(e.target.value)}
+        disabled={loading}
+    />
+    <button className="btn btn-primary px-3" type="submit" disabled={loading}>
+        {loading ? '...' : 'Search'}
+    </button>
+</form>
             {foundUser && (
-                <div className="perm-profile-row mt-3 d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-2">
-                        <div className="perm-avatar">{avatarUrl ? <img src={avatarUrl} alt="av" /> : displayName[0]}</div>
-                        <div>{displayName}</div>
-                    </div>
-                    <button className="btn btn-success btn-sm" onClick={onShare}>Share</button>
-                </div>
-            )}
+    <div className="perm-profile-row mt-3">
+        <div className="perm-profile-left d-flex align-items-center gap-3">
+            {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ ׳‘׳¢׳™׳¦׳•׳‘ ׳¢׳’׳•׳ ׳•׳×׳•׳׳ */}
+            <div className="perm-avatar">
+                {avatarUrl ? (
+                    <img className="perm-avatar-img" src={avatarUrl} alt="avatar" />
+                ) : (
+                    <span>{displayName[0]?.toUpperCase()}</span>
+                )}
+            </div>
+
+            {/* ׳˜׳§׳¡׳˜: ׳©׳ ׳•׳׳™׳׳™׳™׳ */}
+            <div className="perm-profile-text">
+                <div className="perm-profile-name">{displayName}</div>
+                <div className="perm-profile-email">{foundUser.email}</div>
+            </div>
+        </div>
+
+        {/* ׳›׳₪׳×׳•׳¨ ׳”׳©׳™׳×׳•׳£ ׳‘׳¦׳“ ׳™׳׳™׳ */}
+        <button 
+            className="btn btn-success btn-sm px-3" 
+            onClick={onShare} 
+            disabled={loading}
+            style={{ borderRadius: '20px', fontWeight: '600' }}
+        >
+            Share
+        </button>
+    </div>
+)}
             {error && <div className="text-danger small mt-2">{error}</div>}
         </div>
     );
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\PermissionListSection.jsx =====
+import React, { useEffect, useState } from "react";
 import { 
     getPermissions, 
     deletePermission, 
     togglePermissionRole 
 } from "../../api/permissionsApi";
-import { getCurrentUser } from "../../api/filesApi";
+import { getCurrentUser } from "../../api/filesApi"; 
+import PermissionRow from "./PermissionRow";
+
+// ׳’ֵ“ג€¦ ׳™׳™׳‘׳•׳ ׳”-CSS ׳׳”׳×׳™׳§׳™׳™׳” ׳”׳׳¨׳•׳›׳–׳× ׳©׳ ׳”׳•׳•׳™׳“׳’'׳˜׳™׳
+import "../../../../styles/widgets/Permissions.css";
 
 export default function PermissionListSection({ fileId, isOwner, myUserId, ownerId, refreshTrigger }) {
     const [loading, setLoading] = useState(true);
@@ -2642,22 +2679,36 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             setLoading(true);
             const data = await getPermissions(fileId);
             
-            // ׳©׳׳™׳₪׳× ׳ ׳×׳•׳ ׳™׳ ׳׳•׳¢׳©׳¨׳™׳ (׳©׳׳•׳× ׳•׳×׳׳•׳ ׳•׳×) ׳¢׳‘׳•׳¨ ׳›׳ ׳”׳¨׳©׳׳”
             const enriched = await Promise.all(data.permissions.map(async (perm) => {
                 try {
-                    const user = await getUserById(perm.userId);
-                    return { ...perm, ...user };
-                } catch { return perm; }
+                    const user = await getCurrentUser(perm.userId); 
+                    
+                    // ׳’ֵ“ג€¦ ׳–׳™׳”׳•׳™ Owner: ׳”׳©׳•׳•׳׳” ׳‘׳™׳ ׳”-ID ׳©׳ ׳”׳”׳¨׳©׳׳” ׳׳‘׳¢׳׳™׳ ׳”׳׳§׳•׳¨׳™ ׳©׳ ׳”׳§׳•׳‘׳¥
+                    const isActuallyOwner = String(perm.userId) === String(ownerId);
+                    
+                    return { 
+                        ...perm, 
+                        role: isActuallyOwner ? "owner" : perm.role, 
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email,
+                        image: user.image 
+                    };
+                } catch (err) {
+                    return perm; 
+                }
             }));
 
             setPermissions(enriched);
             if (data.myRole) setMyRole(data.myRole);
         } catch (e) {
-            console.error("Failed to load permissions");
-        } finally { setLoading(false); }
+            console.error("Failed to load permissions", e);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    useEffect(() => { load(); }, [fileId, refreshTrigger]);
+    useEffect(() => { load(); }, [fileId, refreshTrigger, ownerId]);
 
     const handleDelete = async (p) => {
         await deletePermission(fileId, p.id);
@@ -2670,40 +2721,43 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
     };
 
     return (
-        <div>
-            <div className="perm-section-title mb-3">Who has access</div>
-            {myRole && <div className="alert alert-info p-2 small">Your role: {myRole}</div>}
-            <div className="d-flex flex-column gap-2">
-                {permissions.map(p => (
-                    <PermissionRow 
-                        key={p.id} 
-                        permission={p} 
-                        canManage={isOwner} 
-                        onDelete={handleDelete}
-                        onToggle={handleToggle}
-                    />
-                ))}
+        <div className="perm-list-container">
+            <div className="perm-section-title">Who has access</div>
+            <div className="d-flex flex-column gap-2 mt-3">
+                {loading && permissions.length === 0 ? (
+                    <div className="text-center p-3 opacity-50">Loading...</div>
+                ) : (
+permissions.map(p => (
+    <PermissionRow 
+        key={p.id || p.userId} 
+        permission={p} 
+        // ׳”׳׳ ׳”׳ ׳™׳›׳•׳ ׳׳ ׳”׳ ׳׳—׳¨׳™׳, ׳׳‘׳ ׳׳ ׳׳× ׳”׳‘׳¢׳׳™׳ (׳”׳•׳ ׳×׳׳™׳“ Owner)
+        canManage={isOwner && p.role !== "owner"} 
+        onDelete={handleDelete}
+        onToggle={handleToggle}
+    />
+))
+                )}
             </div>
         </div>
     );
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\PermissionRow.jsx =====
-// client/src/components/Dashboard/permissions/PermissionRow.jsx
 import React from "react";
 
 const BASE_URL = "http://localhost:3000";
 
 export default function PermissionRow({ permission, canManage, onDelete, onToggle }) {
-    console.log("PermissionRow received:", permission);
+    // ׳’ֵ“ג€¦ ׳×׳™׳§׳•׳ ׳׳•׳’׳™: ׳”-Role ׳™׳™׳§׳‘׳¢ ׳›-Owner ׳׳ ׳”-ID ׳©׳ ׳”׳׳©׳×׳׳© ׳×׳•׳׳ ׳׳‘׳¢׳׳™׳ ׳”׳׳§׳•׳¨׳™ ׳©׳ ׳”׳§׳•׳‘׳¥
+    // ׳’׳ ׳׳ ׳‘׳˜׳¢׳•׳× ׳”׳’׳™׳¢ ׳׳”׳©׳¨׳× ׳›-"viewer" ׳‘׳¨׳©׳™׳׳× ׳”׳”׳¨׳©׳׳•׳×
+    const isOwner = permission.role === "owner";
+    const roleLabel = isOwner ? "Owner" : (permission.role || "viewer");
 
-    const role = (permission.role || "viewer").toLowerCase();
-    const isOwner = role === "owner";
-
-    // ׳‘׳ ׳™׳™׳× ׳©׳ ׳׳׳ ׳׳”׳ ׳×׳•׳ ׳™׳ ׳©׳ ׳©׳׳₪׳•
+    // ׳‘׳ ׳™׳™׳× ׳©׳ ׳׳׳ ׳׳”׳ ׳×׳•׳ ׳™׳ ׳”׳׳•׳¢׳©׳¨׳™׳
     const displayName = `${permission.firstName || ""} ${permission.lastName || ""}`.trim()
         || (permission.email ? permission.email.split('@')[0] : "User");
 
-    // ׳˜׳™׳₪׳•׳ ׳‘׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳
+    // ׳˜׳™׳₪׳•׳ ׳‘׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ (׳×׳׳™׳›׳” ׳‘-Base64, URL ׳׳׳ ׳׳• ׳ ׳×׳™׳‘ ׳™׳—׳¡׳™ ׳׳©׳¨׳×)
     const rawImg = permission.image || "";
     const avatarUrl = rawImg
         ? (rawImg.startsWith("data:") || rawImg.startsWith("http")
@@ -2713,21 +2767,27 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
 
     const initial = displayName[0]?.toUpperCase() || "?";
 
-    console.log("Display values:", { displayName, email: permission.email, avatarUrl, role, isOwner });
-
     return (
         <div className={`perm-profile-row ${isOwner ? 'is-owner' : ''}`}>
             <div className="perm-profile-left">
-                {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ */}
+                {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ ׳‘׳¢׳™׳¦׳•׳‘ Glass */}
                 <div className="perm-avatar">
                     {avatarUrl ? (
-                        <img className="perm-avatar-img" src={avatarUrl} alt="avatar" />
+                        <img 
+                            className="perm-avatar-img" 
+                            src={avatarUrl} 
+                            alt="avatar" 
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentNode.innerHTML = `<span>${initial}</span>`;
+                            }}
+                        />
                     ) : (
                         <span>{initial}</span>
                     )}
                 </div>
 
-                {/* ׳©׳ ׳•׳׳™׳׳™׳™׳ */}
+                {/* ׳₪׳¨׳˜׳™ ׳׳©׳×׳׳© */}
                 <div className="perm-profile-text">
                     <div className="perm-profile-name">
                         {displayName}
@@ -2739,34 +2799,37 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
                 </div>
             </div>
 
-            {/* ׳›׳₪׳×׳•׳¨׳™׳ ׳׳• ׳×׳¦׳•׳’׳× ׳”׳¨׳©׳׳” */}
             <div className="d-flex align-items-center gap-2">
                 {isOwner ? (
-                    /* ׳”׳‘׳¢׳׳™׳ ׳¨׳•׳׳” ׳¨׳§ ׳×׳’ owner ׳׳׳ ׳׳₪׳©׳¨׳•׳× ׳¢׳¨׳™׳›׳” */
-                    <span className="perm-role-owner">{role}</span>
-                ) : canManage ? (
-                    <>
-                        {/* ׳›׳₪׳×׳•׳¨ Toggle Role */}
-                        <button
-                            className="perm-role-toggle-btn"
-                            onClick={() => onToggle?.(permission)}
-                            title="Click to change role"
-                        >
-                            {role}
-                        </button>
-
-                        {/* ׳›׳₪׳×׳•׳¨ Delete */}
-                        <button
-                            className="perm-delete-text-btn"
-                            onClick={() => onDelete?.(permission)}
-                            title="Remove access"
-                        >
-                            Delete
-                        </button>
-                    </>
+                    /* ׳×׳¦׳•׳’׳× ׳‘׳¢׳׳™׳ ׳׳™׳•׳—׳“׳× */
+                    <span className="perm-role-owner">Owner</span>
                 ) : (
-                    /* ׳×׳¦׳•׳’׳” ׳‘׳׳‘׳“ ׳׳׳©׳×׳׳©׳™׳ ׳©׳׳™׳ ׳ ׳‘׳¢׳׳™׳ */
-                    <span className="perm-role-display">{role}</span>
+                    <>
+                        {canManage ? (
+                            <>
+                                {/* ׳›׳₪׳×׳•׳¨ Toggle Role ׳‘׳¢׳™׳¦׳•׳‘ ׳›׳₪׳×׳•׳¨׳™ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */}
+                                <button
+                                    className="perm-role-toggle-btn"
+                                    onClick={() => onToggle?.(permission)}
+                                    title="Click to change role"
+                                >
+                                    {permission.role || "viewer"}
+                                </button>
+
+                                {/* ׳›׳₪׳×׳•׳¨ ׳׳—׳™׳§׳” ׳‘׳¢׳™׳¦׳•׳‘ ׳׳“׳•׳ ׳¢׳“׳™׳ */}
+                                <button
+                                    className="perm-delete-text-btn"
+                                    onClick={() => onDelete?.(permission)}
+                                    title="Remove access"
+                                >
+                                    Delete
+                                </button>
+                            </>
+                        ) : (
+                            /* ׳×׳¦׳•׳’׳” ׳‘׳׳‘׳“ ׳׳׳©׳×׳×׳₪׳™׳ ׳׳—׳¨׳™׳ */
+                            <span className="perm-role-display">{permission.role || "viewer"}</span>
+                        )}
+                    </>
                 )}
             </div>
         </div>
@@ -2988,12 +3051,10 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\ShareModal\ShareModal.jsx =====
 import React, { useEffect, useMemo, useState } from "react";
-// ׳©׳™׳׳•׳© ׳‘׳ ׳×׳™׳‘ ׳”׳׳•׳—׳׳˜ ׳›׳₪׳™ ׳©׳¨׳׳™׳ ׳• ׳‘-MyDrive
-import { useAuth } from "app/providers/AuthContext";
+import { useAuth } from "app/providers/AuthContext"; // ׳©׳™׳׳•׳© ׳‘׳ ׳×׳™׳‘ ׳׳•׳—׳׳˜
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
 import "../permissions/Permissions.css";
-
 function decodeUserId(token) {
     try {
         const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
@@ -3114,7 +3175,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
-import CreateItem from "features/drive/widgets/CreateItem";
+// CreateItem ׳”׳•׳¡׳¨ ׳׳›׳׳ ׳›׳™ ׳”׳•׳ ׳׳’׳™׳¢ ׳-MainArea
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
@@ -3163,6 +3224,7 @@ export default function HomeView({ onChangeView }) {
 
   useEffect(() => {
     loadAll();
+    // ׳׳׳–׳™׳ ׳׳׳™׳¨׳•׳¢ ׳’׳׳•׳‘׳׳™ (׳©׳”׳›׳₪׳×׳•׳¨ ׳‘-MainArea ׳™׳©׳׳—)
     window.addEventListener("reset-home", loadAll);
     return () => window.removeEventListener("reset-home", loadAll);
   }, [loadAll]);
@@ -3195,14 +3257,6 @@ export default function HomeView({ onChangeView }) {
     });
   };
 
-  const onCreated = async () => {
-    await loadAll();
-    window.dispatchEvent(new Event("reset-mydrive"));
-    window.dispatchEvent(new Event("reset-recent"));
-  };
-
-  // ג… LOADING BLOCK REMOVED
-
   return (
     <div className="mainarea">
       <div className="d-flex align-items-center justify-content-between mb-4">
@@ -3219,7 +3273,6 @@ export default function HomeView({ onChangeView }) {
         </div>
 
         {suggestedFolders.length === 0 ? (
-          /* ג… Empty State - Folder Icon */
           <div className="d-flex align-items-center justify-content-center py-4">
              <div className="d-flex align-items-center justify-content-center" 
                   style={{ 
@@ -3266,7 +3319,6 @@ export default function HomeView({ onChangeView }) {
         </div>
 
         {suggestedFiles.length === 0 ? (
-          /* ג… Empty State - File Icon */
           <div className="d-flex align-items-center justify-content-center py-4">
              <div className="d-flex align-items-center justify-content-center" 
                   style={{ 
@@ -3309,7 +3361,10 @@ export default function HomeView({ onChangeView }) {
       <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
         onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
       {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
-      <CreateItem currentFolderId={null} onItemCreated={onCreated} />
+      
+      {/* ג CreateItem ׳”׳•׳¡׳¨ ׳׳›׳׳ 
+         ׳”׳•׳ ׳™׳¨׳•׳ ׳“׳¨ ׳׳•׳˜׳•׳׳˜׳™׳× ׳¢"׳™ MainArea.jsx
+      */}
     </div>
   );
 }
@@ -4601,7 +4656,10 @@ import { encodeTextToBase64 } from "../../../shared/utils/base64Utils";
 // ׳×׳™׳§׳•׳ ׳ ׳×׳™׳‘: ׳¢׳•׳׳™׳ 3 ׳©׳׳‘׳™׳ ׳-src ׳•׳׳– ׳-styles
 import "../../../styles/widgets/CreateItem.css";
 
-// ׳™׳™׳‘׳•׳ ׳”׳§׳•׳׳₪׳•׳ ׳ ׳˜׳•׳× ׳”׳™׳©׳ ׳•׳× ׳׳”-Dashboard (׳©׳׳•׳© ׳§׳•׳׳•׳× ׳׳׳¢׳׳”)
+// ג… ׳™׳™׳‘׳•׳ ׳׳™׳™׳§׳•׳ ׳™׳ ׳׳׳’׳ ׳˜׳™׳™׳ ׳‘׳׳§׳•׳ ׳׳™׳׳•׳’'׳™׳
+import { FiFolderPlus, FiFileText, FiImage, FiUpload, FiPlus } from "react-icons/fi";
+
+// ׳™׳™׳‘׳•׳ ׳”׳§׳•׳׳₪׳•׳ ׳ ׳˜׳•׳× ׳”׳™׳©׳ ׳•׳× ׳׳”-Dashboard
 import FolderCreator from "../../../components/Dashboard/widgets/creation/FolderCreator";
 import TextFileCreator from "../../../components/Dashboard/widgets/creation/TextFileCreator";
 import FileImporter from "../../../components/Dashboard/widgets/creation/FileImporter";
@@ -4660,7 +4718,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         try {
             const typeForServer = modalType === "folder" ? "folder" : "file";
             
-            // ׳׳•׳’׳™׳§׳” ׳¢׳‘׳•׳¨ ׳©׳¨׳× ׳”-C++: ׳”׳–׳¨׳§׳× ׳×׳•׳›׳ ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳׳ ׳¨׳™׳§
             let rawContent = content;
             if (!rawContent || rawContent.trim() === "") {
                 rawContent = "no content";
@@ -4671,7 +4728,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
             const isTxtFile = name.toLowerCase().endsWith('.txt');
 
             if (modalType === "file" || isTxtFile) {
-                // ׳”׳—׳׳₪׳× ׳™׳¨׳™׳“׳•׳× ׳©׳•׳¨׳” ׳¢׳‘׳•׳¨ ׳₪׳¨׳•׳˜׳•׳§׳•׳ ׳”-TCP
                 finalContent = rawContent.replaceAll('\n', NEWLINE_PLACEHOLDER); 
                 finalMime = "text/plain";
             } 
@@ -4705,16 +4761,36 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     return (
         <>
-            <button className="fab" onClick={() => setMenuOpen(!menuOpen)} type="button">+</button>
+            <div className="fab-wrapper-unique">
+                {menuOpen && (
+                    <div className="fab-menu-unique">
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>
+                            <FiFolderPlus className="fab-new-item-icon" /> New folder
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("file"); setMenuOpen(false); }}>
+                            <FiFileText className="fab-new-item-icon" /> New file
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("image"); setMenuOpen(false); }}>
+                            <FiImage className="fab-new-item-icon" /> Upload Pic
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>
+                            <FiUpload className="fab-new-item-icon" /> Import File
+                        </button>
+                    </div>
+                )}
+                
+                <button 
+                    className={`fab-btn-unique ${menuOpen ? 'open' : ''}`} 
+                    onClick={() => setMenuOpen(!menuOpen)} 
+                    type="button"
+                >
+                    {/* ׳©׳™׳׳•׳© ׳‘׳׳™׳™׳§׳•׳ ׳₪׳׳•׳¡ ׳•׳§׳˜׳•׳¨׳™ ׳—׳“ ׳•׳׳“׳•׳™׳§ */}
+                    <FiPlus className="fab-plus-icon" />
+                    <span className="fab-label-text">Add New</span>
+                </button>
+            </div>
 
-            {menuOpen && (
-                <div className="fab-menu">
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>נ“ New folder</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("file"); setMenuOpen(false); }}>נ“„ New file</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("image"); setMenuOpen(false); }}>נ–¼ן¸ Upload Pic</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>נ“¥ Import File</button>
-                </div>
-            )}
+            {menuOpen && <div className="fab-backdrop-unique" onClick={() => setMenuOpen(false)}></div>}
 
             {modalType && (
                 <div className="modal-overlay" onClick={closeModal}>
@@ -7630,13 +7706,208 @@ body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,
   border: 1px solid var(--border-color);
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\CreateItem.css =====
+/* --- FAB Container (Unique Name) --- */
+.fab-wrapper-unique {
+    position: fixed;
+    bottom: 35px;
+    right: 35px;
+    z-index: 990;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    pointer-events: none;
+    background: transparent !important;
+}
+
+.fab-wrapper-unique > * {
+    pointer-events: auto;
+}
+
+/* --- Main Button Styling (Unique Name) --- */
+.fab-btn-unique {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: #ffffff !important;
+    
+    /* Nuclear Reset */
+    border: 0 solid transparent !important;
+    outline: 0 !important;
+    appearance: none !important;
+    text-decoration: none !important;
+    
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35) !important;
+    
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+}
+
+/* Reset Focus/Active */
+.fab-btn-unique:focus, 
+.fab-btn-unique:active, 
+.fab-btn-unique:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35) !important; 
+}
+
+/* Remove Pseudo Elements */
+.fab-btn-unique::before,
+.fab-btn-unique::after {
+    display: none !important;
+    content: "" !important;
+}
+
+/* --- Hover State (Only when NOT open) --- */
+.fab-btn-unique:not(.open):hover {
+    min-width: 150px;
+    padding: 0 24px;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(13, 110, 253, 0.45) !important;
+}
+
+.fab-btn-unique:not(.open):hover .fab-label-text {
+    opacity: 1;
+    max-width: 100px;
+    margin-left: 10px;
+    transition-delay: 0.05s;
+}
+
+/* --- Active Click --- */
+.fab-btn-unique:active {
+    transform: scale(0.95);
+    box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3) !important;
+}
+
+/* --- OPEN STATE (Red X) --- */
+.fab-btn-unique.open {
+    background: #dc3545 !important;
+    min-width: 60px !important;
+    width: 60px !important;
+    height: 60px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    transform: rotate(135deg);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* Locked Open State (Hover) */
+.fab-btn-unique.open:hover, 
+.fab-btn-unique.open:focus {
+    background: #c82333 !important;
+    min-width: 60px !important;
+    padding: 0 !important;
+    transform: rotate(135deg) scale(1.05);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.6) !important;
+}
+
+.fab-btn-unique.open .fab-label-text {
+    display: none !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+}
+
+/* --- Elements Inside --- */
+.fab-plus-icon {
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 2px;
+    color: #ffffff !important;
+    flex-shrink: 0;
+}
+
+.fab-label-text {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    max-width: 0;
+    margin-left: 0;
+    transition: all 0.2s ease;
+    color: #ffffff !important;
+    overflow: hidden;
+}
+
+/* --- Menu Styling (Unique) --- */
+.fab-menu-unique {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    animation: slideInUp 0.2s ease-out;
+}
+
+.fab-menu-item-unique {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    min-width: 160px;
+    text-align: left;
+    white-space: nowrap;
+    outline: none !important;
+    text-decoration: none !important;
+}
+
+.fab-menu-item-unique:hover {
+    transform: translateX(-5px);
+    background: #f8f9fa;
+    color: #0d6efd;
+    border-color: rgba(13, 110, 253, 0.2);
+}
+
+.fab-icon-unique {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+/* --- Backdrop --- */
+.fab-backdrop-unique {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 980;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(2px);
+}
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal styling kept same */
 .modal-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-
 .share-btn {
   border: none;
   background: transparent;
@@ -7647,15 +7918,9 @@ body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,
   color: var(--text-secondary);
   transition: opacity 0.2s ease, color 0.2s ease;
 }
-
 .share-btn:hover {
   opacity: 1;
   color: var(--text-primary);
-}
-
-.share-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\FileListItem.css =====
 /* FileListItem.css */
@@ -7757,6 +8022,142 @@ body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,
 .fli-owner { display: flex; align-items: center; gap: 8px; }
 .fli-owner-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
 .fli-owner-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\Permissions.css =====
+/* Permissions.css - ׳¢׳™׳¦׳•׳‘ ׳׳•׳×׳׳ ׳׳™׳©׳™׳× ׳׳©׳׳¨ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */
+
+.perm-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.perm-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: var(--text-shadow-global);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+/* ׳©׳•׳¨׳” ׳‘׳¡׳’׳ ׳•׳ FileListItem */
+.perm-profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-radius: 16px;
+    
+    /* ׳׳₪׳§׳˜ ׳”׳–׳›׳•׳›׳™׳× ׳”׳׳“׳•׳™׳§ ׳׳”-SideBar ׳•׳”-TopBar */
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+    
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .perm-profile-row {
+    background: rgba(30, 30, 30, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.perm-profile-row:hover {
+    background: rgba(255, 255, 255, 0.7) !important;
+    transform: translateX(4px);
+}
+
+/* ׳©׳•׳¨׳× ׳‘׳¢׳׳™׳ - ׳”׳“׳’׳©׳” ׳׳•׳–׳”׳‘׳× ׳¢׳“׳™׳ ׳” */
+.perm-profile-row.is-owner {
+    border-right: 4px solid #ffd54f !important;
+    background: rgba(255, 213, 79, 0.1) !important;
+}
+
+.perm-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--hover-bg);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.perm-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.perm-profile-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.perm-profile-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* ׳¢׳™׳¦׳•׳‘ ׳”-Owner Badge */
+.owner-badge {
+    background: #ffd54f;
+    color: #000;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+/* ׳›׳₪׳×׳•׳¨׳™ ׳₪׳¢׳•׳׳” ׳‘׳¡׳’׳ ׳•׳ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */
+.perm-role-toggle-btn {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: capitalize;
+}
+
+.perm-role-toggle-btn:hover {
+    background: var(--bg-paper);
+}
+
+.perm-delete-text-btn {
+    color: #ef4444;
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 4px;
+}
+
+.perm-delete-text-btn:hover {
+    text-decoration: underline;
+}
+
+.perm-role-display {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+    padding-right: 10px;
+}
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\StorageIndicator.css =====
 .storage-box {
   padding: 16px 12px;
