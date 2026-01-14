@@ -17,7 +17,7 @@ const ensureArray = (v) => Array.isArray(v) ? v : [];
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   let currentId = fileId;
   let highestRoleFound = null;
-  
+
   while (currentId !== null) {
     const item = fileRepository.findById(currentId);
     if (!item) break;
@@ -29,7 +29,7 @@ const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
 
     const permissions = permissionRepository.findByFileId(currentId) || [];
     const userPerm = permissions.find(p => p.userId === userId);
-    
+
     if (userPerm) {
       if (userPerm.role === 'editor') return true;
       if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
@@ -74,7 +74,7 @@ const collectSubtreeIds = (rootId) => {
     if (visited.has(currentId)) continue;
     visited.add(currentId);
     ids.push(currentId);
-    const children = fileRepository.findByParent(currentId) || []; 
+    const children = fileRepository.findByParent(currentId) || [];
     for (const child of children) stack.push(child.id);
   }
   return ids;
@@ -98,7 +98,7 @@ const decorateFlagsForUser = (item, userId) => {
   const starredBy = ensureArray(item.starredBy);
   const importantBy = ensureArray(item.importantBy);
   const trashedBy = ensureArray(item.trashedBy);
-  
+
   const trashed = trashedBy.includes(userId);
   const trashedAt = trashed ? getTrashedAtForUser(item, userId) : null;
 
@@ -134,7 +134,7 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
   const ownedRoots = fileRepository.findByParent(null, userId);
   const userPermissions = permissionRepository.findByUserId(userId) || [];
   const sharedRoots = userPermissions.map(perm => fileRepository.findById(perm.fileId)).filter(Boolean);
-  
+
   const roots = [...ownedRoots];
   for (const item of sharedRoots) {
     const already = roots.some(r => r.id === item.id);
@@ -216,10 +216,10 @@ const createItem = async (ownerId, payload) => {
     blockedBy: []
   });
 
-  try { 
-    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner"); 
+  try {
+    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
   } catch (_) { }
-  
+
   return created;
 };
 
@@ -243,7 +243,7 @@ const updateItem = async (userId, id, patch) => {
   }
 
   if (patch.mimeType !== undefined) updates.mimeType = patch.mimeType;
-  
+
   if (patch.name !== undefined) {
     const trimmed = patch.name.trim();
     if (trimmed === '') throw { status: 400, message: 'Name must be a non-empty string' };
@@ -295,23 +295,41 @@ const deleteItem = async (userId, id) => {
 
 const deleteForever = async (userId, id) => {
   const item = fileRepository.findById(id);
-  if (!item || !isTrashedForUser(item, userId)) throw { status: 409, message: 'Item not found or not in trash' };
+
+  // תיקון 1: אם הפריט לא קיים, פשוט נחזיר הצלחה (הוא כנראה נמחק כבר ע"י מחיקת תיקיית האב שלו)
+  if (!item) return { id };
+
+  // בדיקה אם הפריט אכן נמצא בפח של המשתמש הספציפי
+  if (!isTrashedForUser(item, userId)) {
+    throw { status: 409, message: 'Item not found in your trash' };
+  }
 
   if (item.ownerId !== userId) {
-    await setTrashed(userId, id, false);
+    // לוגיקה למשתמש שאינו הבעלים: חסימה רקורסיבית
+    const ids = item.type === 'folder' ? collectSubtreeIds(id) : [id];
 
-    const blockedBy = ensureArray(item.blockedBy);
-    if (!blockedBy.includes(userId)) {
-      fileRepository.update(id, { blockedBy: [...blockedBy, userId] });
-    }
+    for (const dId of ids) {
+      const target = fileRepository.findById(dId);
+      if (!target) continue;
 
-    const myPermission = (permissionRepository.findByFileId(id) || []).find(p => p.userId === userId);
-    if (myPermission) {
-      permissionRepository.remove(myPermission.id);
+      // תיקון 2: עדכון ישיר של הדאטה-בייס ללא קריאה ל-setTrashed (כדי לעקוף בדיקת הרשאות מיותרת במחיקה)
+      const trashedBy = ensureArray(target.trashedBy).filter(x => x !== userId);
+      const trashedAtBy = { ...(target.trashedAtBy || {}) };
+      delete trashedAtBy[userId];
+
+      const blockedBy = [...new Set([...ensureArray(target.blockedBy), userId])];
+
+      fileRepository.update(dId, { trashedBy, trashedAtBy, blockedBy });
+
+      const myPermission = (permissionRepository.findByFileId(dId) || []).find(p => p.userId === userId);
+      if (myPermission) {
+        permissionRepository.remove(myPermission.id);
+      }
     }
     return { id };
   }
 
+  // לוגיקה לבעלים (Owner): מחיקה פיזית מהשרת
   const ids = item.type === 'folder' ? collectSubtreeIds(id).reverse() : [id];
   for (const dId of ids) {
     const target = fileRepository.findById(dId);
@@ -330,7 +348,16 @@ const deleteForever = async (userId, id) => {
 
 const emptyTrash = async (userId) => {
   const items = await listTrash(userId);
-  for (const it of items) await deleteForever(userId, it.id);
+
+  // תיקון 3: שימוש ב-Promise.allSettled או לולאה חסינה כדי ששגיאה בפריט אחד לא תעצור את כל התהליך
+  for (const it of items) {
+    try {
+      await deleteForever(userId, it.id);
+    } catch (err) {
+      console.error(`Failed to delete item ${it.id} during empty trash:`, err.message);
+      // ממשיכים לפריט הבא גם אם אחד נכשל
+    }
+  }
   return { ok: true };
 };
 
@@ -383,15 +410,15 @@ module.exports = {
   deleteItem,
   deleteForever,
   emptyTrash,
-  
+
   searchItems: async (userId, query) => {
     const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
     let contentMatchIds = [];
-    try { 
-      const response = await sendTcpCommand(`SEARCH ${query}`); 
-      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0); 
+    try {
+      const response = await sendTcpCommand(`SEARCH ${query}`);
+      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
     } catch (_) { }
-    
+
     const contentMatches = contentMatchIds.map(id => fileRepository.findById(id)).filter(f => f && !isTrashedForUser(f, userId));
     const unique = Array.from(new Map([...nameMatches, ...contentMatches].map(i => [i.id, i])).values());
     return decorateListForUser(unique, userId).filter(i => !i.trashed);
@@ -401,7 +428,7 @@ module.exports = {
   setImportant: async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important),
   listStarred: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.starred),
   listImportant: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.important),
-  
+
   setTrashed,
   listTrash,
   getOwnedStorageUsage,
