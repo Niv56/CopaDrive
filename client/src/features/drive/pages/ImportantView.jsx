@@ -7,13 +7,13 @@ import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import { FiAlertCircle } from "react-icons/fi";
 
 function ImportantView({ onChangeView }) {
   const [items, setItems] = useState([]);
-  // Loading state exists internally
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -39,7 +39,19 @@ function ImportantView({ onChangeView }) {
     finally { setLoading(false); }
   }, []);
 
-  const { sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete } = useFileActions(myUserId, loadData);
+  // ✅ Destructuring כולל את פונקציות העריכה
+  const { 
+    sharingItem, setSharingItem, 
+    openedFile, setOpenedFile, 
+    editingFile, setEditingFile, 
+    openedRole, 
+    handleOpen, 
+    handleToggleStar, 
+    handleToggleImportant, 
+    handleEdit, 
+    handleSaveEdit, 
+    handleDelete 
+  } = useFileActions(myUserId, loadData);
 
   useEffect(() => { loadData(); }, [loadData]);
   const ownersMap = useOwnersMap(items);
@@ -80,7 +92,6 @@ function ImportantView({ onChangeView }) {
       </div>
 
       {items.length === 0 ? (
-         /* ✅ Empty State - Glass Alert Icon */
          <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
            <div className="d-flex align-items-center justify-content-center" 
                 style={{ 
@@ -118,7 +129,7 @@ function ImportantView({ onChangeView }) {
                   dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                   onOpen={openFromImportant} onShare={setSharingItem}
                   onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant}
-                  onDelete={handleDelete} onEdit={() => alert("Edit to be implemented")}
+                  onDelete={handleDelete} onEdit={handleEdit} // ✅ חיבור עריכה
                 />
               ))}
           </div>
@@ -135,8 +146,34 @@ function ImportantView({ onChangeView }) {
         </div>
       )}
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar} 
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit} // ✅ חיבור עריכה למודל צפייה
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+      />
+
+      {/* ✅ מודל העריכה */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={[]} // בדף זה אין לנו את עץ התיקיות המלא, אז מעבירים ריק
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>

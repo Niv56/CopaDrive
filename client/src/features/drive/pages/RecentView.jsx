@@ -8,13 +8,13 @@ import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import { FiClock } from "react-icons/fi";
 
 function RecentView() {
   const [recentFiles, setRecentFiles] = useState([]);
-  // Loading state exists for logic but won't block UI rendering
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
   const { viewMode } = useViewMode();
@@ -40,7 +40,19 @@ function RecentView() {
     }
   }, []);
 
-  const { sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete } = useFileActions(myUserId, loadRecent);
+  // ✅ Destructuring כולל פונקציות עריכה
+  const { 
+    sharingItem, setSharingItem, 
+    openedFile, setOpenedFile, 
+    editingFile, setEditingFile,
+    openedRole, 
+    handleOpen, 
+    handleToggleStar, 
+    handleToggleImportant, 
+    handleDelete,
+    handleEdit,     // ✅
+    handleSaveEdit  // ✅
+  } = useFileActions(myUserId, loadRecent);
 
   useEffect(() => {
     loadRecent();
@@ -74,7 +86,6 @@ function RecentView() {
       </div>
 
       {recentFiles.length === 0 ? (
-        /* ✅ Empty State - Glass Clock Icon */
         <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
              <div className="d-flex align-items-center justify-content-center" 
                   style={{ 
@@ -102,7 +113,8 @@ function RecentView() {
               <FileListItem key={item.id} item={item} ownerLabel={getOwnerLabel(item)} ownerAvatar={getOwnerAvatar(item)}
                 dateLabel={dateLabelForRecent(item)} onOpen={handleOpen} onShare={setSharingItem}
                 onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onDelete={handleDelete}
-                onEdit={() => alert("Edit to be implemented")} />
+                onEdit={handleEdit} // ✅ מחובר לפונקציה האמיתית
+              />
             ))}
           </div>
         </>
@@ -115,8 +127,35 @@ function RecentView() {
         </div>
       )}
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit} // ✅
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+      />
+
+      {/* ✅ מודל העריכה */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={[]} // Recent files don't show folder structure for move
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </div>
   );
