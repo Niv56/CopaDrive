@@ -11,7 +11,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
-
+import { formatBytes } from "shared/utils/formatBytes";
 function MyDrive() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,10 +52,16 @@ function MyDrive() {
     return () => window.removeEventListener("refresh-mydrive", loadFiles);
   }, [loadFiles]);
 
-  const currentItems = useMemo(
-    () => allFiles.filter((f) => f.parentId === currentFolderId),
-    [allFiles, currentFolderId]
-  );
+const currentItems = useMemo(() => {
+  return allFiles.filter((f) => {
+    if (currentFolderId) {
+      return f.parentId === currentFolderId;
+    }
+    // קובץ יוצג ב-Root אם האבא שלו הוא null או אם האבא שלו לא נמצא ברשימת הקבצים שיש לי גישה אליהם
+    const parentIsAccessible = allFiles.some(other => other.id === f.parentId);
+    return f.parentId === null || !parentIsAccessible;
+  });
+}, [allFiles, currentFolderId]);
 
   const currentFolder = useMemo(
     () => allFiles.find((f) => f.id === currentFolderId),
@@ -146,19 +152,22 @@ function MyDrive() {
             <div style={{ width: "100px" }} />
           </div>
           <div className="files-container">
-            {currentItems.map((item) => (
-              <FileListItem
-                key={item.id} item={item}
-                ownerLabel={getOwnerLabel(item)}
-                ownerAvatar={getOwnerAvatar(item)}
-                dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
-                onOpen={openInsideMyDrive}
-                onShare={setSharingItem}
-                onToggleStar={handleToggleStar}
-                onToggleImportant={handleToggleImportant}
-                onDelete={handleDelete}
-              />
-            ))}
+          {currentItems.map((item) => (
+            <FileListItem
+              key={item.id}
+              item={item}
+              ownerLabel={getOwnerLabel(item)}
+              ownerAvatar={getOwnerAvatar(item)}
+              dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+              // הוסף את השורה הזו:
+              sizeLabel={item.type === "folder" ? "—" : formatBytes(item.sizeBytes ?? 0)}
+              onOpen={openInsideMyDrive}
+              onShare={setSharingItem}
+              onToggleStar={handleToggleStar}
+              onToggleImportant={handleToggleImportant}
+              onDelete={handleDelete}
+            />
+          ))}
           </div>
         </>
       ) : (

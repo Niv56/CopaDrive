@@ -67,10 +67,25 @@ function SharedView() {
     loadFiles();
   }, []);
 
-  const displayItems = useMemo(() => {
-    if (!selectedOwnerId) return [];
-    return allFiles.filter((f) => f.ownerId === selectedOwnerId && f.parentId === currentFolderId);
-  }, [allFiles, selectedOwnerId, currentFolderId]);
+const displayItems = useMemo(() => {
+  if (!selectedOwnerId) return [];
+
+  return allFiles.filter((f) => {
+    // 1. חייב להיות שייך לבעלים שנבחר
+    if (f.ownerId !== selectedOwnerId) return false;
+
+    // 2. אם אנחנו בתוך תיקייה ששותפה איתנו, הצג רק את הילדים שלה
+    if (currentFolderId) {
+      return f.parentId === currentFolderId;
+    }
+
+    // 3. אם אנחנו בשורש של "Shared with me" (תצוגת הבעלים):
+    // הצג קבצים ששותפו איתי ישירות (מופיעים ב-permissions) 
+    // או קבצים שהאבא שלהם לא נמצא ברשימת המשותפים שלי
+    const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
+    return !parentIsAlsoShared;
+  });
+}, [allFiles, selectedOwnerId, currentFolderId]);
 
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 

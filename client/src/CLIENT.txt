@@ -2584,6 +2584,7 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
         e?.preventDefault?.();
         if (!isOwner || !email.trim()) return;
         setError("");
+        setFoundUser(null);
         setLoading(true);
         try {
             const user = await findUserByEmail(email.trim());
@@ -2602,141 +2603,98 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
             setFoundUser(null);
             onChanged?.();
         } catch (err) {
-            setError("Unable to share file. User might already have access.");
+            setError("Unable to share file.");
         } finally { setLoading(false); }
     }
 
     return (
         <div className="mb-4">
-            <div className="perm-section-title mb-2">Share with people</div>
-<form onSubmit={onSearch} className="d-flex gap-2">
-    <input 
-        className="dashboard-search w-100" // ׳©׳™׳׳•׳© ׳‘-class ׳©׳ ׳”-TopBar
-        placeholder="Enter user email..." 
-        style={{ height: '40px' }}
-        value={email} 
-        onChange={(e) => setEmail(e.target.value)}
-        disabled={loading}
-    />
-    <button className="btn btn-primary px-3" type="submit" disabled={loading}>
-        {loading ? '...' : 'Search'}
-    </button>
-</form>
+            <div className="perm-section-title">Add people</div>
+            <form onSubmit={onSearch} className="d-flex gap-2">
+                <input 
+                    className="perm-add-input w-100" 
+                    placeholder="Enter email address..." 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                />
+                <button className="perm-search-submit" type="submit" disabled={loading || !email.trim()}>
+                    {loading ? '...' : 'Search'}
+                </button>
+            </form>
+
             {foundUser && (
-    <div className="perm-profile-row mt-3">
-        <div className="perm-profile-left d-flex align-items-center gap-3">
-            {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ ׳‘׳¢׳™׳¦׳•׳‘ ׳¢׳’׳•׳ ׳•׳×׳•׳׳ */}
-            <div className="perm-avatar">
-                {avatarUrl ? (
-                    <img className="perm-avatar-img" src={avatarUrl} alt="avatar" />
-                ) : (
-                    <span>{displayName[0]?.toUpperCase()}</span>
-                )}
-            </div>
-
-            {/* ׳˜׳§׳¡׳˜: ׳©׳ ׳•׳׳™׳׳™׳™׳ */}
-            <div className="perm-profile-text">
-                <div className="perm-profile-name">{displayName}</div>
-                <div className="perm-profile-email">{foundUser.email}</div>
-            </div>
-        </div>
-
-        {/* ׳›׳₪׳×׳•׳¨ ׳”׳©׳™׳×׳•׳£ ׳‘׳¦׳“ ׳™׳׳™׳ */}
-        <button 
-            className="btn btn-success btn-sm px-3" 
-            onClick={onShare} 
-            disabled={loading}
-            style={{ borderRadius: '20px', fontWeight: '600' }}
-        >
-            Share
-        </button>
-    </div>
-)}
-            {error && <div className="text-danger small mt-2">{error}</div>}
+                <div className="perm-profile-row mt-3">
+                    <div className="perm-profile-left">
+                        <div className="perm-avatar">
+                            {avatarUrl ? <img className="perm-avatar-img" src={avatarUrl} alt="av" /> : displayName[0]?.toUpperCase()}
+                        </div>
+                        <div className="perm-profile-text">
+                            <div className="perm-profile-name">{displayName}</div>
+                            <div className="perm-profile-email">{foundUser.email}</div>
+                        </div>
+                    </div>
+                    <button className="perm-role-toggle-btn" style={{borderColor: '#34a853', color: '#34a853'}} onClick={onShare}>
+                        Share
+                    </button>
+                </div>
+            )}
+            {error && <div className="text-danger small mt-2 opacity-75">{error}</div>}
         </div>
     );
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\PermissionListSection.jsx =====
 import React, { useEffect, useState } from "react";
-import { 
-    getPermissions, 
-    deletePermission, 
-    togglePermissionRole 
-} from "../../api/permissionsApi";
+import { getPermissions, deletePermission, togglePermissionRole } from "../../api/permissionsApi";
 import { getCurrentUser } from "../../api/filesApi"; 
 import PermissionRow from "./PermissionRow";
-
-// ׳’ֵ“ג€¦ ׳™׳™׳‘׳•׳ ׳”-CSS ׳׳”׳×׳™׳§׳™׳™׳” ׳”׳׳¨׳•׳›׳–׳× ׳©׳ ׳”׳•׳•׳™׳“׳’'׳˜׳™׳
-import "../../../../styles/widgets/Permissions.css";
 
 export default function PermissionListSection({ fileId, isOwner, myUserId, ownerId, refreshTrigger }) {
     const [loading, setLoading] = useState(true);
     const [permissions, setPermissions] = useState([]);
-    const [myRole, setMyRole] = useState(null);
 
     async function load() {
         try {
             setLoading(true);
             const data = await getPermissions(fileId);
-            
             const enriched = await Promise.all(data.permissions.map(async (perm) => {
                 try {
                     const user = await getCurrentUser(perm.userId); 
-                    
-                    // ׳’ֵ“ג€¦ ׳–׳™׳”׳•׳™ Owner: ׳”׳©׳•׳•׳׳” ׳‘׳™׳ ׳”-ID ׳©׳ ׳”׳”׳¨׳©׳׳” ׳׳‘׳¢׳׳™׳ ׳”׳׳§׳•׳¨׳™ ׳©׳ ׳”׳§׳•׳‘׳¥
                     const isActuallyOwner = String(perm.userId) === String(ownerId);
-                    
                     return { 
                         ...perm, 
-                        role: isActuallyOwner ? "owner" : perm.role, 
+                        role: isActuallyOwner ? "owner" : perm.role,
                         firstName: user.firstName,
                         lastName: user.lastName,
                         email: user.email,
                         image: user.image 
                     };
-                } catch (err) {
-                    return perm; 
-                }
+                } catch { return perm; }
             }));
-
             setPermissions(enriched);
-            if (data.myRole) setMyRole(data.myRole);
         } catch (e) {
             console.error("Failed to load permissions", e);
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }
 
     useEffect(() => { load(); }, [fileId, refreshTrigger, ownerId]);
 
-    const handleDelete = async (p) => {
-        await deletePermission(fileId, p.id);
-        load();
-    };
-
-    const handleToggle = async (p) => {
-        await togglePermissionRole(fileId, p.id);
-        load();
-    };
-
     return (
-        <div className="perm-list-container">
-            <div className="perm-section-title">Who has access</div>
-            <div className="d-flex flex-column gap-2 mt-3">
-                {loading && permissions.length === 0 ? (
-                    <div className="text-center p-3 opacity-50">Loading...</div>
+        <div className="perm-list-section mt-4">
+            <div className="perm-section-title">People with access</div>
+            <div className="perm-rows-container mt-2">
+                {permissions.length === 0 && !loading ? (
+                    <div className="text-center opacity-50 small py-3">No one else has access yet</div>
                 ) : (
-permissions.map(p => (
-    <PermissionRow 
-        key={p.id || p.userId} 
-        permission={p} 
-        // ׳”׳׳ ׳”׳ ׳™׳›׳•׳ ׳׳ ׳”׳ ׳׳—׳¨׳™׳, ׳׳‘׳ ׳׳ ׳׳× ׳”׳‘׳¢׳׳™׳ (׳”׳•׳ ׳×׳׳™׳“ Owner)
-        canManage={isOwner && p.role !== "owner"} 
-        onDelete={handleDelete}
-        onToggle={handleToggle}
-    />
-))
+                    permissions.map(p => (
+                        <PermissionRow 
+                            key={p.id || p.userId} 
+                            permission={p} 
+                            canManage={isOwner && p.role !== "owner"} 
+                            onDelete={async () => { await deletePermission(fileId, p.id); load(); }}
+                            onToggle={async () => { await togglePermissionRole(fileId, p.id); load(); }}
+                        />
+                    ))
                 )}
             </div>
         </div>
@@ -2744,25 +2702,16 @@ permissions.map(p => (
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\PermissionRow.jsx =====
 import React from "react";
-
 const BASE_URL = "http://localhost:3000";
 
 export default function PermissionRow({ permission, canManage, onDelete, onToggle }) {
-    // ׳’ֵ“ג€¦ ׳×׳™׳§׳•׳ ׳׳•׳’׳™: ׳”-Role ׳™׳™׳§׳‘׳¢ ׳›-Owner ׳׳ ׳”-ID ׳©׳ ׳”׳׳©׳×׳׳© ׳×׳•׳׳ ׳׳‘׳¢׳׳™׳ ׳”׳׳§׳•׳¨׳™ ׳©׳ ׳”׳§׳•׳‘׳¥
-    // ׳’׳ ׳׳ ׳‘׳˜׳¢׳•׳× ׳”׳’׳™׳¢ ׳׳”׳©׳¨׳× ׳›-"viewer" ׳‘׳¨׳©׳™׳׳× ׳”׳”׳¨׳©׳׳•׳×
     const isOwner = permission.role === "owner";
-    const roleLabel = isOwner ? "Owner" : (permission.role || "viewer");
-
-    // ׳‘׳ ׳™׳™׳× ׳©׳ ׳׳׳ ׳׳”׳ ׳×׳•׳ ׳™׳ ׳”׳׳•׳¢׳©׳¨׳™׳
     const displayName = `${permission.firstName || ""} ${permission.lastName || ""}`.trim()
         || (permission.email ? permission.email.split('@')[0] : "User");
 
-    // ׳˜׳™׳₪׳•׳ ׳‘׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ (׳×׳׳™׳›׳” ׳‘-Base64, URL ׳׳׳ ׳׳• ׳ ׳×׳™׳‘ ׳™׳—׳¡׳™ ׳׳©׳¨׳×)
     const rawImg = permission.image || "";
     const avatarUrl = rawImg
-        ? (rawImg.startsWith("data:") || rawImg.startsWith("http")
-            ? rawImg
-            : `${BASE_URL}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`)
+        ? (rawImg.startsWith("data:") || rawImg.startsWith("http") ? rawImg : `${BASE_URL}${rawImg}`)
         : "";
 
     const initial = displayName[0]?.toUpperCase() || "?";
@@ -2770,64 +2719,34 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
     return (
         <div className={`perm-profile-row ${isOwner ? 'is-owner' : ''}`}>
             <div className="perm-profile-left">
-                {/* ׳×׳׳•׳ ׳× ׳₪׳¨׳•׳₪׳™׳ ׳‘׳¢׳™׳¦׳•׳‘ Glass */}
                 <div className="perm-avatar">
-                    {avatarUrl ? (
-                        <img 
-                            className="perm-avatar-img" 
-                            src={avatarUrl} 
-                            alt="avatar" 
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.parentNode.innerHTML = `<span>${initial}</span>`;
-                            }}
-                        />
-                    ) : (
-                        <span>{initial}</span>
-                    )}
+                    {avatarUrl ? <img className="perm-avatar-img" src={avatarUrl} alt="av" /> : initial}
                 </div>
-
-                {/* ׳₪׳¨׳˜׳™ ׳׳©׳×׳׳© */}
                 <div className="perm-profile-text">
                     <div className="perm-profile-name">
                         {displayName}
                         {isOwner && <span className="owner-badge">Owner</span>}
                     </div>
-                    <div className="perm-profile-email">
-                        {permission.email || "No email"}
-                    </div>
+                    <div className="perm-profile-email">{permission.email}</div>
                 </div>
             </div>
 
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center">
                 {isOwner ? (
-                    /* ׳×׳¦׳•׳’׳× ׳‘׳¢׳׳™׳ ׳׳™׳•׳—׳“׳× */
-                    <span className="perm-role-owner">Owner</span>
+                    <span className="small opacity-50">Original Owner</span>
                 ) : (
                     <>
                         {canManage ? (
                             <>
-                                {/* ׳›׳₪׳×׳•׳¨ Toggle Role ׳‘׳¢׳™׳¦׳•׳‘ ׳›׳₪׳×׳•׳¨׳™ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */}
-                                <button
-                                    className="perm-role-toggle-btn"
-                                    onClick={() => onToggle?.(permission)}
-                                    title="Click to change role"
-                                >
-                                    {permission.role || "viewer"}
+                                <button className="perm-role-toggle-btn" onClick={() => onToggle?.(permission)}>
+                                    {permission.role}
                                 </button>
-
-                                {/* ׳›׳₪׳×׳•׳¨ ׳׳—׳™׳§׳” ׳‘׳¢׳™׳¦׳•׳‘ ׳׳“׳•׳ ׳¢׳“׳™׳ */}
-                                <button
-                                    className="perm-delete-text-btn"
-                                    onClick={() => onDelete?.(permission)}
-                                    title="Remove access"
-                                >
-                                    Delete
+                                <button className="perm-delete-text-btn" onClick={() => onDelete?.(permission)}>
+                                    Remove
                                 </button>
                             </>
                         ) : (
-                            /* ׳×׳¦׳•׳’׳” ׳‘׳׳‘׳“ ׳׳׳©׳×׳×׳₪׳™׳ ׳׳—׳¨׳™׳ */
-                            <span className="perm-role-display">{permission.role || "viewer"}</span>
+                            <span className="small opacity-50">{permission.role}</span>
                         )}
                     </>
                 )}
@@ -2835,226 +2754,13 @@ export default function PermissionRow({ permission, canManage, onDelete, onToggl
         </div>
     );
 }
-===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\permissions\Permissions.css =====
-/* client/src/components/Dashboard/permissions/Permissions.css */
-
-.perm-section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #5f6368;
-    margin-bottom: 12px;
-}
-
-.perm-owner-note {
-    font-size: 13px;
-    color: #666;
-    margin-top: 10px;
-}
-
-/* ׳©׳•׳¨׳” ׳׳—׳™׳“׳” ׳¢׳‘׳•׳¨ ׳¨׳©׳™׳׳× ׳”׳¨׳©׳׳•׳× ׳•׳׳©׳×׳׳© ׳—׳“׳© */
-.perm-row,
-.perm-profile-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 8px;
-    border-bottom: 1px solid #f1f3f4;
-    transition: background-color 0.2s ease;
-}
-
-/* ׳¨׳§׳¢ ׳¦׳”׳•׳‘ ׳׳‘׳¢׳׳™׳ */
-.perm-profile-row.is-owner {
-    background: linear-gradient(to right, #fff9e6, #fffcf0);
-    border-left: 3px solid #ffd54f;
-    padding-left: 13px;
-}
-
-.perm-row:last-child,
-.perm-profile-row:last-child {
-    border-bottom: none;
-}
-
-.perm-profile-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    flex: 1;
-}
-
-.perm-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: #f0f2f5;
-    color: #333;
-    font-weight: 600;
-    flex-shrink: 0;
-    overflow: hidden;
-}
-
-.perm-avatar-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.perm-profile-text {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    flex: 1;
-}
-
-.perm-profile-name {
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 1.3;
-    color: #202124;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* ׳×׳’ Owner ׳׳™׳“ ׳”׳©׳ */
-.owner-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 8px;
-    background: #ffd54f;
-    color: #8b6914;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    border-radius: 12px;
-    letter-spacing: 0.3px;
-}
-
-.perm-profile-email {
-    font-size: 13px;
-    color: #5f6368;
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ׳›׳₪׳×׳•׳¨ Toggle Role ׳׳¢׳•׳¦׳‘ */
-.perm-role-toggle-btn {
-    padding: 6px 16px;
-    border: 1px solid #dadce0;
-    border-radius: 20px;
-    background: #fff;
-    color: #202124;
-    font-size: 13px;
-    font-weight: 500;
-    text-transform: capitalize;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.perm-role-toggle-btn:hover {
-    background: #f8f9fa;
-    border-color: #c6c6c6;
-}
-
-.perm-role-toggle-btn:active {
-    background: #e8eaed;
-}
-
-/* ׳›׳₪׳×׳•׳¨ Delete ׳׳¢׳•׳¦׳‘ */
-.perm-delete-text-btn {
-    padding: 6px 16px;
-    border: 1px solid #dadce0;
-    border-radius: 20px;
-    background: #fff;
-    color: #d93025;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.perm-delete-text-btn:hover {
-    background: #fce8e6;
-    border-color: #d93025;
-}
-
-.perm-delete-text-btn:active {
-    background: #f6c9c6;
-}
-
-/* ׳×׳¦׳•׳’׳× Role ׳׳׳©׳×׳׳©׳™׳ ׳©׳׳™׳ ׳ ׳‘׳¢׳׳™׳ */
-.perm-role-display {
-    padding: 6px 16px;
-    border-radius: 20px;
-    background: #e8f0fe;
-    color: #1967d2;
-    font-size: 13px;
-    font-weight: 500;
-    text-transform: capitalize;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-/* ׳×׳¦׳•׳’׳× Role ׳׳™׳•׳—׳“׳× ׳׳‘׳¢׳׳™׳ */
-.perm-role-owner {
-    padding: 6px 16px;
-    border-radius: 20px;
-    background: #ffd54f;
-    color: #8b6914;
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: capitalize;
-    white-space: nowrap;
-    flex-shrink: 0;
-    border: 1px solid #ffca28;
-}
-
-/* ׳§׳•׳₪׳¡׳× ׳©׳’׳™׳׳” ׳׳¢׳•׳¦׳‘׳× */
-.perm-error-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 10px;
-    color: #991b1b;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-.perm-error-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    color: #dc2626;
-}
-
-.perm-divider {
-    height: 1px;
-    background: #e8eaed;
-    margin: 16px 0;
-}
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\modals\ShareModal\ShareModal.jsx =====
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "app/providers/AuthContext"; // ׳©׳™׳׳•׳© ׳‘׳ ׳×׳™׳‘ ׳׳•׳—׳׳˜
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
-import "../permissions/Permissions.css";
+import "../../../../styles/widgets/Permissions.css";
+
 function decodeUserId(token) {
     try {
         const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
@@ -3120,13 +2826,12 @@ function ShareModal({ item, onClose }) {
 export default ShareModal;
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\features\drive\pages\Dashboard.jsx =====
 import { useState } from "react";
-import { useTheme } from "app/providers/ThemeProvider"; // ג… ׳™׳™׳‘׳•׳ ׳”-Hook ׳©׳ ׳”׳¢׳™׳¦׳•׳‘
+import { useTheme } from "app/providers/ThemeProvider"; 
 
 import TopBar from "features/drive/layout/TopBar";
 import SideBar from "features/drive/layout/SideBar";
 import MainArea from "features/drive/layout/MainArea";
 
-// ג… ׳™׳™׳‘׳•׳ ׳”׳¡׳¨׳˜׳•׳ ׳™׳ (׳•׳•׳“׳ ׳©׳”׳ ׳ ׳׳¦׳׳™׳ ׳‘׳×׳™׳§׳™׳™׳” ׳”׳–׳• ׳‘׳“׳™׳•׳§)
 import lightVideo from "assets/videos/light.mp4";
 import darkVideo from "assets/videos/dark.mp4";
 
@@ -3135,25 +2840,37 @@ import "styles/pages/Dashboard.css";
 // Main Dashboard Layout
 export default function Dashboard() {
   const [activeView, setActiveView] = useState("home");
-  
-  // ג… ׳©׳׳™׳₪׳× ׳”׳׳¦׳‘ ׳”׳ ׳•׳›׳—׳™ (dark/light)
   const { theme } = useTheme(); 
 
   return (
     <div className="dashboard-root">
-      {/* ג… ׳ ׳’׳ ׳”׳•׳•׳™׳“׳׳• ׳‘׳¨׳§׳¢ */}
+      {/* ׳×׳™׳§׳•׳ ׳׳׳¢׳‘׳¨ ׳—׳׳§:
+          ׳‘׳׳§׳•׳ ׳׳”׳—׳׳™׳£ ׳׳§׳•׳¨ ׳•׳™׳“׳׳• (׳©׳’׳•׳¨׳ ׳׳”׳‘׳”׳•׳‘), ׳׳ ׳—׳ ׳• ׳˜׳•׳¢׳ ׳™׳ ׳׳× ׳©׳ ׳™׳”׳.
+          ׳”-CSS ׳׳˜׳₪׳ ׳‘׳©׳§׳™׳₪׳•׳× (Opacity) ׳›׳“׳™ ׳׳¢׳©׳•׳× ׳׳¢׳‘׳¨ ׳ ׳¢׳™׳.
+      */}
+      
+      {/* ׳•׳™׳“׳׳• ׳™׳•׳ */}
       <video
-        key={theme} // ׳”׳˜׳¨׳™׳§ ׳©׳’׳•׳¨׳ ׳׳”׳—׳׳₪׳” ׳—׳׳§׳” ׳‘׳™׳ ׳¡׳¨׳˜׳•׳ ׳™׳
-        className="background-video"
+        className={`background-video ${theme === 'light' ? 'active' : ''}`}
         autoPlay
         loop
         muted
         playsInline
       >
-        <source src={theme === "dark" ? darkVideo : lightVideo} type="video/mp4" />
+        <source src={lightVideo} type="video/mp4" />
       </video>
 
-      {/* ג… ׳©׳›׳‘׳× ׳”׳×׳•׳›׳ ׳¢׳•׳˜׳₪׳× ׳׳× ׳”׳›׳ */}
+      {/* ׳•׳™׳“׳׳• ׳׳™׳׳” */}
+      <video
+        className={`background-video ${theme === 'dark' ? 'active' : ''}`}
+        autoPlay
+        loop
+        muted
+        playsInline
+      >
+        <source src={darkVideo} type="video/mp4" />
+      </video>
+
       <div className="content-overlay">
         <TopBar />
         <div className="dashboard-body">
@@ -7351,7 +7068,7 @@ input::placeholder { color: #666 !important; opacity: 0.8; }
   color: var(--auth-text-sub);
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\pages\Dashboard.css =====
-/* ׳׳©׳×׳ ׳™׳ ׳׳׳—׳™׳“׳•׳× ׳׳•׳©׳׳׳× (׳—׳•׳‘׳” ׳›׳“׳™ ׳©׳–׳” ׳™׳¨׳׳” ׳׳—׳•׳‘׳¨) */
+/* ׳׳©׳×׳ ׳™׳ ׳׳׳—׳™׳“׳•׳× ׳׳•׳©׳׳׳× */
 :root {
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: 1px solid rgba(255, 255, 255, 0.4);
@@ -7369,21 +7086,35 @@ input::placeholder { color: #666 !important; opacity: 0.8; }
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background-color: #000; /* ׳¨׳§׳¢ ׳©׳—׳•׳¨ ׳׳׳§׳¨׳” ׳§׳™׳¦׳•׳ ׳›׳“׳™ ׳׳ ׳׳¨׳׳•׳× ׳׳× ׳×׳׳•׳ ׳× ׳”׳”׳¨׳©׳׳” */
 }
 
-/* Background Video */
+/* ׳×׳™׳§׳•׳ ׳”׳׳¢׳‘׳¨ ׳”׳—׳׳§ (Smooth Transition Fix)
+   ׳©׳ ׳™ ׳”׳¡׳¨׳˜׳•׳ ׳™׳ ׳ ׳׳¦׳׳™׳ ׳׳—׳“ ׳¢׳ ׳”׳©׳ ׳™. ׳׳ ׳—׳ ׳• ׳׳©׳—׳§׳™׳ ׳¨׳§ ׳¢׳ ׳”׳©׳§׳™׳₪׳•׳×.
+*/
 .background-video {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   z-index: 0;
+  
+  /* ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳: ׳׳•׳¡׳×׳¨ */
+  opacity: 0;
+  /* ׳”׳׳¢׳‘׳¨ ׳¢׳¦׳׳•: ׳—׳¦׳™ ׳©׳ ׳™׳™׳” ׳©׳ ׳¢׳׳¢׳•׳ */
+  transition: opacity 0.8s ease-in-out;
+}
+
+/* ׳›׳©׳”׳•׳™׳“׳׳• ׳₪׳¢׳™׳ (׳׳₪׳™ ׳”-React State) ׳”׳•׳ ׳ ׳”׳™׳” ׳׳˜׳•׳ */
+.background-video.active {
+  opacity: 1;
+  z-index: 1; /* ׳׳•׳•׳“׳ ׳©׳”׳•׳ ׳׳¢׳ ׳”׳•׳™׳“׳׳• ׳”׳©׳ ׳™ ׳‘׳–׳׳ ׳”׳׳¢׳‘׳¨ */
 }
 
 /* Content Overlay */
 .content-overlay {
   position: relative;
-  z-index: 1;
+  z-index: 2; /* ׳׳¢׳ ׳”׳•׳™׳“׳׳• */
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -7393,26 +7124,23 @@ input::placeholder { color: #666 !important; opacity: 0.8; }
 /* Dark Mode Overlay */
 body[data-theme='dark'] .content-overlay {
   background-color: rgba(0, 0, 0, 0.7);
+  transition: background-color 0.8s ease-in-out; /* ׳’׳ ׳”׳¨׳§׳¢ ׳”׳›׳”׳” ׳™׳¢׳‘׳•׳¨ ׳—׳׳§ */
 }
 
 /* ==========================================================================
-   TOP BAR - Seamless Fix
+   TOP BAR
    ========================================================================== */
 .dashboard-top {
   position: sticky;
   top: 0;
-  z-index: 100; /* ׳—׳™׳™׳‘ ׳׳”׳™׳•׳× ׳׳¢׳ ׳”-Sidebar */
+  z-index: 100;
   height: var(--top-height);
-  
-  /* ׳¨׳§׳¢ ׳׳—׳™׳“ */
   background: var(--glass-bg); 
   backdrop-filter: blur(12px); 
-  
-  /* ג… ׳”׳©׳™׳ ׳•׳™ ׳”׳—׳©׳•׳‘: ׳‘׳™׳˜׳•׳ ׳”׳§׳• ׳”׳×׳—׳×׳•׳ */
   border-bottom: none;
-  
   padding: 0 20px;
   display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.3s ease;
 }
 
 body[data-theme='dark'] .dashboard-top {
@@ -7422,27 +7150,23 @@ body[data-theme='dark'] .dashboard-top {
 }
 
 /* ==========================================================================
-   SIDE BAR - Seamless Fix
+   SIDE BAR
    ========================================================================== */
 .dashboard-side {
   width: 240px;
-  
-  /* ג… ׳”׳©׳™׳ ׳•׳™ ׳”׳—׳©׳•׳‘: ׳׳©׳™׳›׳” ׳׳׳¢׳׳” */
   height: 100vh;
-  margin-top: calc(var(--top-height) * -1); /* ׳׳©׳™׳›׳” ׳׳׳¢׳׳” ׳‘׳’׳•׳‘׳” ׳”-Top Bar */
-  padding-top: calc(var(--top-height) + 20px); /* ׳“׳—׳™׳₪׳× ׳”׳×׳•׳›׳ ׳₪׳ ׳™׳׳” */
+  margin-top: calc(var(--top-height) * -1);
+  padding-top: calc(var(--top-height) + 20px);
   position: sticky;
   top: 0;
-  z-index: 90; /* ׳©׳›׳‘׳” ׳׳—׳× ׳׳×׳—׳× ׳-Top Bar */
-
-  /* ׳¢׳™׳¦׳•׳‘ ׳׳—׳™׳“ */
+  z-index: 90;
   background: var(--glass-bg); 
   backdrop-filter: blur(12px);
-  border-right: var(--glass-border); /* ׳’׳‘׳•׳ ׳¦׳“׳“׳™ ׳׳—׳™׳“ */
-  
+  border-right: var(--glass-border);
   padding-left: 15px;
   padding-right: 15px;
   display: flex; flex-direction: column;
+  transition: background 0.3s ease, border-right 0.3s ease;
 }
 
 body[data-theme='dark'] .dashboard-side {
@@ -7455,7 +7179,7 @@ body[data-theme='dark'] .dashboard-side {
 .dashboard-side li:hover { background: rgba(0,0,0,0.05); }
 body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,0.1); }
 
-/* Elements (׳׳׳ ׳©׳™׳ ׳•׳™) */
+/* Elements */
 .dashboard-top-left { display: flex; align-items: center; gap: 10px; }
 .app-logo { width: 48px; height: 48px; object-fit: contain; }
 .app-title { margin: 0; font-size: 32px; }
@@ -8023,69 +7747,61 @@ body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,
 .fli-owner-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
 .fli-owner-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\Permissions.css =====
-/* Permissions.css - ׳¢׳™׳¦׳•׳‘ ׳׳•׳×׳׳ ׳׳™׳©׳™׳× ׳׳©׳׳¨ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */
+/* Permissions.css - Classic Professional Glass Design */
 
-.perm-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
+/* titles */
 .perm-section-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-primary);
-    text-shadow: var(--text-shadow-global);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+    opacity: 0.8;
 }
 
-/* ׳©׳•׳¨׳” ׳‘׳¡׳’׳ ׳•׳ FileListItem */
+/* Glass Row - Shared for Search Result and List Items */
 .perm-profile-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
-    border-radius: 16px;
-    
-    /* ׳׳₪׳§׳˜ ׳”׳–׳›׳•׳›׳™׳× ׳”׳׳“׳•׳™׳§ ׳׳”-SideBar ׳•׳”-TopBar */
-    background: rgba(255, 255, 255, 0.45) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
-    
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color) !important;
     transition: all 0.2s ease;
 }
 
 [data-theme="dark"] .perm-profile-row {
-    background: rgba(30, 30, 30, 0.45) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .perm-profile-row:hover {
-    background: rgba(255, 255, 255, 0.7) !important;
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* ׳©׳•׳¨׳× ׳‘׳¢׳׳™׳ - ׳”׳“׳’׳©׳” ׳׳•׳–׳”׳‘׳× ׳¢׳“׳™׳ ׳” */
-.perm-profile-row.is-owner {
-    border-right: 4px solid #ffd54f !important;
-    background: rgba(255, 213, 79, 0.1) !important;
+/* Container for Avatar + Text */
+.perm-profile-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0; /* Prevents overflow */
 }
 
+/* Avatar Styling */
 .perm-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
     background: var(--hover-bg);
-    overflow: hidden;
     border: 1px solid var(--border-color);
     display: grid;
     place-items: center;
     font-weight: 700;
-    color: var(--text-primary);
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .perm-avatar-img {
@@ -8094,69 +7810,91 @@ body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,
     object-fit: cover;
 }
 
+/* Text Container */
+.perm-profile-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .perm-profile-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .perm-profile-email {
     font-size: 12px;
     color: var(--text-secondary);
+    opacity: 0.7;
 }
 
-/* ׳¢׳™׳¦׳•׳‘ ׳”-Owner Badge */
+/* Owner Styling */
+.perm-profile-row.is-owner {
+    border-left: 3px solid #fbbc04 !important;
+    background: rgba(251, 188, 4, 0.05) !important;
+}
+
 .owner-badge {
-    background: #ffd54f;
-    color: #000;
-    font-size: 10px;
+    background: rgba(251, 188, 4, 0.15);
+    color: #fbbc04;
+    font-size: 9px;
     font-weight: 800;
-    padding: 2px 8px;
-    border-radius: 10px;
-    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
     margin-left: 8px;
+    text-transform: uppercase;
 }
 
-/* ׳›׳₪׳×׳•׳¨׳™ ׳₪׳¢׳•׳׳” ׳‘׳¡׳’׳ ׳•׳ ׳”׳׳₪׳׳™׳§׳¦׳™׳” */
+/* Inputs & Forms */
+.perm-add-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    color: var(--text-primary) !important;
+    padding: 10px 15px;
+    font-size: 14px;
+}
+
+.perm-search-submit {
+    background: var(--text-primary) !important;
+    color: var(--bg-paper) !important;
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
 .perm-role-toggle-btn {
-    background: var(--hover-bg);
+    background: transparent;
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
     text-transform: capitalize;
-}
-
-.perm-role-toggle-btn:hover {
-    background: var(--bg-paper);
 }
 
 .perm-delete-text-btn {
-    color: #ef4444;
+    color: var(--text-secondary);
     background: transparent;
     border: none;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     cursor: pointer;
-    margin-left: 8px;
-    padding: 4px;
+    margin-left: 10px;
+    opacity: 0.5;
 }
 
 .perm-delete-text-btn:hover {
-    text-decoration: underline;
-}
-
-.perm-role-display {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: capitalize;
-    padding-right: 10px;
+    color: #ff5252;
+    opacity: 1;
 }
 ===== C:\Users\niv20\Documents\Advanced programming\CopaDrive\client\src\styles\widgets\StorageIndicator.css =====
 .storage-box {
