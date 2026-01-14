@@ -10,36 +10,26 @@ const assertValidType = (type) => type === 'file' || type === 'folder';
 
 const TRASH_TTL_DAYS = 30;
 const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
-const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024;
 
-<<<<<<< HEAD
-=======
-// --- Internal Helpers ---
+const ensureArray = (v) => Array.isArray(v) ? v : [];
 
-/**
- * RECURSIVE Access Check
- * Checks permissions from the item up to the root.
- * Also respects blockedBy list (users who deleted the file permanently).
- */
->>>>>>> 282a37b (BUGS FIXED)
 const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
   let currentId = fileId;
   let highestRoleFound = null;
+  
   while (currentId !== null) {
     const item = fileRepository.findById(currentId);
     if (!item) break;
-<<<<<<< HEAD
-=======
 
-    // Check if user blocked this item
     const blockedBy = ensureArray(item.blockedBy);
     if (blockedBy.includes(userId)) return false;
 
-    // Owner always has full access
->>>>>>> 282a37b (BUGS FIXED)
     if (item.ownerId === userId) return true;
+
     const permissions = permissionRepository.findByFileId(currentId) || [];
     const userPerm = permissions.find(p => p.userId === userId);
+    
     if (userPerm) {
       if (userPerm.role === 'editor') return true;
       if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
@@ -90,8 +80,6 @@ const collectSubtreeIds = (rootId) => {
   return ids;
 };
 
-const ensureArray = (v) => Array.isArray(v) ? v : [];
-
 const getTrashedAtForUser = (item, userId) => {
   const map = item?.trashedAtBy && typeof item.trashedAtBy === 'object' ? item.trashedAtBy : {};
   return map[userId] || null;
@@ -110,17 +98,15 @@ const decorateFlagsForUser = (item, userId) => {
   const starredBy = ensureArray(item.starredBy);
   const importantBy = ensureArray(item.importantBy);
   const trashedBy = ensureArray(item.trashedBy);
+  
   const trashed = trashedBy.includes(userId);
   const trashedAt = trashed ? getTrashedAtForUser(item, userId) : null;
-<<<<<<< HEAD
-=======
 
-  const lastAccessedBy = item.lastAccessedBy && typeof item.lastAccessedBy === 'object'
+  const lastAccessedBy = (item.lastAccessedBy && typeof item.lastAccessedBy === 'object')
     ? item.lastAccessedBy
     : {};
   const lastAccessed = lastAccessedBy[userId] || null;
 
->>>>>>> 282a37b (BUGS FIXED)
   return {
     ...item,
     starred: starredBy.includes(userId),
@@ -144,15 +130,18 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
     const decorated = decorateListForUser(items, userId);
     return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
   }
+
   const ownedRoots = fileRepository.findByParent(null, userId);
   const userPermissions = permissionRepository.findByUserId(userId) || [];
   const sharedRoots = userPermissions.map(perm => fileRepository.findById(perm.fileId)).filter(Boolean);
+  
   const roots = [...ownedRoots];
   for (const item of sharedRoots) {
     const already = roots.some(r => r.id === item.id);
     const hasAncestorInShared = sharedRoots.some(other => other.id !== item.id && isDescendant(item.id, other.id));
     if (!already && !hasAncestorInShared) roots.push(item);
   }
+
   const result = new Map();
   for (const root of roots) {
     const ids = collectSubtreeIds(root.id);
@@ -173,8 +162,6 @@ const getById = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item) throw { status: 404, message: 'File or folder not found' };
 
-  console.log(`GET_DEBUG 1: Metadata found for ID ${id}:`, item);
-
   if (!(await checkAccess(userId, id, 'viewer'))) {
     throw { status: 403, message: 'Access denied' };
   }
@@ -182,9 +169,7 @@ const getById = async (userId, id) => {
   const result = { ...item };
   if (item.type === 'file') {
     try {
-      console.log(`GET_DEBUG 2: Sending TCP GET for ID: ${id}`);
       const content = await sendTcpCommand(`GET ${id}`);
-      console.log(`GET_DEBUG 3: Content received from TCP (first 20 chars):`, content?.substring(0, 20));
       result.content = content;
     } catch (err) {
       result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
@@ -194,7 +179,6 @@ const getById = async (userId, id) => {
 };
 
 const createItem = async (ownerId, payload) => {
-  console.log("SERVER DEBUG 1: Received payload:", payload);
   const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
   if (!name || typeof name !== 'string' || name.trim() === '') throw { status: 400, message: 'Name is required' };
@@ -232,18 +216,13 @@ const createItem = async (ownerId, payload) => {
     blockedBy: []
   });
 
-<<<<<<< HEAD
-  try { permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner"); } catch (_) { }
-=======
-  try {
-    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
+  try { 
+    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner"); 
   } catch (_) { }
->>>>>>> 282a37b (BUGS FIXED)
-  console.log("SERVER DEBUG 2: Created object in DB:", created);
+  
   return created;
 };
 
-// --- כאן נמצא המיזוג המתוקן ---
 const updateItem = async (userId, id, patch) => {
   if (!patch || typeof patch !== 'object') throw { status: 400, message: 'Invalid JSON body' };
   if (patch.type !== undefined) throw { status: 400, message: 'Type cannot be updated' };
@@ -254,29 +233,23 @@ const updateItem = async (userId, id, patch) => {
 
   const updates = {};
 
-  // 1. עדכון תוכן פיזי
   if (patch.content !== undefined) {
     if (current.type === 'folder') throw { status: 400, message: 'Cannot update content of a folder' };
     try {
-      try { await sendTcpCommand(`DELETE ${id}`); } catch (e) { console.warn(`[Update] Physical delete failed for ${id}:`, e.message); }
+      try { await sendTcpCommand(`DELETE ${id}`); } catch (e) { }
       await sendTcpCommand(`POST ${id} ${patch.content}`);
       updates.sizeBytes = contentSizeBytes(patch.content);
     } catch (err) { throw err; }
   }
 
-  // 2. עדכון mimeType
-  if (patch.mimeType !== undefined) {
-    updates.mimeType = patch.mimeType;
-  }
-
-  // 3. עדכון שם
+  if (patch.mimeType !== undefined) updates.mimeType = patch.mimeType;
+  
   if (patch.name !== undefined) {
-    const trimmedName = patch.name.trim();
-    if (trimmedName === '') throw { status: 400, message: 'Name must be a non-empty string' };
-    updates.name = trimmedName;
+    const trimmed = patch.name.trim();
+    if (trimmed === '') throw { status: 400, message: 'Name must be a non-empty string' };
+    updates.name = trimmed;
   }
 
-  // 4. עדכון מיקום ומניעת מחזוריות
   if (patch.parentId !== undefined) {
     const newParentId = patch.parentId ?? null;
     if (newParentId === id) throw { status: 400, message: 'parentId cannot be the same as id' };
@@ -294,12 +267,6 @@ const updateItem = async (userId, id, patch) => {
   updates.updatedAt = nowIso();
   return fileRepository.update(id, updates);
 };
-<<<<<<< HEAD
-// -----------------------------
-=======
-
-// --- Trash core ---
->>>>>>> 282a37b (BUGS FIXED)
 
 const setTrashed = async (userId, id, trashed) => {
   const item = fileRepository.findById(id);
@@ -320,62 +287,42 @@ const setTrashed = async (userId, id, trashed) => {
 };
 
 const listTrash = async (userId) => (await listAllAccessible(userId, { includeTrashed: true })).filter(i => i.trashed);
-const deleteItem = async (userId, id) => { await setTrashed(userId, id, true); return { id }; };
 
-<<<<<<< HEAD
-=======
-// DELETE becomes "move to trash"
 const deleteItem = async (userId, id) => {
   await setTrashed(userId, id, true);
   return { id };
 };
 
-/**
- * DELETE FOREVER (per-user):
- * - Owner: physical delete + remove from repository
- * - Not owner: remove from user's trash, add to blockedBy AND revoke permission
- */
->>>>>>> 282a37b (BUGS FIXED)
 const deleteForever = async (userId, id) => {
   const item = fileRepository.findById(id);
   if (!item || !isTrashedForUser(item, userId)) throw { status: 409, message: 'Item not found or not in trash' };
+
   if (item.ownerId !== userId) {
     await setTrashed(userId, id, false);
-<<<<<<< HEAD
-    try { permissionService.removePermission(userId, id, userId); } catch (_) {}
-=======
 
     const blockedBy = ensureArray(item.blockedBy);
     if (!blockedBy.includes(userId)) {
       fileRepository.update(id, { blockedBy: [...blockedBy, userId] });
     }
 
-    const filePermissions = permissionRepository.findByFileId(id);
-    const myPermission = filePermissions.find(p => p.userId === userId);
-
+    const myPermission = (permissionRepository.findByFileId(id) || []).find(p => p.userId === userId);
     if (myPermission) {
       permissionRepository.remove(myPermission.id);
     }
-
->>>>>>> 282a37b (BUGS FIXED)
     return { id };
   }
+
   const ids = item.type === 'folder' ? collectSubtreeIds(id).reverse() : [id];
   for (const dId of ids) {
     const target = fileRepository.findById(dId);
-<<<<<<< HEAD
-    if (target?.type === 'file') await sendTcpCommand(`DELETE ${dId}`).catch(() => {});
-=======
     if (!target) continue;
 
     if (target.type === 'file') {
       await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
     }
-
->>>>>>> 282a37b (BUGS FIXED)
     fileRepository.remove(dId);
 
-    const allPerms = permissionRepository.findByFileId(dId);
+    const allPerms = permissionRepository.findByFileId(dId) || [];
     allPerms.forEach(p => permissionRepository.remove(p.id));
   }
   return { id };
@@ -396,109 +343,36 @@ const setUserFlag = async (userId, id, flagKey, enabled) => {
   return decorateFlagsForUser(updated, userId);
 };
 
-<<<<<<< HEAD
-module.exports = {
-  listTopLevel, createItem, getById, updateItem, deleteItem, deleteForever, emptyTrash,
-  searchItems: async (userId, query) => {
-    const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
-    let contentMatchIds = [];
-    try { const res = await sendTcpCommand(`SEARCH ${query}`); if (res) contentMatchIds = res.split('\n').filter(l => l.length > 0); } catch (_) {}
-    const all = [...nameMatches, ...contentMatchIds.map(id => fileRepository.findById(id)).filter(f => f && !isTrashedForUser(f, userId))];
-    return decorateListForUser(Array.from(new Map(all.map(i => [i.id, i])).values()), userId).filter(i => !i.trashed);
-  },
-  setStarred: async (userId, id, starred) => setUserFlag(userId, id, 'starredBy', starred),
-  setImportant: async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important),
-  listStarred: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.starred),
-  listImportant: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.important),
-  setTrashed, listTrash,
-  getOwnedStorageUsage: async (userId) => {
-    const ownedFiles = fileRepository.findAll().filter(f => f.ownerId === userId && f.type === 'file');
-    const usedBytes = ownedFiles.reduce((sum, f) => sum + (f.sizeBytes || 0), 0);
-    return { usedBytes, quotaBytes: QUOTA_BYTES, percent: QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0 };
-  }
-=======
-const setStarred = async (userId, id, starred) => setUserFlag(userId, id, 'starredBy', starred);
-const setImportant = async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important);
-
-const listStarred = async (userId) => {
-  const all = await listAllAccessible(userId, { includeTrashed: false });
-  return all.filter(i => i.starred === true);
-};
-
-const listImportant = async (userId) => {
-  const all = await listAllAccessible(userId, { includeTrashed: false });
-  return all.filter(i => i.important === true);
-};
-
-const searchItems = async (userId, query) => {
-  const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
-
-  let contentMatchIds = [];
-  try {
-    const response = await sendTcpCommand(`SEARCH ${query}`);
-    if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
-  } catch (err) { }
-
-  const contentMatches = contentMatchIds
-    .map(id => fileRepository.findById(id))
-    .filter(f => f && !isTrashedForUser(f, userId));
-
-  const all = [...nameMatches, ...contentMatches];
-  const unique = Array.from(new Map(all.map(i => [i.id, i])).values());
-  return decorateListForUser(unique, userId).filter(i => !i.trashed);
-};
-
-const getOwnedStorageUsage = async (userId) => {
-  const all = fileRepository.findAll();
-  const ownedFiles = all.filter(f => f.ownerId === userId && f.type === 'file');
-
-  const usedBytes = ownedFiles.reduce((sum, f) => {
-    const s = typeof f.sizeBytes === 'number' ? f.sizeBytes : 0;
-    return sum + s;
-  }, 0);
-
-  const percent = QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0;
-
-  return {
-    usedBytes,
-    quotaBytes: QUOTA_BYTES,
-    percent,
-  };
-};
-
 const updateAccessTime = async (userId, id) => {
   const item = fileRepository.findById(id);
-  if (!item) {
-    const err = new Error("File or folder not found");
-    err.status = 404;
-    throw err;
-  }
+  if (!item) throw { status: 404, message: "File or folder not found" };
 
   if (!(await checkAccess(userId, id, "viewer"))) {
-    const err = new Error("Access denied");
-    err.status = 403;
-    throw err;
+    throw { status: 403, message: "Access denied" };
   }
 
-  const lastAccessedBy = item.lastAccessedBy && typeof item.lastAccessedBy === "object"
+  const lastAccessedBy = (item.lastAccessedBy && typeof item.lastAccessedBy === "object")
     ? { ...item.lastAccessedBy }
     : {};
 
   lastAccessedBy[userId] = nowIso();
-
   const updated = fileRepository.update(id, { lastAccessedBy });
   return decorateFlagsForUser(updated, userId);
 };
 
 const listRecent = async (userId) => {
   const all = await listAllAccessible(userId, { includeTrashed: false });
-
-  const withAccess = all
-    .filter(item => item.type === "file" && item.lastAccessed);
-
+  const withAccess = all.filter(item => item.type === "file" && item.lastAccessed);
   withAccess.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
-
   return withAccess.slice(0, 20);
+};
+
+const getOwnedStorageUsage = async (userId) => {
+  const ownedFiles = fileRepository.findAll().filter(f => f.ownerId === userId && f.type === 'file');
+  const usedBytes = ownedFiles.reduce((sum, f) => sum + (typeof f.sizeBytes === 'number' ? f.sizeBytes : 0), 0);
+  const percent = QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0;
+
+  return { usedBytes, quotaBytes: QUOTA_BYTES, percent };
 };
 
 module.exports = {
@@ -509,20 +383,28 @@ module.exports = {
   deleteItem,
   deleteForever,
   emptyTrash,
+  
+  searchItems: async (userId, query) => {
+    const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
+    let contentMatchIds = [];
+    try { 
+      const response = await sendTcpCommand(`SEARCH ${query}`); 
+      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0); 
+    } catch (_) { }
+    
+    const contentMatches = contentMatchIds.map(id => fileRepository.findById(id)).filter(f => f && !isTrashedForUser(f, userId));
+    const unique = Array.from(new Map([...nameMatches, ...contentMatches].map(i => [i.id, i])).values());
+    return decorateListForUser(unique, userId).filter(i => !i.trashed);
+  },
 
-  searchItems,
-
-  setStarred,
-  setImportant,
-  listStarred,
-  listImportant,
-
+  setStarred: async (userId, id, starred) => setUserFlag(userId, id, 'starredBy', starred),
+  setImportant: async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important),
+  listStarred: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.starred),
+  listImportant: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.important),
+  
   setTrashed,
   listTrash,
-
   getOwnedStorageUsage,
-
   updateAccessTime,
   listRecent
->>>>>>> 282a37b (BUGS FIXED)
 };

@@ -1,8 +1,8 @@
 import React from "react";
 // Imports from the new sub-component architecture
-import ImageViewer from "./viewers/ImageViewer";
-import TextViewer from "./viewers/TextViewer";
-import BinaryViewer from "./viewers/BinaryViewer";
+import ImageViewer from "../../../components/Dashboard/widgets/viewers/ImageViewer";
+import TextViewer from "../../../components/Dashboard/widgets/viewers/TextViewer";
+import BinaryViewer from "../../../components/Dashboard/widgets/viewers/BinaryViewer";
 
 function FileViewerModal({
   file,

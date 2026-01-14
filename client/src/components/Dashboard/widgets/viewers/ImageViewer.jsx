@@ -1,7 +1,6 @@
 import React from "react";
 
 function ImageViewer({ file }) {
-  // בניית ה-Src: אם זה כבר DataURL או שצריך להוסיף Prefix של Base64
   const imageSrc = file.content.startsWith('data:') 
     ? file.content 
     : `data:${file.mimeType};base64,${file.content}`;

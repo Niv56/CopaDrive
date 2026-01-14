@@ -1,6 +1,6 @@
 import React from "react";
-<<<<<<< HEAD:client/src/features/drive/layout/MainArea.jsx
 
+// Imports from the new architecture (pages folder)
 import HomeView from "../pages/HomeView";
 import MyDrive from "../pages/MyDrive";
 import RecentView from "../pages/RecentView";
@@ -9,26 +9,24 @@ import ImportantView from "../pages/ImportantView";
 import SharedView from "../pages/SharedView";
 import TrashView from "../pages/TrashView";
 import StorageView from "../pages/StorageView";
-=======
-import MyDrive from "../main/MyDrive";
-import RecentView from "../main/RecentView";
-import StarredView from "../main/StarredView";
-import ImportantView from "../main/ImportantView";
-import SharedView from "../main/SharedView";
-import TrashView from "../main/TrashView";
-import StorageView from "../main/StorageView";
-import CreateItem from "../widgets/CreateItem"; 
->>>>>>> 964700f (button flow over compnent):client/src/components/Dashboard/layout/MainArea.jsx
 
-// MainArea: Renders the specific page content based on the active sidebar selection
+// Integration: Global CreateItem widget
+import CreateItem from "../widgets/CreateItem"; 
+
+/**
+ * MainArea: Renders the specific page content based on the active sidebar selection.
+ */
 function MainArea({ activeView, onChangeView }) {
   
+  // Handlers for global item creation
   const handleItemCreated = () => {
+    // Dispatches a global event that MyDrive.jsx listens for to trigger a refresh
     window.dispatchEvent(new CustomEvent("refresh-mydrive"));
   };
 
   return (
     <main className="dashboard-main">
+      {/* View Management */}
       {activeView === "home" && <HomeView onChangeView={onChangeView} />}
 
       {activeView === "mydrive" && <MyDrive />}
@@ -46,6 +44,7 @@ function MainArea({ activeView, onChangeView }) {
         <StorageView onChangeView={onChangeView} />
       )}
 
+      {/* Global Create button from your logic flow */}
       <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
     </main>
   );

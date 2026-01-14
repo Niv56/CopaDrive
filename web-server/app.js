@@ -15,16 +15,9 @@ const authRoutes = require('./routes/authRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 
 app.use(cors());
-<<<<<<< HEAD
-
-// Parse JSON and URL-encoded bodies for all endpoints.
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ limit: '5mb', extended: true }));
-=======
 // Global middleware to parse JSON bodies. Required for all API endpoints.
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
->>>>>>> ca3ba26 (upload files + loading ring)
 
 // Log method + path for every incoming request.
 app.use((req, res, next) => {

@@ -1,186 +1,190 @@
-import { useState, useEffect, useRef } from "react";
-// 1. שימוש בנתיבים של הארכיטקטורה החדשה (Feature-based)
-import { getRootFiles, createItem } from "features/drive/api/filesApi";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+// תיקון נתיב: עולים שלב אחד ל-drive ואז ל-api
+import { getRootFiles, createItem } from "../api/filesApi";
 import FileUploadHandler from "./FileUploadHandler";
-import "styles/widgets/CreateItem.css";
+// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-utils
+import { encodeTextToBase64 } from "../../../shared/utils/base64Utils";
+// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-styles
+import "../../../styles/widgets/CreateItem.css";
 
-// 2. שמירה על הקומפוננטות המופרדות שיצרת לניהול נקי של ה-UI
-import FolderCreator from "./creation/FolderCreator";
-import TextFileCreator from "./creation/TextFileCreator";
-import FileImporter from "./creation/FileImporter";
+// ייבוא הקומפוננטות הישנות מה-Dashboard (שלוש קומות למעלה)
+import FolderCreator from "../../../components/Dashboard/widgets/creation/FolderCreator";
+import TextFileCreator from "../../../components/Dashboard/widgets/creation/TextFileCreator";
+import FileImporter from "../../../components/Dashboard/widgets/creation/FileImporter";
+import ImageImporter from "../../../components/Dashboard/widgets/creation/ImageImporter";
+
+const NEWLINE_PLACEHOLDER = "_@NL@_";
 
 function CreateItem({ onItemCreated, currentFolderId }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); 
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
-  const [parentId, setParentId] = useState(currentFolderId || null);
-  const [folders, setFolders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [mimeType, setMimeType] = useState("");
-  const uploadHandlerRef = useRef(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [modalType, setModalType] = useState(null); 
+    const [name, setName] = useState("");
+    const [content, setContent] = useState("");
+    const [size, setSize] = useState(0); 
+    const [parentId, setParentId] = useState(currentFolderId || null);
+    const [folders, setFolders] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [mimeType, setMimeType] = useState("");
+    const uploadHandlerRef = useRef(null);
 
-  useEffect(() => {
-    if (modalType) loadFolders();
-  }, [modalType]);
+    const loadFolders = useCallback(async () => {
+        try {
+            const data = await getRootFiles();
+            setFolders(Array.isArray(data) ? data.filter(f => f.type === "folder") : []);
+        } catch (e) {
+            console.error("Failed to load folders:", e);
+        }
+    }, []);
 
-  // לוגיקה מה-HEAD: סגירת המודאל בלחיצה על Escape (UX טוב יותר)
-  useEffect(() => {
-    if (!modalType) return;
-    function onKeyDown(e) {
-      if (e.key === "Escape") closeModal();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [modalType]);
+    useEffect(() => {
+        if (modalType) {
+            loadFolders();
+            setParentId(currentFolderId || null);
+        }
+    }, [modalType, currentFolderId, loadFolders]);
 
-  async function loadFolders() {
-    try {
-      const data = await getRootFiles();
-      setFolders(Array.isArray(data) ? data.filter(f => f.type === "folder") : []);
-    } catch (e) {
-      console.error("Failed to load folders:", e);
-    }
-  }
+    const closeModal = () => {
+        setModalType(null);
+        setName("");
+        setContent("");
+        setMimeType("");
+        setSize(0);
+    };
 
-  function openCreate(type) {
-    setModalType(type);
-    setMenuOpen(false);
-    setName("");
-    setContent("");
-    setMimeType("");
-    setParentId(currentFolderId || null);
-  }
+    const formatBytes = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
 
-  function closeModal() {
-    setModalType(null);
-  }
+    const onSaveClicked = async () => {
+        if (!name.trim()) return;
+        setLoading(true);
 
-  async function onSaveClicked() {
-    if (!name.trim()) return;
-    setLoading(true);
+        try {
+            const typeForServer = modalType === "folder" ? "folder" : "file";
+            
+            // לוגיקה עבור שרת ה-C++: הזרקת תוכן ברירת מחדל אם ריק
+            let rawContent = content;
+            if (!rawContent || rawContent.trim() === "") {
+                rawContent = "no content";
+            }
 
-    try {
-      const typeForServer = modalType === "upload" ? "file" : modalType;
+            let finalContent = rawContent;
+            let finalMime = mimeType;
+            const isTxtFile = name.toLowerCase().endsWith('.txt');
 
-      // לוגיקה קריטית מה-HEAD: המרת ירידות שורה עבור שרת ה-TCP ב-C++
-      let finalContent = content;
-      if (typeForServer === "file") {
-        finalContent = content.replaceAll('\n', "_@NL@_"); 
-      }
+            if (modalType === "file" || isTxtFile) {
+                // החלפת ירידות שורה עבור פרוטוקול ה-TCP
+                finalContent = rawContent.replaceAll('\n', NEWLINE_PLACEHOLDER); 
+                finalMime = "text/plain";
+            } 
 
-      const created = await createItem({
-        name: name.trim(),
-        type: typeForServer,
-        parentId: parentId || null,
-        content: typeForServer === "file" ? finalContent : "",
-        mimeType: typeForServer === "file" ? (mimeType || "text/plain") : ""
-      });
+            const newItem = {
+                name: name.trim(),
+                type: typeForServer,
+                parentId: parentId || null,
+                content: finalContent,
+                mimeType: finalMime || "application/octet-stream"
+            };
 
-      closeModal();
-      if (onItemCreated) onItemCreated(created);
-    } catch (error) {
-      alert(`Failed to create item: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  }
+            const created = await createItem(newItem);
+            closeModal();
+            if (onItemCreated) onItemCreated(created);
+        } catch (error) {
+            alert(`Failed to save: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleFileProcessed = (fileData) => {
-    setName(fileData.name);
-    setContent(fileData.content);
-    setMimeType(fileData.mimeType);
-    setModalType("upload");
-    setMenuOpen(false);
-  };
+    const handleFileProcessed = (fileData) => {
+        setName(fileData.name);
+        setContent(fileData.content); 
+        setMimeType(fileData.mimeType);
+        setSize(fileData.size); 
+        setModalType("upload");
+        setMenuOpen(false);
+    };
 
-  const getModalTitle = () => {
-    switch (modalType) {
-      case "folder": return "Create New Folder";
-      case "file": return "Create New Text File";
-      case "upload": return "Import File from Computer";
-      default: return "";
-    }
-  };
+    return (
+        <>
+            <button className="fab" onClick={() => setMenuOpen(!menuOpen)} type="button">+</button>
 
-  return (
-    <>
-      <button className="fab" onClick={() => setMenuOpen(!menuOpen)} type="button">+</button>
-
-      {menuOpen && (
-        <div className="fab-menu">
-          <button type="button" className="fab-menu-item" onClick={() => openCreate("folder")}>📁 New folder</button>
-          <button type="button" className="fab-menu-item" onClick={() => openCreate("file")}>📄 New file</button>
-          <button type="button" className="fab-menu-item" onClick={() => openCreate("upload")}>📤 Upload file</button>
-        </div>
-      )}
-
-      {modalType && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            {loading && (
-              <div className="spinner-overlay">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
+            {menuOpen && (
+                <div className="fab-menu">
+                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>📁 New folder</button>
+                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("file"); setMenuOpen(false); }}>📄 New file</button>
+                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("image"); setMenuOpen(false); }}>🖼️ Upload Pic</button>
+                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>📥 Import File</button>
                 </div>
-              </div>
             )}
 
-            <div className="modal-title-row">
-              <div className="modal-title-text">{getModalTitle()}</div>
-              <button type="button" className="share-btn" onClick={closeModal}>✕</button>
-            </div>
+            {modalType && (
+                <div className="modal-overlay" onClick={closeModal}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-title-row">
+                            <div className="modal-title-text">
+                                {modalType === "folder" ? "Create New Folder" : 
+                                 modalType === "file" ? "Text Editor" : 
+                                 modalType === "image" ? "Upload Picture" : "Import File"}
+                            </div>
+                            <button type="button" className="share-btn" onClick={closeModal}>✕</button>
+                        </div>
 
-            <div className="modal-body">
-              {/* שימוש בקומפוננטות ה-Creation הנקיות שלך */}
-              {modalType === "folder" && (
-                <FolderCreator name={name} setName={setName} loading={loading} />
-              )}
+                        <div className="modal-body">
+                            {modalType === "folder" && <FolderCreator name={name} setName={setName} loading={loading} />}
+                            
+                            {modalType === "file" && (
+                                <TextFileCreator name={name} setName={setName} content={content} setContent={setContent} loading={loading} />
+                            )}
+                            
+                            {modalType === "image" && (
+                                <>
+                                    {name && <div className="selected-file-info mb-3 text-primary fw-bold">Selected: {name}</div>}
+                                    <ImageImporter name={name} setName={setName} content={content} 
+                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("image/*")} 
+                                    />
+                                </>
+                            )}
+                            
+                            {modalType === "upload" && (
+                                <>
+                                    {name && (
+                                        <div className="file-details-header mb-4 p-3 bg-light border rounded">
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <h4 className="m-0 fw-bold text-dark text-truncate" style={{maxWidth: '70%'}}>{name}</h4>
+                                                <span className="badge bg-secondary">{formatBytes(size)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <FileImporter name={name} setName={setName} content={content} mimeType={mimeType} loading={loading}
+                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("*/*")} 
+                                    />
+                                </>
+                            )}
 
-              {modalType === "file" && (
-                <TextFileCreator 
-                  name={name} setName={setName} 
-                  content={content} setContent={setContent} 
-                  loading={loading} 
-                />
-              )}
+                            <label className="modal-label mt-3">Location</label>
+                            <select className="modal-input" value={parentId ?? ""} onChange={(e) => setParentId(e.target.value || null)}>
+                                <option value="">My Drive</option>
+                                {folders.map((f) => <option key={f.id} value={f.id}>📁 {f.name}</option>)}
+                            </select>
+                        </div>
 
-              {modalType === "upload" && (
-                <FileImporter 
-                  name={name} setName={setName} 
-                  content={content} mimeType={mimeType}
-                  loading={loading}
-                  triggerUpload={() => uploadHandlerRef.current.triggerUpload()}
-                />
-              )}
-
-              <label className="modal-label mt-3">Location</label>
-              <select
-                className="modal-input"
-                value={parentId ?? ""}
-                onChange={(e) => setParentId(e.target.value || null)}
-                disabled={loading}
-              >
-                <option value="">My Drive</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>📁 {f.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn secondary" onClick={closeModal} disabled={loading}>Cancel</button>
-              <button type="button" className="btn primary" onClick={onSaveClicked} disabled={!name.trim() || loading}>
-                {loading ? "Creating..." : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <FileUploadHandler ref={uploadHandlerRef} onFileProcessed={handleFileProcessed} />
-    </>
-  );
+                        <div className="modal-actions">
+                            <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
+                            <button type="button" className="btn primary" onClick={onSaveClicked} disabled={!name.trim() || loading}>
+                                {loading ? "Creating..." : "Save to Drive"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <FileUploadHandler ref={uploadHandlerRef} onFileProcessed={handleFileProcessed} />
+        </>
+    );
 }
 
 export default CreateItem;
