@@ -262,3 +262,38 @@ input::placeholder {
   letter-spacing: -0.5px;
   color: var(--text-primary) !important;
 }
+
+.shared-owner-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: var(--glass-border) !important;
+  border-radius: 16px;
+  padding: 15px 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.shared-owner-card:hover {
+  transform: translateY(-2px);
+  background: var(--hover-bg) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.vmt-btn .vmt-icon {
+  color: #000000 !important;
+  font-weight: 900;
+}
+
+[data-theme="dark"] .vmt-btn:not(.is-on) .vmt-icon {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .vmt-btn.is-on .vmt-icon {
+  color: #000000 !important;
+}
