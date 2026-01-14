@@ -8,7 +8,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
-import CreateItem from "features/drive/widgets/CreateItem";
+// CreateItem הוסר מכאן כי הוא מגיע מ-MainArea
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
@@ -57,6 +57,7 @@ export default function HomeView({ onChangeView }) {
 
   useEffect(() => {
     loadAll();
+    // מאזין לאירוע גלובלי (שהכפתור ב-MainArea ישלח)
     window.addEventListener("reset-home", loadAll);
     return () => window.removeEventListener("reset-home", loadAll);
   }, [loadAll]);
@@ -89,14 +90,6 @@ export default function HomeView({ onChangeView }) {
     });
   };
 
-  const onCreated = async () => {
-    await loadAll();
-    window.dispatchEvent(new Event("reset-mydrive"));
-    window.dispatchEvent(new Event("reset-recent"));
-  };
-
-  // ✅ LOADING BLOCK REMOVED
-
   return (
     <div className="mainarea">
       <div className="d-flex align-items-center justify-content-between mb-4">
@@ -113,7 +106,6 @@ export default function HomeView({ onChangeView }) {
         </div>
 
         {suggestedFolders.length === 0 ? (
-          /* ✅ Empty State - Folder Icon */
           <div className="d-flex align-items-center justify-content-center py-4">
              <div className="d-flex align-items-center justify-content-center" 
                   style={{ 
@@ -160,7 +152,6 @@ export default function HomeView({ onChangeView }) {
         </div>
 
         {suggestedFiles.length === 0 ? (
-          /* ✅ Empty State - File Icon */
           <div className="d-flex align-items-center justify-content-center py-4">
              <div className="d-flex align-items-center justify-content-center" 
                   style={{ 
@@ -203,7 +194,10 @@ export default function HomeView({ onChangeView }) {
       <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
         onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
       {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
-      <CreateItem currentFolderId={null} onItemCreated={onCreated} />
+      
+      {/* ❌ CreateItem הוסר מכאן 
+         הוא ירונדר אוטומטית ע"י MainArea.jsx
+      */}
     </div>
   );
 }
