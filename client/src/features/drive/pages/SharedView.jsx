@@ -4,7 +4,7 @@ import { useAuth } from "app/providers/AuthContext";
 import { useFileActions } from "features/drive/hooks/useFileActions";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
-import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅
+import FileEditorView from "components/Dashboard/widgets/FileEditorView";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
@@ -20,72 +20,46 @@ function SharedView() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
   const { token } = useAuth();
-
   const { viewMode } = useViewMode();
 
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
-      return JSON.parse(
-        window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
-      ).userId;
-    } catch {
-      return null;
-    }
+      return JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).userId;
+    } catch { return null; }
   }, [token]);
 
   const loadFiles = async () => {
-    if (allFiles.length === 0) {
-      setLoading(true);
-    }
-
+    if (allFiles.length === 0) setLoading(true);
     try {
       const data = await getRootFiles();
       const files = Array.isArray(data) ? data : [];
       setAllFiles(files);
 
-      const uniqueOwnerIds = [
-        ...new Set(files.filter((f) => f.ownerId && f.ownerId !== myUserId).map((f) => f.ownerId)),
-      ];
-
+      const uniqueOwnerIds = [...new Set(files.filter((f) => f.ownerId && f.ownerId !== myUserId).map((f) => f.ownerId))];
       uniqueOwnerIds.forEach(async (id) => {
         try {
           const userData = await getCurrentUser(id);
           setOwnersData((prev) => ({ ...prev, [id]: userData }));
-        } catch {
-          // Ignore
-        }
+        } catch { /* Ignore */ }
       });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  // ✅ Destructuring כולל עריכה
   const {
-    sharingItem, setSharingItem,
-    openedFile, setOpenedFile,
-    editingFile, setEditingFile,
-    openedRole,
-    handleOpen,
-    handleDelete,
-    handleToggleStar,        // כוכב
-    handleToggleImportant,   // חשיבות
-    handleEdit,              // עריכה
-    handleSaveEdit           // שמירה
+    sharingItem, setSharingItem, openedFile, setOpenedFile,
+    editingFile, setEditingFile, openedRole, handleOpen,
+    handleDelete, handleToggleStar, handleToggleImportant,
+    handleEdit, handleSaveEdit
   } = useFileActions(myUserId, loadFiles);
 
-  useEffect(() => {
-    loadFiles();
-  }, []);
+  useEffect(() => { loadFiles(); }, []);
 
   const displayItems = useMemo(() => {
     if (!selectedOwnerId) return [];
     return allFiles.filter((f) => {
       if (f.ownerId !== selectedOwnerId) return false;
-      if (currentFolderId) {
-        return f.parentId === currentFolderId;
-      }
+      if (currentFolderId) return f.parentId === currentFolderId;
       const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
       return !parentIsAlsoShared;
     });
@@ -95,6 +69,7 @@ function SharedView() {
 
   return (
     <div className="mainarea">
+      {/* כותרת הדף בסגנון Glacier */}
       <div className="page-title-container">
         <div className="d-flex align-items-center gap-2">
           <h2 style={{ cursor: "pointer", color: !selectedOwnerId ? "inherit" : "#1a73e8" }}
@@ -130,10 +105,7 @@ function SharedView() {
       ) : (
         <>
           {selectedOwnerId && viewMode !== "grid" && (
-            <div
-              className="d-flex align-items-center text-muted px-3 pb-2 border-bottom mb-2"
-              style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}
-            >
+            <div className="d-flex align-items-center text-muted px-3 pb-2 border-bottom mb-2" style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
               <div style={{ flex: 1 }}>Name</div>
               <div style={{ width: "150px" }}>Shared by</div>
               <div style={{ width: "150px" }}>Date shared</div>
@@ -144,19 +116,14 @@ function SharedView() {
           <div className="files-container">
             {!selectedOwnerId ? (
               Object.keys(ownersData).map((ownerId) => (
-                <div
-                  key={ownerId}
-                  className="list-group-item d-flex align-items-center gap-3 rounded-4 shadow-sm p-3 mb-2"
-                  style={{ cursor: "pointer", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(5px)", border: "1px solid var(--border-color)" }}
-                  onClick={() => setSelectedOwnerId(ownerId)}
-                >
+                <div key={ownerId} className="shared-owner-card" onClick={() => setSelectedOwnerId(ownerId)}>
                   <img
                     src={ownersData[ownerId]?.image || defaultAvatar}
                     alt="Owner"
-                    style={{ width: 32, height: 32, borderRadius: 999, objectFit: "cover", border: "1px solid #eef1f4" }}
+                    style={{ width: 36, height: 36, borderRadius: 999, objectFit: "cover", border: "1px solid #eef1f4" }}
                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultAvatar; }}
                   />
-                  <div className="fw-semibold" style={{ color: "#333" }}>
+                  <div className="fw-bold" style={{ color: "var(--text-primary)" }}>
                     Items shared by {ownersData[ownerId]?.email || "Unknown"}
                   </div>
                 </div>
@@ -187,7 +154,6 @@ function SharedView() {
                     setCurrentFolderId(folder.id);
                     setFolderPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
                   })}
-                  // ✅ העברת עריכה (הלוגיקה הפנימית ב-Viewer תחסום אם אין הרשאה)
                   onEdit={handleEdit}
                   onToggleStar={handleToggleStar}
                   onToggleImportant={handleToggleImportant}
@@ -199,30 +165,14 @@ function SharedView() {
         </>
       )}
 
-      <FileViewerModal
-        file={openedFile}
-        role={openedRole}
-        onClose={() => setOpenedFile(null)}
-        onShare={setSharingItem}
-        onToggleStar={handleToggleStar}
-        onToggleImportant={handleToggleImportant}
-        onEdit={handleEdit} // ✅
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
-      />
+      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem} onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onEdit={handleEdit} onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
 
-      {/* ✅ מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView
-                file={editingFile}
-                initialData={editingFile}
-                folders={[]} // משותפים לא ניתן להזיז לתיקיות האישיות דרך עורך זה
-                onSave={handleSaveEdit}
-                onCancel={() => setEditingFile(null)}
-              />
+              <FileEditorView file={editingFile} initialData={editingFile} folders={[]} onSave={handleSaveEdit} onCancel={() => setEditingFile(null)} />
             </div>
           </div>
         </div>
