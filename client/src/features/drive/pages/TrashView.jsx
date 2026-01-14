@@ -110,10 +110,8 @@ function TrashView() {
 
   return (
     <div className="p-4" style={{ height: "100%", overflowY: "auto" }}>
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <div className="d-flex align-items-center gap-2">
-          <h2 className="m-0 fw-bold" style={{ color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>Trash</h2>
-        </div>
+      <div className="page-title-container">
+        <h2>Trash</h2>
         <div className="d-flex align-items-center gap-2">
           <ViewModeToggle />
           {hasItems && (
@@ -121,7 +119,6 @@ function TrashView() {
               className="btn btn-danger d-flex align-items-center gap-2 px-3 rounded-pill"
               disabled={loading}
               onClick={onEmptyTrash}
-              style={{ backdropFilter: "blur(5px)", opacity: 0.9 }}
             >
               <FiTrash2 /> Empty trash
             </button>

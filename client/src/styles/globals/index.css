@@ -3,10 +3,17 @@
 /* ==========================================================================
    GLOBAL RESET & LAYOUT
    ========================================================================== */
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
-  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -16,9 +23,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.app-layout { display: flex; flex-direction: column; height: 100vh; }
-.app-body { display: flex; flex: 1; overflow: hidden; }
-.app-content { flex: 1; padding: 24px; overflow-y: auto; }
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
 
 /* ==========================================================================
    THEMES & TEXT VISIBILITY FIXES
@@ -27,42 +48,55 @@ body {
   /* Day Theme */
   --bg-app: transparent;
   --bg-paper: #ffffff;
-  
+
   /* ✅ CHANGED: Darker text for Day mode to stand out on glass */
-  --text-primary: #1a1a1a; 
-  --text-secondary: #4a4a4a; 
-  
-  --border-color: rgba(0,0,0,0.15);
-  --hover-bg: rgba(0,0,0,0.05);
-  
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+
+  --border-color: rgba(0, 0, 0, 0.15);
+  --hover-bg: rgba(0, 0, 0, 0.05);
+
   /* צל עדין ליום - עוזר לקריאות על עננים */
-  --text-shadow-global: 0 1px 2px rgba(255,255,255,0.5); 
+  --text-shadow-global: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"] {
   --bg-app: transparent;
   --bg-paper: #1e1e1e;
-  
+
   /* ✅ CHANGED: Bright White for Night mode */
-  --text-primary: #ffffff; 
-  --text-secondary: #e0e0e0; /* אפור בהיר מאוד במקום כהה */
-  
-  --border-color: rgba(255,255,255,0.2);
-  --hover-bg: rgba(255,255,255,0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  /* אפור בהיר מאוד במקום כהה */
+
+  --border-color: rgba(255, 255, 255, 0.2);
+  --hover-bg: rgba(255, 255, 255, 0.1);
 
   /* צל שחור ללילה - הקסם שהופך את הטקסט לקריא */
-  --text-shadow-global: 0 1px 4px rgba(0,0,0,0.8);
+  --text-shadow-global: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 /* החלת הצבעים והצל על כל הטקסטים באתר */
-body, h1, h2, h3, h4, h5, h6, p, span, div {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div {
   color: var(--text-primary);
 }
 
 /* הודעות ריקות כמו "No files yet" וטקסטים משניים */
-.text-muted, .text-secondary, .empty-state-text {
+.text-muted,
+.text-secondary,
+.empty-state-text {
   color: var(--text-secondary) !important;
-  text-shadow: var(--text-shadow-global); /* הוספת הצל */
+  text-shadow: var(--text-shadow-global);
+  /* הוספת הצל */
   font-weight: 500;
 }
 
@@ -71,45 +105,51 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
    ========================================================================== */
 
 /* עיצוב הזכוכית של התפריטים */
-.dropdown-menu, .user-dropdown {
+.dropdown-menu,
+.user-dropdown {
   background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.1) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 /* פריטים בתוך התפריט */
-.dropdown-item, .user-dropdown-item {
-  color: #333 !important; /* תמיד כהה ביום */
+.dropdown-item,
+.user-dropdown-item {
+  color: #333 !important;
+  /* תמיד כהה ביום */
   font-weight: 500;
 }
 
-.dropdown-item:hover, .user-dropdown-item:hover {
-  background: rgba(0,0,0,0.05) !important;
+.dropdown-item:hover,
+.user-dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* ✅ DARK MODE SPECIFIC FOR DROPDOWNS */
-[data-theme="dark"] .dropdown-menu, 
+[data-theme="dark"] .dropdown-menu,
 [data-theme="dark"] .user-dropdown {
-  background: rgba(30, 30, 30, 0.9) !important; /* רקע כהה כמעט אטום */
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  background: rgba(30, 30, 30, 0.9) !important;
+  /* רקע כהה כמעט אטום */
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* הטקסט בתוך התפריט בלילה - לבן! */
-[data-theme="dark"] .dropdown-item, 
+[data-theme="dark"] .dropdown-item,
 [data-theme="dark"] .user-dropdown-item,
 [data-theme="dark"] .dropdown-header {
   color: #ffffff !important;
 }
 
-[data-theme="dark"] .dropdown-item:hover, 
+[data-theme="dark"] .dropdown-item:hover,
 [data-theme="dark"] .user-dropdown-item:hover {
-  background: rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* טקסט הפרופיל (ליד התמונה) */
-.user-name-text, .header-user-name {
+.user-name-text,
+.header-user-name {
   color: var(--text-primary) !important;
   text-shadow: var(--text-shadow-global);
   font-weight: 600;
@@ -118,11 +158,15 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
 /* ==========================================================================
    COMPONENT STYLES (Glass)
    ========================================================================== */
-.dashboard-root, .dashboard-root .mainarea, .dashboard-root .dashboard-main, .copa-auth-container {
+.dashboard-root,
+.dashboard-root .mainarea,
+.dashboard-root .dashboard-main,
+.copa-auth-container {
   background: transparent !important;
 }
 
-.copa-auth-card, .modal-content {
+.copa-auth-card,
+.modal-content {
   background-color: var(--bg-paper) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
@@ -130,21 +174,23 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
 
 /* Headers background (Glass Strip) */
 .dashboard-main div[class*="border-bottom"] {
-  background: rgba(255, 255, 255, 0.65) !important; /* יותר שקיפות */
+  background: rgba(255, 255, 255, 0.65) !important;
+  /* יותר שקיפות */
   backdrop-filter: blur(12px);
   border-radius: 12px;
   padding: 12px 20px !important;
   margin-bottom: 12px !important;
-  border: 1px solid rgba(255,255,255,0.4) !important;
-  
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+
   /* הטקסט בתוך הסטריפ */
-  color: #000 !important; 
-  text-shadow: none !important; /* כאן לא צריך צל כי יש רקע */
+  color: #000 !important;
+  text-shadow: none !important;
+  /* כאן לא צריך צל כי יש רקע */
 }
 
 [data-theme="dark"] .dashboard-main div[class*="border-bottom"] {
   background: rgba(40, 40, 40, 0.65) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #fff !important;
 }
 
@@ -153,24 +199,66 @@ body, h1, h2, h3, h4, h5, h6, p, span, div {
 }
 
 /* Inputs */
-input, select, .form-control, .form-select {
-  background-color: rgba(255, 255, 255, 0.8) !important; /* קצת שקיפות */
+input,
+select,
+.form-control,
+.form-select {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  /* קצת שקיפות */
   color: #000 !important;
   border: 1px solid transparent !important;
 }
 
-[data-theme="dark"] input, 
-[data-theme="dark"] select, 
+[data-theme="dark"] input,
+[data-theme="dark"] select,
 [data-theme="dark"] .form-control {
   background-color: rgba(50, 50, 50, 0.8) !important;
   color: #fff !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-input::placeholder { color: #666 !important; opacity: 0.8; }
-[data-theme="dark"] input::placeholder { color: #ccc !important; }
+input::placeholder {
+  color: #666 !important;
+  opacity: 0.8;
+}
+
+[data-theme="dark"] input::placeholder {
+  color: #ccc !important;
+}
 
 /* Modal Fixes */
-.modal-content { box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-.modal { z-index: 1055 !important; }
-.modal-backdrop { z-index: 1050 !important; background-color: rgba(0,0,0,0.6) !important; }
+.modal-content {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.modal {
+  z-index: 1055 !important;
+}
+
+.modal-backdrop {
+  z-index: 1050 !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.page-title-container {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  padding: 15px 25px;
+  border-radius: 20px;
+  border: var(--glass-border) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* תיקון צבע הכותרת עצמה שיהיה בולט */
+.page-title-container h2 {
+  margin: 0;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px;
+  color: var(--text-primary) !important;
+}

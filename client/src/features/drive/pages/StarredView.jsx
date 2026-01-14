@@ -11,7 +11,7 @@ import FileViewerModal from "features/drive/widgets/FileViewerModal";
 import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
-import { FiStar } from "react-icons/fi"; 
+import { FiStar } from "react-icons/fi";
 
 function StarredView({ onChangeView }) {
   const [items, setItems] = useState([]);
@@ -34,7 +34,7 @@ function StarredView({ onChangeView }) {
 
   useEffect(() => {
     if (myUserId) {
-        getCurrentUser(myUserId).then(setCurrentUser).catch(() => {});
+      getCurrentUser(myUserId).then(setCurrentUser).catch(() => { });
     }
   }, [myUserId]);
 
@@ -52,35 +52,35 @@ function StarredView({ onChangeView }) {
   }, []);
 
   // ✅ Destructuring כולל עריכה
-  const { 
-    sharingItem, setSharingItem, 
-    openedFile, setOpenedFile, 
+  const {
+    sharingItem, setSharingItem,
+    openedFile, setOpenedFile,
     editingFile, setEditingFile,
-    openedRole, 
-    handleOpen, 
-    handleToggleStar, 
-    handleToggleImportant, 
-    handleEdit, 
+    openedRole,
+    handleOpen,
+    handleToggleStar,
+    handleToggleImportant,
+    handleEdit,
     handleSaveEdit,
-    handleDelete 
+    handleDelete
   } = useFileActions(myUserId, loadData);
 
   useEffect(() => { loadData(); }, [loadData]);
   const ownersMap = useOwnersMap(items);
 
   const getOwnerLabel = useCallback((item) => {
-      if (!item?.ownerId) return "Unknown";
-      if (item.ownerId === myUserId) return "Me";
-      const u = ownersMap[item.ownerId];
-      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-      return fullName || u?.email || "External";
+    if (!item?.ownerId) return "Unknown";
+    if (item.ownerId === myUserId) return "Me";
+    const u = ownersMap[item.ownerId];
+    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
   const getOwnerAvatar = useCallback((item) => {
-      if (!item?.ownerId) return "";
-      if (item.ownerId === myUserId) return currentUser?.image || "";
-      const u = ownersMap[item.ownerId];
-      return u?.image || "";
+    if (!item?.ownerId) return "";
+    if (item.ownerId === myUserId) return currentUser?.image || "";
+    const u = ownersMap[item.ownerId];
+    return u?.image || "";
   }, [ownersMap, myUserId, currentUser]);
 
   const onOpenFolder = (folder) => {
@@ -90,27 +90,27 @@ function StarredView({ onChangeView }) {
 
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="m-0" style={{ color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>Starred</h2>
+      <div className="page-title-container">
+        <h2>Starred</h2>
         <ViewModeToggle />
       </div>
 
       {items.length === 0 ? (
-         <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
-           <div className="d-flex align-items-center justify-content-center" 
-                style={{ 
-                    width: "100px", height: "100px", borderRadius: "50%", 
-                    background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)",
-                    border: "1px solid var(--border-color)",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
-                }}>
-              <FiStar size={42} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
-           </div>
-         </div>
+        <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
+          <div className="d-flex align-items-center justify-content-center"
+            style={{
+              width: "100px", height: "100px", borderRadius: "50%",
+              background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
+            }}>
+            <FiStar size={42} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
+          </div>
+        </div>
       ) : viewMode === "list" ? (
         <>
           <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-               style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+            style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
             <div style={{ flex: 1 }}>Name</div>
             <div style={{ width: "150px" }}>Owner</div>
             <div style={{ width: "150px" }}>Date created</div>
@@ -136,24 +136,24 @@ function StarredView({ onChangeView }) {
         </div>
       )}
 
-      <FileViewerModal 
-        file={openedFile} 
-        role={openedRole} 
-        onClose={() => setOpenedFile(null)} 
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onEdit={handleEdit} // ✅
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
-      
+
       {/* ✅ מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
                 folders={[]} // רשימת תיקיות ריקה כרגע בתצוגה זו
