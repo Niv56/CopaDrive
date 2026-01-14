@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-// שימוש בנתיב המוחלט כפי שראינו ב-MyDrive
-import { useAuth } from "app/providers/AuthContext";
+import { useAuth } from "app/providers/AuthContext"; // שימוש בנתיב מוחלט
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
-import "../permissions/Permissions.css";
+import "../../../../styles/widgets/Permissions.css";
 
 function decodeUserId(token) {
     try {
