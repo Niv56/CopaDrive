@@ -7,8 +7,8 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅ ייבוא העורך
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
-// CreateItem הוסר מכאן כי הוא מגיע מ-MainArea
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
@@ -43,26 +43,29 @@ export default function HomeView({ onChangeView }) {
     }
   }, []);
 
+  // ✅ Destructuring מלא כולל עריכה
   const {
-    sharingItem,
-    setSharingItem,
-    openedFile,
-    setOpenedFile,
+    sharingItem, setSharingItem,
+    openedFile, setOpenedFile,
+    editingFile, setEditingFile,
     openedRole,
     handleOpen,
     handleToggleStar,
     handleToggleImportant,
+    handleEdit,
+    handleSaveEdit,
     handleDelete,
   } = useFileActions(myUserId, loadAll);
 
   useEffect(() => {
     loadAll();
-    // מאזין לאירוע גלובלי (שהכפתור ב-MainArea ישלח)
     window.addEventListener("reset-home", loadAll);
     return () => window.removeEventListener("reset-home", loadAll);
   }, [loadAll]);
 
   const ownersMap = useOwnersMap(allItems);
+  // כאן אנחנו כן טוענים את כל הקבצים, אז אפשר לחשב תיקיות עבור העורך
+  const allFolders = useMemo(() => allItems.filter(f => f.type === 'folder'), [allItems]);
 
   const getOwnerLabel = useCallback((item) => {
       if (!item?.ownerId) return "Unknown";
@@ -131,7 +134,7 @@ export default function HomeView({ onChangeView }) {
               <FileListItem key={item.id} item={item} ownerLabel={getOwnerLabel(item)} ownerAvatar={getOwnerAvatar(item)}
                 dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                 onOpen={openFromHome} onShare={setSharingItem} onToggleStar={handleToggleStar}
-                onToggleImportant={handleToggleImportant} onDelete={handleDelete} />
+                onToggleImportant={handleToggleImportant} onDelete={handleDelete} onEdit={handleEdit} />
             ))}
           </div>
         ) : (
@@ -177,7 +180,7 @@ export default function HomeView({ onChangeView }) {
               <FileListItem key={item.id} item={item} ownerLabel={getOwnerLabel(item)} ownerAvatar={getOwnerAvatar(item)}
                 dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
                 onOpen={openFromHome} onShare={setSharingItem} onToggleStar={handleToggleStar}
-                onToggleImportant={handleToggleImportant} onDelete={handleDelete} />
+                onToggleImportant={handleToggleImportant} onDelete={handleDelete} onEdit={handleEdit} />
             ))}
           </div>
         ) : (
@@ -191,13 +194,36 @@ export default function HomeView({ onChangeView }) {
         )}
       </div>
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
-      {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit} // ✅
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+      />
       
-      {/* ❌ CreateItem הוסר מכאן 
-         הוא ירונדר אוטומטית ע"י MainArea.jsx
-      */}
+      {/* ✅ מודל העריכה */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={allFolders} // בבית יש לנו את כל התיקיות
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
     </div>
   );
 }
