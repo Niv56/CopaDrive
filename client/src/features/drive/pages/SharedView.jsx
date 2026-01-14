@@ -4,16 +4,16 @@ import { useAuth } from "app/providers/AuthContext";
 import { useFileActions } from "features/drive/hooks/useFileActions";
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
-import { FiUsers } from "react-icons/fi"; // ✅ אייקון חדש
+import { FiUsers } from "react-icons/fi";
 
 function SharedView() {
   const [allFiles, setAllFiles] = useState([]);
-  // Loading state exists internally
   const [loading, setLoading] = useState(true);
   const [ownersData, setOwnersData] = useState({});
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
@@ -53,7 +53,7 @@ function SharedView() {
           const userData = await getCurrentUser(id);
           setOwnersData((prev) => ({ ...prev, [id]: userData }));
         } catch {
-          // Ignore and use fallback UI.
+          // Ignore
         }
       });
     } finally {
@@ -61,31 +61,35 @@ function SharedView() {
     }
   };
 
-  const { sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole, handleOpen, handleDelete } = useFileActions(myUserId, loadFiles);
+  // ✅ Destructuring כולל עריכה
+  const { 
+    sharingItem, setSharingItem, 
+    openedFile, setOpenedFile, 
+    editingFile, setEditingFile, 
+    openedRole, 
+    handleOpen, 
+    handleDelete,
+    handleToggleStar,        // כוכב
+    handleToggleImportant,   // חשיבות
+    handleEdit,              // עריכה
+    handleSaveEdit           // שמירה
+  } = useFileActions(myUserId, loadFiles);
 
   useEffect(() => {
     loadFiles();
   }, []);
 
-const displayItems = useMemo(() => {
-  if (!selectedOwnerId) return [];
-
-  return allFiles.filter((f) => {
-    // 1. חייב להיות שייך לבעלים שנבחר
-    if (f.ownerId !== selectedOwnerId) return false;
-
-    // 2. אם אנחנו בתוך תיקייה ששותפה איתנו, הצג רק את הילדים שלה
-    if (currentFolderId) {
-      return f.parentId === currentFolderId;
-    }
-
-    // 3. אם אנחנו בשורש של "Shared with me" (תצוגת הבעלים):
-    // הצג קבצים ששותפו איתי ישירות (מופיעים ב-permissions) 
-    // או קבצים שהאבא שלהם לא נמצא ברשימת המשותפים שלי
-    const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
-    return !parentIsAlsoShared;
-  });
-}, [allFiles, selectedOwnerId, currentFolderId]);
+  const displayItems = useMemo(() => {
+    if (!selectedOwnerId) return [];
+    return allFiles.filter((f) => {
+      if (f.ownerId !== selectedOwnerId) return false;
+      if (currentFolderId) {
+        return f.parentId === currentFolderId;
+      }
+      const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
+      return !parentIsAlsoShared;
+    });
+  }, [allFiles, selectedOwnerId, currentFolderId]);
 
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -116,7 +120,6 @@ const displayItems = useMemo(() => {
       </div>
 
       {!selectedOwnerId && Object.keys(ownersData).length === 0 ? (
-         /* ✅ Empty State - Glass Users Icon */
          <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
            <div className="d-flex align-items-center justify-content-center" 
                 style={{ 
@@ -188,6 +191,11 @@ const displayItems = useMemo(() => {
                         setCurrentFolderId(folder.id);
                         setFolderPath((prev) => [...prev, { id: folder.id, name: folder.name }]);
                     })}
+                    // ✅ העברת עריכה (הלוגיקה הפנימית ב-Viewer תחסום אם אין הרשאה)
+                    onEdit={handleEdit} 
+                    onToggleStar={handleToggleStar}
+                    onToggleImportant={handleToggleImportant}
+                    onDelete={handleDelete}
                     />
                 ))
                 )}
@@ -195,8 +203,35 @@ const displayItems = useMemo(() => {
         </>
       )}
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit} // ✅
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+      />
+      
+      {/* ✅ מודל העריכה */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={[]} // משותפים לא ניתן להזיז לתיקיות האישיות דרך עורך זה
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
     </div>
   );

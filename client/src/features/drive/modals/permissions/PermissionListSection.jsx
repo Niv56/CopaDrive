@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getPermissions, deletePermission, togglePermissionRole } from "../../api/permissionsApi";
-import { getCurrentUser } from "../../api/filesApi"; 
+import { getCurrentUser } from "../../api/filesApi";
 import PermissionRow from "./PermissionRow";
 
 export default function PermissionListSection({ fileId, isOwner, myUserId, ownerId, refreshTrigger }) {
@@ -13,17 +13,22 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             const data = await getPermissions(fileId);
             const enriched = await Promise.all(data.permissions.map(async (perm) => {
                 try {
-                    const user = await getCurrentUser(perm.userId); 
+                    const user = await getCurrentUser(perm.userId);
+                    if (!user) return perm; // בדיקת בטיחות: אם אין משתמש, אל תמשיך
+
                     const isActuallyOwner = String(perm.userId) === String(ownerId);
-                    return { 
-                        ...perm, 
+                    return {
+                        ...perm,
                         role: isActuallyOwner ? "owner" : perm.role,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        email: user.email,
-                        image: user.image 
+                        firstName: user.firstName || "",
+                        lastName: user.lastName || "",
+                        email: user.email || "",
+                        image: user.image || ""
                     };
-                } catch { return perm; }
+                } catch (e) {
+                    console.error("Error enriching permission:", e);
+                    return perm;
+                }
             }));
             setPermissions(enriched);
         } catch (e) {
@@ -41,10 +46,10 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
                     <div className="text-center opacity-50 small py-3">No one else has access yet</div>
                 ) : (
                     permissions.map(p => (
-                        <PermissionRow 
-                            key={p.id || p.userId} 
-                            permission={p} 
-                            canManage={isOwner && p.role !== "owner"} 
+                        <PermissionRow
+                            key={p.id || p.userId}
+                            permission={p}
+                            canManage={isOwner && p.role !== "owner"}
                             onDelete={async () => { await deletePermission(fileId, p.id); load(); }}
                             onToggle={async () => { await togglePermissionRole(fileId, p.id); load(); }}
                         />

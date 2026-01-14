@@ -20,7 +20,7 @@ const resolveRole = (userId, fileId) => {
     let found = null;
 
     while (currentId !== null) {
-        const item = fileRepository.findById(currentId); 
+        const item = fileRepository.findById(currentId);
         if (!item) break;
 
         if (item.ownerId === userId) return "owner";
@@ -72,22 +72,33 @@ exports.getPermissions = (requesterId, fileId) => {
 
 // Add new permission and unblock user if necessary
 exports.addPermission = (ownerId, fileId, payload) => {
-    verifyOwnership(ownerId, fileId);
+    const file = verifyOwnership(ownerId, fileId);
+    const targetUserId = payload.userId;
 
-    const targetUser = userRepository.findById(payload.userId);
-    if (!targetUser) {
-        const err = new Error('User to grant permission to not found');
-        err.status = 404;
-        throw err;
-    }
-
-    const file = fileRepository.findById(fileId);
-    if (file && file.blockedBy && Array.isArray(file.blockedBy)) {
-        const blockedBy = file.blockedBy.filter(uid => uid !== payload.userId);
-        if (blockedBy.length !== file.blockedBy.length) {
-            fileRepository.update(fileId, { blockedBy });
+    const unblock = (id) => {
+        const item = fileRepository.findById(id);
+        if (item && Array.isArray(item.blockedBy)) {
+            const nextBlocked = item.blockedBy.filter(uid => uid !== targetUserId);
+            if (nextBlocked.length !== item.blockedBy.length) {
+                fileRepository.update(id, { blockedBy: nextBlocked });
+            }
         }
-    }
+    };
+
+    const allFiles = fileRepository.findAll();
+    const toUnblock = [];
+
+    const collect = (pid) => {
+        allFiles.filter(f => f.parentId === pid).forEach(f => {
+            toUnblock.push(f.id);
+            if (f.type === 'folder') collect(f.id);
+        });
+    };
+
+    toUnblock.push(fileId);
+    if (file.type === 'folder') collect(fileId);
+
+    toUnblock.forEach(id => unblock(id));
 
     const existingPermissions = permissionRepository.findByFileId(fileId);
     const duplicate = existingPermissions.find(p => p.userId === payload.userId);
@@ -142,7 +153,7 @@ const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
     let foundPermission = null;
 
     while (currentId !== null) {
-        const item = fileRepository.findById(currentId); 
+        const item = fileRepository.findById(currentId);
         if (!item) break;
 
         if (item.ownerId === userId) return true;

@@ -7,6 +7,7 @@ import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
 
 import FileListItem from "features/drive/widgets/FileListItem";
 import FileViewerModal from "features/drive/widgets/FileViewerModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView"; // ✅
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
@@ -17,7 +18,6 @@ import { FiHardDrive } from "react-icons/fi";
 export default function StorageView({ onChangeView }) {
   const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
   const [files, setFiles] = useState([]);
-  // Loading state exists internally
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const { token } = useAuth();
@@ -49,11 +49,26 @@ export default function StorageView({ onChangeView }) {
     }
   }, []);
 
-  const { sharingItem, setSharingItem, openedFile, setOpenedFile, openedRole, handleOpen, handleToggleStar, handleToggleImportant, handleDelete } = useFileActions(myUserId, load);
+  // ✅ Destructuring כולל עריכה
+  const { 
+    sharingItem, setSharingItem, 
+    openedFile, setOpenedFile, 
+    editingFile, setEditingFile,
+    openedRole, 
+    handleOpen, 
+    handleToggleStar, 
+    handleToggleImportant, 
+    handleEdit, 
+    handleSaveEdit,
+    handleDelete 
+  } = useFileActions(myUserId, load);
 
   useEffect(() => { load(); }, [load]);
 
   const sortedFiles = useMemo(() => [...files].filter((f) => f.type === "file").sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0)), [files]);
+  // חישוב תיקיות עבור העורך
+  const allFolders = useMemo(() => files.filter(f => f.type === 'folder'), [files]);
+  
   const ownersMap = useOwnersMap(sortedFiles);
 
   const getOwnerLabel = useCallback((item) => {
@@ -123,13 +138,40 @@ export default function StorageView({ onChangeView }) {
                   onChangeView?.("mydrive");
                   setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
               })}
-              onShare={setSharingItem} onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onDelete={handleDelete} />
+              onShare={setSharingItem} onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onDelete={handleDelete} onEdit={handleEdit} />
           ))
         )}
       </div>
 
-      <FileViewerModal file={openedFile} role={openedRole} onClose={() => setOpenedFile(null)} onShare={setSharingItem}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} />
+      <FileViewerModal 
+        file={openedFile} 
+        role={openedRole} 
+        onClose={() => setOpenedFile(null)} 
+        onShare={setSharingItem}
+        onToggleStar={handleToggleStar}
+        onToggleImportant={handleToggleImportant}
+        onEdit={handleEdit} // ✅
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+      />
+
+      {/* ✅ מודל העריכה */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView 
+                file={editingFile}
+                initialData={editingFile}
+                folders={allFolders} // אפשר להעביר כאן תיקיות
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {sharingItem ? <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} /> : null}
     </div>
   );
