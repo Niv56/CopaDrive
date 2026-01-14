@@ -74,7 +74,7 @@ const collectSubtreeIds = (rootId) => {
     if (visited.has(currentId)) continue;
     visited.add(currentId);
     ids.push(currentId);
-    const children = fileRepository.findByParent(currentId) || [];
+    const children = fileRepository.findByParent(currentId) || []; 
     for (const child of children) stack.push(child.id);
   }
   return ids;
