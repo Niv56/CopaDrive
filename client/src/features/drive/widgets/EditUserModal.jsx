@@ -10,11 +10,6 @@ const shallowEqual = (a, b) => {
   return true;
 };
 
-/**
- * EditUserModal
- * Handles updating user profile details (Name, Phone, Avatar) and Password.
- * Includes "dirty state" detection to warn before discarding unsaved changes.
- */
 export default function EditUserModal({
   show,
   onClose,
@@ -228,7 +223,6 @@ export default function EditUserModal({
 
       const updatedUser = await updateUserProfile(userId, patch);
 
-      // Notify the application globally that the user (and potentially avatar) has changed
       window.dispatchEvent(
         new CustomEvent("user-updated", { detail: { userId, user: updatedUser } })
       );
@@ -245,11 +239,10 @@ export default function EditUserModal({
           } else {
             setErrors((p) => ({ ...p, general: msg }));
           }
-          return; // Do not close modal if password fails
+          return;
         }
       }
 
-      // Update snapshot to match new saved state
       initialSnapshotRef.current = {
         firstName: patch.firstName,
         lastName: patch.lastName,
@@ -271,6 +264,35 @@ export default function EditUserModal({
 
   return (
     <>
+      {/* ✅ CSS מעודכן: תיבות מעוגלות, רקע אפור ברור (contrast), ופוקוס יפה */}
+      <style>{`
+        .edit-user-input {
+          background-color: #f1f3f4 !important; /* רקע אפור בולט יותר */
+          border: 1px solid transparent !important;
+          border-radius: 50px !important; /* מעוגל כמו החיפוש */
+          padding: 10px 20px !important; /* ריווח פנימי נוח */
+          color: #202124 !important;
+          transition: all 0.2s ease-in-out !important;
+        }
+        
+        .edit-user-input:focus {
+          background-color: #ffffff !important;
+          border-color: transparent !important;
+          box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important; /* צללית יפה בפוקוס */
+          color: #202124 !important;
+        }
+
+        /* התאמה למצב לילה - שיהיה קריא גם שם */
+        [data-theme="dark"] .edit-user-input {
+          background-color: #303134 !important;
+          color: #e8eaed !important;
+        }
+        [data-theme="dark"] .edit-user-input:focus {
+          background-color: #3c4043 !important;
+          box-shadow: 0 1px 6px rgba(0,0,0,0.5) !important;
+        }
+      `}</style>
+
       {/* Main Edit Modal */}
       <div
         className="modal d-block"
@@ -280,25 +302,25 @@ export default function EditUserModal({
         onClick={requestClose}
       >
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-content shadow" style={{ borderRadius: 12 }}>
-            <div className="modal-header">
-              <h5 className="modal-title">Edit user</h5>
+          <div className="modal-content shadow" style={{ borderRadius: 24, border: "none" }}> {/* גם למודל עצמו עיגול יפה יותר */}
+            <div className="modal-header border-0 pb-0 pt-4 px-4">
+              <h4 className="modal-title fw-bold">Edit user</h4>
               <button type="button" className="btn-close" aria-label="Close" onClick={requestClose} />
             </div>
 
-            <div className="modal-body">
-              {errors.general && <div className="alert alert-danger">{errors.general}</div>}
+            <div className="modal-body p-4">
+              {errors.general && <div className="alert alert-danger rounded-4">{errors.general}</div>}
 
               <div className="row g-4">
                 {/* Left Column: Avatar */}
-                <div className="col-12 col-md-4">
-                  <div className="d-flex flex-column align-items-center">
+                <div className="col-12 col-md-4 border-end">
+                  <div className="d-flex flex-column align-items-center h-100 justify-content-center">
                     <div
-                      className="rounded-circle border overflow-hidden"
+                      className="rounded-circle overflow-hidden position-relative shadow-sm"
                       style={{
-                        width: 120,
-                        height: 120,
-                        background: "#f5f5f5",
+                        width: 140,
+                        height: 140,
+                        background: "#f1f3f4",
                         cursor: imagePreview ? "pointer" : "default",
                       }}
                       onClick={() => imagePreview && setShowImagePreview(true)}
@@ -310,15 +332,15 @@ export default function EditUserModal({
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
                       ) : (
-                        <div className="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
-                          No image
+                        <div className="w-100 h-100 d-flex align-items-center justify-content-center text-muted display-4">
+                          👤
                         </div>
                       )}
                     </div>
 
-                    <div className="mt-3 d-flex gap-2">
-                      <label className="btn btn-outline-primary btn-sm mb-0">
-                        Upload
+                    <div className="mt-4 d-flex flex-column gap-2 w-75">
+                      <label className="btn btn-primary rounded-pill w-100">
+                        Change photo
                         <input
                           type="file"
                           accept="image/*"
@@ -327,113 +349,113 @@ export default function EditUserModal({
                         />
                       </label>
 
-                      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={removeImage}>
-                        Remove
-                      </button>
+                      {imagePreview && (
+                        <button type="button" className="btn btn-outline-danger rounded-pill w-100" onClick={removeImage}>
+                          Remove
+                        </button>
+                      )}
                     </div>
 
-                    {errors.image && <div className="text-danger mt-2" style={{ fontSize: 13 }}>{errors.image}</div>}
+                    {errors.image && <div className="text-danger mt-2 small">{errors.image}</div>}
                   </div>
                 </div>
 
                 {/* Right Column: Fields */}
-                <div className="col-12 col-md-8">
+                <div className="col-12 col-md-8 ps-md-4">
                   <div className="row g-3">
                     <div className="col-12 col-md-6">
-                      <label className="form-label">First name</label>
+                      <label className="form-label fw-bold small ms-2 text-muted">FIRST NAME</label>
                       <input
-                        className={`form-control ${errors.firstName ? "is-invalid" : ""}`}
+                        className={`form-control edit-user-input ${errors.firstName ? "is-invalid" : ""}`}
                         value={firstName}
                         onChange={(e) => { setFirstName(e.target.value); clearErr("firstName"); }}
+                        placeholder="Enter first name"
                       />
-                      {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+                      {errors.firstName && <div className="invalid-feedback ms-2">{errors.firstName}</div>}
                     </div>
 
                     <div className="col-12 col-md-6">
-                      <label className="form-label">Last name</label>
-                      <input className="form-control" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                      <label className="form-label fw-bold small ms-2 text-muted">LAST NAME</label>
+                      <input 
+                        className="form-control edit-user-input" 
+                        value={lastName} 
+                        onChange={(e) => setLastName(e.target.value)} 
+                        placeholder="Enter last name"
+                      />
                     </div>
 
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Phone</label>
+                    <div className="col-12">
+                      <label className="form-label fw-bold small ms-2 text-muted">PHONE NUMBER</label>
                       <input
-                        className={`form-control ${errors.phoneNumber ? "is-invalid" : ""}`}
+                        className={`form-control edit-user-input ${errors.phoneNumber ? "is-invalid" : ""}`}
                         value={phoneNumber}
                         onChange={(e) => { setPhoneNumber(e.target.value); clearErr("phoneNumber"); }}
                         placeholder="05X-XXX-XXXX"
                       />
-                      {errors.phoneNumber ? (
-                        <div className="invalid-feedback">{errors.phoneNumber}</div>
-                      ) : (
-                        <div className="form-text small text-secondary">
-                          Israeli mobile numbers only
-                        </div>
-                      )}
+                      {errors.phoneNumber && <div className="invalid-feedback ms-2">{errors.phoneNumber}</div>}
                     </div>
                   </div>
 
-                  <hr className="my-4" />
+                  <div className="my-4 border-top"></div>
 
-                  <h6 className="mb-3">Change password</h6>
+                  <h6 className="mb-3 fw-bold">Change Password</h6>
 
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label">Current password</label>
                       <input
                         type="password"
-                        className={`form-control ${errors.currentPassword ? "is-invalid" : ""}`}
+                        className={`form-control edit-user-input ${errors.currentPassword ? "is-invalid" : ""}`}
                         value={currentPassword}
                         onChange={(e) => { setCurrentPassword(e.target.value); clearErr("currentPassword"); }}
+                        placeholder="Current password"
                         autoComplete="current-password"
                       />
-                      {errors.currentPassword && <div className="invalid-feedback">{errors.currentPassword}</div>}
+                      {errors.currentPassword && <div className="invalid-feedback ms-2">{errors.currentPassword}</div>}
                     </div>
 
                     <div className="col-12 col-md-6">
-                      <label className="form-label">New password</label>
                       <input
                         type="password"
-                        className={`form-control ${errors.newPassword ? "is-invalid" : ""}`}
+                        className={`form-control edit-user-input ${errors.newPassword ? "is-invalid" : ""}`}
                         value={newPassword}
                         onChange={(e) => { setNewPassword(e.target.value); clearErr("newPassword"); }}
+                        placeholder="New password"
                         autoComplete="new-password"
                       />
-                      {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
-
-                      {newPassword && (
-                        <div className="mt-2 p-3 bg-white bg-opacity-75 rounded-3 border text-dark">
-                          <InfoRow ok={passwordStrength.hasLength} text="At least 8 characters" />
-                          <InfoRow ok={passwordStrength.hasUpper} text="One uppercase letter (A-Z)" />
-                          <InfoRow ok={passwordStrength.hasLower} text="One lowercase letter (a-z)" />
-                          <InfoRow ok={passwordStrength.hasNumber} text="One number (0-9)" />
-                        </div>
-                      )}
+                      {errors.newPassword && <div className="invalid-feedback ms-2">{errors.newPassword}</div>}
                     </div>
 
                     <div className="col-12 col-md-6">
-                      <label className="form-label">Confirm new password</label>
                       <input
                         type="password"
-                        className={`form-control ${errors.confirmNewPassword ? "is-invalid" : ""}`}
+                        className={`form-control edit-user-input ${errors.confirmNewPassword ? "is-invalid" : ""}`}
                         value={confirmNewPassword}
                         onChange={(e) => { setConfirmNewPassword(e.target.value); clearErr("confirmNewPassword"); }}
+                        placeholder="Confirm new password"
                         autoComplete="new-password"
                       />
-                      {errors.confirmNewPassword && <div className="invalid-feedback">{errors.confirmNewPassword}</div>}
+                      {errors.confirmNewPassword && <div className="invalid-feedback ms-2">{errors.confirmNewPassword}</div>}
                     </div>
 
-                    <small className="text-muted">Leave password fields empty if you don't want to change it.</small>
+                    {newPassword && (
+                      <div className="mt-2 p-3 bg-light rounded-4 border">
+                        <InfoRow ok={passwordStrength.hasLength} text="At least 8 characters" />
+                        <InfoRow ok={passwordStrength.hasUpper} text="One uppercase letter" />
+                        <InfoRow ok={passwordStrength.hasLower} text="One lowercase letter" />
+                        <InfoRow ok={passwordStrength.hasNumber} text="One number" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button type="button" className="btn btn-light" onClick={requestClose} disabled={saving}>
+            <div className="modal-footer border-0 pt-0 pb-4 px-4">
+              <button type="button" className="btn btn-light rounded-pill px-4" onClick={requestClose} disabled={saving}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "Save"}
+              <button type="button" className="btn btn-primary rounded-pill px-4" onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save changes"}
               </button>
             </div>
           </div>
@@ -450,15 +472,15 @@ export default function EditUserModal({
           onClick={() => setShowDiscardConfirm(false)}
         >
           <div className="modal-dialog modal-dialog-centered" role="document" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content shadow" style={{ borderRadius: 12 }}>
-              <div className="modal-header">
-                <h6 className="modal-title">Discard changes?</h6>
+            <div className="modal-content shadow rounded-4">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold">Unsaved changes</h5>
                 <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowDiscardConfirm(false)} />
               </div>
-              <div className="modal-body">You have unsaved changes. If you close now, they will be lost.</div>
-              <div className="modal-footer">
-                <button className="btn btn-light" onClick={() => setShowDiscardConfirm(false)}>Keep editing</button>
-                <button className="btn btn-danger" onClick={discardAndClose}>Discard</button>
+              <div className="modal-body">Are you sure you want to discard your changes?</div>
+              <div className="modal-footer border-0">
+                <button className="btn btn-light rounded-pill" onClick={() => setShowDiscardConfirm(false)}>Keep editing</button>
+                <button className="btn btn-danger rounded-pill" onClick={discardAndClose}>Discard</button>
               </div>
             </div>
           </div>
@@ -471,7 +493,7 @@ export default function EditUserModal({
           className="modal d-block"
           tabIndex="-1"
           role="dialog"
-          style={{ backgroundColor: "rgba(0,0,0,0.85)", zIndex: 1400 }}
+          style={{ backgroundColor: "rgba(0,0,0,0.9)", zIndex: 1400 }}
           onClick={() => setShowImagePreview(false)}
         >
           <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
@@ -485,7 +507,7 @@ export default function EditUserModal({
               <img
                 src={imagePreview}
                 alt="Profile preview"
-                style={{ width: "100%", maxHeight: "90vh", objectFit: "contain" }}
+                style={{ width: "100%", maxHeight: "80vh", objectFit: "contain" }}
                 onClick={() => setShowImagePreview(false)}
               />
             </div>
