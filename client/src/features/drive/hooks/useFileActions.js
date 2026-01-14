@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi"; // ✅ הוספנו את updateItem
+import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi";
 import { getPermissions } from "../api/permissionsApi";
 
 export function useFileActions(myUserId, onRefresh) {
   const [sharingItem, setSharingItem] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
-  const [editingFile, setEditingFile] = useState(null); // ✅ State חדש לעריכה
+  const [editingFile, setEditingFile] = useState(null); 
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
@@ -51,11 +51,9 @@ export function useFileActions(myUserId, onRefresh) {
   // --- Toggles Logic ---
   const handleToggleStar = async (item, newValue) => {
     try {
-      // עדכון אופטימי (מקומי) אם תרצה, אבל כרגע נסמוך על הרענון
       await setStarred(item.id, newValue);
       if (onRefresh) onRefresh();
       
-      // אם הקובץ פתוח כרגע במודל צפייה, נעדכן גם אותו כדי שהאייקון ישתנה מיד
       if (openedFile?.id === item.id) {
         setOpenedFile(prev => ({ ...prev, starred: newValue }));
       }
@@ -77,20 +75,37 @@ export function useFileActions(myUserId, onRefresh) {
     }
   };
 
-  // --- Edit Logic (New) ---
+  // --- Edit Logic ---
   const handleEdit = (file) => {
-    // סוגרים את מודל הצפייה אם הוא פתוח ועוברים לעריכה
     setOpenedFile(null); 
     setEditingFile(file);
   };
 
   const handleSaveEdit = async (updatedData) => {
     try {
-        // updatedData מכיל: { name, content, parentId, ... }
-        await updateItem(editingFile.id, updatedData);
-        setEditingFile(null); // סגור את העורך
-        if (onRefresh) onRefresh(); // רענן את הרשימה
+      // ✅ יצירת אובייקט נקי עם השדות המותרים בלבד
+      // השרת חוסם עדכון של 'type', לכן לא נכלול אותו ב-Payload
+      const patch = {
+        name: updatedData.name,
+        parentId: updatedData.parentId || null
+      };
+
+      // אם מדובר בקובץ (ולא תיקייה), נוסיף את התוכן
+      if (editingFile.type === "file") {
+        patch.content = updatedData.content;
+        
+        // הערה: אם אתה מחליף קובץ פיזי (למשל תמונה בתמונה אחרת), 
+        // ייתכן שהשרת יצפה גם ל-mimeType החדש. 
+        // אם השגיאה נמשכת, נסה להסיר את השורה הבאה:
+        patch.mimeType = updatedData.mimeType;
+      }
+
+      await updateItem(editingFile.id, patch);
+      
+      setEditingFile(null); 
+      if (onRefresh) onRefresh(); 
     } catch (e) {
+        // כאן נקבל את הודעת השגיאה המדויקת מהשרת אם עדיין יש בעיה
         alert("Failed to save changes: " + e.message);
     }
   };
@@ -109,14 +124,14 @@ export function useFileActions(myUserId, onRefresh) {
   return {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
-    editingFile, setEditingFile, // ✅ ייצוא משתני העריכה
+    editingFile, setEditingFile,
     openedRole,
     loadingFile,
     handleOpen,
     handleToggleStar,
     handleToggleImportant,
-    handleEdit,     // ✅ פונקציה לפתיחת העורך
-    handleSaveEdit, // ✅ פונקציה לשמירה
+    handleEdit,
+    handleSaveEdit,
     handleDelete,
   };
 }
