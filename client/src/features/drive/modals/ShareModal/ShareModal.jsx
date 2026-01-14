@@ -1,127 +1,70 @@
-import React, { useState } from "react";
-import { findUserByEmail, addFilePermission } from "../../api/filesApi";
-import "styles/modals/ShareModal.css";
+import React, { useEffect, useMemo, useState } from "react";
+// שימוש בנתיב המוחלט כפי שראינו ב-MyDrive
+import { useAuth } from "app/providers/AuthContext";
+import PermissionAddSection from "../permissions/PermissionAddSection";
+import PermissionListSection from "../permissions/PermissionListSection";
+import "../permissions/Permissions.css";
+
+function decodeUserId(token) {
+    try {
+        const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+        return payload.userId || null;
+    } catch { return null; }
+}
 
 function ShareModal({ item, onClose }) {
-  const [email, setEmail] = useState("");
-  const [foundUser, setFoundUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isShared, setIsShared] = useState(false);
-  const [status, setStatus] = useState("");
+    const { token } = useAuth();
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const myUserId = useMemo(() => (token ? decodeUserId(token) : null), [token]);
 
-  // Search a user by email and update modal state.
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault();
-    if (!email.trim()) return;
+    const ownerId = item?.ownerId || item?.owner?.id || null;
+    const isOwner = !!ownerId && !!myUserId && String(ownerId) === String(myUserId);
+    const fileId = item?.id;
 
-    setLoading(true);
-    setIsShared(false);
-    setStatus("");
+    useEffect(() => {
+        setRefreshTrigger(prev => prev + 1);
+    }, [fileId]);
 
-    const user = await findUserByEmail(email.trim());
-    setFoundUser(user);
-    if (!user) setStatus("User not found");
+    if (!fileId) return null;
 
-    setLoading(false);
-  };
+    return (
+        <div className="modal-overlay" onMouseDown={onClose}>
+            <div className="modal-card" onMouseDown={(e) => e.stopPropagation()} style={{ padding: '24px' }}>
+                <div className="modal-title mb-4">Share "{item?.name}"</div>
 
-  // Share the item with the found user, treating "already exists" as success.
-  const handleShare = async () => {
-    if (!foundUser) return;
-
-    try {
-      await addFilePermission(item.id, foundUser.id);
-      setIsShared(true);
-    } catch (err) {
-      if (err.message.includes("already exists")) {
-        setIsShared(true);
-      } else {
-        alert(err.message);
-      }
-    }
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-title">Share "{item.name}"</div>
-
-        <form onSubmit={handleSearch} className="d-flex gap-2 mb-3">
-          <input
-            className="modal-input"
-            placeholder="Enter user email..."
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button type="submit" className="btn primary" disabled={loading}>
-            Search
-          </button>
-        </form>
-
-        {foundUser && (
-          <div className="list-group-item d-flex align-items-center justify-content-between p-2 border rounded-3 mb-3">
-            <div className="d-flex align-items-center gap-3">
-              <div
-                className="user-avatar"
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                  background: "#eee",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {foundUser.image ? (
-                  <img
-                    src={foundUser.image}
-                    alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  "👤"
+                {isOwner && (
+                    <>
+                        <PermissionAddSection
+                            fileId={fileId}
+                            isOwner={isOwner}
+                            onChanged={() => setRefreshTrigger(prev => prev + 1)}
+                        />
+                        <div className="perm-divider" />
+                    </>
                 )}
-              </div>
 
-              <div>
-                <div className="fw-bold">
-                  {foundUser.firstName} {foundUser.lastName}
+                <PermissionListSection
+                    fileId={fileId}
+                    isOwner={isOwner}
+                    myUserId={myUserId}
+                    ownerId={ownerId}
+                    refreshTrigger={refreshTrigger}
+                />
+
+                {!isOwner && (
+                    <div className="perm-owner-note mt-3">
+                        Only the owner can manage sharing settings for this file.
+                    </div>
+                )}
+
+                <div className="modal-actions mt-4">
+                    <button className="btn btn-light px-4" onClick={onClose} style={{ borderRadius: '10px' }}>
+                        Close
+                    </button>
                 </div>
-                <div className="small text-muted">{email}</div>
-              </div>
             </div>
-
-            <button
-              className="btn btn-sm"
-              onClick={handleShare}
-              disabled={isShared}
-              style={{
-                backgroundColor: isShared ? "#e0e0e0" : "#1a73e8",
-                color: isShared ? "#757575" : "#fff",
-                border: "none",
-                cursor: isShared ? "not-allowed" : "pointer",
-                padding: "6px 12px",
-                borderRadius: "8px",
-              }}
-            >
-              {isShared ? "Shared" : "Share"}
-            </button>
-          </div>
-        )}
-
-        {status && <div className="text-danger small mb-3">{status}</div>}
-
-        <div className="modal-actions">
-          <button className="btn secondary" onClick={onClose}>
-            Close
-          </button>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default ShareModal;

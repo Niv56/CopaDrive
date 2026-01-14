@@ -8,7 +8,6 @@ import FileViewerModal from "features/drive/widgets/FileViewerModal";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import "styles/pages/MyDrive.css";
 import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
-
 import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
