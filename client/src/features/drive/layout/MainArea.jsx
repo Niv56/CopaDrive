@@ -18,10 +18,11 @@ import CreateItem from "../widgets/CreateItem";
  */
 function MainArea({ activeView, onChangeView }) {
   
-  // Handlers for global item creation
+  // פונקציה שמרעננת את כל המערכת כשהכפתור הגלובלי יוצר קובץ
   const handleItemCreated = () => {
-    // Dispatches a global event that MyDrive.jsx listens for to trigger a refresh
-    window.dispatchEvent(new CustomEvent("refresh-mydrive"));
+    // שולח אירועים שגם ה-Home וגם ה-MyDrive מאזינים להם
+    window.dispatchEvent(new Event("reset-home"));
+    window.dispatchEvent(new Event("refresh-mydrive"));
   };
 
   return (
@@ -44,8 +45,14 @@ function MainArea({ activeView, onChangeView }) {
         <StorageView onChangeView={onChangeView} />
       )}
 
-      {/* Global Create button from your logic flow */}
-      <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
+      {/* ✅ הכפתור הגלובלי 
+          אנחנו מציגים אותו בכל העמודים **חוץ** מ-MyDrive.
+          למה? כי MyDrive מנהל כפתור משלו שיודע ליצור קבצים בתוך תיקיות ספציפיות.
+          בכל שאר העמודים (Home, Starred, וכו') הכפתור ייצור בתיקייה הראשית.
+      */}
+      {activeView !== "mydrive" && (
+        <CreateItem onItemCreated={handleItemCreated} currentFolderId={null} />
+      )}
     </main>
   );
 }

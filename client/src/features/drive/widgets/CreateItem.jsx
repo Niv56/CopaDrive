@@ -7,7 +7,10 @@ import { encodeTextToBase64 } from "../../../shared/utils/base64Utils";
 // תיקון נתיב: עולים 3 שלבים ל-src ואז ל-styles
 import "../../../styles/widgets/CreateItem.css";
 
-// ייבוא הקומפוננטות הישנות מה-Dashboard (שלוש קומות למעלה)
+// ✅ ייבוא אייקונים אלגנטיים במקום אימוג'ים
+import { FiFolderPlus, FiFileText, FiImage, FiUpload, FiPlus } from "react-icons/fi";
+
+// ייבוא הקומפוננטות הישנות מה-Dashboard
 import FolderCreator from "../../../components/Dashboard/widgets/creation/FolderCreator";
 import TextFileCreator from "../../../components/Dashboard/widgets/creation/TextFileCreator";
 import FileImporter from "../../../components/Dashboard/widgets/creation/FileImporter";
@@ -66,7 +69,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         try {
             const typeForServer = modalType === "folder" ? "folder" : "file";
             
-            // לוגיקה עבור שרת ה-C++: הזרקת תוכן ברירת מחדל אם ריק
             let rawContent = content;
             if (!rawContent || rawContent.trim() === "") {
                 rawContent = "no content";
@@ -77,7 +79,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
             const isTxtFile = name.toLowerCase().endsWith('.txt');
 
             if (modalType === "file" || isTxtFile) {
-                // החלפת ירידות שורה עבור פרוטוקול ה-TCP
                 finalContent = rawContent.replaceAll('\n', NEWLINE_PLACEHOLDER); 
                 finalMime = "text/plain";
             } 
@@ -111,16 +112,36 @@ function CreateItem({ onItemCreated, currentFolderId }) {
 
     return (
         <>
-            <button className="fab" onClick={() => setMenuOpen(!menuOpen)} type="button">+</button>
+            <div className="fab-wrapper-unique">
+                {menuOpen && (
+                    <div className="fab-menu-unique">
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>
+                            <FiFolderPlus className="fab-new-item-icon" /> New folder
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("file"); setMenuOpen(false); }}>
+                            <FiFileText className="fab-new-item-icon" /> New file
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("image"); setMenuOpen(false); }}>
+                            <FiImage className="fab-new-item-icon" /> Upload Pic
+                        </button>
+                        <button type="button" className="fab-menu-item-unique" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>
+                            <FiUpload className="fab-new-item-icon" /> Import File
+                        </button>
+                    </div>
+                )}
+                
+                <button 
+                    className={`fab-btn-unique ${menuOpen ? 'open' : ''}`} 
+                    onClick={() => setMenuOpen(!menuOpen)} 
+                    type="button"
+                >
+                    {/* שימוש באייקון פלוס וקטורי חד ומדויק */}
+                    <FiPlus className="fab-plus-icon" />
+                    <span className="fab-label-text">Add New</span>
+                </button>
+            </div>
 
-            {menuOpen && (
-                <div className="fab-menu">
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("folder"); setMenuOpen(false); }}>📁 New folder</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("file"); setMenuOpen(false); }}>📄 New file</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("image"); setMenuOpen(false); }}>🖼️ Upload Pic</button>
-                    <button type="button" className="fab-menu-item" onClick={() => { setModalType("upload"); setMenuOpen(false); }}>📥 Import File</button>
-                </div>
-            )}
+            {menuOpen && <div className="fab-backdrop-unique" onClick={() => setMenuOpen(false)}></div>}
 
             {modalType && (
                 <div className="modal-overlay" onClick={closeModal}>
