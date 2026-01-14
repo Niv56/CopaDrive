@@ -42,13 +42,13 @@ function MyDrive() {
 
   // ✅ Destructuring כולל את פונקציות העריכה החדשות
   const {
-    sharingItem, setSharingItem, 
-    openedFile, setOpenedFile, 
+    sharingItem, setSharingItem,
+    openedFile, setOpenedFile,
     editingFile, setEditingFile, // State לעריכה
     openedRole,
-    handleOpen, 
-    handleToggleStar, 
-    handleToggleImportant, 
+    handleOpen,
+    handleToggleStar,
+    handleToggleImportant,
     handleEdit,      // פונקציית פתיחת עריכה
     handleSaveEdit,  // פונקציית שמירה
     handleDelete
@@ -132,9 +132,9 @@ function MyDrive() {
   return (
     <div className="mainarea">
       {/* Header logic ... */}
-      <div className="d-flex align-items-center justify-content-between mb-4">
+      <div className="page-title-container">
         <div className="d-flex align-items-center gap-2">
-          <h2 className="mb-0" style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "#202124" }}
+          <h2 style={{ cursor: "pointer", color: currentFolderId ? "#1a73e8" : "inherit" }}
             onClick={() => { setCurrentFolderId(null); setFolderPath([]); }}>
             My Drive
           </h2>
@@ -159,22 +159,22 @@ function MyDrive() {
             <div style={{ width: "100px" }} />
           </div>
           <div className="files-container">
-          {currentItems.map((item) => (
-            <FileListItem
-              key={item.id}
-              item={item}
-              ownerLabel={getOwnerLabel(item)}
-              ownerAvatar={getOwnerAvatar(item)}
-              dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
-              sizeLabel={item.type === "folder" ? "—" : formatBytes(item.sizeBytes ?? 0)}
-              onOpen={openInsideMyDrive}
-              onShare={setSharingItem}
-              onToggleStar={handleToggleStar}
-              onToggleImportant={handleToggleImportant}
-              onDelete={handleDelete}
-              onEdit={handleEdit} // ✅ העברת פונקציית העריכה לתפריט 3 הנקודות
-            />
-          ))}
+            {currentItems.map((item) => (
+              <FileListItem
+                key={item.id}
+                item={item}
+                ownerLabel={getOwnerLabel(item)}
+                ownerAvatar={getOwnerAvatar(item)}
+                dateLabel={item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                sizeLabel={item.type === "folder" ? "—" : formatBytes(item.sizeBytes ?? 0)}
+                onOpen={openInsideMyDrive}
+                onShare={setSharingItem}
+                onToggleStar={handleToggleStar}
+                onToggleImportant={handleToggleImportant}
+                onDelete={handleDelete}
+                onEdit={handleEdit} // ✅ העברת פונקציית העריכה לתפריט 3 הנקודות
+              />
+            ))}
           </div>
         </>
       ) : (
@@ -196,7 +196,7 @@ function MyDrive() {
 
       {/* Viewer Modal */}
       <FileViewerModal
-        file={openedFile} 
+        file={openedFile}
         role={openedRole}
         onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
@@ -216,7 +216,7 @@ function MyDrive() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
                 folders={allFolders}

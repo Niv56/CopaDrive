@@ -68,17 +68,17 @@ export default function HomeView({ onChangeView }) {
   const allFolders = useMemo(() => allItems.filter(f => f.type === 'folder'), [allItems]);
 
   const getOwnerLabel = useCallback((item) => {
-      if (!item?.ownerId) return "Unknown";
-      if (item.ownerId === myUserId) return "Me";
-      const u = ownersMap[item.ownerId];
-      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-      return fullName || u?.email || "External";
+    if (!item?.ownerId) return "Unknown";
+    if (item.ownerId === myUserId) return "Me";
+    const u = ownersMap[item.ownerId];
+    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
   const getOwnerAvatar = useCallback((item) => {
-      if (!item?.ownerId) return "";
-      const u = ownersMap[item.ownerId];
-      return u?.image || "";
+    if (!item?.ownerId) return "";
+    const u = ownersMap[item.ownerId];
+    return u?.image || "";
   }, [ownersMap]);
 
   const suggestedFolders = useMemo(() => allItems.filter((x) => x.type === "folder").slice(0, 6), [allItems]);
@@ -95,10 +95,8 @@ export default function HomeView({ onChangeView }) {
 
   return (
     <div className="mainarea">
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="mb-0" style={{ fontSize: 44, fontWeight: 700, color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>
-          Home
-        </h2>
+      <div className="page-title-container">
+        <h2 style={{ fontSize: 44 }}>Home</h2>
         <ViewModeToggle />
       </div>
 
@@ -110,20 +108,20 @@ export default function HomeView({ onChangeView }) {
 
         {suggestedFolders.length === 0 ? (
           <div className="d-flex align-items-center justify-content-center py-4">
-             <div className="d-flex align-items-center justify-content-center" 
-                  style={{ 
-                      width: "80px", height: "80px", borderRadius: "50%", 
-                      background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
-                      border: "1px solid var(--border-color)", 
-                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
-                  }}>
-                <FiFolder size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
-             </div>
+            <div className="d-flex align-items-center justify-content-center"
+              style={{
+                width: "80px", height: "80px", borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
+              }}>
+              <FiFolder size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
+            </div>
           </div>
         ) : viewMode === "list" ? (
           <div className="files-container">
             <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-                 style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+              style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
               <div style={{ flex: 1 }}>Name</div>
               <div style={{ width: "150px" }}>Owner</div>
               <div style={{ width: "150px" }}>Date created</div>
@@ -156,20 +154,20 @@ export default function HomeView({ onChangeView }) {
 
         {suggestedFiles.length === 0 ? (
           <div className="d-flex align-items-center justify-content-center py-4">
-             <div className="d-flex align-items-center justify-content-center" 
-                  style={{ 
-                      width: "80px", height: "80px", borderRadius: "50%", 
-                      background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
-                      border: "1px solid var(--border-color)", 
-                      boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
-                  }}>
-                <FiFile size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
-             </div>
+            <div className="d-flex align-items-center justify-content-center"
+              style={{
+                width: "80px", height: "80px", borderRadius: "50%",
+                background: "rgba(255,255,255,0.1)", backdropFilter: "blur(5px)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.1)"
+              }}>
+              <FiFile size={32} style={{ color: "var(--text-primary)", opacity: 0.8 }} />
+            </div>
           </div>
         ) : viewMode === "list" ? (
           <div className="files-container">
             <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-                 style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+              style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
               <div style={{ flex: 1 }}>Name</div>
               <div style={{ width: "150px" }}>Owner</div>
               <div style={{ width: "150px" }}>Date created</div>
@@ -194,24 +192,24 @@ export default function HomeView({ onChangeView }) {
         )}
       </div>
 
-      <FileViewerModal 
-        file={openedFile} 
-        role={openedRole} 
-        onClose={() => setOpenedFile(null)} 
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onEdit={handleEdit} // ✅
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
-      
+
       {/* ✅ מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
                 folders={allFolders} // בבית יש לנו את כל התיקיות

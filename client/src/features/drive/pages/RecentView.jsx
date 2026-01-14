@@ -41,14 +41,14 @@ function RecentView() {
   }, []);
 
   // ✅ Destructuring כולל פונקציות עריכה
-  const { 
-    sharingItem, setSharingItem, 
-    openedFile, setOpenedFile, 
+  const {
+    sharingItem, setSharingItem,
+    openedFile, setOpenedFile,
     editingFile, setEditingFile,
-    openedRole, 
-    handleOpen, 
-    handleToggleStar, 
-    handleToggleImportant, 
+    openedRole,
+    handleOpen,
+    handleToggleStar,
+    handleToggleImportant,
     handleDelete,
     handleEdit,     // ✅
     handleSaveEdit  // ✅
@@ -63,44 +63,44 @@ function RecentView() {
   const ownersMap = useOwnersMap(recentFiles);
 
   const getOwnerLabel = useCallback((item) => {
-      if (!item?.ownerId) return "Unknown";
-      if (item.ownerId === myUserId) return "Me";
-      const u = ownersMap[item.ownerId];
-      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-      return fullName || u?.email || "External";
+    if (!item?.ownerId) return "Unknown";
+    if (item.ownerId === myUserId) return "Me";
+    const u = ownersMap[item.ownerId];
+    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
   const getOwnerAvatar = useCallback((item) => {
-      if (!item?.ownerId) return "";
-      const u = ownersMap[item.ownerId];
-      return u?.image || "";
+    if (!item?.ownerId) return "";
+    const u = ownersMap[item.ownerId];
+    return u?.image || "";
   }, [ownersMap]);
 
   const dateLabelForRecent = useCallback((item) => (item?.lastAccessed ? formatLastAccessed(item.lastAccessed) : "—"), []);
 
   return (
     <div className="mainarea">
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <h2 className="mb-0" style={{ color: "var(--text-primary)", textShadow: "var(--text-shadow-global)" }}>Recent</h2>
+      <div className="page-title-container">
+        <h2>Recent</h2>
         <ViewModeToggle />
       </div>
 
       {recentFiles.length === 0 ? (
         <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "50vh", textAlign: "center" }}>
-             <div className="d-flex align-items-center justify-content-center" 
-                  style={{ 
-                      width: "100px", height: "100px", borderRadius: "50%", 
-                      background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)",
-                      border: "1px solid var(--border-color)",
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
-                  }}>
-                <FiClock size={42} style={{ color: "var(--text-primary)", opacity: 0.9 }} />
-             </div>
+          <div className="d-flex align-items-center justify-content-center"
+            style={{
+              width: "100px", height: "100px", borderRadius: "50%",
+              background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
+            }}>
+            <FiClock size={42} style={{ color: "var(--text-primary)", opacity: 0.9 }} />
+          </div>
         </div>
       ) : viewMode === "list" ? (
         <>
           <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-               style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+            style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
             <div style={{ flex: 1 }}>Name</div>
             <div style={{ width: "150px" }}>Owner</div>
             <div style={{ width: "150px" }}>Last opened</div>
@@ -127,15 +127,15 @@ function RecentView() {
         </div>
       )}
 
-      <FileViewerModal 
-        file={openedFile} 
-        role={openedRole} 
-        onClose={() => setOpenedFile(null)} 
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onEdit={handleEdit} // ✅
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
 
       {/* ✅ מודל העריכה */}
@@ -144,7 +144,7 @@ function RecentView() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
                 folders={[]} // Recent files don't show folder structure for move
