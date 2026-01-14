@@ -1,12 +1,21 @@
-/* משתנים לאחידות מושלמת */
+/* Dashboard.css */
+
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.75);
+  --top-height: 70px;
+  
+  /* ✅ הצבע האחיד למצב יום - תכלת/לבן חצי שקוף */
+  --glass-bg: rgba(255, 255, 255, 0.65);
   --glass-border: 1px solid rgba(255, 255, 255, 0.4);
-  --top-height: 60px;
+  
+  /* צבעי רקע לכרטיסייה הצפה */
+  --main-bg-light: #ffffff;
+  --main-bg-dark: #1e1e1e;
 }
 
 [data-theme='dark'] {
-  --glass-bg: rgba(30, 30, 30, 0.75);
+  /* ✅ הצבע האחיד למצב לילה - שחור/אפור חצי שקוף */
+  /* זה הגוון שביקשת (כמו ה-SideBar שלך) */
+  --glass-bg: rgba(30, 30, 30, 0.60); 
   --glass-border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -16,117 +25,61 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: #000; /* רקע שחור למקרה קיצון כדי לא לראות את תמונת ההרשמה */
+  background-color: #000;
 }
 
-/* תיקון המעבר החלק (Smooth Transition Fix)
-   שני הסרטונים נמצאים אחד על השני. אנחנו משחקים רק עם השקיפות.
-*/
+/* Background Video */
 .background-video {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   z-index: 0;
-  
-  /* ברירת מחדל: מוסתר */
   opacity: 0;
-  /* המעבר עצמו: חצי שנייה של עמעום */
   transition: opacity 0.8s ease-in-out;
 }
 
-/* כשהוידאו פעיל (לפי ה-React State) הוא נהיה אטום */
 .background-video.active {
   opacity: 1;
-  z-index: 1; /* מוודא שהוא מעל הוידאו השני בזמן המעבר */
+  z-index: 1;
 }
 
 /* Content Overlay */
 .content-overlay {
   position: relative;
-  z-index: 2; /* מעל הוידאו */
+  z-index: 2;
   height: 100%;
   display: flex;
   flex-direction: column;
   background-color: transparent; 
 }
 
-/* Dark Mode Overlay */
-body[data-theme='dark'] .content-overlay {
-  background-color: rgba(0, 0, 0, 0.7);
-  transition: background-color 0.8s ease-in-out; /* גם הרקע הכהה יעבור חלק */
+/* Layout Structure */
+.dashboard-body {
+  flex: 1; 
+  display: flex; 
+  background: transparent;
+  overflow: hidden;
+  padding-top: 0;
 }
 
-/* ==========================================================================
-   TOP BAR
-   ========================================================================== */
-.dashboard-top {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: var(--top-height);
-  background: var(--glass-bg); 
-  backdrop-filter: blur(12px); 
-  border-bottom: none;
-  padding: 0 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  transition: background 0.3s ease;
+/* Main Area - הכרטיסייה הצפה */
+.dashboard-main { 
+  flex: 1; 
+  background-color: var(--main-bg-light);
+  
+  /* הפינה העגולה והמרווחים ליצירת אפקט הציפה */
+  border-top-left-radius: 24px; 
+  border-bottom-left-radius: 24px; 
+  margin: 12px 12px 12px 0; 
+  
+  padding: 20px; 
+  overflow-y: auto;
+  box-shadow: -5px 0 20px rgba(0,0,0,0.05);
+  position: relative;
 }
 
-body[data-theme='dark'] .dashboard-top {
-  background: var(--glass-bg);
-  border-bottom: none;
-  color: white;
+[data-theme='dark'] .dashboard-main {
+  background-color: var(--main-bg-dark);
+  box-shadow: -5px 0 20px rgba(0,0,0,0.2);
 }
-
-/* ==========================================================================
-   SIDE BAR
-   ========================================================================== */
-.dashboard-side {
-  width: 240px;
-  height: 100vh;
-  margin-top: calc(var(--top-height) * -1);
-  padding-top: calc(var(--top-height) + 20px);
-  position: sticky;
-  top: 0;
-  z-index: 90;
-  background: var(--glass-bg); 
-  backdrop-filter: blur(12px);
-  border-right: var(--glass-border);
-  padding-left: 15px;
-  padding-right: 15px;
-  display: flex; flex-direction: column;
-  transition: background 0.3s ease, border-right 0.3s ease;
-}
-
-body[data-theme='dark'] .dashboard-side {
-  background: var(--glass-bg);
-  border-right: var(--glass-border);
-}
-
-.dashboard-side ul { list-style: none; padding: 0; margin: 0; }
-.dashboard-side li { padding: 10px 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-.dashboard-side li:hover { background: rgba(0,0,0,0.05); }
-body[data-theme='dark'] .dashboard-side li:hover { background: rgba(255,255,255,0.1); }
-
-/* Elements */
-.dashboard-top-left { display: flex; align-items: center; gap: 10px; }
-.app-logo { width: 48px; height: 48px; object-fit: contain; }
-.app-title { margin: 0; font-size: 32px; }
-.dashboard-top-center { display: flex; justify-content: center; flex: 1; }
-.dashboard-search {
-  width: 320px; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; background: rgba(255,255,255,0.9);
-}
-.dashboard-top-right { display: flex; align-items: center; gap: 10px; }
-
-/* Main Area */
-.dashboard-body { flex: 1; display: flex; background: transparent; }
-.dashboard-main { flex: 1; padding: 20px; overflow-y: auto; }
-
-/* User Menu */
-.user-menu { position: relative; display: flex; align-items: center; gap: 10px; }
-.user-avatar-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid #e8eaed; background: #fff; cursor: pointer; }
-.user-dropdown { position: absolute; right: 0; top: 52px; width: 240px; background: #fff; border: 1px solid #e8eaed; border-radius: 14px; box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15); padding: 10px; z-index: 99999; }
-.user-dropdown-item { width: 100%; border: none; background: transparent; text-align: left; padding: 10px 10px; border-radius: 10px; cursor: pointer; }
-.user-dropdown-item:hover { background: #f6f8fc; }
-.user-dropdown-divider { height: 1px; background: #eee; margin: 8px 0; }
