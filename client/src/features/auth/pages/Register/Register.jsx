@@ -203,16 +203,21 @@ const Register = () => {
           <div className="text-secondary">{currentConfig.subtitle}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="d-grid gap-3">
+        {/* ✅ התיקון: הוספת style שימרכז את התוכן בתוך ה-Grid רק בשלב 5 */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="d-grid gap-3" 
+          style={step === 5 ? { justifyItems: "center" } : {}}
+        >
           {renderStep()}
 
           {errors.submit && <div className="alert alert-danger py-2 mb-0">{errors.submit}</div>}
 
-          <div className="d-flex justify-content-between align-items-center mt-2">
+          <div className="d-flex justify-content-between align-items-center mt-2 w-100">
             {step === 5 ? (
               <button
                 type="button"
-                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle"
+                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle btn-sparkle-center"
                 onClick={() => navigate("/login")}
               >
                 <span className="sparkle-text">Proceed to Login</span>
