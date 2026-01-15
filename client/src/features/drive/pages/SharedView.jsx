@@ -12,6 +12,10 @@ import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import { FiUsers } from "react-icons/fi";
 
+/**
+ * View for displaying items shared with the current user by others.
+ * Groups items by owner and supports hierarchical navigation within shared folders.
+ */
 function SharedView() {
   const [allFiles, setAllFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +26,7 @@ function SharedView() {
   const { token } = useAuth();
   const { viewMode } = useViewMode();
 
+  /** Extracts current userId from JWT payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -33,6 +38,9 @@ function SharedView() {
     }
   }, [token]);
 
+  /** * Fetches root files, filters shared items, 
+   * and populates owner profiles for the grouping UI.
+   */
   const loadFiles = async () => {
     if (allFiles.length === 0) {
       setLoading(true);
@@ -52,7 +60,7 @@ function SharedView() {
           const userData = await getCurrentUser(id);
           setOwnersData((prev) => ({ ...prev, [id]: userData }));
         } catch {
-          // Ignore and use fallback UI.
+          // Fallback handled by UI checks
         }
       });
     } finally {
@@ -77,6 +85,7 @@ function SharedView() {
     loadFiles();
   }, []);
 
+  /** Filters files based on selected owner and current directory level */
   const displayItems = useMemo(() => {
     if (!selectedOwnerId) return [];
 
@@ -85,6 +94,7 @@ function SharedView() {
       if (currentFolderId) {
         return f.parentId === currentFolderId;
       }
+      // If at root of shared view, only show items whose parents aren't also shared
       const parentIsAlsoShared = allFiles.some(other => other.id === f.parentId);
       return !parentIsAlsoShared;
     });
@@ -94,7 +104,6 @@ function SharedView() {
 
   return (
     <div className="mainarea">
-
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
@@ -123,7 +132,9 @@ function SharedView() {
           {selectedOwnerId && (
             <>
               <span className="text-muted" style={{ fontSize: "1.5rem" }}>/</span>
-              <span className="fw-bold" style={{ fontSize: "1.2rem", color: "var(--text-primary)" }}>{ownersData[selectedOwnerId]?.email}</span>
+              <span className="fw-bold" style={{ fontSize: "1.2rem", color: "var(--text-primary)" }}>
+                {ownersData[selectedOwnerId]?.email}
+              </span>
             </>
           )}
         </div>

@@ -4,6 +4,7 @@ import { getPermissions } from "../api/permissionsApi";
 
 const NEWLINE_PLACEHOLDER = "_@NL@_";
 
+/** Custom hook for managing file-related states and server-side actions */
 export function useFileActions(myUserId, onRefresh) {
   const [sharingItem, setSharingItem] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
@@ -11,6 +12,7 @@ export function useFileActions(myUserId, onRefresh) {
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
+  /** Resolves user permissions and retrieves full item data for viewing */
   const handleOpen = async (item, onFolderOpen) => {
     if (!item) return;
     setLoadingFile(true);
@@ -49,6 +51,7 @@ export function useFileActions(myUserId, onRefresh) {
     }
   };
 
+  /** Updates starred status via API and syncs local state */
   const handleToggleStar = async (item, newValue) => {
     try {
       await setStarred(item.id, newValue);
@@ -62,6 +65,7 @@ export function useFileActions(myUserId, onRefresh) {
     }
   };
 
+  /** Updates importance flag via API and syncs local state */
   const handleToggleImportant = async (item, newValue) => {
     try {
       await setImportant(item.id, newValue);
@@ -75,11 +79,13 @@ export function useFileActions(myUserId, onRefresh) {
     }
   };
 
+  /** Switches view from preview to edit mode */
   const handleEdit = (file) => {
     setOpenedFile(null);
     setEditingFile(file);
   };
 
+  /** Detects changes, sanitizes text content, and persists updates */
   const handleSaveEdit = async (updatedData) => {
     try {
       if (!updatedData.name || updatedData.name.trim() === "") {
@@ -101,6 +107,7 @@ export function useFileActions(myUserId, onRefresh) {
           let contentToSave = updatedData.content;
           const isTxtFile = updatedData.name.toLowerCase().endsWith('.txt') || updatedData.mimeType === "text/plain";
 
+          // Format newlines for database compatibility
           if (isTxtFile && contentToSave) {
             contentToSave = contentToSave.replaceAll("\n", NEWLINE_PLACEHOLDER);
           }
@@ -124,6 +131,7 @@ export function useFileActions(myUserId, onRefresh) {
     }
   };
 
+  /** Triggers soft deletion and closes active preview */
   const handleDelete = async (item) => {
     if (!item?.id) return;
     try {

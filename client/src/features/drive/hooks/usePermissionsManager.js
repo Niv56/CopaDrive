@@ -8,19 +8,18 @@ import {
     getCurrentUser,
 } from "../api/filesApi";
 
-/**
- * usePermissionsManager Hook
- * מנהל את כל הלוגיקה של הרשאות - שליפה, הוספה, עדכון (toggle), מחיקה
- * + enrichment: מביא email/image לכל permission דרך getCurrentUser(userId)
+/** * Manages file permissions including fetching, profile enrichment, 
+ * and CRUD operations for access control.
  */
 export function usePermissionsManager(itemId) {
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Cache כדי לא לקרוא שוב ושוב ל /api/users/:id
+    // Cache to prevent redundant profile requests
     const userCacheRef = useRef(new Map());
 
+    /** Retrieves user profile from cache or API based on ID */
     const getUserCached = useCallback(async (userId) => {
         if (!userId) return null;
 
@@ -28,20 +27,17 @@ export function usePermissionsManager(itemId) {
         if (cache.has(userId)) return cache.get(userId);
 
         try {
-            const user = await getCurrentUser(userId); // uses request() + token
+            const user = await getCurrentUser(userId);
             cache.set(userId, user);
             return user;
         } catch (e) {
-            // לא שוברים את המסך אם אין משתמש/אין הרשאה
             cache.set(userId, null);
             return null;
         }
     }, []);
 
-    /**
-     * טעינת רשימת ההרשאות
-     * - backend יכול להחזיר array או { permissions: [] }
-     * - enrichment: מוסיף userEmail/userImage
+    /** * Fetches raw permission records and enriches them with 
+     * cached user details (name, email, image).
      */
     const loadPermissions = useCallback(async () => {
         if (!itemId) return;
@@ -88,9 +84,7 @@ export function usePermissionsManager(itemId) {
         loadPermissions();
     }, [loadPermissions]);
 
-    /**
-     * חיפוש משתמש לפי אימייל (משמש את ה-form למעלה)
-     */
+    /** Finds user metadata via email address */
     const searchUser = async (email) => {
         if (!email?.trim()) return null;
         const user = await findUserByEmail(email.trim());
@@ -98,27 +92,21 @@ export function usePermissionsManager(itemId) {
         return user;
     };
 
-    /**
-     * שיתוף - הוספת הרשאה (viewer ברירת מחדל בשרת)
-     */
+    /** Grants file access to a user and refreshes permission list */
     const shareWithUser = async (targetUserId) => {
         if (!itemId) return;
         await addFilePermission(itemId, targetUserId);
         await loadPermissions();
     };
 
-    /**
-     * Toggle Role (PATCH) - מחליף viewer <-> editor
-     */
+    /** Switches user role between viewer and editor */
     const toggleRole = async (permissionId) => {
         if (!itemId) return;
         await patchFilePermission(itemId, permissionId);
         await loadPermissions();
     };
 
-    /**
-     * מחיקת הרשאה (DELETE)
-     */
+    /** Revokes access for a specific permission record */
     const deletePermission = async (permissionId) => {
         if (!itemId) return;
         await deleteFilePermission(itemId, permissionId);

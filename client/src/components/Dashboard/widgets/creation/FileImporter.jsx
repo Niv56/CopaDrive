@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
-import { 
-  BsFileEarmarkWordFill, BsFileEarmarkExcelFill, BsFileEarmarkPptFill, 
-  BsFileEarmarkPdfFill, BsFileEarmarkImageFill, BsFileEarmarkPlayFill, 
-  BsFileEarmarkMusicFill, BsFileEarmarkZipFill, BsFileEarmarkCodeFill, 
+import {
+  BsFileEarmarkWordFill, BsFileEarmarkExcelFill, BsFileEarmarkPptFill,
+  BsFileEarmarkPdfFill, BsFileEarmarkImageFill, BsFileEarmarkPlayFill,
+  BsFileEarmarkMusicFill, BsFileEarmarkZipFill, BsFileEarmarkCodeFill,
   BsFileEarmarkTextFill, BsFileEarmarkFill,
-  BsCloudUpload 
+  BsCloudUpload
 } from "react-icons/bs";
 
+/** Returns matching icon based on extension or mime type */
 const getFileIcon = (name, mimeType, size = 24) => {
   const ext = name ? name.split('.').pop().toLowerCase() : "";
   const mime = mimeType || "";
@@ -24,6 +25,7 @@ const getFileIcon = (name, mimeType, size = 24) => {
   return <BsFileEarmarkFill size={size} color="#9aa0a6" />;
 };
 
+/** Handles file upload trigger and conditional preview rendering */
 function FileImporter({ name, content, mimeType, triggerUpload }) {
   const isText = mimeType?.startsWith("text/") || name?.toLowerCase().endsWith(".txt");
   const isImage = mimeType?.startsWith("image/");
@@ -35,51 +37,47 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
 
   return (
     <div className="file-importer h-100 d-flex flex-column">
-      <div className="preview-box flex-grow-1 d-flex align-items-center justify-content-center p-3" 
-           style={{ minHeight: "200px", position: "relative" }}>
-        
+      <div className="preview-box flex-grow-1 d-flex align-items-center justify-content-center p-3"
+        style={{ minHeight: "200px", position: "relative" }}>
+
         {content ? (
           <div className="w-100 text-center">
-            {/* תצוגת תמונה */}
             {isImage && (
               <img src={`data:${mimeType};base64,${content}`} alt="preview" className="img-fluid rounded shadow-sm" style={{ maxHeight: "250px" }} />
             )}
 
-            {/* תצוגת טקסט - תיקון מצב לילה */}
             {isText && (
-              <div 
-                className="text-preview-wrapper text-start p-3 border rounded shadow-sm" 
-                style={{ 
-                  maxHeight: "250px", 
+              <div
+                className="text-preview-wrapper text-start p-3 border rounded shadow-sm"
+                style={{
+                  maxHeight: "250px",
                   overflowY: "auto",
-                  // שימוש ברקע וצבע טקסט שמתאימים ל-Theme של האפליקציה
-                  backgroundColor: "var(--bg-secondary, #f8f9fa)", 
+                  backgroundColor: "var(--bg-secondary, #f8f9fa)",
                   color: "var(--text-main, #333)",
                   borderColor: "var(--border-color, #dee2e6)"
                 }}
               >
-                <pre style={{ 
-                  margin: 0, 
-                  fontSize: "0.85rem", 
+                <pre style={{
+                  margin: 0,
+                  fontSize: "0.85rem",
                   whiteSpace: "pre-wrap",
-                  color: "inherit" // יורש את הצבע הדינמי מהדיב העוטף
+                  color: "inherit"
                 }}>
                   {textPreview}
                 </pre>
               </div>
             )}
 
-            {/* אייקון לקבצים ללא תצוגה */}
             {!isImage && !isText && (
               <div className="no-preview py-4">
                 <div className="mb-3">
-                   {getFileIcon(name, mimeType, 80)}
+                  {getFileIcon(name, mimeType, 80)}
                 </div>
                 <strong className="d-block mb-1" style={{ fontSize: "1.1rem" }}>{name}</strong>
                 <span className="opacity-75 small">No preview available</span>
               </div>
             )}
-            
+
             <div className="mt-3">
               <button type="button" className="btn btn-outline-secondary btn-sm" onClick={triggerUpload}>
                 Change file
@@ -88,12 +86,12 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
           </div>
         ) : (
           <div className="text-center w-100">
-            <button 
+            <button
               className="btn btn-primary btn-lg rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2 mx-auto"
               onClick={triggerUpload}
             >
-               <BsCloudUpload size={22} />
-               <span>Choose File</span>
+              <BsCloudUpload size={22} />
+              <span>Choose File</span>
             </button>
             <p className="mt-3 mb-0 small opacity-75">or drag and drop file here</p>
           </div>

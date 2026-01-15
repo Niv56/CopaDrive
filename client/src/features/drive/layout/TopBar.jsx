@@ -13,7 +13,6 @@ import ThemeToggle from "../widgets/ThemeToggle";
 import ShareModal from "../modals/ShareModal/ShareModal";
 import FileEditorView from "components/Dashboard/widgets/FileEditorView";
 
-// ✅ ייבוא האייקונים וה-Hook המרכזי
 import { getFileIcon } from "../widgets/FileListItem";
 import { useFileActions } from "../hooks/useFileActions";
 
@@ -21,6 +20,7 @@ import { FiSearch, FiMusic, FiPause } from "react-icons/fi";
 import "styles/layout/TopBar.css";
 import songFile from "assets/videos/Song.mp3";
 
+/** Main dashboard header containing search, audio controls, and user profile */
 export default function TopBar() {
   const { token, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export default function TopBar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
-  // ✅ חילוץ מזהה המשתמש מה-Token
+  /** Extracts user ID from JWT payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -42,7 +42,7 @@ export default function TopBar() {
     } catch { return null; }
   }, [token]);
 
-  // ✅ חיבור ל-Hook שבודק הרשאות ופותח את המודאל הנכון
+  /** Shared file manipulation logic and state management */
   const {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
@@ -59,15 +59,16 @@ export default function TopBar() {
     setSearchResults([]);
   });
 
-  // ✅ החזרת הפונקציה handleLogout שהייתה חסרה
+  /** Terminates session and redirects to login */
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  // --- 🎵 לוגיקת נגינה ---
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
+
+  /** Manages global audio playback and state */
   const toggleSong = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(songFile);
@@ -91,7 +92,7 @@ export default function TopBar() {
     };
   }, []);
 
-  // טעינת נתוני משתמש
+  /** Fetches user profile data upon authentication */
   useEffect(() => {
     if (isAuthenticated && token) {
       try {
@@ -107,7 +108,7 @@ export default function TopBar() {
     }
   }, [isAuthenticated, token]);
 
-  // לוגיקת חיפוש
+  /** Debounced search effect for filtering drive items */
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q) { setSearchResults([]); return; }
@@ -120,6 +121,7 @@ export default function TopBar() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  /** Handles search result click based on item type */
   const handleSearchOpen = (item) => {
     setSearchQuery("");
     setSearchResults([]);
@@ -127,10 +129,10 @@ export default function TopBar() {
       window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: item.id } }));
       return;
     }
-    // ✅ שימוש ב-handleOpen שמזהה אוטומטית שאתה ה-Owner
     handleOpen(item);
   };
 
+  /** Closes search dropdown on outside click */
   useEffect(() => {
     function handleClickOutside(e) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -171,7 +173,6 @@ export default function TopBar() {
                 ) : (
                   searchResults.map((item) => (
                     <div key={item.id} className="search-result-item" onClick={() => handleSearchOpen(item)}>
-                      {/* ✅ אייקונים מערכתיים במקום איימוג'י */}
                       <span style={{ display: 'flex', alignItems: 'center' }}>
                         {getFileIcon(item.name, item.mimeType, item.type === "folder", 20)}
                       </span>
@@ -196,7 +197,6 @@ export default function TopBar() {
 
       <EditUserModal show={isEditUserOpen} onClose={() => setIsEditUserOpen(false)} userId={userData?.id} userEmail={userData?.email || ""} initialFirstName={userData?.firstName || ""} initialLastName={userData?.lastName || ""} initialPhoneNumber={userData?.phoneNumber || ""} initialImage={userData?.image || ""} onSaved={(updatedUser) => setUserData(updatedUser)} />
 
-      {/* ✅ מודאל צפייה - יציג את ה-Role הנכון (Owner) בזכות useFileActions */}
       {openedFile && (
         <FileViewerModal
           file={openedFile}
@@ -210,7 +210,6 @@ export default function TopBar() {
         />
       )}
 
-      {/* ✅ מודאל עריכה (הכרטיסייה עם כפתורי השמירה) */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>

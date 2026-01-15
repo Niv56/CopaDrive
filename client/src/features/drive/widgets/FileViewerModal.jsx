@@ -16,6 +16,11 @@ import {
   BsX
 } from "react-icons/bs";
 
+/**
+ * A comprehensive modal for viewing file content.
+ * It dynamically selects a viewer (Image, Text, or Binary) based on MIME type
+ * and provides a suite of actions (Edit, Share, Delete, Download).
+ */
 function FileViewerModal({
   file,
   role,
@@ -32,6 +37,9 @@ function FileViewerModal({
   const isStarred = !!file.starred;
   const isImportant = !!file.important;
 
+  /**
+   * Determines if a file should be treated as plain text or code.
+   */
   const isActualTextFile = (mimeType, fileName) => {
     const mime = mimeType || "";
     return (
@@ -50,17 +58,24 @@ function FileViewerModal({
     }
   };
 
+  /**
+   * Triggers a browser download. 
+   * Handles newline restoration for text files and Base64 decoding for binary data.
+   */
   const handleDownload = () => {
     const link = document.createElement("a");
     let processedContent = file.content || "";
 
+    // Restore newlines from the database placeholder
     if (!file.mimeType || file.mimeType === "text/plain") {
       processedContent = processedContent.replaceAll("_@NL@_", "\n");
     }
 
     if (file.mimeType && file.mimeType !== "text/plain") {
+      // Binary files use the Base64 string directly
       link.href = `data:${file.mimeType};base64,${processedContent}`;
     } else {
+      // Text files are converted to a Blob URL
       const blob = new Blob([processedContent], { type: "text/plain" });
       link.href = URL.createObjectURL(blob);
     }
@@ -71,6 +86,9 @@ function FileViewerModal({
     document.body.removeChild(link);
   };
 
+  /**
+   * Routing logic for selecting the appropriate sub-viewer.
+   */
   const renderViewer = () => {
     const mime = file.mimeType || "";
     if (mime.startsWith("image/")) return <ImageViewer file={file} />;
@@ -89,9 +107,9 @@ function FileViewerModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card viewer-modal viewer-modal-glass" onClick={(e) => e.stopPropagation()}>
-        {/* ✅ Glass header block: title above icons */}
+
+        {/* Header Section: Glassmorphism style with Title and Actions */}
         <div className="viewer-glass-header">
-          {/* Top line: title + close */}
           <div className="viewer-glass-title-row">
             <div className="viewer-title-col">
               <h2 className="viewer-file-name" title={file.name}>
@@ -110,7 +128,6 @@ function FileViewerModal({
             </button>
           </div>
 
-          {/* Second line: icons */}
           <div className="viewer-actions viewer-actions-under-title">
             <button
               type="button"
@@ -188,8 +205,10 @@ function FileViewerModal({
           </div>
         </div>
 
+        {/* Main Content Area */}
         <div className="modal-body-container-viewer">{renderViewer()}</div>
 
+        {/* Footer Section */}
         <div className="modal-footer-actions">
           <button type="button" className="btn btn-secondary px-4" onClick={onClose}>
             Back

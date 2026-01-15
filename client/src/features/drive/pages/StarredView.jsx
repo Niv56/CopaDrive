@@ -13,6 +13,7 @@ import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import { FiStar } from "react-icons/fi";
 
+/** View displaying all items marked as 'Starred' across the drive */
 function StarredView({ onChangeView }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ function StarredView({ onChangeView }) {
   const { token } = useAuth();
   const { viewMode } = useViewMode();
 
+  /** Extracts userId from JWT token payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -32,12 +34,14 @@ function StarredView({ onChangeView }) {
     }
   }, [token]);
 
+  /** Fetches current user profile data */
   useEffect(() => {
     if (myUserId) {
       getCurrentUser(myUserId).then(setCurrentUser).catch(() => { });
     }
   }, [myUserId]);
 
+  /** Fetches starred files and folders from the API */
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -67,6 +71,7 @@ function StarredView({ onChangeView }) {
   useEffect(() => { loadData(); }, [loadData]);
   const ownersMap = useOwnersMap(items);
 
+  /** Resolves owner display name */
   const getOwnerLabel = useCallback((item) => {
     if (!item?.ownerId) return "Unknown";
     if (item.ownerId === myUserId) return "Me";
@@ -75,6 +80,7 @@ function StarredView({ onChangeView }) {
     return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
+  /** Resolves owner profile image */
   const getOwnerAvatar = useCallback((item) => {
     if (!item?.ownerId) return "";
     if (item.ownerId === myUserId) return currentUser?.image || "";
@@ -82,6 +88,7 @@ function StarredView({ onChangeView }) {
     return u?.image || "";
   }, [ownersMap, myUserId, currentUser]);
 
+  /** Navigates to the folder location within My Drive view */
   const onOpenFolder = (folder) => {
     onChangeView?.("mydrive");
     setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
@@ -89,22 +96,19 @@ function StarredView({ onChangeView }) {
 
   return (
     <div className="mainarea">
-      
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <h2 style={{ 
-            fontFamily: "'Bruno Ace SC', sans-serif", 
-            fontSize: "2.5rem", 
-            fontWeight: "400",
-            margin: 0,
-            color: "var(--text-primary)", 
-            letterSpacing: "2px", 
-            textTransform: "uppercase" 
+        <h2 style={{
+          fontFamily: "'Bruno Ace SC', sans-serif",
+          fontSize: "2.5rem",
+          fontWeight: "400",
+          margin: 0,
+          color: "var(--text-primary)",
+          letterSpacing: "2px",
+          textTransform: "uppercase"
         }}>
           Starred
         </h2>
@@ -126,7 +130,7 @@ function StarredView({ onChangeView }) {
       ) : viewMode === "list" ? (
         <>
           <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-               style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+            style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
             <div style={{ flex: 1 }}>Name</div>
             <div style={{ width: "150px" }}>Owner</div>
             <div style={{ width: "150px" }}>Date created</div>
@@ -152,27 +156,26 @@ function StarredView({ onChangeView }) {
         </div>
       )}
 
-      <FileViewerModal 
-        file={openedFile} 
-        role={openedRole} 
-        onClose={() => setOpenedFile(null)} 
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onEdit={handleEdit}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
-      
-      {/* ✅ מודל העריכה */}
+
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
-                folders={[]} // רשימת תיקיות ריקה כרגע בתצוגה זו
+                folders={[]}
                 onSave={handleSaveEdit}
                 onCancel={() => setEditingFile(null)}
               />

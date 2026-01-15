@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { changeUserPassword, updateUserProfile } from "features/drive/api/filesApi";
 import { getProfilePicture, validateProfilePicture } from "shared/utils/profileUtils";
 
-// Helper to check if two objects are superficially different
+/** Performs a superficial comparison between two objects for state tracking */
 const shallowEqual = (a, b) => {
   const ak = Object.keys(a), bk = Object.keys(b);
   if (ak.length !== bk.length) return false;
@@ -10,6 +10,9 @@ const shallowEqual = (a, b) => {
   return true;
 };
 
+/** * Modal for editing user profile information including name, 
+ * phone number, profile picture, and account password.
+ */
 export default function EditUserModal({
   show,
   onClose,
@@ -50,7 +53,7 @@ export default function EditUserModal({
     general: "",
   });
 
-  // Calculate password complexity requirements
+  /** Calculates password complexity flags for the UI indicators */
   const passwordStrength = useMemo(() => {
     const pwd = newPassword || "";
     return {
@@ -61,7 +64,7 @@ export default function EditUserModal({
     };
   }, [newPassword]);
 
-  // Reset form when modal opens
+  /** Synchronizes state and snapshots when the modal visibility changes */
   useEffect(() => {
     if (!show) return;
 
@@ -85,7 +88,6 @@ export default function EditUserModal({
       general: "",
     });
 
-    // Capture initial state for "dirty" checking
     initialSnapshotRef.current = {
       firstName: initialFirstName || "",
       lastName: initialLastName || "",
@@ -94,13 +96,12 @@ export default function EditUserModal({
     };
   }, [show, initialFirstName, initialLastName, initialPhoneNumber, initialImage]);
 
-  // Create current snapshot to compare against initial
   const formSnapshot = useMemo(
     () => ({ firstName, lastName, phoneNumber, imagePreview }),
     [firstName, lastName, phoneNumber, imagePreview]
   );
 
-  // Determine if form has unsaved changes
+  /** Tracks if changes exist to prompt discard confirmation on close */
   const isDirty = useMemo(() => {
     const init = initialSnapshotRef.current;
     if (!init) return false;
@@ -109,7 +110,7 @@ export default function EditUserModal({
     return basicDirty || pwdDirty;
   }, [formSnapshot, currentPassword, newPassword, confirmNewPassword]);
 
-  // Validate Israeli phone format
+  /** Validates Israeli mobile phone formatting (05X-XXXXXXX) */
   const validatePhone = (value) => {
     const clean = String(value || "").replace(/\D/g, "");
     if (!clean) return "Phone number is required";
@@ -123,7 +124,7 @@ export default function EditUserModal({
     setErrors((p) => ({ ...p, [key]: "" }));
   };
 
-  // Close handlers
+  /** Handles close request with dirty check protection */
   const requestClose = () => {
     if (!isDirty) return onClose?.();
     setShowDiscardConfirm(true);
@@ -134,7 +135,7 @@ export default function EditUserModal({
     onClose?.();
   };
 
-  // Image handlers
+  /** Validates and generates local preview for selected profile image */
   const onFileChange = (file) => {
     if (!file) return;
 
@@ -147,7 +148,6 @@ export default function EditUserModal({
     setErrors((e) => ({ ...e, image: "" }));
     setUploadedFile(file);
 
-    // Immediate preview
     const reader = new FileReader();
     reader.onload = () => setImagePreview(String(reader.result || ""));
     reader.readAsDataURL(file);
@@ -159,7 +159,7 @@ export default function EditUserModal({
     setErrors((e) => ({ ...e, image: "" }));
   };
 
-  // Validation before API call
+  /** Comprehensive validation of all form sections prior to API calls */
   const validateBeforeSave = () => {
     const next = {
       firstName: "",
@@ -193,7 +193,7 @@ export default function EditUserModal({
     return Object.values(next).some(Boolean);
   };
 
-  // Helper UI component for password rules
+  /** Helper UI component for rendering password requirement statuses */
   const InfoRow = ({ ok, text }) => (
     <div className={`d-flex align-items-center gap-2 ${ok ? "text-success" : "text-danger"}`}>
       <span style={{ width: 18, textAlign: "center" }}>{ok ? "✓" : "•"}</span>
@@ -201,19 +201,18 @@ export default function EditUserModal({
     </div>
   );
 
+  /** Orchastrates profile update and optional password change API calls */
   const handleSave = async () => {
     if (validateBeforeSave()) return;
 
     try {
       setSaving(true);
 
-      // 1. Prepare Image
       let finalImage = imagePreview;
       if (uploadedFile) {
         finalImage = await getProfilePicture(uploadedFile, firstName.trim(), lastName.trim());
       }
 
-      // 2. Update Profile
       const patch = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -223,11 +222,11 @@ export default function EditUserModal({
 
       const updatedUser = await updateUserProfile(userId, patch);
 
+      // Notify application of user identity change
       window.dispatchEvent(
         new CustomEvent("user-updated", { detail: { userId, user: updatedUser } })
       );
 
-      // 3. Update Password (if requested)
       const wantsPasswordChange = !!(currentPassword || newPassword || confirmNewPassword);
       if (wantsPasswordChange) {
         try {
@@ -264,13 +263,12 @@ export default function EditUserModal({
 
   return (
     <>
-      {/* ✅ CSS מעודכן: תיבות מעוגלות, רקע אפור ברור (contrast), ופוקוס יפה */}
       <style>{`
         .edit-user-input {
-          background-color: #f1f3f4 !important; /* רקע אפור בולט יותר */
+          background-color: #f1f3f4 !important;
           border: 1px solid transparent !important;
-          border-radius: 50px !important; /* מעוגל כמו החיפוש */
-          padding: 10px 20px !important; /* ריווח פנימי נוח */
+          border-radius: 50px !important;
+          padding: 10px 20px !important;
           color: #202124 !important;
           transition: all 0.2s ease-in-out !important;
         }
@@ -278,11 +276,10 @@ export default function EditUserModal({
         .edit-user-input:focus {
           background-color: #ffffff !important;
           border-color: transparent !important;
-          box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important; /* צללית יפה בפוקוס */
+          box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important;
           color: #202124 !important;
         }
 
-        /* התאמה למצב לילה - שיהיה קריא גם שם */
         [data-theme="dark"] .edit-user-input {
           background-color: #303134 !important;
           color: #e8eaed !important;
@@ -302,7 +299,7 @@ export default function EditUserModal({
         onClick={requestClose}
       >
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-content shadow" style={{ borderRadius: 24, border: "none" }}> {/* גם למודל עצמו עיגול יפה יותר */}
+          <div className="modal-content shadow" style={{ borderRadius: 24, border: "none" }}>
             <div className="modal-header border-0 pb-0 pt-4 px-4">
               <h4 className="modal-title fw-bold">Edit user</h4>
               <button type="button" className="btn-close" aria-label="Close" onClick={requestClose} />
@@ -312,7 +309,7 @@ export default function EditUserModal({
               {errors.general && <div className="alert alert-danger rounded-4">{errors.general}</div>}
 
               <div className="row g-4">
-                {/* Left Column: Avatar */}
+                {/* Avatar Section */}
                 <div className="col-12 col-md-4 border-end">
                   <div className="d-flex flex-column align-items-center h-100 justify-content-center">
                     <div
@@ -360,7 +357,7 @@ export default function EditUserModal({
                   </div>
                 </div>
 
-                {/* Right Column: Fields */}
+                {/* Profile Fields Section */}
                 <div className="col-12 col-md-8 ps-md-4">
                   <div className="row g-3">
                     <div className="col-12 col-md-6">
@@ -376,10 +373,10 @@ export default function EditUserModal({
 
                     <div className="col-12 col-md-6">
                       <label className="form-label fw-bold small ms-2 text-muted">LAST NAME</label>
-                      <input 
-                        className="form-control edit-user-input" 
-                        value={lastName} 
-                        onChange={(e) => setLastName(e.target.value)} 
+                      <input
+                        className="form-control edit-user-input"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                         placeholder="Enter last name"
                       />
                     </div>

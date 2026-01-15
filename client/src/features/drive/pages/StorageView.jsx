@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { getRootFiles, getUsage, getCurrentUser } from "features/drive/api/filesApi";
 import { useAuth } from "app/providers/AuthContext";
 import { useFileActions } from "features/drive/hooks/useFileActions";
@@ -15,6 +15,9 @@ import { useViewMode } from "features/drive/providers/ViewModeContext";
 import FileGridItem from "features/drive/widgets/FileGridItem";
 import { FiHardDrive } from "react-icons/fi";
 
+/** * View for monitoring storage consumption. 
+ * Displays files sorted by size to help users manage their quota.
+ */
 export default function StorageView({ onChangeView }) {
   const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
   const [files, setFiles] = useState([]);
@@ -23,6 +26,7 @@ export default function StorageView({ onChangeView }) {
   const { token } = useAuth();
   const { viewMode } = useViewMode();
 
+  /** Extracts userId from JWT token payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -32,12 +36,14 @@ export default function StorageView({ onChangeView }) {
     } catch { return null; }
   }, [token]);
 
+  /** Fetches current user profile for avatar rendering */
   useEffect(() => {
     if (myUserId) {
-        getCurrentUser(myUserId).then(setCurrentUser).catch(() => {});
+      getCurrentUser(myUserId).then(setCurrentUser).catch(() => { });
     }
   }, [myUserId]);
 
+  /** Concurrent fetch of storage usage data and file list */
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,57 +70,63 @@ export default function StorageView({ onChangeView }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const sortedFiles = useMemo(() => [...files].filter((f) => f.type === "file").sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0)), [files]);
+  /** Filters folders and sorts files by descending size */
+  const sortedFiles = useMemo(() =>
+    [...files]
+      .filter((f) => f.type === "file")
+      .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0)),
+    [files]);
+
   const allFolders = useMemo(() => files.filter(f => f.type === 'folder'), [files]);
-  
+
   const ownersMap = useOwnersMap(sortedFiles);
 
+  /** Resolves owner display name */
   const getOwnerLabel = useCallback((item) => {
-      if (!item?.ownerId) return "Unknown";
-      if (item.ownerId === myUserId) return "Me";
-      const u = ownersMap[item.ownerId];
-      const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
-      return fullName || u?.email || "External";
+    if (!item?.ownerId) return "Unknown";
+    if (item.ownerId === myUserId) return "Me";
+    const u = ownersMap[item.ownerId];
+    const fullName = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+    return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
+  /** Resolves owner profile image */
   const getOwnerAvatar = useCallback((item) => {
-      if (!item?.ownerId) return "";
-      if (item.ownerId === myUserId) return currentUser?.image || "";
-      const u = ownersMap[item.ownerId];
-      return u?.image || "";
+    if (!item?.ownerId) return "";
+    if (item.ownerId === myUserId) return currentUser?.image || "";
+    const u = ownersMap[item.ownerId];
+    return u?.image || "";
   }, [ownersMap, myUserId, currentUser]);
 
   return (
     <div className="mainarea">
-      
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <h2 style={{ 
-            fontFamily: "'Bruno Ace SC', sans-serif", 
-            fontSize: "2.5rem", 
-            fontWeight: "400",
-            margin: 0,
-            color: "var(--text-primary)", 
-            letterSpacing: "2px", 
-            textTransform: "uppercase" 
+        <h2 style={{
+          fontFamily: "'Bruno Ace SC', sans-serif",
+          fontSize: "2.5rem",
+          fontWeight: "400",
+          margin: 0,
+          color: "var(--text-primary)",
+          letterSpacing: "2px",
+          textTransform: "uppercase"
         }}>
           Storage
         </h2>
         <ViewModeToggle />
       </div>
 
-      <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4" 
-           style={{ 
-               background: "rgba(255, 255, 255, 0.2)", 
-               backdropFilter: "blur(10px)", 
-               border: "1px solid var(--border-color)",
-               boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
-           }}>
+      {/* Storage usage summary card */}
+      <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4"
+        style={{
+          background: "rgba(255, 255, 255, 0.2)",
+          backdropFilter: "blur(10px)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
+        }}>
         <FiHardDrive size={20} style={{ color: "var(--text-primary)" }} />
         <div style={{ color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, textShadow: "var(--text-shadow-global)" }}>
           {formatBytes(usage.usedBytes)} of {formatBytes(usage.quotaBytes)} used
@@ -123,7 +135,7 @@ export default function StorageView({ onChangeView }) {
 
       {viewMode !== "grid" && (
         <div className="d-flex align-items-center px-3 pb-2 border-bottom mb-2"
-             style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
+          style={{ fontSize: "13px", fontWeight: 600, gap: "10px", color: "var(--text-secondary)", textShadow: "var(--text-shadow-global)" }}>
           <div style={{ flex: 1 }}>Name</div>
           <div style={{ width: "150px" }}>Owner</div>
           <div style={{ width: "150px" }}>Date created</div>
@@ -139,8 +151,8 @@ export default function StorageView({ onChangeView }) {
               <FileGridItem key={f.id} item={f} ownerLabel={getOwnerLabel(f)} ownerAvatar={getOwnerAvatar(f)}
                 dateLabel={f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "—"}
                 onOpen={(it) => handleOpen(it, (folder) => {
-                    onChangeView?.("mydrive");
-                    setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
+                  onChangeView?.("mydrive");
+                  setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
                 })}
                 onShare={setSharingItem} onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onDelete={handleDelete} />
             ))}
@@ -150,23 +162,23 @@ export default function StorageView({ onChangeView }) {
             <FileListItem key={f.id} item={f} ownerLabel={getOwnerLabel(f)} ownerAvatar={getOwnerAvatar(f)}
               dateLabel={f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "—"}
               onOpen={(it) => handleOpen(it, (folder) => {
-                  onChangeView?.("mydrive");
-                  setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
+                onChangeView?.("mydrive");
+                setTimeout(() => window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: folder.id } })), 0);
               })}
               onShare={setSharingItem} onToggleStar={handleToggleStar} onToggleImportant={handleToggleImportant} onDelete={handleDelete} onEdit={handleEdit} />
           ))
         )}
       </div>
 
-      <FileViewerModal 
-        file={openedFile} 
-        role={openedRole} 
-        onClose={() => setOpenedFile(null)} 
+      <FileViewerModal
+        file={openedFile}
+        role={openedRole}
+        onClose={() => setOpenedFile(null)}
         onShare={setSharingItem}
         onToggleStar={handleToggleStar}
         onToggleImportant={handleToggleImportant}
         onEdit={handleEdit}
-        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
+        onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }}
       />
 
       {editingFile && (
@@ -174,7 +186,7 @@ export default function StorageView({ onChangeView }) {
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
             <div className="p-4">
               <h4 className="mb-4">Edit File</h4>
-              <FileEditorView 
+              <FileEditorView
                 file={editingFile}
                 initialData={editingFile}
                 folders={allFolders}

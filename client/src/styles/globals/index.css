@@ -56,7 +56,7 @@ body {
   --border-color: rgba(0, 0, 0, 0.15);
   --hover-bg: rgba(0, 0, 0, 0.05);
 
-  /* צל עדין ליום - עוזר לקריאות על עננים */
+  /*    -     */
   --text-shadow-global: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
@@ -67,16 +67,16 @@ body {
   /* ✅ CHANGED: Bright White for Night mode */
   --text-primary: #ffffff;
   --text-secondary: #e0e0e0;
-  /* אפור בהיר מאוד במקום כהה */
+  /*      */
 
   --border-color: rgba(255, 255, 255, 0.2);
   --hover-bg: rgba(255, 255, 255, 0.1);
 
-  /* צל שחור ללילה - הקסם שהופך את הטקסט לקריא */
+  /*    -      */
   --text-shadow-global: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
-/* החלת הצבעים והצל על כל הטקסטים באתר */
+/*        */
 body,
 h1,
 h2,
@@ -90,13 +90,13 @@ div {
   color: var(--text-primary);
 }
 
-/* הודעות ריקות כמו "No files yet" וטקסטים משניים */
+/*    "No files yet"   */
 .text-muted,
 .text-secondary,
 .empty-state-text {
   color: var(--text-secondary) !important;
   text-shadow: var(--text-shadow-global);
-  /* הוספת הצל */
+  /*   */
   font-weight: 500;
 }
 
@@ -104,7 +104,7 @@ div {
    DROPDOWN & MENU FIXES (Hamburger / Profile)
    ========================================================================== */
 
-/* עיצוב הזכוכית של התפריטים */
+/*     */
 .dropdown-menu,
 .user-dropdown {
   background: rgba(255, 255, 255, 0.9) !important;
@@ -113,11 +113,11 @@ div {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
-/* פריטים בתוך התפריט */
+/*    */
 .dropdown-item,
 .user-dropdown-item {
   color: #333 !important;
-  /* תמיד כהה ביום */
+  /*    */
   font-weight: 500;
 }
 
@@ -130,12 +130,12 @@ div {
 [data-theme="dark"] .dropdown-menu,
 [data-theme="dark"] .user-dropdown {
   background: rgba(30, 30, 30, 0.9) !important;
-  /* רקע כהה כמעט אטום */
+  /*     */
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* הטקסט בתוך התפריט בלילה - לבן! */
+/*     - ! */
 [data-theme="dark"] .dropdown-item,
 [data-theme="dark"] .user-dropdown-item,
 [data-theme="dark"] .dropdown-header {
@@ -147,7 +147,7 @@ div {
   background: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* טקסט הפרופיל (ליד התמונה) */
+/*   ( ) */
 .user-name-text,
 .header-user-name {
   color: var(--text-primary) !important;
@@ -175,17 +175,14 @@ div {
 /* Headers background (Glass Strip) */
 .dashboard-main div[class*="border-bottom"] {
   background: rgba(255, 255, 255, 0.65) !important;
-  /* יותר שקיפות */
   backdrop-filter: blur(12px);
   border-radius: 12px;
   padding: 12px 20px !important;
   margin-bottom: 12px !important;
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
 
-  /* הטקסט בתוך הסטריפ */
   color: #000 !important;
   text-shadow: none !important;
-  /* כאן לא צריך צל כי יש רקע */
 }
 
 [data-theme="dark"] .dashboard-main div[class*="border-bottom"] {
@@ -204,7 +201,6 @@ select,
 .form-control,
 .form-select {
   background-color: rgba(255, 255, 255, 0.8) !important;
-  /* קצת שקיפות */
   color: #000 !important;
   border: 1px solid transparent !important;
 }
@@ -255,7 +251,6 @@ input::placeholder {
   width: 100%;
 }
 
-/* תיקון צבע הכותרת עצמה שיהיה בולט */
 .page-title-container h2 {
   margin: 0;
   font-weight: 800 !important;

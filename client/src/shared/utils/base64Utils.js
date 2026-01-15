@@ -1,12 +1,10 @@
 /**
- * base64Utils.js - Optimized version
+ * Encodes a UTF-8 string to a Base64 string.
  */
-
 export const encodeTextToBase64 = (str) => {
   if (!str) return "";
   try {
     const bytes = new TextEncoder().encode(str);
-    // שימוש ב-fromCodePoint/fromCharCode בצורה מרוכזת ליעילות
     const binString = String.fromCodePoint(...bytes);
     return btoa(binString);
   } catch (e) {
@@ -15,6 +13,9 @@ export const encodeTextToBase64 = (str) => {
   }
 };
 
+/**
+ * Decodes a Base64 string back to a UTF-8 string.
+ */
 export const decodeBase64ToText = (base64) => {
   if (!base64) return "";
   try {
@@ -27,11 +28,12 @@ export const decodeBase64ToText = (base64) => {
   }
 };
 
+/**
+ * Converts a Base64 string into a Blob object.
+ */
 export const base64ToBlob = (base64, mimeType = "application/octet-stream") => {
   try {
-    // ניקוי אפשרי של הקידומת במקרה שנשלח Data URL מלא
     const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
-    
     const binString = atob(cleanBase64);
     const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
     return new Blob([bytes], { type: mimeType });
@@ -41,6 +43,9 @@ export const base64ToBlob = (base64, mimeType = "application/octet-stream") => {
   }
 };
 
+/**
+ * Reads a File or Blob and resolves to its Base64 string.
+ */
 export const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     if (!(file instanceof File || file instanceof Blob)) {

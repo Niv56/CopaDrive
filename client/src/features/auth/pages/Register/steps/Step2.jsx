@@ -1,7 +1,10 @@
 import React from "react";
-import { FiImage, FiSmartphone } from "react-icons/fi"; // ✅ Elegant Icons
+import { FiImage, FiSmartphone } from "react-icons/fi";
 
+/** Form step for profile image upload and phone number registration */
 const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, errors }) => {
+
+  /** Processes selected image file and updates local preview */
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -9,6 +12,7 @@ const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, error
     setPreview(URL.createObjectURL(file));
   };
 
+  /** Formats raw numeric input into 05X-XXX-XXXX pattern */
   const handlePhoneChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     if (value.length > 10) value = value.slice(0, 10);
@@ -30,7 +34,6 @@ const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, error
     <div className="d-grid gap-3">
       <div className="text-center">
         <div className="mb-2">
-          {/* ✅ New Elegant Avatar Design */}
           <div
             className={`copa-avatar-preview ${hasImageError ? "copa-avatar-error" : ""}`}
             onClick={() => fileInputRef.current?.click()}
@@ -66,37 +69,15 @@ const Step2 = ({ formData, setFormData, preview, setPreview, fileInputRef, error
           onChange={handlePhoneChange}
         />
       </div>
-      
+
       <div className="form-text ps-3 small text-secondary">
-         Israeli mobile numbers only (e.g., 054-123-4567)
+        Israeli mobile numbers only (e.g., 054-123-4567)
       </div>
       {errors.phoneNumber && (
-         <div className="invalid-feedback d-block ps-3">{errors.phoneNumber}</div>
+        <div className="invalid-feedback d-block ps-3">{errors.phoneNumber}</div>
       )}
     </div>
   );
-};
-
-export const validateStep2 = (formData) => {
-  const errors = {};
-  const cleanPhone = formData.phoneNumber.replace(/\D/g, "");
-  const blockedPrefixes = ["056", "057", "059"];
-
-  if (!cleanPhone) {
-    errors.phoneNumber = "Phone number is required";
-  } else if (cleanPhone.length !== 10) {
-    errors.phoneNumber = "Number must be exactly 10 digits";
-  } else if (!cleanPhone.startsWith("05")) {
-    errors.phoneNumber = "Must start with 05";
-  } else if (blockedPrefixes.includes(cleanPhone.slice(0, 3))) {
-    errors.phoneNumber = `Prefix ${cleanPhone.slice(0, 3)} is not supported`;
-  }
-
-  if (formData.image && formData.image.size > 5000000) {
-    errors.image = "Image size must be less than 5MB";
-  }
-
-  return errors;
 };
 
 export default Step2;

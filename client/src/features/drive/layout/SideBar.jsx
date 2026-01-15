@@ -14,6 +14,7 @@ import {
   FiHardDrive,
 } from "react-icons/fi";
 
+/** Main navigation sidebar with view switching and background storage polling */
 function SideBar({ activeView, onChangeView }) {
   const [usage, setUsage] = useState({
     usedBytes: 0,
@@ -23,7 +24,7 @@ function SideBar({ activeView, onChangeView }) {
   useEffect(() => {
     let alive = true;
 
-    // Poll storage usage periodically and stop cleanly on unmount.
+    /** Fetches storage usage and updates local state */
     async function loadUsage() {
       try {
         const u = await getUsage();
@@ -33,7 +34,7 @@ function SideBar({ activeView, onChangeView }) {
           quotaBytes: u?.quotaBytes ?? 15 * 1024 * 1024 * 1024,
         });
       } catch {
-        // Ignore usage polling errors.
+        // Silently ignore polling errors
       }
     }
 
@@ -46,6 +47,7 @@ function SideBar({ activeView, onChangeView }) {
     };
   }, []);
 
+  /** Renders a navigation item with icon and click logic */
   const Item = ({ id, icon: Icon, text, onClick }) => (
     <li
       className={`sb-item ${activeView === id ? "active" : ""}`}

@@ -9,15 +9,15 @@ import React, {
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  // Initialize token from localStorage
+  // Initialize auth token from localStorage
   const [token, setToken] = useState(() => {
     return localStorage.getItem("token");
   });
 
-  // Global state to track if the session has expired (e.g., 401 response)
+  // Indicates whether the session expired (e.g. after 401)
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  // Sync state if localStorage changes externally (optional safeguard)
+  // Sync token state with localStorage on mount
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken !== token) {
@@ -25,26 +25,28 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Persist token and reset session state on login
   const login = (newToken) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
-    setSessionExpired(false); // Reset expiration state on fresh login
+    setSessionExpired(false);
   };
 
+  // Clear auth state and localStorage
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
     setSessionExpired(false);
   };
 
-  // Trigger the "Session Expired" modal without immediately logging out the user
-  // This allows the user to see *why* they are being asked to log in again
+  // Marks the session as expired without logging out immediately
   const triggerSessionExpired = () => {
     setSessionExpired(true);
   };
 
   const isAuthenticated = !!token && token !== "undefined";
 
+  // Memoized context value to avoid unnecessary re-renders
   const value = useMemo(
     () => ({
       token,
@@ -66,8 +68,11 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
+  // Ensures hook is used within AuthProvider
   if (!context) {
     throw new Error("useAuth must be used within AuthProvider");
   }
+
   return context;
 }

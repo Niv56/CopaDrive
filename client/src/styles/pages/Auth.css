@@ -2,14 +2,13 @@
    AUTH (Login + Register) - Compact & Glassmorphism
    ========================================================================== */
 
-/* ✅ NEW: Animation Keyframes 
-   Card slides up and fades in on load                
-*/
+/* Card slides up and fades in on load */
 @keyframes slideUpFade {
   from {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -19,17 +18,17 @@
 /* Color variables for Day/Night modes */
 :root {
   --auth-bg-overlay: rgba(255, 255, 255, 0);
-  
+
   /* Glass Background */
   --auth-card-bg: rgba(255, 255, 255, 0.15);
-  
+
   /* Base border (will be overridden for 3D effect) */
   --auth-card-border: rgba(255, 255, 255, 0.3);
-  
-  /* ✅ CHANGED: Deep Navy Blue instead of harsh Black */
-  --auth-text-main: #0b2b38; 
+
+  /* CHANGED: Deep Navy Blue instead of harsh Black */
+  --auth-text-main: #0b2b38;
   --auth-text-sub: #495057;
-  
+
   /* Inputs */
   --auth-input-bg: rgba(255, 255, 255, 0.8);
   --auth-input-text: #0b2b38;
@@ -37,13 +36,13 @@
 
 [data-theme="dark"] {
   --auth-bg-overlay: rgba(0, 0, 0, 0.7);
-  
+
   --auth-card-bg: rgba(0, 0, 0, 0.4);
   --auth-card-border: rgba(255, 255, 255, 0.1);
-  
+
   --auth-text-main: #e8eaed;
   --auth-text-sub: #b0b3b8;
-  
+
   --auth-input-bg: rgba(32, 33, 36, 0.6);
   --auth-input-text: #e8eaed;
 }
@@ -74,32 +73,32 @@
   width: 100%;
   max-width: 520px;
   padding: 36px 34px;
-  
+
   /* Background & Blur with !important to override Bootstrap */
   background: var(--auth-card-bg) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  
-  /* ✅ NEW: 3D Glass Borders (Top/Left are lighter) */
+
+  /* 3D Glass Borders (Top/Left are lighter) */
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.6) !important;
   border-left: 1px solid rgba(255, 255, 255, 0.6) !important;
-  
+
   color: var(--auth-text-main);
   border-radius: 24px;
-  
+
   /* Deeper shadow for depth */
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-  
-  /* ✅ NEW: Apply the animation */
+
+  /* Apply the animation */
   animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  
+
   transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Text color adjustments inside the card */
-.copa-auth-card h1, 
-.copa-auth-card .h4, 
+.copa-auth-card h1,
+.copa-auth-card .h4,
 .copa-brand-text {
   color: var(--auth-text-main) !important;
 }
@@ -124,7 +123,7 @@
 }
 
 [data-theme="dark"] .copa-link {
-  color: #8ab4f8; 
+  color: #8ab4f8;
 }
 
 .copa-link:hover {
@@ -133,17 +132,17 @@
 }
 
 /* ==========================================================================
-   ✅ NEW: Gradient Button Styling
+   Gradient Button Styling
    ========================================================================== */
 
 /* Primary Button (Sign In) */
 .copa-auth-card :where(.btn-primary) {
   /* Gradient from Blue to Cyan/Teal */
   background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%) !important;
-  
-  /* ✅ FIX: Force white text explicitly */
+
+  /* Force white text explicitly */
   color: #ffffff !important;
-  
+
   border: none !important;
   font-weight: 600;
   letter-spacing: 0.3px;
@@ -152,9 +151,8 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-/* וידוא שגם האלמנטים הפנימיים לבנים */
 .copa-auth-card :where(.btn-primary) * {
-    color: #ffffff !important;
+  color: #ffffff !important;
 }
 
 .copa-auth-card :where(.btn-primary:hover) {
@@ -171,24 +169,25 @@
 
 /* Secondary Button (Outline) - Adapted for glass */
 .copa-auth-card :where(.btn-outline-secondary) {
-    color: var(--auth-text-main);
-    border-color: rgba(0,0,0,0.15); /* Subtle border */
-    background: transparent;
+  color: var(--auth-text-main);
+  border-color: rgba(0, 0, 0, 0.15);
+  /* Subtle border */
+  background: transparent;
 }
 
 .copa-auth-card :where(.btn-outline-secondary:hover) {
   background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(0,0,0,0.25);
+  border-color: rgba(0, 0, 0, 0.25);
   color: #000;
 }
 
 [data-theme="dark"] .copa-auth-card :where(.btn-outline-secondary) {
-    color: #e8eaed;
-    border-color: rgba(255,255,255,0.3);
+  color: #e8eaed;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 [data-theme="dark"] .copa-auth-card :where(.btn-outline-secondary:hover) {
-    background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 
@@ -197,13 +196,13 @@
    ========================================================================== */
 .copa-auth-card :where(.form-control, .form-select) {
   transition: all .2s ease-in-out;
-  
+
   /* Semi-transparent white */
   background-color: var(--auth-input-bg) !important;
   color: var(--auth-input-text);
-  
+
   /* Remove default border */
-  border: 1px solid transparent; 
+  border: 1px solid transparent;
 }
 
 /* Placeholder color fix */
@@ -219,18 +218,18 @@
 
 .copa-auth-card :where(.form-control, .form-select):focus {
   /* Solid white on focus */
-  background-color: #fff !important; 
+  background-color: #fff !important;
   color: #000;
   border-color: transparent;
-  
+
   /* Soft blue glow */
   box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
   transform: translateY(-1px);
 }
 
 [data-theme="dark"] .copa-auth-card :where(.form-control, .form-select):focus {
-   background-color: #303134 !important;
-   color: #e8eaed;
+  background-color: #303134 !important;
+  color: #e8eaed;
 }
 
 .copa-auth-card :where(.form-control.is-invalid):hover {
@@ -256,8 +255,8 @@
 }
 
 [data-theme="dark"] .copa-avatar-preview {
-    border-color: rgba(255, 255, 255, .25);
-    background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .1);
 }
 
 .copa-avatar-preview:hover {
@@ -266,7 +265,7 @@
 }
 
 [data-theme="dark"] .copa-avatar-preview:hover {
-    border-color: rgba(255, 255, 255, .6);
+  border-color: rgba(255, 255, 255, .6);
 }
 
 .copa-avatar-preview.copa-avatar-error {
@@ -321,32 +320,36 @@
    Sparkle Button Effect (Step 5) - NEW SECTION
    ========================================================================== */
 
-/* אנימציית נצנוץ */
+/*   */
 @keyframes twinkle {
-  0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
-  50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
+
+  0%,
+  100% {
+    transform: scale(0.5) rotate(0deg);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: scale(1.2) rotate(15deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  }
 }
 
-/* מיקום הכפתור המיוחד */
 .btn-sparkle {
   position: relative;
-  overflow: visible !important; /* חשוב כדי שנראה את ה-Glow */
+  overflow: visible !important;
   transition: all 0.3s ease;
   z-index: 1;
-  
-  /* ✅ FIX: חובה צבע לבן גם פה כדי לגבור על הגדרות אחרות */
   color: #ffffff !important;
 }
 
-/* טקסט הכפתור */
 .btn-sparkle .sparkle-text {
   position: relative;
   z-index: 2;
-  /* ✅ FIX: וידוא שהטקסט הפנימי לבן */
   color: #ffffff !important;
 }
 
-/* קונטיינר לכוכבים - שלא יפריע ללחיצה */
 .btn-sparkle .sparkle-stars {
   position: absolute;
   inset: 0;
@@ -354,20 +357,16 @@
   z-index: 1;
 }
 
-/* עיצוב הכוכב עצמו באמצעות CSS בלבד (צורת יהלום) */
 .s-star {
   position: absolute;
   background-color: white;
   width: 16px;
   height: 16px;
-  
-  /* יצירת צורת כוכב 4 קצוות */
   clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
-  
+
   animation: twinkle 2s infinite ease-in-out;
 }
 
-/* מיקומים שונים וזמנים שונים לכל כוכב */
 .s-star.s-1 {
   top: 10%;
   left: 15%;
@@ -392,24 +391,23 @@
   animation-delay: 1.2s;
 }
 
-/* אפקט Hover מחוזק לכפתור הזה ספציפית */
 .btn-sparkle:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 10px 25px rgba(13, 202, 240, 0.5); /* צל זוהר בצבע התכלת של הכפתור */
+  box-shadow: 0 10px 25px rgba(13, 202, 240, 0.5);
 }
 
-/* בהובר הכוכבים מסתובבים קצת יותר מהר */
 .btn-sparkle:hover .s-star {
   animation-duration: 1s;
 }
 
-/* ✅ Center content inside the Step 5 sparkle button only */
+/* Center content inside the Step 5 sparkle button only */
 .btn-sparkle.btn-sparkle-center {
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 8px; /* spacing if an icon exists */
+  gap: 8px;
+  /* spacing if an icon exists */
 }
 
 .btn-sparkle.btn-sparkle-center .sparkle-text {
