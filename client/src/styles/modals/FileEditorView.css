@@ -1,0 +1,141 @@
+/* Outer glass card */
+.editor-glass {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 22px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* Width */
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+
+  /* ✅ Height control */
+  max-height: 78vh;         /* הקטנת גובה כללי */
+}
+
+/* Header block like the viewer */
+.editor-glass-header {
+  margin: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-title {
+  font-size: 1.45rem; /* קצת קטן יותר */
+  font-weight: 800;
+  color: #202124;
+}
+
+.editor-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-chip {
+  max-width: 100%;
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #5f6368;
+  background: rgba(0, 0, 0, 0.06);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ✅ Body becomes scrollable if needed */
+.editor-glass-body {
+  padding: 0 18px 12px 18px;
+  overflow: auto;          /* גלילה פנימית */
+  flex: 1;                 /* תופס את כל השטח בין header ל-footer */
+}
+
+/* Text area style */
+.editor-textarea {
+  font-family: monospace;
+  resize: none;
+  background-color: rgba(252, 252, 252, 0.9);
+}
+
+/* Replace card */
+.editor-replace-card {
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(248, 249, 250, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.editor-preview-card {
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Footer */
+.editor-glass-footer {
+  padding: 12px 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Dark mode */
+[data-theme="dark"] .editor-glass {
+  background: rgba(32, 33, 36, 0.86);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .editor-glass-header {
+  background: rgba(60, 64, 67, 0.55);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .editor-title {
+  color: #e8eaed;
+}
+
+[data-theme="dark"] .editor-chip {
+  color: rgba(232, 234, 237, 0.78);
+  background: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .editor-replace-card {
+  background: rgba(32, 33, 36, 0.35);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .editor-preview-card {
+  background: rgba(32, 33, 36, 0.55);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .editor-glass-footer {
+  background: rgba(32, 33, 36, 0.72);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}

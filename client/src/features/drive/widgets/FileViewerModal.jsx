@@ -2,6 +2,7 @@ import React from "react";
 import ImageViewer from "../../../components/Dashboard/widgets/viewers/ImageViewer";
 import TextViewer from "../../../components/Dashboard/widgets/viewers/TextViewer";
 import BinaryViewer from "../../../components/Dashboard/widgets/viewers/BinaryViewer";
+import "../../../styles/modals/FileViewerModal.css";
 
 import {
   BsStar,
@@ -38,7 +39,7 @@ function FileViewerModal({
       mime.startsWith("text/") ||
       mime === "application/json" ||
       mime === "application/javascript" ||
-      fileName?.toLowerCase().endsWith('.txt')
+      fileName?.toLowerCase().endsWith(".txt")
     );
   };
 
@@ -52,15 +53,18 @@ function FileViewerModal({
   const handleDownload = () => {
     const link = document.createElement("a");
     let processedContent = file.content || "";
+
     if (!file.mimeType || file.mimeType === "text/plain") {
       processedContent = processedContent.replaceAll("_@NL@_", "\n");
     }
+
     if (file.mimeType && file.mimeType !== "text/plain") {
       link.href = `data:${file.mimeType};base64,${processedContent}`;
     } else {
       const blob = new Blob([processedContent], { type: "text/plain" });
       link.href = URL.createObjectURL(blob);
     }
+
     link.download = file.name;
     document.body.appendChild(link);
     link.click();
@@ -70,6 +74,7 @@ function FileViewerModal({
   const renderViewer = () => {
     const mime = file.mimeType || "";
     if (mime.startsWith("image/")) return <ImageViewer file={file} />;
+
     if (isActualTextFile(mime, file.name)) {
       const displayFile = {
         ...file,
@@ -77,95 +82,117 @@ function FileViewerModal({
       };
       return <TextViewer file={displayFile} />;
     }
+
     return <BinaryViewer file={file} onDownload={handleDownload} />;
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card viewer-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-card viewer-modal viewer-modal-glass" onClick={(e) => e.stopPropagation()}>
+        {/* ✅ Glass header block: title above icons */}
+        <div className="viewer-glass-header">
+          {/* Top line: title + close */}
+          <div className="viewer-glass-title-row">
+            <div className="viewer-title-col">
+              <h2 className="viewer-file-name" title={file.name}>
+                {file.name}
+              </h2>
+              <div className="viewer-role">Role: {role}</div>
+            </div>
 
-        {/* --- Header Row המעודכן עם Inline Styles --- */}
-        <div className="modal-title-row" style={{
-          display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'nowrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '12px',
-          width: '100%',
-          padding: '16px 24px',
-          borderBottom: '1px solid #f1f3f4'
-        }}>
-
-          {/* חלק הטקסט - יתכווץ ויוסיף שלוש נקודות */}
-          <div className="modal-title-text" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
-            <h2 className="fw-bold m-0" title={file.name} style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontSize: '1.4rem',
-              color: '#202124'
-            }}>
-              {file.name}
-            </h2>
-            <div className="role-info-text" style={{ fontSize: '12px', color: '#5f6368' }}>Role: {role}</div>
+            <button
+              type="button"
+              className="viewer-icon-btn viewer-close-btn"
+              onClick={onClose}
+              title="Close"
+            >
+              <BsX size={22} />
+            </button>
           </div>
 
-          {/* חלק הכפתורים - קשיח, לא נשבר ולא זז */}
-          <div className="modal-action-buttons" style={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'nowrap',
-            alignItems: 'center',
-            gap: '8px',
-            flexShrink: 0
-          }}>
-            <button className="btn secondary" onClick={(e) => { stop(e); onToggleStar(file, !isStarred); }} style={isStarred ? { color: "#FFD54F" } : {}} title="Star">
+          {/* Second line: icons */}
+          <div className="viewer-actions viewer-actions-under-title">
+            <button
+              type="button"
+              className={`viewer-icon-btn ${isStarred ? "is-starred" : ""}`}
+              onClick={(e) => {
+                stop(e);
+                onToggleStar(file, !isStarred);
+              }}
+              title="Star"
+            >
               {isStarred ? <BsStarFill /> : <BsStar />}
             </button>
 
-            <button className="btn secondary" onClick={(e) => { stop(e); onToggleImportant(file, !isImportant); }} style={isImportant ? { color: "#EF5350" } : {}} title="Important">
+            <button
+              type="button"
+              className={`viewer-icon-btn ${isImportant ? "is-important" : ""}`}
+              onClick={(e) => {
+                stop(e);
+                onToggleImportant(file, !isImportant);
+              }}
+              title="Important"
+            >
               {isImportant ? <BsExclamationCircleFill /> : <BsExclamationCircle />}
             </button>
 
-            <button className="btn secondary" onClick={(e) => { stop(e); handleDownload(); }} title="Download">
+            <button
+              type="button"
+              className="viewer-icon-btn"
+              onClick={(e) => {
+                stop(e);
+                handleDownload();
+              }}
+              title="Download"
+            >
               <BsDownload />
             </button>
 
             {canEdit && (
-              <button className="btn secondary" onClick={(e) => { stop(e); onEdit(file); }} title="Edit">
+              <button
+                type="button"
+                className="viewer-icon-btn"
+                onClick={(e) => {
+                  stop(e);
+                  onEdit(file);
+                }}
+                title="Edit"
+              >
                 <BsPencil />
               </button>
             )}
 
-            <button className="btn secondary" onClick={(e) => { stop(e); onShare(file); }} title="Share">
+            <button
+              type="button"
+              className="viewer-icon-btn"
+              onClick={(e) => {
+                stop(e);
+                onShare(file);
+              }}
+              title="Share"
+            >
               <BsLink45Deg />
             </button>
 
-            <button className="btn secondary text-danger" onClick={(e) => { stop(e); onDelete(file); }} title="Delete">
+            <button
+              type="button"
+              className="viewer-icon-btn danger"
+              onClick={(e) => {
+                stop(e);
+                onDelete(file);
+              }}
+              title="Delete"
+            >
               <BsTrash />
-            </button>
-
-            {/* קו מפריד */}
-            <div className="header-divider-v" style={{ width: '1px', height: '24px', background: '#dadce0', margin: '0 4px', flexShrink: 0 }}></div>
-
-            <button className="btn secondary close-btn-final" onClick={onClose} title="Close" style={{ flexShrink: 0 }}>
-              <BsX size={24} />
             </button>
           </div>
         </div>
-        {/* --- סוף Header --- */}
 
-        <div className="modal-body-container-viewer">
-          {renderViewer()}
-        </div>
+        <div className="modal-body-container-viewer">{renderViewer()}</div>
 
         <div className="modal-footer-actions">
           <button type="button" className="btn btn-secondary px-4" onClick={onClose}>
-            Close
-          </button>
-          <button type="button" className="btn btn-primary px-4" onClick={handleDownload}>
-            Download
+            Back
           </button>
         </div>
       </div>

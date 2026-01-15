@@ -23,20 +23,16 @@ const getFileIcon = (name, mimeType, size = 24) => {
   return <BsFileEarmarkFill size={size} color="#9aa0a6" />;
 };
 
-function BinaryViewer({ file, onDownload }) {
+function BinaryViewer({ file }) {
   return (
     <div className="viewer-container text-center p-5 d-flex flex-column align-items-center justify-content-center h-100">
-      <div className="mb-4">
-        {/* האייקון הגדול */}
-        {getFileIcon(file.name, file.mimeType, 100)}
+      <div className="mb-4 icon-wrapper-floating">
+        {getFileIcon(file.name, file.mimeType, 120)}
       </div>
       
-      <h4 className="mt-2 fw-bold">{file.name}</h4>
-      <p className="mb-4 opacity-75">No preview available for this file type</p>
-      
-      <button className="btn btn-primary px-4 py-2 rounded-pill shadow-sm" onClick={onDownload}>
-        ⬇️ Download File
-      </button>
+      <h3 className="mt-2 fw-bold file-name-display">{file.name}</h3>
+      <p className="mb-0 opacity-50">No preview available for this file type</p>
+      {/* כפתור ה-Download הכחול הוסר מכאן בהצלחה */}
     </div>
   );
 }
