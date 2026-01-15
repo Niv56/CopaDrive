@@ -89,5 +89,3 @@ export const validateStep4 = (formData) => {
 
     return errors;
 };
-
-export default registerValidators;

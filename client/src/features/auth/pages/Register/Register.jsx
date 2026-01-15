@@ -14,7 +14,7 @@ import {
   validateStep2,
   validateStep3,
   validateStep4
-} from "@features/auth/validators/registerValidators";
+} from "../../validators/registerValidators";
 
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
