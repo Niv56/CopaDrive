@@ -1,32 +1,26 @@
 .storage-box {
   padding: 10px 12px;
-  margin-top: auto; /* דוחף לתחתית */
-  
-  /* ✅ השינוי העיקרי: מרים את הכל למעלה */
-  margin-bottom: 15px; 
-  
+  margin-top: auto;
+  margin-bottom: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px; /* צמצום הרווח בין העץ לטקסט */
+  gap: 5px;
 }
 
 .storage-sub {
   font-size: 12px;
-  color: #5f6368; /* צבע מעט כהה יותר לקריאות */
+  color: #5f6368;
   text-align: center;
   line-height: 1.4;
   font-weight: 500;
-  
-  /* מוודא שהטקסט לא יישבר בצורה מוזרה */
-  white-space: nowrap; 
+  white-space: nowrap;
 }
 
-/* ✅ הקטנת העץ כדי שיהיה מקום לטקסט */
 .storage-tree-container {
   position: relative;
-  width: 70px;  /* הוקטן מ-90px */
-  height: 70px; /* הוקטן מ-90px */
+  width: 70px;
+  height: 70px;
 }
 
 .storage-tree-bg,
@@ -34,9 +28,9 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 70px;  /* הוקטן מ-90px */
-  height: 70px; /* הוקטן מ-90px */
-  font-size: 70px; /* הוקטן מ-90px */
+  width: 70px;
+  height: 70px;
+  font-size: 70px;
   line-height: 1;
   user-select: none;
   display: flex;

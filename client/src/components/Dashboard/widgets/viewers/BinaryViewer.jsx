@@ -1,9 +1,9 @@
 import React from "react";
-import { 
-  BsFileEarmarkWordFill, BsFileEarmarkExcelFill, BsFileEarmarkPptFill, 
-  BsFileEarmarkPdfFill, BsFileEarmarkImageFill, BsFileEarmarkPlayFill, 
-  BsFileEarmarkMusicFill, BsFileEarmarkZipFill, BsFileEarmarkCodeFill, 
-  BsFileEarmarkTextFill, BsFileEarmarkFill 
+import {
+  BsFileEarmarkWordFill, BsFileEarmarkExcelFill, BsFileEarmarkPptFill,
+  BsFileEarmarkPdfFill, BsFileEarmarkImageFill, BsFileEarmarkPlayFill,
+  BsFileEarmarkMusicFill, BsFileEarmarkZipFill, BsFileEarmarkCodeFill,
+  BsFileEarmarkTextFill, BsFileEarmarkFill
 } from "react-icons/bs";
 
 const getFileIcon = (name, mimeType, size = 24) => {
@@ -29,10 +29,10 @@ function BinaryViewer({ file }) {
       <div className="mb-4 icon-wrapper-floating">
         {getFileIcon(file.name, file.mimeType, 120)}
       </div>
-      
+
       <h3 className="mt-2 fw-bold file-name-display">{file.name}</h3>
       <p className="mb-0 opacity-50">No preview available for this file type</p>
-      {/* כפתור ה-Download הכחול הוסר מכאן בהצלחה */}
+      {/*  -Download     */}
     </div>
   );
 }

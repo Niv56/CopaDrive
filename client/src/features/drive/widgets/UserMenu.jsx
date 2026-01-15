@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { FiEdit2, FiLogOut } from "react-icons/fi";
 
+/**
+ * UserMenu Component
+ * Displays user profile summary and a toggleable dropdown for account actions.
+ * Features:
+ * - Click-outside detection to close the menu.
+ * - Avatar fallback to user initials.
+ * - Profile editing and logout triggers.
+ */
 function UserMenu({
   isOpen,
   onToggle,
@@ -14,6 +22,10 @@ function UserMenu({
 }) {
   const menuRef = useRef(null);
 
+  /**
+   * Listens for clicks on the document to close the dropdown if the 
+   * user clicks outside the component boundaries.
+   */
   useEffect(() => {
     function onDocClick(e) {
       if (!isOpen) return;
@@ -27,32 +39,35 @@ function UserMenu({
   }, [isOpen, onCloseMenu]);
 
   return (
-    <div 
-      className="user-menu" 
-      ref={menuRef} 
+    <div
+      className="user-menu"
+      ref={menuRef}
       onClick={(e) => {
+        // Prevent trigger from closing immediately due to document listener
         e.stopPropagation();
         onToggle?.();
       }}
     >
-      <div className="user-meta" style={{textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center"}}>
-        <div style={{fontSize: "14px", fontWeight: "600", lineHeight: "1.2"}}>
+      {/* Identity Summary */}
+      <div className="user-meta" style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.2" }}>
           {isAuthenticated ? userName : "Guest"}
         </div>
-        <div style={{fontSize: "11px", opacity: 0.7, lineHeight: "1.2"}}>
+        <div style={{ fontSize: "11px", opacity: 0.7, lineHeight: "1.2" }}>
           {isAuthenticated ? "Signed in" : "Offline"}
         </div>
       </div>
 
+      {/* Avatar Circle */}
       <div
         className="user-avatar-btn"
-        style={{ 
-          width: "40px", 
-          height: "40px", 
-          borderRadius: "50%", 
-          overflow: "hidden", 
-          display: "flex", 
-          alignItems: "center", 
+        style={{
+          width: "40px",
+          height: "40px",
+          borderRadius: "50%",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
           justifyContent: "center",
           border: "2px solid rgba(255,255,255,0.5)",
           boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
@@ -72,12 +87,13 @@ function UserMenu({
         )}
       </div>
 
+      {/* Action Dropdown */}
       {isOpen && (
         <div className="user-dropdown" onClick={(e) => e.stopPropagation()}>
           <div className="user-dropdown-email">
             {userEmail}
           </div>
-          
+
           <button type="button" className="user-dropdown-item" onClick={onEditUser}>
             <FiEdit2 size={18} />
             <span>Edit profile</span>

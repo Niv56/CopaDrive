@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import "styles/layout/SplashScreen.css";
 
+/** Animated splash screen with auto-timer and skip option */
 const SplashScreen = ({ onFinish }) => {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    // טיימר ל-3 שניות בדיוק
     const timer = setTimeout(() => {
       handleTransition();
     }, 3000);
@@ -13,27 +13,26 @@ const SplashScreen = ({ onFinish }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  /** Triggers exit transition */
   const handleTransition = () => {
     if (isFading) return;
     setIsFading(true);
     setTimeout(() => {
       if (onFinish) onFinish();
-    }, 500); // זמן לאנימציית יציאה
+    }, 500);
   };
 
   return (
     <div className={`splash-screen ${isFading ? "fade-out" : ""}`}>
       <div className="splash-content">
-        {/* קוקוס קופץ */}
         <div className="coconut-bounce">
           <span style={{ fontSize: "100px", display: "block" }}>🥥</span>
         </div>
-        
+
         <h1 className="splash-title">CopaDrive</h1>
-        
+
         <div className="loading-bar"></div>
-        
-        {/* כפתור דילוג מנצנץ */}
+
         <button className="btn-sparkle" onClick={handleTransition}>
           <span className="sparkle-text">Skip</span>
           <div className="sparkle-stars">

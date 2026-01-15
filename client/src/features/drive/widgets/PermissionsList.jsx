@@ -1,20 +1,28 @@
 import React, { useMemo } from "react";
 
 /**
- * PermissionsList
- * - מציג avatar (תמונה כמו שהיא) + email בלבד
- * - role הוא כפתור Toggle: לחיצה על Editor תהפוך ל-Viewer ולהפך
- * - Remove נשאר כפתור נפרד (רק לבעלים)
+ * PermissionsList Component
+ * Renders a managed list of users with access to a specific item.
+ * * Features:
+ * - Avatar/Initials fallback.
+ * - Role labels (Owner, Editor, Viewer) with dynamic styling.
+ * - Interactive role toggling (Editor <-> Viewer) for owners.
+ * - Access revocation (Remove) for owners.
  */
 function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDelete }) {
+
+    /** * Normalizes raw permission data for UI rendering.
+     * Assigns specific labels and CSS classes based on roles and ownership.
+     */
     const normalized = useMemo(() => {
         return (permissions || []).map((p) => {
             const role = (p.role || "").toLowerCase();
             const isOwnerRow = p.userId === itemOwnerId;
 
             const label = isOwnerRow ? "Owner" : role === "editor" ? "Editor" : "Viewer";
-            const cls =
-                isOwnerRow ? "share-role-owner" : role === "editor" ? "share-role-editor" : "share-role-viewer";
+            const cls = isOwnerRow
+                ? "share-role-owner"
+                : role === "editor" ? "share-role-editor" : "share-role-viewer";
 
             const email = p.userEmail || p.email || "Unknown";
             const image = p.userImage || p.image || null;
@@ -23,6 +31,7 @@ function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDe
         });
     }, [permissions, itemOwnerId]);
 
+    /** Generates 1-2 character initials from an email for fallback avatars */
     const initialsFromEmail = (email) => {
         const safe = (email || "").trim();
         if (!safe || safe === "Unknown") return "?";
@@ -36,24 +45,27 @@ function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDe
             {normalized.map((p) => {
                 const { label, cls, isOwnerRow, email, image } = p._ui;
 
+                /** Logic: Only the item owner can manage other users' permissions */
                 const canManageThisRow = isOwner && !isOwnerRow;
 
                 return (
                     <div className="share-row" key={p.id}>
-                        {/* Left: Avatar + Email */}
+                        {/* User Identity Section */}
                         <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
                             <div className="share-avatar">
                                 {image ? (
                                     <img src={image} alt={email} />
                                 ) : (
-                                    <div className="share-avatar-initials">{initialsFromEmail(email)}</div>
+                                    <div className="share-avatar-initials">
+                                        {initialsFromEmail(email)}
+                                    </div>
                                 )}
                             </div>
 
                             <div className="share-email text-truncate">{email}</div>
                         </div>
 
-                        {/* Right: Role (toggle) + Remove */}
+                        {/* Management Actions Section */}
                         <div className="d-flex align-items-center gap-2">
                             <button
                                 type="button"
@@ -68,7 +80,7 @@ function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDe
                                 {label}
                             </button>
 
-                            {canManageThisRow ? (
+                            {canManageThisRow && (
                                 <button
                                     className="btn share-btn-danger btn-sm rounded-pill px-3"
                                     type="button"
@@ -76,7 +88,7 @@ function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDe
                                 >
                                     Remove
                                 </button>
-                            ) : null}
+                            )}
                         </div>
                     </div>
                 );

@@ -4,24 +4,28 @@ import { getCurrentUser } from "../../api/filesApi";
 
 const BASE_URL = "http://localhost:3000";
 
+/** UI section for searching users and granting file access */
 export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
     const [email, setEmail] = useState("");
     const [foundUser, setFoundUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    /** Formats user name or email prefix for display */
     const displayName = useMemo(() => {
         if (!foundUser) return "";
         const full = `${foundUser.firstName || ""} ${foundUser.lastName || ""}`.trim();
         return full || foundUser.email?.split("@")[0] || "";
     }, [foundUser]);
 
+    /** Resolves absolute URL for the user's avatar image */
     const avatarUrl = useMemo(() => {
         if (!foundUser?.image) return "";
         const raw = foundUser.image;
         return raw.startsWith("data:") || raw.startsWith("http") ? raw : `${BASE_URL}${raw}`;
     }, [foundUser]);
 
+    /** Searches for a registered user by email address */
     async function onSearch(e) {
         e?.preventDefault?.();
         if (!isOwner || !email.trim()) return;
@@ -37,6 +41,7 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
         } finally { setLoading(false); }
     }
 
+    /** Grants access to the found user and refreshes permission list */
     async function onShare() {
         try {
             setLoading(true);
@@ -53,10 +58,10 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
         <div className="mb-4">
             <div className="perm-section-title">Add people</div>
             <form onSubmit={onSearch} className="d-flex gap-2">
-                <input 
-                    className="perm-add-input w-100" 
-                    placeholder="Enter email address..." 
-                    value={email} 
+                <input
+                    className="perm-add-input w-100"
+                    placeholder="Enter email address..."
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                 />
@@ -76,7 +81,7 @@ export default function PermissionAddSection({ fileId, isOwner, onChanged }) {
                             <div className="perm-profile-email">{foundUser.email}</div>
                         </div>
                     </div>
-                    <button className="perm-role-toggle-btn" style={{borderColor: '#34a853', color: '#34a853'}} onClick={onShare}>
+                    <button className="perm-role-toggle-btn" style={{ borderColor: '#34a853', color: '#34a853' }} onClick={onShare}>
                         Share
                     </button>
                 </div>

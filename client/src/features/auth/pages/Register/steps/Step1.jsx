@@ -1,17 +1,16 @@
 import React from "react";
-import { FiUser } from "react-icons/fi"; // ✅ Elegant Icon
+import { FiUser } from "react-icons/fi";
 
+/** Form step for collecting basic user identity */
 const Step1 = ({ formData, setFormData, errors }) => {
   return (
     <div className="d-grid gap-3">
-      {/* First Name Input */}
       <div className="input-wrapper">
         <FiUser className="input-icon" />
         <input
           type="text"
-          className={`form-control form-control-lg rounded-pill ${
-            errors.firstName ? "is-invalid" : ""
-          }`}
+          className={`form-control form-control-lg rounded-pill ${errors.firstName ? "is-invalid" : ""
+            }`}
           placeholder="First name"
           value={formData.firstName}
           onChange={(e) =>
@@ -23,7 +22,6 @@ const Step1 = ({ formData, setFormData, errors }) => {
         )}
       </div>
 
-      {/* Last Name Input */}
       <div className="input-wrapper">
         <FiUser className="input-icon" />
         <input
@@ -38,16 +36,6 @@ const Step1 = ({ formData, setFormData, errors }) => {
       </div>
     </div>
   );
-};
-
-export const validateStep1 = (formData) => {
-  const errors = {};
-  if (!formData.firstName.trim()) {
-    errors.firstName = "Enter your first name";
-  } else if (formData.firstName.trim().length < 2) {
-    errors.firstName = "First name must be at least 2 characters";
-  }
-  return errors;
 };
 
 export default Step1;

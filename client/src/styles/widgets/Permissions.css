@@ -1,5 +1,3 @@
-/* Permissions.css - Classic Professional Glass Design */
-
 /* titles */
 .perm-section-title {
     font-size: 12px;
@@ -38,7 +36,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 0; /* Prevents overflow */
+    min-width: 0;
+    /* Prevents overflow */
 }
 
 /* Avatar Styling */

@@ -3,6 +3,7 @@ import "../../../styles/modals/FileEditorView.css";
 
 const NEWLINE_PLACEHOLDER = "_@NL@_";
 
+/** Modal view for editing file metadata and content */
 function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
   const [localData, setLocalData] = useState(() => {
     const isTxtFile = initialData.mimeType === "text/plain" || initialData.name.toLowerCase().endsWith(".txt");
@@ -25,6 +26,7 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
 
   const isFolder = file.type === "folder";
 
+  /** Processes file input and updates local state */
   const handleFileChange = (e) => {
     const newFile = e.target.files[0];
     if (!newFile) return;
@@ -46,7 +48,6 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
 
   return (
     <div className="editor-glass">
-      {/* Glass header block */}
       <div className="editor-glass-header">
         <h2 className="editor-title m-0">Edit File</h2>
         <div className="editor-subtitle">
@@ -56,7 +57,6 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
         </div>
       </div>
 
-      {/* Body */}
       <div className="editor-glass-body">
         <div className="mb-3">
           <label className="form-label fw-bold">FILE NAME</label>

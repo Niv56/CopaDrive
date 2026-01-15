@@ -1,9 +1,17 @@
 import { useEffect } from "react";
 import "styles/modals/SessionExpiredModal.css";
 
-// Modal displayed when the user's session has timed out
+/**
+ * Modal displayed when the user's authentication token has expired.
+ * Forces the user to log out to clear invalid credentials and redirect to login.
+ * * @param {boolean} isOpen - Controls visibility of the modal.
+ * @param {Function} onLogout - Callback to clear local storage and redirect.
+ */
 function SessionExpiredModal({ isOpen, onLogout }) {
-  // Prevents background scrolling when the modal is active
+
+  /** * Management of body scroll state.
+   * Prevents the user from scrolling the background while the session error is active.
+   */
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";

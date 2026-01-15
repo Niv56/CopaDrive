@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FiMail, FiLock } from "react-icons/fi"; // ✅ Elegant Icons
+import { FiMail, FiLock } from "react-icons/fi";
 
+/** Form step for email setup and password security configuration */
 const Step4 = ({ formData, setFormData, errors }) => {
   const [passwordStrength, setPasswordStrength] = useState({
     hasLength: false,
@@ -11,6 +12,7 @@ const Step4 = ({ formData, setFormData, errors }) => {
 
   const [isCopaEmail, setIsCopaEmail] = useState(false);
 
+  /** Updates complexity flags whenever password changes */
   useEffect(() => {
     const pwd = formData.password || "";
     setPasswordStrength({
@@ -21,11 +23,13 @@ const Step4 = ({ formData, setFormData, errors }) => {
     });
   }, [formData.password]);
 
+  /** Checks for the required @copa.com domain suffix */
   useEffect(() => {
     const email = formData.email || "";
     setIsCopaEmail(email.toLowerCase().endsWith("@copa.com"));
   }, [formData.email]);
 
+  /** Auto-completes the domain when the user types '@' */
   const handleEmailChange = (e) => {
     let value = e.target.value;
     const oldEmail = formData.email || "";
@@ -43,6 +47,7 @@ const Step4 = ({ formData, setFormData, errors }) => {
   const hasPasswordError = Boolean(errors.password);
   const hasVerifyError = Boolean(errors.verifyPassword);
 
+  /** Helper for rendering dynamic validation status items */
   const InfoRow = ({ ok, text }) => (
     <div className={`d-flex align-items-center gap-2 ${ok ? "text-success" : "text-danger"}`}>
       <span style={{ width: 18, textAlign: "center" }}>{ok ? "✓" : "•"}</span>
@@ -63,7 +68,7 @@ const Step4 = ({ formData, setFormData, errors }) => {
             onChange={handleEmailChange}
           />
         </div>
-        
+
         {formData.email && (
           <div className="mt-2 p-2 bg-light rounded-3 border ps-3">
             <InfoRow ok={isCopaEmail} text="Must end with @copa.com" />
@@ -110,34 +115,6 @@ const Step4 = ({ formData, setFormData, errors }) => {
       </div>
     </div>
   );
-};
-
-export const validateStep4 = (formData) => {
-  const errors = {};
-  const email = (formData.email || "").trim().toLowerCase();
-
-  if (!email) {
-    errors.email = "Email is required";
-  } else if (!email.endsWith("@copa.com")) {
-    errors.email = "Only @copa.com accounts are permitted";
-  } else if (!/^[^\s@]+@copa\.com$/.test(email)) {
-    errors.email = "Enter a valid email username";
-  }
-
-  if (!formData.password) {
-    errors.password = "Password is required";
-  } else {
-    const pwd = formData.password;
-    if (pwd.length < 8 || !/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) {
-      errors.password = "Password does not meet requirements";
-    }
-  }
-
-  if (formData.password !== formData.verifyPassword) {
-    errors.verifyPassword = "Passwords don't match";
-  }
-
-  return errors;
 };
 
 export default Step4;

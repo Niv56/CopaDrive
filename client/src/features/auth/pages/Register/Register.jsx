@@ -4,19 +4,25 @@ import { useNavigate, Link } from "react-router-dom";
 import "styles/pages/Auth.css";
 import { getProfilePicture } from "shared/utils/profileUtils";
 
-import Step1, { validateStep1 } from "./steps/Step1";
-import Step2, { validateStep2 } from "./steps/Step2";
-import Step3, { validateStep3 } from "./steps/Step3";
-import Step4, { validateStep4 } from "./steps/Step4";
+import Step1 from "./steps/Step1";
+import Step2 from "./steps/Step2";
+import Step3 from "./steps/Step3";
+import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
+import {
+  validateStep1,
+  validateStep2,
+  validateStep3,
+  validateStep4
+} from "@features/auth/validators/registerValidators";
 
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
 
-// ✅ ייבואים חדשים למוזיקה
 import { FiMusic, FiPause } from "react-icons/fi";
-import songFile from "assets/videos/Song.mp3"; 
+import songFile from "assets/videos/Song.mp3";
 
+/** Configuration for step titles, subtitles, and validation logic */
 const STEP_CONFIG = {
   1: {
     title: "Create a Copa Account",
@@ -48,6 +54,7 @@ const STEP_CONFIG = {
 const TOTAL_STEPS = 4;
 const API_URL = "http://localhost:3000/api/users";
 
+/** Multi-step registration flow with audio and theme support */
 const Register = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -68,10 +75,10 @@ const Register = () => {
     verifyPassword: "",
   });
 
-  // ✅ לוגיקת נגינה (Play/Pause)
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
+  /** Toggles background audio playback */
   const toggleSong = () => {
     if (!audioRef.current) {
       audioRef.current = new Audio(songFile);
@@ -96,14 +103,14 @@ const Register = () => {
     };
   }, []);
 
-  // Validate current step
+  /** Validates the current step using STEP_CONFIG */
   const validateCurrentStep = () => {
     const stepErrors = STEP_CONFIG[step].validate(formData);
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
 
-  // Submit registration
+  /** Sends finalized registration data to the backend */
   const submitRegistration = async () => {
     try {
       const profilePicture = await getProfilePicture(
@@ -141,6 +148,7 @@ const Register = () => {
     }
   };
 
+  /** Handles step transition or final form submission */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateCurrentStep()) return;
@@ -153,12 +161,14 @@ const Register = () => {
     }
   };
 
+  /** Navigates back to the previous registration step */
   const handleBack = () => {
     if (step === 1 || step === 5) return;
     setErrors({});
     setStep((s) => s - 1);
   };
 
+  /** Renders the component corresponding to the current step */
   const renderStep = () => {
     const stepProps = { formData, setFormData, errors };
 
@@ -176,17 +186,16 @@ const Register = () => {
 
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
-      
+
       <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
-        
-        {/* כפתור PlaySong מנצנץ עם Play/Pause */}
+
         <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={toggleSong}>
-            {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
-            <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
-            <div className="sparkle-stars">
-              <div className="s-star s-1"></div>
-              <div className="s-star s-2"></div>
-            </div>
+          {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
+          <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
+          <div className="sparkle-stars">
+            <div className="s-star s-1"></div>
+            <div className="s-star s-2"></div>
+          </div>
         </button>
 
         <ThemeToggle />
@@ -203,10 +212,9 @@ const Register = () => {
           <div className="text-secondary">{currentConfig.subtitle}</div>
         </div>
 
-        {/* ✅ התיקון: הוספת style שימרכז את התוכן בתוך ה-Grid רק בשלב 5 */}
-        <form 
-          onSubmit={handleSubmit} 
-          className="d-grid gap-3" 
+        <form
+          onSubmit={handleSubmit}
+          className="d-grid gap-3"
           style={step === 5 ? { justifyItems: "center" } : {}}
         >
           {renderStep()}

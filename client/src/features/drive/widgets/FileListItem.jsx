@@ -1,54 +1,63 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "styles/widgets/FileListItem.css";
 import { formatBytes } from "shared/utils/formatBytes";
 
-// 🎨 ייבוא האייקונים מהספרייה
-import { 
-  BsFolderFill, 
-  BsFileEarmarkWordFill, 
-  BsFileEarmarkExcelFill, 
-  BsFileEarmarkPptFill, 
-  BsFileEarmarkPdfFill, 
-  BsFileEarmarkImageFill, 
-  BsFileEarmarkPlayFill, 
-  BsFileEarmarkMusicFill, 
-  BsFileEarmarkZipFill, 
-  BsFileEarmarkCodeFill, 
-  BsFileEarmarkTextFill, 
-  BsFileEarmarkFill 
+import {
+  BsFolderFill,
+  BsFileEarmarkWordFill,
+  BsFileEarmarkExcelFill,
+  BsFileEarmarkPptFill,
+  BsFileEarmarkPdfFill,
+  BsFileEarmarkImageFill,
+  BsFileEarmarkPlayFill,
+  BsFileEarmarkMusicFill,
+  BsFileEarmarkZipFill,
+  BsFileEarmarkCodeFill,
+  BsFileEarmarkTextFill,
+  BsFileEarmarkFill
 } from "react-icons/bs";
 
-// 🛠️ פונקציית עזר
+/**
+ * Utility to retrieve the correct icon and color based on file metadata.
+ * @param {string} name - File name including extension.
+ * @param {string} mimeType - The MIME type of the file.
+ * @param {boolean} isFolder - Flag to determine if item is a directory.
+ * @param {number} size - Pixel size for the icon.
+ */
 export const getFileIcon = (name, mimeType, isFolder, size = 24) => {
-  if (isFolder) return <BsFolderFill size={size} color="#5f6368" />; 
+  if (isFolder) return <BsFolderFill size={size} color="#5f6368" />;
 
   const ext = name ? name.split('.').pop().toLowerCase() : "";
   const mime = mimeType || "";
 
-  if (['doc', 'docx', 'odt'].includes(ext) || mime.includes('word')) 
+  if (['doc', 'docx', 'odt'].includes(ext) || mime.includes('word'))
     return <BsFileEarmarkWordFill size={size} color="#4285f4" />;
-  if (['xls', 'xlsx', 'csv', 'ods'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel')) 
+  if (['xls', 'xlsx', 'csv', 'ods'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel'))
     return <BsFileEarmarkExcelFill size={size} color="#34a853" />;
-  if (['ppt', 'pptx', 'odp'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint')) 
+  if (['ppt', 'pptx', 'odp'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint'))
     return <BsFileEarmarkPptFill size={size} color="#f4b400" />;
-  if (ext === 'pdf' || mime === 'application/pdf') 
+  if (ext === 'pdf' || mime === 'application/pdf')
     return <BsFileEarmarkPdfFill size={size} color="#ea4335" />;
-  if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext) || mime.startsWith('image/')) 
+  if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext) || mime.startsWith('image/'))
     return <BsFileEarmarkImageFill size={size} color="#ea4335" />;
-  if (['mp4', 'mkv', 'avi', 'mov'].includes(ext) || mime.startsWith('video/')) 
+  if (['mp4', 'mkv', 'avi', 'mov'].includes(ext) || mime.startsWith('video/'))
     return <BsFileEarmarkPlayFill size={size} color="#ea4335" />;
-  if (['mp3', 'wav', 'ogg'].includes(ext) || mime.startsWith('audio/')) 
+  if (['mp3', 'wav', 'ogg'].includes(ext) || mime.startsWith('audio/'))
     return <BsFileEarmarkMusicFill size={size} color="#a142f4" />;
-  if (['zip', 'rar', '7z', 'tar'].includes(ext) || mime.includes('zip') || mime.includes('compressed')) 
+  if (['zip', 'rar', '7z', 'tar'].includes(ext) || mime.includes('zip') || mime.includes('compressed'))
     return <BsFileEarmarkZipFill size={size} color="#fbbc04" />;
-  if (['js', 'jsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp'].includes(ext)) 
+  if (['js', 'jsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp'].includes(ext))
     return <BsFileEarmarkCodeFill size={size} color="#4285f4" />;
-  if (ext === 'txt' || mime === 'text/plain') 
+  if (ext === 'txt' || mime === 'text/plain')
     return <BsFileEarmarkTextFill size={size} color="#4285f4" />;
 
   return <BsFileEarmarkFill size={size} color="#9aa0a6" />;
 };
 
+/**
+ * Component for rendering a single item row in the drive list view.
+ * Handles primary actions like opening, editing, sharing, and deletion.
+ */
 function FileListItem({
   item,
   onOpen,
@@ -57,7 +66,7 @@ function FileListItem({
   onDelete,
   onToggleStar,
   onToggleImportant,
-  mode = "default", 
+  mode = "default",
   onRestore,
   onDeleteForever,
   ownerLabel,
@@ -72,6 +81,7 @@ function FileListItem({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
+  /** Handles closing the context menu when clicking elsewhere */
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -95,19 +105,23 @@ function FileListItem({
 
   const colStyle = {
     fontSize: '13px',
-    color: 'var(--text-secondary)', 
-    textShadow: 'var(--text-shadow-global)', 
-    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500
+    color: 'var(--text-secondary)',
+    textShadow: 'var(--text-shadow-global)',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    fontWeight: 500
   };
 
   const daysLeftStyle = { ...colStyle, color: '#d93025', fontWeight: 600 };
 
+  /** Prevents row click events from firing when interacting with nested buttons */
   function stop(e) { e.preventDefault(); e.stopPropagation(); }
 
   return (
     <div className={`fli-row ${isTrash ? "is-trash" : ""}`} onClick={() => onOpen?.(item)}
       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 16px', position: 'relative', zIndex: isMenuOpen ? 1000 : 1 }}>
-      
+
       {/* 1. Name & Icon */}
       <div className="fli-left" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div className="fli-icon" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
@@ -119,57 +133,54 @@ function FileListItem({
         </div>
       </div>
 
-      {/* 2. Owner */}
+      {/* 2. Owner column */}
       <div className="fli-owner" style={{ width: '150px', ...colStyle }} title={ownerLabel}>
         <img src={ownerAvatar || defaultAvatar} alt="User" className="fli-owner-avatar" style={{ border: "1px solid var(--border-color)" }} onError={(e) => { e.target.onerror = null; e.target.src = defaultAvatar; }} />
         <span className="fli-owner-text" style={{ color: 'var(--text-secondary)' }}>{ownerLabel || "Me"}</span>
       </div>
 
-      {/* 3. Date */}
+      {/* 3. Modification/Creation Date */}
       <div style={{ width: '150px', ...colStyle }}>{dateLabel || "—"}</div>
 
-      {/* 4. Days Left */}
+      {/* 4. Trash Expiry countdown */}
       {isTrash && daysLeftLabel && <div style={{ width: '120px', ...daysLeftStyle }}>{daysLeftLabel}</div>}
 
-      {/* 5. Size */}
+      {/* 5. File Size */}
       {showSize && <div style={{ width: '100px', ...colStyle }}>{displaySize}</div>}
 
-      {/* 6. Actions */}
+      {/* 6. Action buttons and Context Menu */}
       <div className="fli-right" onClick={stop} style={{ width: '80px', display: 'flex', justifyContent: 'flex-end' }}>
         {!isTrash && (
           <div className="fli-actions">
-            {/* ✅ נוסף title לכפתור הכוכב */}
-            <button 
-                className={`fli-iconbtn ${isStarred ? "is-on" : ""}`} 
-                onClick={(e) => { stop(e); onToggleStar?.(item, !isStarred); }} 
-                title={isStarred ? "Remove star" : "Toggle star"} // או "Toggle star" כפי שביקשת
-                style={{ color: isStarred ? '#fbbc04' : 'var(--text-secondary)' }}
+            <button
+              className={`fli-iconbtn ${isStarred ? "is-on" : ""}`}
+              onClick={(e) => { stop(e); onToggleStar?.(item, !isStarred); }}
+              title={isStarred ? "Remove star" : "Toggle star"}
+              style={{ color: isStarred ? '#fbbc04' : 'var(--text-secondary)' }}
             >
-                {isStarred ? "★" : "☆"}
+              {isStarred ? "★" : "☆"}
             </button>
 
-            {/* ✅ נוסף title לכפתור החשיבות */}
-            <button 
-                className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`} 
-                onClick={(e) => { stop(e); onToggleImportant?.(item, !isImportant); }} 
-                title={isImportant ? "Mark as not important" : "Mark as important"}
-                style={{ color: isImportant ? '#ff5252' : 'var(--text-secondary)' }}
+            <button
+              className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`}
+              onClick={(e) => { stop(e); onToggleImportant?.(item, !isImportant); }}
+              title={isImportant ? "Mark as not important" : "Mark as important"}
+              style={{ color: isImportant ? '#ff5252' : 'var(--text-secondary)' }}
             >
-                !
+              !
             </button>
           </div>
         )}
         <div className="dropdown" onClick={stop} ref={menuRef}>
-          {/* ✅ נוסף title לכפתור התפריט */}
-          <button 
-            className={`fli-menubtn ${isMenuOpen ? "show" : ""}`} 
-            onClick={(e) => { stop(e); setIsMenuOpen(!isMenuOpen); }} 
+          <button
+            className={`fli-menubtn ${isMenuOpen ? "show" : ""}`}
+            onClick={(e) => { stop(e); setIsMenuOpen(!isMenuOpen); }}
             title="More options"
             style={{ color: 'var(--text-secondary)' }}
           >
             ⋮
           </button>
-          
+
           <ul className={`dropdown-menu dropdown-menu-end shadow-sm ${isMenuOpen ? "show" : ""}`} style={{ display: isMenuOpen ? "block" : "none", position: "absolute", inset: "0px 0px auto auto", transform: "translate3d(0px, 30px, 0px)" }}>
             {isTrash ? (
               <>

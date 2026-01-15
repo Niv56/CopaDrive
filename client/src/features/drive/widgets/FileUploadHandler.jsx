@@ -1,9 +1,18 @@
 import React, { useRef, useImperativeHandle, forwardRef } from "react";
 
+/**
+ * A headless component that handles local file selection and processing.
+ * It abstracts the FileReader API and provides a clean interface for the parent 
+ * to trigger uploads and receive processed Base64 or text content.
+ * * @param {Function} onFileProcessed - Callback receiving the structured file data.
+ */
 const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
     const fileInputRef = useRef(null);
 
-    // Expose trigger function to parent with optional MIME filter
+    /**
+     * Exposes the triggerUpload method to the parent component.
+     * Allows dynamic setting of the 'accept' attribute
+     */
     useImperativeHandle(ref, () => ({
         triggerUpload: (filter = "*/*") => {
             if (fileInputRef.current) {
@@ -13,6 +22,10 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
         }
     }));
 
+    /**
+     * Internal handler for the native input change event.
+     * Manages reading logic based on whether the file is plain text or binary.
+     */
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -22,8 +35,7 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
 
         reader.onload = () => {
             const result = reader.result;
-            
-            // Safety check for empty or failed reads
+
             if (result === null) {
                 console.error("FileReader result is null");
                 return;
@@ -32,15 +44,18 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
             let finalContent = "";
 
             if (isTextFile) {
-                // Keep text content as-is (even if empty string)
+                // Return text content as a raw string
                 finalContent = result;
             } else {
-                // Extract Base64 string for binary files
+                /**
+                 * For binary files (images, PDFs, etc.), we extract the Base64 portion 
+                 * by splitting the DataURL at the comma.
+                 */
                 const base64Parts = result.split(',');
                 finalContent = base64Parts.length > 1 ? base64Parts[1] : result;
             }
 
-            // Send processed data to the parent component
+            // Package the metadata and content for the parent
             onFileProcessed({
                 name: file.name,
                 content: finalContent,
@@ -52,17 +67,19 @@ const FileUploadHandler = forwardRef(({ onFileProcessed }, ref) => {
 
         reader.onerror = (err) => {
             console.error("FileReader error:", err);
-            alert("Failed to read file from local disk.");
+            alert("An error occurred while reading the file.");
         };
 
-        // Choose reading method based on file type
+        // Determine the read strategy
         if (isTextFile) {
             reader.readAsText(file);
         } else {
             reader.readAsDataURL(file);
         }
 
-        // Reset input to allow selecting the same file again
+        /** * Important: Reset the input value so the same file can be 
+         * selected/processed again consecutively.
+         */
         e.target.value = "";
     };
 

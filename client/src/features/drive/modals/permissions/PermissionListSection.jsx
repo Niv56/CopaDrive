@@ -3,10 +3,12 @@ import { getPermissions, deletePermission, togglePermissionRole, addPermission }
 import { getCurrentUser } from "../../api/filesApi";
 import PermissionRow from "./PermissionRow";
 
+/** Displays and manages the list of users who have access to the file */
 export default function PermissionListSection({ fileId, isOwner, myUserId, ownerId, refreshTrigger }) {
     const [loading, setLoading] = useState(true);
     const [permissions, setPermissions] = useState([]);
 
+    /** Fetches permissions and enriches them with user profile details */
     async function load() {
         try {
             setLoading(true);
@@ -32,6 +34,7 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
         } finally { setLoading(false); }
     }
 
+    /** Updates user role or creates a local override for inherited permissions */
     const handleToggle = async (p) => {
         try {
             await togglePermissionRole(fileId, p.id);
@@ -47,6 +50,7 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
         load();
     };
 
+    /** Revokes file access for a specific permission record */
     const handleDelete = async (p) => {
         try {
             await deletePermission(fileId, p.id);

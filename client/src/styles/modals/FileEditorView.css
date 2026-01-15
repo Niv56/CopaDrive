@@ -6,18 +6,14 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-
   overflow: hidden;
   display: flex;
   flex-direction: column;
-
   /* Width */
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-
-  /* ✅ Height control */
-  max-height: 78vh;         /* הקטנת גובה כללי */
+  max-height: 78vh;
 }
 
 /* Header block like the viewer */
@@ -39,7 +35,7 @@
 }
 
 .editor-title {
-  font-size: 1.45rem; /* קצת קטן יותר */
+  font-size: 1.45rem;
   font-weight: 800;
   color: #202124;
 }
@@ -64,11 +60,10 @@
   text-overflow: ellipsis;
 }
 
-/* ✅ Body becomes scrollable if needed */
 .editor-glass-body {
   padding: 0 18px 12px 18px;
-  overflow: auto;          /* גלילה פנימית */
-  flex: 1;                 /* תופס את כל השטח בין header ל-footer */
+  overflow: auto;
+  flex: 1;
 }
 
 /* Text area style */

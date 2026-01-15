@@ -7,6 +7,11 @@ import App from "./app/App";
 
 import { ViewModeProvider } from "./features/drive/providers/ViewModeContext";
 
+/**
+ * Application entry point.
+ * Initializes the React root, injects global styles, and wraps the app 
+ * in necessary context providers.
+ */
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(

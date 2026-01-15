@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTheme } from "app/providers/ThemeProvider"; 
+import { useTheme } from "app/providers/ThemeProvider";
 
 import TopBar from "features/drive/layout/TopBar";
 import SideBar from "features/drive/layout/SideBar";
@@ -10,19 +10,15 @@ import darkVideo from "assets/videos/dark.mp4";
 
 import "styles/pages/Dashboard.css";
 
-// Main Dashboard Layout
+/** Primary dashboard layout with dynamic video backgrounds and view management */
 export default function Dashboard() {
   const [activeView, setActiveView] = useState("home");
-  const { theme } = useTheme(); 
+  const { theme } = useTheme();
 
   return (
     <div className="dashboard-root">
-      {/* תיקון למעבר חלק:
-          במקום להחליף מקור וידאו (שגורם להבהוב), אנחנו טוענים את שניהם.
-          ה-CSS מטפל בשקיפות (Opacity) כדי לעשות מעבר נעים.
-      */}
-      
-      {/* וידאו יום */}
+      {/* Background videos toggled via CSS opacity based on active theme */}
+
       <video
         className={`background-video ${theme === 'light' ? 'active' : ''}`}
         autoPlay
@@ -33,7 +29,6 @@ export default function Dashboard() {
         <source src={lightVideo} type="video/mp4" />
       </video>
 
-      {/* וידאו לילה */}
       <video
         className={`background-video ${theme === 'dark' ? 'active' : ''}`}
         autoPlay

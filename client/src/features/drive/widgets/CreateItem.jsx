@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-// תיקון נתיב: עולים שלב אחד ל-drive ואז ל-api
 import { getRootFiles, createItem } from "../api/filesApi";
 import FileUploadHandler from "./FileUploadHandler";
-// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-utils
 import { encodeTextToBase64 } from "../../../shared/utils/base64Utils";
-// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-styles
 import "../../../styles/widgets/CreateItem.css";
 
-// ✅ ייבוא אייקונים אלגנטיים במקום אימוג'ים
 import { FiFolderPlus, FiFileText, FiImage, FiUpload, FiPlus } from "react-icons/fi";
 
-// ייבוא הקומפוננטות הישנות מה-Dashboard
 import FolderCreator from "../../../components/Dashboard/widgets/creation/FolderCreator";
 import TextFileCreator from "../../../components/Dashboard/widgets/creation/TextFileCreator";
 import FileImporter from "../../../components/Dashboard/widgets/creation/FileImporter";
@@ -18,18 +13,27 @@ import ImageImporter from "../../../components/Dashboard/widgets/creation/ImageI
 
 const NEWLINE_PLACEHOLDER = "_@NL@_";
 
+/**
+ * Floating Action Button (FAB) component that handles the creation of new items 
+ * (folders, text files, images, and file imports) within the Drive.
+ * * @param {Function} onItemCreated - Callback triggered when a new item is successfully added.
+ * @param {string|null} currentFolderId - The ID of the currently active folder.
+ */
 function CreateItem({ onItemCreated, currentFolderId }) {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [modalType, setModalType] = useState(null); 
+    const [modalType, setModalType] = useState(null);
     const [name, setName] = useState("");
     const [content, setContent] = useState("");
-    const [size, setSize] = useState(0); 
+    const [size, setSize] = useState(0);
     const [parentId, setParentId] = useState(currentFolderId || null);
     const [folders, setFolders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [mimeType, setMimeType] = useState("");
     const uploadHandlerRef = useRef(null);
 
+    /**
+     * Fetches root-level folders to populate the 'Location' dropdown in modals.
+     */
     const loadFolders = useCallback(async () => {
         try {
             const data = await getRootFiles();
@@ -46,6 +50,9 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         }
     }, [modalType, currentFolderId, loadFolders]);
 
+    /**
+     * Resets the creation state and closes any active modal.
+     */
     const closeModal = () => {
         setModalType(null);
         setName("");
@@ -54,6 +61,9 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         setSize(0);
     };
 
+    /**
+     * Utility to format file sizes for display.
+     */
     const formatBytes = (bytes) => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -62,13 +72,16 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    /**
+     * Handles the final API call to save the new item (folder or file) to the server.
+     */
     const onSaveClicked = async () => {
         if (!name.trim()) return;
         setLoading(true);
 
         try {
             const typeForServer = modalType === "folder" ? "folder" : "file";
-            
+
             let rawContent = content;
             if (!rawContent || rawContent.trim() === "") {
                 rawContent = "no content";
@@ -78,10 +91,11 @@ function CreateItem({ onItemCreated, currentFolderId }) {
             let finalMime = mimeType;
             const isTxtFile = name.toLowerCase().endsWith('.txt');
 
+            // Handle newline sanitization for text files
             if (modalType === "file" || isTxtFile) {
-                finalContent = rawContent.replaceAll('\n', NEWLINE_PLACEHOLDER); 
+                finalContent = rawContent.replaceAll('\n', NEWLINE_PLACEHOLDER);
                 finalMime = "text/plain";
-            } 
+            }
 
             const newItem = {
                 name: name.trim(),
@@ -101,11 +115,14 @@ function CreateItem({ onItemCreated, currentFolderId }) {
         }
     };
 
+    /**
+     * Callback passed to the FileUploadHandler to receive processed file data.
+     */
     const handleFileProcessed = (fileData) => {
         setName(fileData.name);
-        setContent(fileData.content); 
+        setContent(fileData.content);
         setMimeType(fileData.mimeType);
-        setSize(fileData.size); 
+        setSize(fileData.size);
         setModalType("upload");
         setMenuOpen(false);
     };
@@ -129,13 +146,12 @@ function CreateItem({ onItemCreated, currentFolderId }) {
                         </button>
                     </div>
                 )}
-                
-                <button 
-                    className={`fab-btn-unique ${menuOpen ? 'open' : ''}`} 
-                    onClick={() => setMenuOpen(!menuOpen)} 
+
+                <button
+                    className={`fab-btn-unique ${menuOpen ? 'open' : ''}`}
+                    onClick={() => setMenuOpen(!menuOpen)}
                     type="button"
                 >
-                    {/* שימוש באייקון פלוס וקטורי חד ומדויק */}
                     <FiPlus className="fab-plus-icon" />
                     <span className="fab-label-text">Add New</span>
                 </button>
@@ -148,41 +164,41 @@ function CreateItem({ onItemCreated, currentFolderId }) {
                     <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-title-row">
                             <div className="modal-title-text">
-                                {modalType === "folder" ? "Create New Folder" : 
-                                 modalType === "file" ? "Text Editor" : 
-                                 modalType === "image" ? "Upload Picture" : "Import File"}
+                                {modalType === "folder" ? "Create New Folder" :
+                                    modalType === "file" ? "Text Editor" :
+                                        modalType === "image" ? "Upload Picture" : "Import File"}
                             </div>
                             <button type="button" className="share-btn" onClick={closeModal}>✕</button>
                         </div>
 
                         <div className="modal-body">
                             {modalType === "folder" && <FolderCreator name={name} setName={setName} loading={loading} />}
-                            
+
                             {modalType === "file" && (
                                 <TextFileCreator name={name} setName={setName} content={content} setContent={setContent} loading={loading} />
                             )}
-                            
+
                             {modalType === "image" && (
                                 <>
                                     {name && <div className="selected-file-info mb-3 text-primary fw-bold">Selected: {name}</div>}
-                                    <ImageImporter name={name} setName={setName} content={content} 
-                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("image/*")} 
+                                    <ImageImporter name={name} setName={setName} content={content}
+                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("image/*")}
                                     />
                                 </>
                             )}
-                            
+
                             {modalType === "upload" && (
                                 <>
                                     {name && (
                                         <div className="file-details-header mb-4 p-3 bg-light border rounded">
                                             <div className="d-flex justify-content-between align-items-center">
-                                                <h4 className="m-0 fw-bold text-dark text-truncate" style={{maxWidth: '70%'}}>{name}</h4>
+                                                <h4 className="m-0 fw-bold text-dark text-truncate" style={{ maxWidth: '70%' }}>{name}</h4>
                                                 <span className="badge bg-secondary">{formatBytes(size)}</span>
                                             </div>
                                         </div>
                                     )}
                                     <FileImporter name={name} setName={setName} content={content} mimeType={mimeType} loading={loading}
-                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("*/*")} 
+                                        triggerUpload={() => uploadHandlerRef.current.triggerUpload("*/*")}
                                     />
                                 </>
                             )}

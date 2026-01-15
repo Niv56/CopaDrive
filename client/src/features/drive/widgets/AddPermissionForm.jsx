@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 
+/**
+ * Form component for searching users by email and granting them item permissions.
+ * Only accessible to the item owner.
+ */
 function AddPermissionForm({ isOwner, onSearch, onShare }) {
     const [email, setEmail] = useState("");
     const [foundUser, setFoundUser] = useState(null);
     const [status, setStatus] = useState("");
     const [loading, setLoading] = useState(false);
 
+    /** Executes user search based on provided email */
     const handleSearch = async (e) => {
         e?.preventDefault?.();
         setStatus("");
@@ -26,6 +31,7 @@ function AddPermissionForm({ isOwner, onSearch, onShare }) {
         }
     };
 
+    /** Grants permission to the discovered user and resets form state */
     const handleShare = async () => {
         if (!foundUser?.id) return;
 
@@ -37,7 +43,7 @@ function AddPermissionForm({ isOwner, onSearch, onShare }) {
             setFoundUser(null);
             setEmail("");
         } catch (err) {
-            // אם כבר קיים – לא נשרוף UI
+            // Handle cases where the user might already have access
             const msg = err?.message || "Failed to share";
             if (msg.toLowerCase().includes("already")) {
                 setStatus("Already shared ✓");
@@ -49,6 +55,7 @@ function AddPermissionForm({ isOwner, onSearch, onShare }) {
         }
     };
 
+    /** Guard clause: Render warning if current user is not the owner */
     if (!isOwner) {
         return (
             <div className="share-warning">

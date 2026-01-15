@@ -1,4 +1,3 @@
-// client/src/utils/formatBytes.js
 // Format a byte count into a human-readable string (B/KB/MB/GB/TB).
 export function formatBytes(bytes, decimals = 1) {
   const n = Number(bytes);

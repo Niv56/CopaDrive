@@ -1,11 +1,15 @@
 import React from "react";
 const BASE_URL = "http://localhost:3000";
 
+/** Renders a single user record within the sharing/permission list */
 export default function PermissionRow({ permission, canManage, onDelete, onToggle }) {
     const isOwner = permission.role === "owner";
+
+    /** Derives display name from profile info or email prefix */
     const displayName = `${permission.firstName || ""} ${permission.lastName || ""}`.trim()
         || (permission.email ? permission.email.split('@')[0] : "User");
 
+    /** Resolves relative or data-based avatar URL */
     const rawImg = permission.image || "";
     const avatarUrl = rawImg
         ? (rawImg.startsWith("data:") || rawImg.startsWith("http") ? rawImg : `${BASE_URL}${rawImg}`)

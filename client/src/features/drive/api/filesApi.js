@@ -1,5 +1,3 @@
-// src/features/drive/api/filesApi.js
-
 let unauthorizedHandler = null;
 
 // Set a callback for 401 Unauthorized responses (used in App.js)
@@ -24,7 +22,7 @@ async function request(path, options = {}) {
     ...options,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json", // Default to JSON, can be overridden
+      "Content-Type": "application/json",
       ...(options.headers || {}),
     },
   });
@@ -38,12 +36,12 @@ async function request(path, options = {}) {
   const text = await res.text();
   const data = text
     ? (() => {
-        try {
-          return JSON.parse(text);
-        } catch {
-          return text;
-        }
-      })()
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    })()
     : null;
 
   if (!res.ok) {
@@ -81,7 +79,7 @@ export async function createItem({ name, type, parentId = null, content = "", mi
     type,
     parentId,
     content: type === "file" ? content : "",
-    mimeType: type === "file" ? mimeType : "" 
+    mimeType: type === "file" ? mimeType : ""
   };
 
   return request("/api/files", {

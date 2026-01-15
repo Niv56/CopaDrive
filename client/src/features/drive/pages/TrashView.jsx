@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import FileListItem from "features/drive/widgets/FileListItem";
-import FileGridItem from "features/drive/widgets/FileGridItem";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import "styles/pages/MyDrive.css";
 import {
   getTrashFiles,
   restoreFromTrash,
@@ -10,12 +9,19 @@ import {
 } from "features/drive/api/filesApi";
 import { useAuth } from "app/providers/AuthContext";
 import { useOwnersMap } from "features/drive/hooks/useOwnersMap";
-
-import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import { useViewMode } from "features/drive/providers/ViewModeContext";
+
+import FileListItem from "features/drive/widgets/FileListItem";
+import FileGridItem from "features/drive/widgets/FileGridItem";
+import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 
 import { FiTrash2, FiInfo } from "react-icons/fi";
 
+/**
+ * Calculates remaining days until permanent deletion based on a 30-day policy.
+ * @param {string} trashedAt - ISO timestamp of when the item was deleted.
+ * @returns {string} Human-readable countdown string.
+ */
 function getDaysLeft(trashedAt) {
   if (!trashedAt) return "";
   const trashDate = new Date(trashedAt);
@@ -26,6 +32,10 @@ function getDaysLeft(trashedAt) {
   return diffDays > 0 ? `${diffDays} days left` : "Deleting soon";
 }
 
+/**
+ * View component for managing deleted items.
+ * Allows users to restore files, delete them permanently, or empty the entire trash.
+ */
 function TrashView() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +45,7 @@ function TrashView() {
   const { token } = useAuth();
   const { viewMode } = useViewMode();
 
+  /** Extracts userId from JWT token payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -46,12 +57,14 @@ function TrashView() {
     }
   }, [token]);
 
+  /** Fetches current user profile for owner resolution */
   useEffect(() => {
     if (myUserId) {
       getCurrentUser(myUserId).then(setCurrentUser).catch(() => { });
     }
   }, [myUserId]);
 
+  /** Fetches all items currently in the trash */
   const refresh = useCallback(async () => {
     setErr("");
     if (items.length === 0) setLoading(true);
@@ -71,12 +84,16 @@ function TrashView() {
   }, [refresh]);
 
   const hasItems = items.length > 0;
+
+  /** Sorts items so the most recently deleted appear first */
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => new Date(b.trashedAt || 0) - new Date(a.trashedAt || 0)),
     [items]
   );
+
   const ownersMap = useOwnersMap(sortedItems);
 
+  /** Resolves display name for the item owner */
   const getOwnerLabel = useCallback((item) => {
     if (!item?.ownerId) return "Unknown";
     if (item.ownerId === myUserId) return "Me";
@@ -85,6 +102,7 @@ function TrashView() {
     return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
+  /** Resolves avatar image for the item owner */
   const getOwnerAvatar = useCallback((item) => {
     if (!item?.ownerId) return "";
     if (item.ownerId === myUserId) {
@@ -94,13 +112,19 @@ function TrashView() {
     return u?.image || "";
   }, [ownersMap, myUserId, currentUser]);
 
-  async function onRestore(item) { await restoreFromTrash(item.id); await refresh(); }
-  
+  /** Moves item back to original location */
+  async function onRestore(item) {
+    await restoreFromTrash(item.id);
+    await refresh();
+  }
+
+  /** Permanently deletes a single item */
   async function onDeleteForever(item) {
     await deleteForever(item.id);
     await refresh();
   }
 
+  /** Wipes all items from the trash */
   async function onEmptyTrash() {
     await emptyTrash();
     await refresh();
@@ -108,22 +132,20 @@ function TrashView() {
 
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
-      
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
+      {/* Header section with view toggle and destructive actions */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <h2 style={{ 
-            fontFamily: "'Bruno Ace SC', sans-serif", 
-            fontSize: "2.5rem", 
-            fontWeight: "400",
-            margin: 0,
-            color: "var(--text-primary)", 
-            letterSpacing: "2px", 
-            textTransform: "uppercase" 
+        <h2 style={{
+          fontFamily: "'Bruno Ace SC', sans-serif",
+          fontSize: "2.5rem",
+          fontWeight: "400",
+          margin: 0,
+          color: "var(--text-primary)",
+          letterSpacing: "2px",
+          textTransform: "uppercase"
         }}>
           Trash
         </h2>
@@ -141,7 +163,7 @@ function TrashView() {
         </div>
       </div>
 
-      {/* הודעה עדינה */}
+      {/* Policy information banner */}
       <div className="d-inline-flex align-items-center gap-2 mb-4 px-3 py-2 rounded-pill"
         style={{
           background: "rgba(255, 255, 255, 0.25)",

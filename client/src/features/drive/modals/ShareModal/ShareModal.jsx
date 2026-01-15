@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useAuth } from "app/providers/AuthContext"; // שימוש בנתיב מוחלט
+import { useAuth } from "app/providers/AuthContext";
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
 import "../../../../styles/widgets/Permissions.css";
 
+/** Decodes JWT to extract the userId */
 function decodeUserId(token) {
     try {
         const payload = JSON.parse(window.atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
@@ -11,6 +12,7 @@ function decodeUserId(token) {
     } catch { return null; }
 }
 
+/** Modal for managing item permissions and sharing */
 function ShareModal({ item, onClose }) {
     const { token } = useAuth();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -20,6 +22,7 @@ function ShareModal({ item, onClose }) {
     const isOwner = !!ownerId && !!myUserId && String(ownerId) === String(myUserId);
     const fileId = item?.id;
 
+    // Trigger refresh when file selection changes
     useEffect(() => {
         setRefreshTrigger(prev => prev + 1);
     }, [fileId]);

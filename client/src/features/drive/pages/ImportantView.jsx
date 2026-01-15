@@ -12,6 +12,7 @@ import ViewModeToggle from "features/drive/widgets/ViewModeToggle";
 import ShareModal from "features/drive/modals/ShareModal/ShareModal";
 import { FiAlertCircle } from "react-icons/fi";
 
+/** View for files marked as important */
 function ImportantView({ onChangeView }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ function ImportantView({ onChangeView }) {
   const { token } = useAuth();
   const { viewMode } = useViewMode();
 
+  /** Extracts userId from JWT token payload */
   const myUserId = useMemo(() => {
     if (!token) return null;
     try {
@@ -34,6 +36,7 @@ function ImportantView({ onChangeView }) {
     }
   }, [myUserId]);
 
+  /** Fetches important items from API */
   const loadData = useCallback(async () => {
     try { setLoading(true); const data = await getImportantFiles(); setItems(Array.isArray(data) ? data : []); }
     finally { setLoading(false); }
@@ -55,6 +58,7 @@ function ImportantView({ onChangeView }) {
   useEffect(() => { loadData(); }, [loadData]);
   const ownersMap = useOwnersMap(items);
 
+  /** Resolves owner display name */
   const getOwnerLabel = useCallback((item) => {
     if (!item?.ownerId) return "Unknown";
     if (item.ownerId === myUserId) return "Me";
@@ -63,6 +67,7 @@ function ImportantView({ onChangeView }) {
     return fullName || u?.email || "External";
   }, [ownersMap, myUserId]);
 
+  /** Resolves owner profile image */
   const getOwnerAvatar = useCallback((item) => {
     if (!item?.ownerId) return "";
     if (item.ownerId === myUserId) {
@@ -72,6 +77,7 @@ function ImportantView({ onChangeView }) {
     return u?.image || "";
   }, [ownersMap, myUserId, currentUser]);
 
+  /** Opens file or navigates to folder in MyDrive */
   const openFromImportant = (it) => {
     handleOpen(it, (folder) => {
       onChangeView?.("mydrive");
@@ -81,22 +87,20 @@ function ImportantView({ onChangeView }) {
 
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
-      
-      {/* ✅ טעינת הפונט Bruno Ace SC */}
+
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה (בדיוק כמו ב-Home) */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <h2 style={{ 
-            fontFamily: "'Bruno Ace SC', sans-serif", 
-            fontSize: "2.5rem", 
-            fontWeight: "400",
-            margin: 0,
-            color: "var(--text-primary)", 
-            letterSpacing: "2px", 
-            textTransform: "uppercase" 
+        <h2 style={{
+          fontFamily: "'Bruno Ace SC', sans-serif",
+          fontSize: "2.5rem",
+          fontWeight: "400",
+          margin: 0,
+          color: "var(--text-primary)",
+          letterSpacing: "2px",
+          textTransform: "uppercase"
         }}>
           Important
         </h2>

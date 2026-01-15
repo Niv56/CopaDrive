@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-/**
- * Step 3: Date of Birth + Gender
- * Includes validation based on birth year (ages 10-120).
- */
+/** Handles birth date and gender selection with age validation logic */
 const Step3 = ({ formData, setFormData, errors }) => {
-  // Helper to split "YYYY-MM-DD" into parts
+  /** Parses YYYY-MM-DD string into date parts */
   const parseDob = (dob) => {
     if (!dob || typeof dob !== "string") return { y: "", m: "", d: "" };
     const match = dob.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -15,7 +12,7 @@ const Step3 = ({ formData, setFormData, errors }) => {
 
   const [dob, setDob] = useState(() => parseDob(formData.dateOfBirth));
 
-  // Sync internal state if parent formData changes externally
+  /** Syncs internal state with parent formData */
   useEffect(() => {
     const match = String(formData.dateOfBirth || "").match(/^\d{4}-\d{2}-\d{2}$/);
     if (match) setDob(parseDob(formData.dateOfBirth));
@@ -33,17 +30,17 @@ const Step3 = ({ formData, setFormData, errors }) => {
     []
   );
 
-  // Year list: Generates years allowing ages between 10 and 120
+  /** Generates year list for age range 10-120 */
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const maxYear = currentYear - 10; // Youngest allowed (e.g., 2016)
-    const minYear = currentYear - 120; // Oldest allowed
+    const maxYear = currentYear - 10;
+    const minYear = currentYear - 120;
     const arr = [];
     for (let y = maxYear; y >= minYear; y--) arr.push(String(y));
     return arr;
   }, []);
 
-  // Calculate days in a specific month/year
+  /** Returns max days in a specific month/year */
   const daysInMonth = (year, month) => {
     if (!year || !month) return 31;
     const yy = Number(year);
@@ -52,18 +49,17 @@ const Step3 = ({ formData, setFormData, errors }) => {
     return new Date(yy, mm, 0).getDate();
   };
 
-  // Generate dynamic day options based on selected month/year
+  /** Dynamic day options based on month/year selection */
   const dayOptions = useMemo(() => {
     const count = daysInMonth(dob.y, dob.m);
     return Array.from({ length: count }, (_, i) => String(i + 1).padStart(2, "0"));
   }, [dob.y, dob.m]);
 
-  // Update internal DOB state and propagate to parent
+  /** Updates internal state and parent data with day overflow adjustment */
   const updateDob = (part, value) => {
     setDob((prev) => {
       const next = { ...prev, [part]: value };
-      
-      // Adjust day if it exceeds the new month's max days (e.g., switching Jan 31 to Feb)
+
       if ((part === "y" || part === "m") && next.y && next.m && next.d) {
         const max = daysInMonth(next.y, next.m);
         if (Number(next.d) > max) next.d = String(max).padStart(2, "0");
@@ -83,7 +79,6 @@ const Step3 = ({ formData, setFormData, errors }) => {
 
   return (
     <div className="d-grid gap-3">
-      {/* Date of Birth Section */}
       <div>
         <label className="form-label mb-2">Date of birth</label>
         <div className="row g-2">
@@ -121,7 +116,6 @@ const Step3 = ({ formData, setFormData, errors }) => {
         {dobInvalid && <div className="invalid-feedback d-block mt-1">{errors.dateOfBirth}</div>}
       </div>
 
-      {/* Gender Section */}
       <div>
         <label className="form-label mb-2">Gender</label>
         <select
@@ -139,38 +133,6 @@ const Step3 = ({ formData, setFormData, errors }) => {
       </div>
     </div>
   );
-};
-
-/**
- * Validates Step 3.
- * Checks for valid date format and ensures age is between 10 and 120.
- */
-export const validateStep3 = (formData) => {
-  const errors = {};
-  const dobStr = String(formData.dateOfBirth || "").trim();
-  const m = dobStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (!m) {
-    errors.dateOfBirth = "Date of birth is required";
-  } else {
-    const yy = Number(m[1]);
-    const currentYear = new Date().getFullYear();
-
-    if (yy > currentYear - 10) {
-      errors.dateOfBirth = "You must be at least 10 years old";
-    } else if (yy < currentYear - 120) {
-      errors.dateOfBirth = "Age cannot exceed 120 years";
-    }
-  }
-
-  const allowed = new Set(["male", "female", "other", "prefer_not_to_say"]);
-  if (!formData.gender || String(formData.gender).trim() === "") {
-    errors.gender = "Gender is required";
-  } else if (!allowed.has(formData.gender)) {
-    errors.gender = "Invalid gender value";
-  }
-
-  return errors;
 };
 
 export default Step3;

@@ -1,10 +1,11 @@
 import React from "react";
 import { FiCheckCircle } from "react-icons/fi";
 
+/** Final confirmation step displayed after successful account creation */
 const Step5 = () => {
   return (
     <div className="text-center py-4">
-      {/* Elegant Success Icon */}
+      {/* Success indicator icon */}
       <div className="mb-4 text-success" style={{ fontSize: "64px" }}>
         <FiCheckCircle />
       </div>
