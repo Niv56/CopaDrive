@@ -1,4 +1,9 @@
 .vscode/
 node_modules/
 UML/
+
 .env
+**/.env
+
+npm-debug.log*
+yarn-error.log*
