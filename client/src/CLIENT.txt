@@ -219,7 +219,6 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
 
   return (
     <div className="file-importer h-100 d-flex flex-column">
-      {/* ׳”׳•׳¨׳“׳×׳™ bg-light ׳•-border ׳›׳“׳™ ׳׳©׳׳•׳¨ ׳¢׳ ׳©׳§׳™׳₪׳•׳× */}
       <div className="preview-box flex-grow-1 d-flex align-items-center justify-content-center p-3" 
            style={{ minHeight: "200px", position: "relative" }}>
         
@@ -230,10 +229,27 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
               <img src={`data:${mimeType};base64,${content}`} alt="preview" className="img-fluid rounded shadow-sm" style={{ maxHeight: "250px" }} />
             )}
 
-            {/* ׳×׳¦׳•׳’׳× ׳˜׳§׳¡׳˜ - ׳›׳׳ ׳©׳׳¨׳×׳™ ׳¨׳§׳¢ ׳׳‘׳ ׳¨׳§ ׳׳×׳™׳‘׳” ׳¢׳¦׳׳” ׳›׳“׳™ ׳©׳”׳˜׳§׳¡׳˜ ׳™׳”׳™׳” ׳§׳¨׳™׳ */}
+            {/* ׳×׳¦׳•׳’׳× ׳˜׳§׳¡׳˜ - ׳×׳™׳§׳•׳ ׳׳¦׳‘ ׳׳™׳׳” */}
             {isText && (
-              <div className="text-preview-wrapper text-start bg-white p-3 border rounded" style={{ maxHeight: "250px", overflowY: "auto" }}>
-                <pre style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>{textPreview}</pre>
+              <div 
+                className="text-preview-wrapper text-start p-3 border rounded shadow-sm" 
+                style={{ 
+                  maxHeight: "250px", 
+                  overflowY: "auto",
+                  // ׳©׳™׳׳•׳© ׳‘׳¨׳§׳¢ ׳•׳¦׳‘׳¢ ׳˜׳§׳¡׳˜ ׳©׳׳×׳׳™׳׳™׳ ׳-Theme ׳©׳ ׳”׳׳₪׳׳™׳§׳¦׳™׳”
+                  backgroundColor: "var(--bg-secondary, #f8f9fa)", 
+                  color: "var(--text-main, #333)",
+                  borderColor: "var(--border-color, #dee2e6)"
+                }}
+              >
+                <pre style={{ 
+                  margin: 0, 
+                  fontSize: "0.85rem", 
+                  whiteSpace: "pre-wrap",
+                  color: "inherit" // ׳™׳•׳¨׳© ׳׳× ׳”׳¦׳‘׳¢ ׳”׳“׳™׳ ׳׳™ ׳׳”׳“׳™׳‘ ׳”׳¢׳•׳˜׳£
+                }}>
+                  {textPreview}
+                </pre>
               </div>
             )}
 
@@ -255,7 +271,6 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
             </div>
           </div>
         ) : (
-          /* ג… ׳”׳׳—׳¦׳ ׳ ׳˜׳• - ׳׳׳ ׳¨׳§׳¢ ׳׳¡׳‘׳™׳‘ */
           <div className="text-center w-100">
             <button 
               className="btn btn-primary btn-lg rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2 mx-auto"
@@ -721,15 +736,15 @@ const SplashScreen = ({ onFinish }) => {
 
 export default SplashScreen;
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\features\auth\pages\Login\Login.jsx =====
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FiMail, FiLock, FiLogIn, FiMusic } from "react-icons/fi"; // ג… ׳”׳•׳¡׳₪׳×׳™ FiMusic
+import { FiMail, FiLock, FiLogIn, FiMusic, FiPause } from "react-icons/fi"; // ג… ׳”׳•׳¡׳₪׳ ׳• FiPause
 
 import { useAuth } from "app/providers/AuthContext";
 import "styles/pages/Auth.css";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
-import songFile from "assets/videos/Song.mp3"; // ג… ׳™׳™׳‘׳•׳ ׳©׳™׳¨
+import songFile from "assets/videos/Song.mp3";
 
 const Login = () => {
   const { login } = useAuth();
@@ -738,11 +753,34 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // ג… ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳ ׳™׳’׳•׳
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log(e));
+  // ג… ׳׳•׳’׳™׳§׳× ׳ ׳’׳™׳ ׳” (Play/Pause)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log(e));
+      setIsPlaying(true);
+    }
   };
+
+  // ׳ ׳™׳§׳•׳™ ׳”׳ ׳’׳ ׳‘׳¢׳× ׳׳¢׳‘׳¨ ׳“׳£
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -770,13 +808,12 @@ const Login = () => {
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
       
-      {/* ג… ׳›׳׳ ׳”׳©׳™׳ ׳•׳™: ׳”׳•׳¡׳₪׳× ׳”׳›׳₪׳×׳•׳¨ ׳׳™׳“ ThemeToggle */}
       <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
         
-        {/* ׳›׳₪׳×׳•׳¨ PlaySong ׳׳ ׳¦׳ ׳¥ */}
-        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
-            <FiMusic style={{ marginRight: "6px" }} />
-            <span className="sparkle-text">PlaySong</span>
+        {/* ׳›׳₪׳×׳•׳¨ PlaySong ׳׳ ׳¦׳ ׳¥ ׳¢׳ Play/Pause */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={toggleSong}>
+            {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
+            <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
             <div className="sparkle-stars">
               <div className="s-star s-1"></div>
               <div className="s-star s-2"></div>
@@ -1342,7 +1379,7 @@ const Step5 = () => {
 
 export default Step5;
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\features\auth\pages\Register\Register.jsx =====
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 import "styles/pages/Auth.css";
@@ -1357,8 +1394,8 @@ import Step5 from "./steps/Step5";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
 
-// ג… ׳™׳™׳‘׳•׳׳™׳ ׳—׳“׳©׳™׳
-import { FiMusic } from "react-icons/fi";
+// ג… ׳™׳™׳‘׳•׳׳™׳ ׳—׳“׳©׳™׳ ׳׳׳•׳–׳™׳§׳”
+import { FiMusic, FiPause } from "react-icons/fi";
 import songFile from "assets/videos/Song.mp3"; 
 
 const STEP_CONFIG = {
@@ -1412,20 +1449,42 @@ const Register = () => {
     verifyPassword: "",
   });
 
-  // ג… ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳ ׳™׳’׳•׳
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log(e));
+  // ג… ׳׳•׳’׳™׳§׳× ׳ ׳’׳™׳ ׳” (Play/Pause)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log(e));
+      setIsPlaying(true);
+    }
   };
 
-  // Validate the current step and store field errors.
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Validate current step
   const validateCurrentStep = () => {
     const stepErrors = STEP_CONFIG[step].validate(formData);
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
 
-  // Submit the registration payload to the backend.
+  // Submit registration
   const submitRegistration = async () => {
     try {
       const profilePicture = await getProfilePicture(
@@ -1463,10 +1522,8 @@ const Register = () => {
     }
   };
 
-  // Handle the step form submit (next step or final submit).
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateCurrentStep()) return;
 
     if (step === TOTAL_STEPS) {
@@ -1477,37 +1534,22 @@ const Register = () => {
     }
   };
 
-  // Go back one step (disabled on first and success steps).
   const handleBack = () => {
     if (step === 1 || step === 5) return;
     setErrors({});
     setStep((s) => s - 1);
   };
 
-  // Render the current step component with shared props.
   const renderStep = () => {
     const stepProps = { formData, setFormData, errors };
 
     switch (step) {
-      case 1:
-        return <Step1 {...stepProps} />;
-      case 2:
-        return (
-          <Step2
-            {...stepProps}
-            preview={preview}
-            setPreview={setPreview}
-            fileInputRef={fileInputRef}
-          />
-        );
-      case 3:
-        return <Step3 {...stepProps} />;
-      case 4:
-        return <Step4 {...stepProps} />;
-      case 5:
-        return <Step5 />;
-      default:
-        return null;
+      case 1: return <Step1 {...stepProps} />;
+      case 2: return <Step2 {...stepProps} preview={preview} setPreview={setPreview} fileInputRef={fileInputRef} />;
+      case 3: return <Step3 {...stepProps} />;
+      case 4: return <Step4 {...stepProps} />;
+      case 5: return <Step5 />;
+      default: return null;
     }
   };
 
@@ -1516,13 +1558,12 @@ const Register = () => {
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
       
-      {/* ג… ׳›׳׳ ׳”׳©׳™׳ ׳•׳™: ׳”׳•׳¡׳₪׳× ׳”׳›׳₪׳×׳•׳¨ ׳׳™׳“ ThemeToggle */}
       <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
         
-        {/* ׳›׳₪׳×׳•׳¨ PlaySong ׳׳ ׳¦׳ ׳¥ */}
-        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
-            <FiMusic style={{ marginRight: "6px" }} />
-            <span className="sparkle-text">PlaySong</span>
+        {/* ׳›׳₪׳×׳•׳¨ PlaySong ׳׳ ׳¦׳ ׳¥ ׳¢׳ Play/Pause */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={toggleSong}>
+            {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
+            <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
             <div className="sparkle-stars">
               <div className="s-star s-1"></div>
               <div className="s-star s-2"></div>
@@ -1543,22 +1584,24 @@ const Register = () => {
           <div className="text-secondary">{currentConfig.subtitle}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="d-grid gap-3">
+        {/* ג… ׳”׳×׳™׳§׳•׳: ׳”׳•׳¡׳₪׳× style ׳©׳™׳׳¨׳›׳– ׳׳× ׳”׳×׳•׳›׳ ׳‘׳×׳•׳ ׳”-Grid ׳¨׳§ ׳‘׳©׳׳‘ 5 */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="d-grid gap-3" 
+          style={step === 5 ? { justifyItems: "center" } : {}}
+        >
           {renderStep()}
 
           {errors.submit && <div className="alert alert-danger py-2 mb-0">{errors.submit}</div>}
 
-          <div className="d-flex justify-content-between align-items-center mt-2">
+          <div className="d-flex justify-content-between align-items-center mt-2 w-100">
             {step === 5 ? (
-              /* ג… ׳›׳₪׳×׳•׳¨ ׳¡׳™׳•׳ ׳¢׳ ׳׳₪׳§׳˜ Sparkle (׳ ׳©׳׳¨ ׳›׳₪׳™ ׳©׳”׳™׳”) */
               <button
                 type="button"
-                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle"
+                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle btn-sparkle-center"
                 onClick={() => navigate("/login")}
               >
                 <span className="sparkle-text">Proceed to Login</span>
-                
-                {/* ׳׳׳׳ ׳˜׳™׳ ׳©׳ ׳”׳›׳•׳›׳‘׳™׳ ׳©׳ ׳•׳¡׳₪׳• ׳׳׳ ׳™׳׳¦׳™׳” */}
                 <div className="sparkle-stars">
                   <div className="s-star s-1"></div>
                   <div className="s-star s-2"></div>
@@ -1997,17 +2040,17 @@ export async function request(path, options = {}) {
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\features\drive\hooks\useFileActions.js =====
 import { useState } from "react";
-import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi"; // ג… ׳”׳•׳¡׳₪׳ ׳• ׳׳× updateItem
+import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi";
 import { getPermissions } from "../api/permissionsApi";
 
 export function useFileActions(myUserId, onRefresh) {
   const [sharingItem, setSharingItem] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
-  const [editingFile, setEditingFile] = useState(null); // ג… State ׳—׳“׳© ׳׳¢׳¨׳™׳›׳”
+  const [editingFile, setEditingFile] = useState(null); 
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
-  // --- Viewing Logic ---
+  // --- ׳₪׳×׳™׳—׳× ׳₪׳¨׳™׳˜ (׳§׳•׳‘׳¥ ׳׳• ׳×׳™׳§׳™׳™׳”) ---
   const handleOpen = async (item, onFolderOpen) => {
     if (!item) return;
     setLoadingFile(true);
@@ -2040,25 +2083,24 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile({ ...fullFile, role });
       }
     } catch (e) {
-      alert("Error opening item: " + (e?.message || "unknown"));
+      console.error("Error opening item:", e);
+      alert("׳©׳’׳™׳׳” ׳‘׳₪׳×׳™׳—׳× ׳”׳₪׳¨׳™׳˜: " + (e?.message || "unknown"));
     } finally {
       setLoadingFile(false);
     }
   };
 
-  // --- Toggles Logic ---
+  // --- ׳©׳™׳ ׳•׳™ ׳¡׳˜׳˜׳•׳¡ ׳›׳•׳›׳‘ / ׳—׳©׳™׳‘׳•׳× ---
   const handleToggleStar = async (item, newValue) => {
     try {
-      // ׳¢׳“׳›׳•׳ ׳׳•׳₪׳˜׳™׳׳™ (׳׳§׳•׳׳™) ׳׳ ׳×׳¨׳¦׳”, ׳׳‘׳ ׳›׳¨׳’׳¢ ׳ ׳¡׳׳•׳ ׳¢׳ ׳”׳¨׳¢׳ ׳•׳
       await setStarred(item.id, newValue);
       if (onRefresh) onRefresh();
       
-      // ׳׳ ׳”׳§׳•׳‘׳¥ ׳₪׳×׳•׳— ׳›׳¨׳’׳¢ ׳‘׳׳•׳“׳ ׳¦׳₪׳™׳™׳”, ׳ ׳¢׳“׳›׳ ׳’׳ ׳׳•׳×׳• ׳›׳“׳™ ׳©׳”׳׳™׳™׳§׳•׳ ׳™׳©׳×׳ ׳” ׳׳™׳“
       if (openedFile?.id === item.id) {
         setOpenedFile(prev => ({ ...prev, starred: newValue }));
       }
     } catch (e) {
-      alert("Failed to update star status");
+      console.error("Failed to update star status");
     }
   };
 
@@ -2071,28 +2113,65 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile(prev => ({ ...prev, important: newValue }));
       }
     } catch (e) {
-      alert("Failed to update importance status");
+      console.error("Failed to update importance status");
     }
   };
 
-  // --- Edit Logic (New) ---
+  // --- ׳׳•׳’׳™׳§׳× ׳¢׳¨׳™׳›׳” ׳•׳©׳׳™׳¨׳” ---
   const handleEdit = (file) => {
-    // ׳¡׳•׳’׳¨׳™׳ ׳׳× ׳׳•׳“׳ ׳”׳¦׳₪׳™׳™׳” ׳׳ ׳”׳•׳ ׳₪׳×׳•׳— ׳•׳¢׳•׳‘׳¨׳™׳ ׳׳¢׳¨׳™׳›׳”
     setOpenedFile(null); 
     setEditingFile(file);
   };
 
   const handleSaveEdit = async (updatedData) => {
     try {
-        // updatedData ׳׳›׳™׳: { name, content, parentId, ... }
-        await updateItem(editingFile.id, updatedData);
-        setEditingFile(null); // ׳¡׳’׳•׳¨ ׳׳× ׳”׳¢׳•׳¨׳
-        if (onRefresh) onRefresh(); // ׳¨׳¢׳ ׳ ׳׳× ׳”׳¨׳©׳™׳׳”
+      // ׳‘׳“׳™׳§׳” ׳‘׳¡׳™׳¡׳™׳× ׳©׳”׳©׳ ׳׳ ׳¨׳™׳§
+      if (!updatedData.name || updatedData.name.trim() === "") {
+        alert("׳©׳ ׳”׳§׳•׳‘׳¥ ׳׳ ׳™׳›׳•׳ ׳׳”׳™׳•׳× ׳¨׳™׳§");
+        return;
+      }
+
+      // נ¯ ׳™׳¦׳™׳¨׳× ׳׳•׳‘׳™׳™׳§׳˜ ׳”׳×׳™׳§׳•׳ (Patch)
+      // ׳׳ ׳—׳ ׳• ׳©׳•׳׳—׳™׳ ׳¨׳§ ׳׳” ׳©׳¦׳¨׳™׳ ׳›׳“׳™ ׳׳”׳™׳׳ ׳¢ ׳׳”׳©׳’׳™׳׳” "Type cannot be updated"
+      const patch = {};
+
+      // ׳”׳•׳¡׳₪׳× ׳©׳ ׳׳ ׳”׳©׳×׳ ׳”
+      if (updatedData.name !== editingFile.name) {
+        patch.name = updatedData.name.trim();
+      }
+
+      // ׳”׳•׳¡׳₪׳× ׳×׳™׳§׳™׳™׳× ׳׳‘ ׳׳ ׳”׳©׳×׳ ׳×׳”
+      if (updatedData.parentId !== editingFile.parentId) {
+        patch.parentId = updatedData.parentId || null;
+      }
+
+      // ׳˜׳™׳₪׳•׳ ׳‘׳×׳•׳›׳ ׳§׳•׳‘׳¥ (׳¨׳§ ׳׳ ׳–׳” ׳§׳•׳‘׳¥ ׳•׳׳ ׳×׳™׳§׳™׳™׳”)
+      if (editingFile.type === "file") {
+        // ׳©׳•׳׳—׳™׳ ׳×׳•׳›׳ ׳•׳¡׳•׳’ MIME ׳¨׳§ ׳׳ ׳”׳×׳•׳›׳ ׳‘׳׳׳× ׳¢׳‘׳¨ ׳©׳™׳ ׳•׳™
+        if (updatedData.content !== editingFile.content) {
+          patch.content = updatedData.content;
+          patch.mimeType = updatedData.mimeType;
+        }
+      }
+
+      // ׳׳ ׳׳ ׳‘׳•׳¦׳¢ ׳©׳•׳ ׳©׳™׳ ׳•׳™ - ׳₪׳©׳•׳˜ ׳¡׳•׳’׳¨׳™׳ ׳׳× ׳”׳׳•׳“׳
+      if (Object.keys(patch).length === 0) {
+        setEditingFile(null);
+        return;
+      }
+
+      // ׳©׳׳™׳—׳” ׳׳©׳¨׳×
+      await updateItem(editingFile.id, patch);
+      
+      setEditingFile(null); 
+      if (onRefresh) onRefresh(); 
     } catch (e) {
-        alert("Failed to save changes: " + e.message);
+      console.error("Save error:", e);
+      alert("׳ ׳›׳©׳ ׳‘׳¢׳“׳›׳•׳ ׳”׳©׳™׳ ׳•׳™׳™׳: " + e.message);
     }
   };
 
+  // --- ׳׳—׳™׳§׳” (׳”׳¢׳‘׳¨׳” ׳׳¡׳ ׳׳—׳–׳•׳¨) ---
   const handleDelete = async (item) => {
     if (!item?.id) return;
     try {
@@ -2100,21 +2179,22 @@ export function useFileActions(myUserId, onRefresh) {
       if (onRefresh) onRefresh();
       if (openedFile?.id === item.id) setOpenedFile(null);
     } catch (e) {
-      alert("Move to trash failed");
+      console.error("Move to trash failed");
+      alert("׳”׳¢׳‘׳¨׳” ׳׳¡׳ ׳”׳׳—׳–׳•׳¨ ׳ ׳›׳©׳׳”");
     }
   };
 
   return {
     sharingItem, setSharingItem,
     openedFile, setOpenedFile,
-    editingFile, setEditingFile, // ג… ׳™׳™׳¦׳•׳ ׳׳©׳×׳ ׳™ ׳”׳¢׳¨׳™׳›׳”
+    editingFile, setEditingFile,
     openedRole,
     loadingFile,
     handleOpen,
     handleToggleStar,
     handleToggleImportant,
-    handleEdit,     // ג… ׳₪׳•׳ ׳§׳¦׳™׳” ׳׳₪׳×׳™׳—׳× ׳”׳¢׳•׳¨׳
-    handleSaveEdit, // ג… ׳₪׳•׳ ׳§׳¦׳™׳” ׳׳©׳׳™׳¨׳”
+    handleEdit,
+    handleSaveEdit,
     handleDelete,
   };
 }
@@ -2512,8 +2592,8 @@ import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
 
-// ג… ׳”׳•׳¡׳₪׳×׳™ FiMusic
-import { FiSearch, FiMusic } from "react-icons/fi";
+// ג… ׳”׳•׳¡׳₪׳ ׳• FiPause ׳׳©׳™׳ ׳•׳™ ׳”׳׳™׳™׳§׳•׳
+import { FiSearch, FiMusic, FiPause } from "react-icons/fi";
 
 import "styles/layout/TopBar.css";
 
@@ -2534,11 +2614,38 @@ export default function TopBar() {
 
   const navigate = useNavigate();
 
-  // ג… ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳ ׳’׳™׳ ׳”
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log("Play error:", e));
+  // --- נµ ׳׳•׳’׳™׳§׳× ׳ ׳’׳™׳ ׳” ׳׳×׳•׳§׳ ׳× ---
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    // ׳׳ ׳”׳ ׳’׳ ׳¢׳“׳™׳™׳ ׳׳ ׳ ׳•׳¦׳¨, ׳™׳•׳¦׳¨׳™׳ ׳׳•׳×׳• ׳₪׳¢׳ ׳׳—׳× ׳‘׳׳‘׳“
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      // ׳׳™׳₪׳•׳¡ ׳”׳¡׳˜׳™׳™׳˜ ׳›׳©׳”׳©׳™׳¨ ׳ ׳’׳׳¨ ׳׳¢׳¦׳׳•
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log("Play error:", e));
+      setIsPlaying(false); // ׳ ׳•׳¢׳“ ׳׳׳ ׳•׳¢ ׳‘׳¢׳™׳•׳× ׳‘׳׳§׳¨׳” ׳©׳”׳“׳₪׳“׳₪׳ ׳—׳•׳¡׳
+      setIsPlaying(true);
+    }
   };
+
+  // ׳ ׳™׳§׳•׳™ ׳”׳–׳™׳›׳¨׳•׳ ׳׳ ׳¢׳•׳–׳‘׳™׳ ׳׳× ׳”׳“׳£
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+  // --------------------------
 
   const handleLogout = () => {
     logout();
@@ -2610,23 +2717,18 @@ export default function TopBar() {
 
   return (
     <>
-      {/* ג… ׳˜׳¢׳™׳ ׳× ׳”׳₪׳•׳ ׳˜ */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
       <header className="dashboard-top">
-        {/* Left: Logo */}
         <div className="dashboard-top-left" style={{ gap: '15px', alignItems: 'center' }}>
-          {/* ג… ׳׳•׳’׳• ׳׳•׳’׳“׳ */}
           <img 
             src={appLogo} 
             alt="CopaDrive logo" 
             className="app-logo" 
             style={{ width: "48px", height: "48px" }} 
           />
-          
-          {/* ג… ׳˜׳§׳¡׳˜ ׳‘׳₪׳•׳ ׳˜ ׳”׳׳•׳×׳׳ */}
           <h2 className="app-title" style={{ 
               fontFamily: "'Bruno Ace SC', sans-serif",
               fontSize: "1.8rem", 
@@ -2634,17 +2736,13 @@ export default function TopBar() {
               margin: 0,
               letterSpacing: "1px",
               textTransform: "uppercase",
-              paddingTop: "4px" // ׳™׳™׳©׳•׳¨ ׳§׳ ׳׳•׳ ׳”׳׳•׳’׳•
+              paddingTop: "4px"
           }}>
             CopaDrive
           </h2>
         </div>
 
-        {/* Center: Search Bar - Wide & Clean */}
-        <div
-          ref={searchRef}
-          className="dashboard-top-center"
-        >
+        <div ref={searchRef} className="dashboard-top-center">
           <div className="search-wrapper">
             <FiSearch className="search-icon" />
             <input
@@ -2693,13 +2791,21 @@ export default function TopBar() {
           )}
         </div>
 
-        {/* Right: Actions & Profile */}
         <div className="dashboard-top-right">
           
-          {/* ג… ׳›׳₪׳×׳•׳¨ ׳©׳™׳¨ ׳׳ ׳¦׳ ׳¥ */}
-          <button className="btn-sparkle-sm" onClick={playSong}>
-            <FiMusic style={{ color: 'white' }} />
-            <span className="sparkle-text">PlaySong</span>
+          {/* ג… ׳›׳₪׳×׳•׳¨ ׳©׳™׳¨ ׳׳¢׳•׳“׳›׳ - Play/Pause */}
+          <button className="btn-sparkle-sm" onClick={toggleSong}>
+            {isPlaying ? (
+              <>
+                <FiPause style={{ color: 'white' }} />
+                <span className="sparkle-text">PauseSong</span>
+              </>
+            ) : (
+              <>
+                <FiMusic style={{ color: 'white' }} />
+                <span className="sparkle-text">PlaySong</span>
+              </>
+            )}
             <div className="sparkle-stars">
                 <div className="s-star s-1"></div>
                 <div className="s-star s-2"></div>
@@ -6090,7 +6196,6 @@ function FileViewerModal({
   const isStarred = !!file.starred;
   const isImportant = !!file.important;
 
-  // ׳¢׳–׳¨׳” ׳‘׳–׳™׳”׳•׳™ ׳§׳‘׳¦׳™ ׳˜׳§׳¡׳˜ ׳׳׳™׳×׳™׳™׳ - ׳§׳¨׳™׳˜׳™ ׳›׳“׳™ ׳׳ ׳׳”׳¦׳™׳’ ׳’'׳™׳‘׳¨׳™׳©
   const isActualTextFile = (mimeType, fileName) => {
     const mime = mimeType || "";
     return (
@@ -6129,10 +6234,7 @@ function FileViewerModal({
 
   const renderViewer = () => {
     const mime = file.mimeType || "";
-    // 1. ׳×׳׳•׳ ׳•׳×
     if (mime.startsWith("image/")) return <ImageViewer file={file} />;
-
-    // 2. ׳§׳‘׳¦׳™ ׳˜׳§׳¡׳˜ (׳§׳•׳“, ׳ ׳•׳˜׳₪׳׳“ ׳•׳›׳•')
     if (isActualTextFile(mime, file.name)) {
       const displayFile = {
         ...file,
@@ -6140,8 +6242,6 @@ function FileViewerModal({
       };
       return <TextViewer file={displayFile} />;
     }
-
-    // 3. ׳§׳‘׳¦׳™׳ ׳‘׳™׳ ׳׳¨׳™׳™׳ (PPTX, PDF, ZIP) - ׳×׳¦׳•׳’׳× ׳”׳׳™׳™׳§׳•׳ ׳©׳¨׳¦׳™׳×
     return <BinaryViewer file={file} onDownload={handleDownload} />;
   };
 
@@ -6149,15 +6249,42 @@ function FileViewerModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card viewer-modal" onClick={(e) => e.stopPropagation()}>
 
-        <div className="modal-title-row">
-          <div className="modal-title-text">
-            <h2 className="fw-bold m-0" title={file.name}>
+        {/* --- Header Row ׳”׳׳¢׳•׳“׳›׳ ׳¢׳ Inline Styles --- */}
+        <div className="modal-title-row" style={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          width: '100%',
+          padding: '16px 24px',
+          borderBottom: '1px solid #f1f3f4'
+        }}>
+
+          {/* ׳—׳׳§ ׳”׳˜׳§׳¡׳˜ - ׳™׳×׳›׳•׳•׳¥ ׳•׳™׳•׳¡׳™׳£ ׳©׳׳•׳© ׳ ׳§׳•׳“׳•׳× */}
+          <div className="modal-title-text" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
+            <h2 className="fw-bold m-0" title={file.name} style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: '1.4rem',
+              color: '#202124'
+            }}>
               {file.name}
             </h2>
-            <div className="role-info-text">Role: {role}</div>
+            <div className="role-info-text" style={{ fontSize: '12px', color: '#5f6368' }}>Role: {role}</div>
           </div>
 
-          <div className="modal-action-buttons">
+          {/* ׳—׳׳§ ׳”׳›׳₪׳×׳•׳¨׳™׳ - ׳§׳©׳™׳—, ׳׳ ׳ ׳©׳‘׳¨ ׳•׳׳ ׳–׳– */}
+          <div className="modal-action-buttons" style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            alignItems: 'center',
+            gap: '8px',
+            flexShrink: 0
+          }}>
             <button className="btn secondary" onClick={(e) => { stop(e); onToggleStar(file, !isStarred); }} style={isStarred ? { color: "#FFD54F" } : {}} title="Star">
               {isStarred ? <BsStarFill /> : <BsStar />}
             </button>
@@ -6184,13 +6311,15 @@ function FileViewerModal({
               <BsTrash />
             </button>
 
-            <div className="header-divider-v"></div>
+            {/* ׳§׳• ׳׳₪׳¨׳™׳“ */}
+            <div className="header-divider-v" style={{ width: '1px', height: '24px', background: '#dadce0', margin: '0 4px', flexShrink: 0 }}></div>
 
-            <button className="btn secondary close-btn-final" onClick={onClose} title="Close">
+            <button className="btn secondary close-btn-final" onClick={onClose} title="Close" style={{ flexShrink: 0 }}>
               <BsX size={24} />
             </button>
           </div>
         </div>
+        {/* --- ׳¡׳•׳£ Header --- */}
 
         <div className="modal-body-container-viewer">
           {renderViewer()}
@@ -7701,29 +7830,36 @@ input::placeholder {
   overflow: hidden;
 }
 
-/* HEADER: Grid - ׳˜׳§׳¡׳˜ ׳‘׳¦׳“ ׳׳—׳“, ׳›׳₪׳×׳•׳¨׳™׳ ׳‘׳¦׳“ ׳”׳©׳ ׳™ */
 .viewer-modal .modal-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-
-  padding: 16px 24px;
-  border-bottom: 1px solid #f1f3f4;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  /* ׳§׳¨׳™׳˜׳™: ׳׳•׳ ׳¢ ׳׳”׳›׳₪׳×׳•׳¨׳™׳ ׳׳¨׳“׳× ׳׳׳˜׳” */
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
 }
 
-/* ׳˜׳§׳¡׳˜ */
+/* 2. ׳”׳׳›׳•׳׳” ׳©׳ ׳”׳˜׳§׳¡׳˜ - "׳”׳¡׳•׳“" ׳׳§׳™׳¦׳•׳¨ ׳”׳©׳ */
 .viewer-modal .modal-title-text {
-  min-width: 0;
+  flex: 1 1 auto !important;
+  /* ׳×׳•׳₪׳¡ ׳׳× ׳›׳ ׳”׳׳§׳•׳ ׳”׳₪׳ ׳•׳™ ׳׳ ׳׳¡׳›׳™׳ ׳׳”׳×׳›׳•׳•׳¥ */
+  min-width: 0 !important;
+  /* ׳׳׳ ׳–׳”, ׳”׳˜׳§׳¡׳˜ ׳”׳׳¨׳•׳ ׳™׳¡׳¨׳‘ ׳׳”׳×׳›׳•׳•׳¥ ׳‘׳×׳•׳ Flexbox */
+  overflow: hidden !important;
 }
 
 .viewer-modal .modal-title-text h2 {
+  display: block !important;
+  white-space: nowrap !important;
+  /* ׳׳•׳ ׳¢ ׳׳”׳˜׳§׳¡׳˜ ׳׳”׳™׳©׳‘׳¨ ׳׳©׳×׳™ ׳©׳•׳¨׳•׳× */
+  overflow: hidden !important;
+  /* ׳׳¡׳×׳™׳¨ ׳׳× ׳׳” ׳©׳—׳•׳¨׳’ ׳׳”׳¨׳•׳—׳‘ */
+  text-overflow: ellipsis !important;
+  /* ׳׳•׳¡׳™׳£ ׳׳× ׳©׳׳•׳© ׳”׳ ׳§׳•׳“׳•׳× ׳”׳׳‘׳•׳§׳©׳•׳× */
   margin: 0;
-  font-size: 1.4rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #202124;
+  width: 100%;
 }
 
 .viewer-modal .role-info-text {
@@ -7732,34 +7868,18 @@ input::placeholder {
 }
 
 .viewer-modal .modal-action-buttons {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-
-  flex: 0 0 auto;
-  max-width: none;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
 }
 
-/* ׳”׳›׳₪׳×׳•׳¨׳™׳ ׳¢׳¦׳׳ */
 .viewer-modal .modal-action-buttons .btn.secondary {
+  flex: 0 0 36px !important;
   width: 36px !important;
   height: 36px !important;
   padding: 0 !important;
-
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-
   border-radius: 50% !important;
-  background: #f1f3f4 !important;
-  border: none !important;
-  color: #5f6368 !important;
-  transition: all 0.2s ease;
-
-  flex: 0 0 auto;
-  /* ׳׳ ׳׳×׳›׳•׳•׳¥ */
 }
 
 .viewer-modal .modal-action-buttons .btn.secondary:hover {
@@ -7819,6 +7939,15 @@ input::placeholder {
 [data-theme="dark"] .viewer-modal .modal-footer-actions {
   background: #202124 !important;
   border-top-color: #2b2f33 !important;
+}
+
+.viewer-modal .modal-action-buttons::-webkit-scrollbar {
+  height: 6px;
+}
+
+.viewer-modal .modal-action-buttons::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\styles\modals\SessionExpiredModal.css =====
 /* Backdrop */
@@ -7900,7 +8029,7 @@ input::placeholder {
    ========================================================================== */
 
 /* ג… NEW: Animation Keyframes 
-   Card slides up and fades in on load 
+   Card slides up and fades in on load                
 */
 @keyframes slideUpFade {
   from {
@@ -8298,6 +8427,20 @@ input::placeholder {
 /* ׳‘׳”׳•׳‘׳¨ ׳”׳›׳•׳›׳‘׳™׳ ׳׳¡׳×׳•׳‘׳‘׳™׳ ׳§׳¦׳× ׳™׳•׳×׳¨ ׳׳”׳¨ */
 .btn-sparkle:hover .s-star {
   animation-duration: 1s;
+}
+
+/* ג… Center content inside the Step 5 sparkle button only */
+.btn-sparkle.btn-sparkle-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px; /* spacing if an icon exists */
+}
+
+.btn-sparkle.btn-sparkle-center .sparkle-text {
+  display: inline-block;
+  line-height: 1;
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\client\src\styles\pages\Dashboard.css =====
 /* Dashboard.css */

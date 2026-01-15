@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "app/providers/AuthContext";
@@ -10,52 +10,78 @@ import { getCurrentUser, searchItems } from "../api/filesApi";
 import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
+import ShareModal from "../modals/ShareModal/ShareModal";
+import FileEditorView from "components/Dashboard/widgets/FileEditorView";
 
-// ✅ הוספנו FiPause לשינוי האייקון
+// ✅ ייבוא האייקונים וה-Hook המרכזי
+import { getFileIcon } from "../widgets/FileListItem";
+import { useFileActions } from "../hooks/useFileActions";
+
 import { FiSearch, FiMusic, FiPause } from "react-icons/fi";
-
 import "styles/layout/TopBar.css";
-
-// ✅ ייבוא השיר
 import songFile from "assets/videos/Song.mp3";
 
 export default function TopBar() {
+  const { token, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const searchRef = useRef(null);
+
   const [userData, setUserData] = useState(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-
-  const { token, logout, isAuthenticated } = useAuth();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const searchRef = useRef(null);
 
-  const navigate = useNavigate();
+  // ✅ חילוץ מזהה המשתמש מה-Token
+  const myUserId = useMemo(() => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(window.atob(base64)).userId;
+    } catch { return null; }
+  }, [token]);
 
-  // --- 🎵 לוגיקת נגינה מתוקנת ---
+  // ✅ חיבור ל-Hook שבודק הרשאות ופותח את המודאל הנכון
+  const {
+    sharingItem, setSharingItem,
+    openedFile, setOpenedFile,
+    editingFile, setEditingFile,
+    openedRole,
+    handleOpen,
+    handleToggleStar,
+    handleToggleImportant,
+    handleEdit,
+    handleSaveEdit,
+    handleDelete,
+  } = useFileActions(myUserId, () => {
+    setSearchQuery("");
+    setSearchResults([]);
+  });
+
+  // ✅ החזרת הפונקציה handleLogout שהייתה חסרה
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  // --- 🎵 לוגיקת נגינה ---
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
-
   const toggleSong = () => {
-    // אם הנגן עדיין לא נוצר, יוצרים אותו פעם אחת בלבד
     if (!audioRef.current) {
       audioRef.current = new Audio(songFile);
-      // איפוס הסטייט כשהשיר נגמר מעצמו
       audioRef.current.onended = () => setIsPlaying(false);
     }
-
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
       audioRef.current.play().catch(e => console.log("Play error:", e));
-      setIsPlaying(false); // נועד למנוע בעיות במקרה שהדפדפן חוסם
       setIsPlaying(true);
     }
   };
 
-  // ניקוי הזיכרון אם עוזבים את הדף
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -64,45 +90,32 @@ export default function TopBar() {
       }
     };
   }, []);
-  // --------------------------
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
+  // טעינת נתוני משתמש
   useEffect(() => {
     if (isAuthenticated && token) {
       try {
         const base64Url = token.split(".")[1];
         const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
         const payload = JSON.parse(window.atob(base64));
-
         if (payload.userId) {
           getCurrentUser(payload.userId)
             .then((data) => setUserData(data))
             .catch((err) => console.error(err));
         }
-      } catch (e) {
-        console.error("Error decoding token", e);
-      }
+      } catch (e) { console.error("Error decoding token", e); }
     }
   }, [isAuthenticated, token]);
 
+  // לוגיקת חיפוש
   useEffect(() => {
     const q = searchQuery.trim();
-    if (!q) {
-      setSearchResults([]);
-      return;
-    }
+    if (!q) { setSearchResults([]); return; }
     const timer = setTimeout(async () => {
       try {
         const results = await searchItems(q);
         setSearchResults(results);
-      } catch (err) {
-        console.error("search failed:", err);
-        setSearchResults([]);
-      }
+      } catch (err) { setSearchResults([]); }
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -111,12 +124,11 @@ export default function TopBar() {
     setSearchQuery("");
     setSearchResults([]);
     if (item.type === "folder") {
-      window.dispatchEvent(
-        new CustomEvent("open-folder", { detail: { folderId: item.id } })
-      );
+      window.dispatchEvent(new CustomEvent("open-folder", { detail: { folderId: item.id } }));
       return;
     }
-    setSelectedFile(item);
+    // ✅ שימוש ב-handleOpen שמזהה אוטומטית שאתה ה-Owner
+    handleOpen(item);
   };
 
   useEffect(() => {
@@ -130,76 +142,38 @@ export default function TopBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const userFullName = userData
-    ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim() || "Guest"
-    : "Guest";
+  const userFullName = userData ? `${userData.firstName || ""} ${userData.lastName || ""}`.trim() : "Guest";
 
   return (
     <>
-      <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
-      </style>
-
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}</style>
       <header className="dashboard-top">
         <div className="dashboard-top-left" style={{ gap: '15px', alignItems: 'center' }}>
-          <img 
-            src={appLogo} 
-            alt="CopaDrive logo" 
-            className="app-logo" 
-            style={{ width: "48px", height: "48px" }} 
-          />
-          <h2 className="app-title" style={{ 
-              fontFamily: "'Bruno Ace SC', sans-serif",
-              fontSize: "1.8rem", 
-              fontWeight: "400",
-              margin: 0,
-              letterSpacing: "1px",
-              textTransform: "uppercase",
-              paddingTop: "4px"
-          }}>
-            CopaDrive
-          </h2>
+          <img src={appLogo} alt="CopaDrive" className="app-logo" style={{ width: "48px", height: "48px" }} />
+          <h2 className="app-title" style={{ fontFamily: "'Bruno Ace SC', sans-serif", fontSize: "1.8rem", fontWeight: "400", margin: 0, letterSpacing: "1px", textTransform: "uppercase", paddingTop: "4px" }}>CopaDrive</h2>
         </div>
 
         <div ref={searchRef} className="dashboard-top-center">
           <div className="search-wrapper">
             <FiSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search in CopaDrive"
-              className="dashboard-search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <input type="text" placeholder="Search in CopaDrive" className="dashboard-search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
           {searchQuery.trim() && (
             <div className="search-dropdown-results">
               <div className="search-header">
                 <div style={{ fontWeight: 600 }}>Results</div>
-                <button
-                  className="btn btn-light btn-sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSearchResults([]);
-                  }}
-                >
-                  ✕
-                </button>
+                <button className="btn btn-light btn-sm" onClick={() => { setSearchQuery(""); setSearchResults([]); }}>✕</button>
               </div>
-
               <div className="d-flex flex-column gap-2">
                 {searchResults.length === 0 ? (
                   <div className="no-results">No results</div>
                 ) : (
                   searchResults.map((item) => (
-                    <div
-                      key={item.id}
-                      className="search-result-item"
-                      onClick={() => handleSearchOpen(item)}
-                    >
-                      <span style={{ fontSize: 18 }}>
-                        {item.type === "folder" ? "📁" : "📄"}
+                    <div key={item.id} className="search-result-item" onClick={() => handleSearchOpen(item)}>
+                      {/* ✅ אייקונים מערכתיים במקום איימוג'י */}
+                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                        {getFileIcon(item.name, item.mimeType, item.type === "folder", 20)}
                       </span>
                       <span>{item.name}</span>
                     </div>
@@ -211,69 +185,50 @@ export default function TopBar() {
         </div>
 
         <div className="dashboard-top-right">
-          
-          {/* ✅ כפתור שיר מעודכן - Play/Pause */}
           <button className="btn-sparkle-sm" onClick={toggleSong}>
-            {isPlaying ? (
-              <>
-                <FiPause style={{ color: 'white' }} />
-                <span className="sparkle-text">PauseSong</span>
-              </>
-            ) : (
-              <>
-                <FiMusic style={{ color: 'white' }} />
-                <span className="sparkle-text">PlaySong</span>
-              </>
-            )}
-            <div className="sparkle-stars">
-                <div className="s-star s-1"></div>
-                <div className="s-star s-2"></div>
-            </div>
+            {isPlaying ? <><FiPause style={{ color: 'white' }} /><span className="sparkle-text">PauseSong</span></> : <><FiMusic style={{ color: 'white' }} /><span className="sparkle-text">PlaySong</span></>}
+            <div className="sparkle-stars"><div className="s-star s-1"></div><div className="s-star s-2"></div></div>
           </button>
-
           <ThemeToggle />
-
-          <UserMenu
-            isOpen={isUserMenuOpen}
-            onToggle={() => setIsUserMenuOpen((v) => !v)}
-            userEmail={userData?.email || "guest@copadrive.com"}
-            userName={userFullName}
-            userImage={userData?.image}
-            isAuthenticated={isAuthenticated}
-            onEditUser={() => {
-              setIsUserMenuOpen(false);
-              setIsEditUserOpen(true);
-            }}
-            onCloseMenu={() => setIsUserMenuOpen(false)}
-            onLogout={handleLogout}
-          />
+          <UserMenu isOpen={isUserMenuOpen} onToggle={() => setIsUserMenuOpen((v) => !v)} userEmail={userData?.email || "guest@copadrive.com"} userName={userFullName} userImage={userData?.image} isAuthenticated={isAuthenticated} onEditUser={() => { setIsUserMenuOpen(false); setIsEditUserOpen(true); }} onCloseMenu={() => setIsUserMenuOpen(false)} onLogout={handleLogout} />
         </div>
       </header>
 
-      <EditUserModal
-        show={isEditUserOpen}
-        onClose={() => setIsEditUserOpen(false)}
-        userId={userData?.id}
-        userEmail={userData?.email || ""}
-        initialFirstName={userData?.firstName || ""}
-        initialLastName={userData?.lastName || ""}
-        initialPhoneNumber={userData?.phoneNumber || ""}
-        initialImage={userData?.image || ""}
-        onSaved={(updatedUser) => {
-          setUserData(updatedUser);
-        }}
-      />
+      <EditUserModal show={isEditUserOpen} onClose={() => setIsEditUserOpen(false)} userId={userData?.id} userEmail={userData?.email || ""} initialFirstName={userData?.firstName || ""} initialLastName={userData?.lastName || ""} initialPhoneNumber={userData?.phoneNumber || ""} initialImage={userData?.image || ""} onSaved={(updatedUser) => setUserData(updatedUser)} />
 
-      {selectedFile && (
+      {/* ✅ מודאל צפייה - יציג את ה-Role הנכון (Owner) בזכות useFileActions */}
+      {openedFile && (
         <FileViewerModal
-          file={selectedFile}
-          role={"viewer"}
-          onClose={() => setSelectedFile(null)}
-          onEdit={() => alert("Feature to be implemented")}
-          onShare={() => alert("Feature to be implemented")}
-          onDelete={() => alert("Feature to be implemented")}
+          file={openedFile}
+          role={openedRole}
+          onClose={() => setOpenedFile(null)}
+          onEdit={handleEdit}
+          onShare={setSharingItem}
+          onToggleStar={handleToggleStar}
+          onToggleImportant={handleToggleImportant}
+          onDelete={async () => { await handleDelete(openedFile); setOpenedFile(null); }}
         />
       )}
+
+      {/* ✅ מודאל עריכה (הכרטיסייה עם כפתורי השמירה) */}
+      {editingFile && (
+        <div className="modal-overlay" onClick={() => setEditingFile(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>
+            <div className="p-4">
+              <h4 className="mb-4">Edit File</h4>
+              <FileEditorView
+                file={editingFile}
+                initialData={editingFile}
+                folders={[]}
+                onSave={handleSaveEdit}
+                onCancel={() => setEditingFile(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sharingItem && <ShareModal item={sharingItem} onClose={() => setSharingItem(null)} />}
     </>
   );
 }
