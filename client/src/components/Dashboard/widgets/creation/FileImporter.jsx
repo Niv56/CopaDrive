@@ -35,7 +35,6 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
 
   return (
     <div className="file-importer h-100 d-flex flex-column">
-      {/* הורדתי bg-light ו-border כדי לשמור על שקיפות */}
       <div className="preview-box flex-grow-1 d-flex align-items-center justify-content-center p-3" 
            style={{ minHeight: "200px", position: "relative" }}>
         
@@ -46,10 +45,27 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
               <img src={`data:${mimeType};base64,${content}`} alt="preview" className="img-fluid rounded shadow-sm" style={{ maxHeight: "250px" }} />
             )}
 
-            {/* תצוגת טקסט - כאן שמרתי רקע לבן רק לתיבה עצמה כדי שהטקסט יהיה קריא */}
+            {/* תצוגת טקסט - תיקון מצב לילה */}
             {isText && (
-              <div className="text-preview-wrapper text-start bg-white p-3 border rounded" style={{ maxHeight: "250px", overflowY: "auto" }}>
-                <pre style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>{textPreview}</pre>
+              <div 
+                className="text-preview-wrapper text-start p-3 border rounded shadow-sm" 
+                style={{ 
+                  maxHeight: "250px", 
+                  overflowY: "auto",
+                  // שימוש ברקע וצבע טקסט שמתאימים ל-Theme של האפליקציה
+                  backgroundColor: "var(--bg-secondary, #f8f9fa)", 
+                  color: "var(--text-main, #333)",
+                  borderColor: "var(--border-color, #dee2e6)"
+                }}
+              >
+                <pre style={{ 
+                  margin: 0, 
+                  fontSize: "0.85rem", 
+                  whiteSpace: "pre-wrap",
+                  color: "inherit" // יורש את הצבע הדינמי מהדיב העוטף
+                }}>
+                  {textPreview}
+                </pre>
               </div>
             )}
 
@@ -71,7 +87,6 @@ function FileImporter({ name, content, mimeType, triggerUpload }) {
             </div>
           </div>
         ) : (
-          /* ✅ הלחצן נטו - ללא רקע מסביב */
           <div className="text-center w-100">
             <button 
               className="btn btn-primary btn-lg rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2 mx-auto"

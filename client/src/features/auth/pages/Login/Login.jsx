@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FiMail, FiLock, FiLogIn, FiMusic } from "react-icons/fi"; // ✅ הוספתי FiMusic
+import { FiMail, FiLock, FiLogIn, FiMusic, FiPause } from "react-icons/fi"; // ✅ הוספנו FiPause
 
 import { useAuth } from "app/providers/AuthContext";
 import "styles/pages/Auth.css";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
-import songFile from "assets/videos/Song.mp3"; // ✅ ייבוא שיר
+import songFile from "assets/videos/Song.mp3";
 
 const Login = () => {
   const { login } = useAuth();
@@ -15,11 +15,34 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // ✅ פונקציית ניגון
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log(e));
+  // ✅ לוגיקת נגינה (Play/Pause)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log(e));
+      setIsPlaying(true);
+    }
   };
+
+  // ניקוי הנגן בעת מעבר דף
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,13 +70,12 @@ const Login = () => {
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
       
-      {/* ✅ כאן השינוי: הוספת הכפתור ליד ThemeToggle */}
       <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
         
-        {/* כפתור PlaySong מנצנץ */}
-        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
-            <FiMusic style={{ marginRight: "6px" }} />
-            <span className="sparkle-text">PlaySong</span>
+        {/* כפתור PlaySong מנצנץ עם Play/Pause */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={toggleSong}>
+            {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
+            <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
             <div className="sparkle-stars">
               <div className="s-star s-1"></div>
               <div className="s-star s-2"></div>

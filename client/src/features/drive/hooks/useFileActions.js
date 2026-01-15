@@ -9,7 +9,7 @@ export function useFileActions(myUserId, onRefresh) {
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
-  // --- Viewing Logic ---
+  // --- פתיחת פריט (קובץ או תיקייה) ---
   const handleOpen = async (item, onFolderOpen) => {
     if (!item) return;
     setLoadingFile(true);
@@ -42,13 +42,14 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile({ ...fullFile, role });
       }
     } catch (e) {
-      alert("Error opening item: " + (e?.message || "unknown"));
+      console.error("Error opening item:", e);
+      alert("שגיאה בפתיחת הפריט: " + (e?.message || "unknown"));
     } finally {
       setLoadingFile(false);
     }
   };
 
-  // --- Toggles Logic ---
+  // --- שינוי סטטוס כוכב / חשיבות ---
   const handleToggleStar = async (item, newValue) => {
     try {
       await setStarred(item.id, newValue);
@@ -58,7 +59,7 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile(prev => ({ ...prev, starred: newValue }));
       }
     } catch (e) {
-      alert("Failed to update star status");
+      console.error("Failed to update star status");
     }
   };
 
@@ -71,11 +72,11 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile(prev => ({ ...prev, important: newValue }));
       }
     } catch (e) {
-      alert("Failed to update importance status");
+      console.error("Failed to update importance status");
     }
   };
 
-  // --- Edit Logic ---
+  // --- לוגיקת עריכה ושמירה ---
   const handleEdit = (file) => {
     setOpenedFile(null); 
     setEditingFile(file);
@@ -83,33 +84,53 @@ export function useFileActions(myUserId, onRefresh) {
 
   const handleSaveEdit = async (updatedData) => {
     try {
-      // ✅ יצירת אובייקט נקי עם השדות המותרים בלבד
-      // השרת חוסם עדכון של 'type', לכן לא נכלול אותו ב-Payload
-      const patch = {
-        name: updatedData.name,
-        parentId: updatedData.parentId || null
-      };
-
-      // אם מדובר בקובץ (ולא תיקייה), נוסיף את התוכן
-      if (editingFile.type === "file") {
-        patch.content = updatedData.content;
-        
-        // הערה: אם אתה מחליף קובץ פיזי (למשל תמונה בתמונה אחרת), 
-        // ייתכן שהשרת יצפה גם ל-mimeType החדש. 
-        // אם השגיאה נמשכת, נסה להסיר את השורה הבאה:
-        patch.mimeType = updatedData.mimeType;
+      // בדיקה בסיסית שהשם לא ריק
+      if (!updatedData.name || updatedData.name.trim() === "") {
+        alert("שם הקובץ לא יכול להיות ריק");
+        return;
       }
 
+      // 🎯 יצירת אובייקט התיקון (Patch)
+      // אנחנו שולחים רק מה שצריך כדי להימנע מהשגיאה "Type cannot be updated"
+      const patch = {};
+
+      // הוספת שם אם השתנה
+      if (updatedData.name !== editingFile.name) {
+        patch.name = updatedData.name.trim();
+      }
+
+      // הוספת תיקיית אב אם השתנתה
+      if (updatedData.parentId !== editingFile.parentId) {
+        patch.parentId = updatedData.parentId || null;
+      }
+
+      // טיפול בתוכן קובץ (רק אם זה קובץ ולא תיקייה)
+      if (editingFile.type === "file") {
+        // שולחים תוכן וסוג MIME רק אם התוכן באמת עבר שינוי
+        if (updatedData.content !== editingFile.content) {
+          patch.content = updatedData.content;
+          patch.mimeType = updatedData.mimeType;
+        }
+      }
+
+      // אם לא בוצע שום שינוי - פשוט סוגרים את המודל
+      if (Object.keys(patch).length === 0) {
+        setEditingFile(null);
+        return;
+      }
+
+      // שליחה לשרת
       await updateItem(editingFile.id, patch);
       
       setEditingFile(null); 
       if (onRefresh) onRefresh(); 
     } catch (e) {
-        // כאן נקבל את הודעת השגיאה המדויקת מהשרת אם עדיין יש בעיה
-        alert("Failed to save changes: " + e.message);
+      console.error("Save error:", e);
+      alert("נכשל בעדכון השינויים: " + e.message);
     }
   };
 
+  // --- מחיקה (העברה לסל מחזור) ---
   const handleDelete = async (item) => {
     if (!item?.id) return;
     try {
@@ -117,7 +138,8 @@ export function useFileActions(myUserId, onRefresh) {
       if (onRefresh) onRefresh();
       if (openedFile?.id === item.id) setOpenedFile(null);
     } catch (e) {
-      alert("Move to trash failed");
+      console.error("Move to trash failed");
+      alert("העברה לסל המחזור נכשלה");
     }
   };
 

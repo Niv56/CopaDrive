@@ -3,7 +3,7 @@
    ========================================================================== */
 
 /* ✅ NEW: Animation Keyframes 
-   Card slides up and fades in on load 
+   Card slides up and fades in on load                
 */
 @keyframes slideUpFade {
   from {
@@ -401,4 +401,18 @@
 /* בהובר הכוכבים מסתובבים קצת יותר מהר */
 .btn-sparkle:hover .s-star {
   animation-duration: 1s;
+}
+
+/* ✅ Center content inside the Step 5 sparkle button only */
+.btn-sparkle.btn-sparkle-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px; /* spacing if an icon exists */
+}
+
+.btn-sparkle.btn-sparkle-center .sparkle-text {
+  display: inline-block;
+  line-height: 1;
 }

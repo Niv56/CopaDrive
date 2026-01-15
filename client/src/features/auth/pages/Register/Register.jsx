@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 import "styles/pages/Auth.css";
@@ -13,8 +13,8 @@ import Step5 from "./steps/Step5";
 import logo from "assets/photos/logo.svg";
 import ThemeToggle from "features/drive/widgets/ThemeToggle";
 
-// ✅ ייבואים חדשים
-import { FiMusic } from "react-icons/fi";
+// ✅ ייבואים חדשים למוזיקה
+import { FiMusic, FiPause } from "react-icons/fi";
 import songFile from "assets/videos/Song.mp3"; 
 
 const STEP_CONFIG = {
@@ -68,20 +68,42 @@ const Register = () => {
     verifyPassword: "",
   });
 
-  // ✅ פונקציית ניגון
-  const playSong = () => {
-    const audio = new Audio(songFile);
-    audio.play().catch(e => console.log(e));
+  // ✅ לוגיקת נגינה (Play/Pause)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const toggleSong = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(songFile);
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.log(e));
+      setIsPlaying(true);
+    }
   };
 
-  // Validate the current step and store field errors.
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Validate current step
   const validateCurrentStep = () => {
     const stepErrors = STEP_CONFIG[step].validate(formData);
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
 
-  // Submit the registration payload to the backend.
+  // Submit registration
   const submitRegistration = async () => {
     try {
       const profilePicture = await getProfilePicture(
@@ -119,10 +141,8 @@ const Register = () => {
     }
   };
 
-  // Handle the step form submit (next step or final submit).
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateCurrentStep()) return;
 
     if (step === TOTAL_STEPS) {
@@ -133,37 +153,22 @@ const Register = () => {
     }
   };
 
-  // Go back one step (disabled on first and success steps).
   const handleBack = () => {
     if (step === 1 || step === 5) return;
     setErrors({});
     setStep((s) => s - 1);
   };
 
-  // Render the current step component with shared props.
   const renderStep = () => {
     const stepProps = { formData, setFormData, errors };
 
     switch (step) {
-      case 1:
-        return <Step1 {...stepProps} />;
-      case 2:
-        return (
-          <Step2
-            {...stepProps}
-            preview={preview}
-            setPreview={setPreview}
-            fileInputRef={fileInputRef}
-          />
-        );
-      case 3:
-        return <Step3 {...stepProps} />;
-      case 4:
-        return <Step4 {...stepProps} />;
-      case 5:
-        return <Step5 />;
-      default:
-        return null;
+      case 1: return <Step1 {...stepProps} />;
+      case 2: return <Step2 {...stepProps} preview={preview} setPreview={setPreview} fileInputRef={fileInputRef} />;
+      case 3: return <Step3 {...stepProps} />;
+      case 4: return <Step4 {...stepProps} />;
+      case 5: return <Step5 />;
+      default: return null;
     }
   };
 
@@ -172,13 +177,12 @@ const Register = () => {
   return (
     <div className="copa-auth-container" style={{ position: "relative" }}>
       
-      {/* ✅ כאן השינוי: הוספת הכפתור ליד ThemeToggle */}
       <div style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
         
-        {/* כפתור PlaySong מנצנץ */}
-        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={playSong}>
-            <FiMusic style={{ marginRight: "6px" }} />
-            <span className="sparkle-text">PlaySong</span>
+        {/* כפתור PlaySong מנצנץ עם Play/Pause */}
+        <button className="btn-sparkle" style={{ padding: "6px 16px", fontSize: "14px", marginTop: "0" }} onClick={toggleSong}>
+            {isPlaying ? <FiPause style={{ marginRight: "6px" }} /> : <FiMusic style={{ marginRight: "6px" }} />}
+            <span className="sparkle-text">{isPlaying ? "PauseSong" : "PlaySong"}</span>
             <div className="sparkle-stars">
               <div className="s-star s-1"></div>
               <div className="s-star s-2"></div>
@@ -199,22 +203,24 @@ const Register = () => {
           <div className="text-secondary">{currentConfig.subtitle}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="d-grid gap-3">
+        {/* ✅ התיקון: הוספת style שימרכז את התוכן בתוך ה-Grid רק בשלב 5 */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="d-grid gap-3" 
+          style={step === 5 ? { justifyItems: "center" } : {}}
+        >
           {renderStep()}
 
           {errors.submit && <div className="alert alert-danger py-2 mb-0">{errors.submit}</div>}
 
-          <div className="d-flex justify-content-between align-items-center mt-2">
+          <div className="d-flex justify-content-between align-items-center mt-2 w-100">
             {step === 5 ? (
-              /* ✅ כפתור סיום עם אפקט Sparkle (נשאר כפי שהיה) */
               <button
                 type="button"
-                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle"
+                className="btn btn-primary btn-lg rounded-pill w-100 btn-sparkle btn-sparkle-center"
                 onClick={() => navigate("/login")}
               >
                 <span className="sparkle-text">Proceed to Login</span>
-                
-                {/* אלמנטים של הכוכבים שנוספו לאנימציה */}
                 <div className="sparkle-stars">
                   <div className="s-star s-1"></div>
                   <div className="s-star s-2"></div>
