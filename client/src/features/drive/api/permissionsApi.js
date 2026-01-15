@@ -8,7 +8,6 @@ function normalizePermission(p) {
         userId: p?.userId ?? u?.id ?? u?._id,
         email: p?.email ?? p?.userEmail ?? u?.email ?? "",
         role: p?.role ?? "viewer",
-        // שליפת פרטי הפרופיל עבור התצוגה האלגנטית
         firstName: p?.firstName ?? u?.firstName ?? "",
         lastName: p?.lastName ?? u?.lastName ?? "",
         image: p?.image ?? u?.image ?? u?.avatar ?? ""
@@ -20,18 +19,17 @@ export async function getPermissions(fileId) {
     if (Array.isArray(data)) {
         return { myRole: null, permissions: data.map(normalizePermission) };
     }
-
     return {
         myRole: data?.myRole ?? null,
         permissions: Array.isArray(data?.permissions) ? data.permissions.map(normalizePermission) : [],
     };
 }
 
-export async function addPermission(fileId, userId) {
+export async function addPermission(fileId, userId, role = "viewer") {
     return request(`/api/files/${fileId}/permissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, role }),
     });
 }
 

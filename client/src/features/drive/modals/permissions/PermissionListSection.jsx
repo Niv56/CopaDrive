@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getPermissions, deletePermission, togglePermissionRole } from "../../api/permissionsApi";
+import { getPermissions, deletePermission, togglePermissionRole, addPermission } from "../../api/permissionsApi";
 import { getCurrentUser } from "../../api/filesApi";
 import PermissionRow from "./PermissionRow";
 
@@ -14,8 +14,7 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             const enriched = await Promise.all(data.permissions.map(async (perm) => {
                 try {
                     const user = await getCurrentUser(perm.userId);
-                    if (!user) return perm; // בדיקת בטיחות: אם אין משתמש, אל תמשיך
-
+                    if (!user) return perm;
                     const isActuallyOwner = String(perm.userId) === String(ownerId);
                     return {
                         ...perm,
@@ -25,16 +24,37 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
                         email: user.email || "",
                         image: user.image || ""
                     };
-                } catch (e) {
-                    console.error("Error enriching permission:", e);
-                    return perm;
-                }
+                } catch (e) { return perm; }
             }));
             setPermissions(enriched);
         } catch (e) {
             console.error("Failed to load permissions", e);
         } finally { setLoading(false); }
     }
+
+    const handleToggle = async (p) => {
+        try {
+            await togglePermissionRole(fileId, p.id);
+        } catch (e) {
+            console.log("Inherited permission detected, creating file-level override...");
+            const newRole = p.role === "viewer" ? "editor" : "viewer";
+            try {
+                await addPermission(fileId, p.userId, newRole);
+            } catch (innerErr) {
+                console.error("Failed to create permission override", innerErr);
+            }
+        }
+        load();
+    };
+
+    const handleDelete = async (p) => {
+        try {
+            await deletePermission(fileId, p.id);
+        } catch (e) {
+            console.error("Failed to delete permission", e);
+        }
+        load();
+    };
 
     useEffect(() => { load(); }, [fileId, refreshTrigger, ownerId]);
 
@@ -50,8 +70,8 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
                             key={p.id || p.userId}
                             permission={p}
                             canManage={isOwner && p.role !== "owner"}
-                            onDelete={async () => { await deletePermission(fileId, p.id); load(); }}
-                            onToggle={async () => { await togglePermissionRole(fileId, p.id); load(); }}
+                            onDelete={() => handleDelete(p)}
+                            onToggle={() => handleToggle(p)}
                         />
                     ))
                 )}
