@@ -26,49 +26,26 @@ services:
     networks:
       - copadrive-network
     env_file:
-      - .env
+      - ./web-server/.env
 
-  # C++ Client (For testing)
-  cpp-client:
+  client:
     build:
-      context: ./cpp-server
-      dockerfile: Dockerfile.client.cpp
-    container_name: copadrive_client_cpp
-    stdin_open: true
-    tty: true
-    depends_on:
-      - server
-    command: ["server", "5555"]
-    networks:
-      - copadrive-network
-
-  # Python Client (For testing)
-  python-client:
-    build:
-      context: ./cpp-server
-      dockerfile: Dockerfile.client.python
-    container_name: copadrive_client_python
-    stdin_open: true
-    tty: true
-    depends_on:
-      - server
-    command: ["server", "5555"]
-    networks:
-      - copadrive-network
-
-  # Tests
-  test:
-    build:
-      context: ./cpp-server
+      context: ./client
       dockerfile: Dockerfile
-    container_name: copadrive_test
+    container_name: copadrive_client
+    ports:
+      - "4000:4000"
     environment:
-      - PATH_DIR=/usr/src/mytest/storage
+      - PORT=4000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - web-server
     networks:
       - copadrive-network
-    entrypoint: ["sh", "-lc"]
-    command: ["cd /usr/src/mytest/build && ctest --output-on-failure"]
-
 networks:
   copadrive-network:
     driver: bridge

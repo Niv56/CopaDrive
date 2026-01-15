@@ -65,11 +65,13 @@ stores and retrieves the compressed file content. The NodeJS server connects to 
 - Docker Desktop
 - Node.js (LTS) + npm
 
-### Run Instructions
-The commands are tailored for PowerShell.
-1. Terminal 1 - From the project root: `docker compose up --build`
-2. Terminal 2 - navigate to client: `cd client`
-3. Terminal 2 - From client root: `npm start`
+### Environment Setup (Required)
+**Rename**: web-server/.env.example → web-server/.env
+Open web-server/.env and set your own secret: **JWT_SECRET**="your-own-strong-secret"
+
+### Run Instructions (PowerShell)
+- From the project root: `docker compose up --build`
+- open it in your browser http://localhost:4000 Or Ctrl + Click the URL in the terminal.
 
 ### App Run Example
 **Loading page**
