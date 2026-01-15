@@ -37,7 +37,6 @@ function AddPermissionForm({ isOwner, onSearch, onShare }) {
             setFoundUser(null);
             setEmail("");
         } catch (err) {
-            // אם כבר קיים – לא נשרוף UI
             const msg = err?.message || "Failed to share";
             if (msg.toLowerCase().includes("already")) {
                 setStatus("Already shared ✓");

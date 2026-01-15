@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-// תיקון נתיב: עולים שלב אחד ל-drive ואז ל-api
 import { getRootFiles, createItem } from "../api/filesApi";
 import FileUploadHandler from "./FileUploadHandler";
-// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-utils
 import { encodeTextToBase64 } from "../../../shared/utils/base64Utils";
-// תיקון נתיב: עולים 3 שלבים ל-src ואז ל-styles
 import "../../../styles/widgets/CreateItem.css";
 
-// ✅ ייבוא אייקונים אלגנטיים במקום אימוג'ים
 import { FiFolderPlus, FiFileText, FiImage, FiUpload, FiPlus } from "react-icons/fi";
 
-// ייבוא הקומפוננטות הישנות מה-Dashboard
 import FolderCreator from "../../../components/Dashboard/widgets/creation/FolderCreator";
 import TextFileCreator from "../../../components/Dashboard/widgets/creation/TextFileCreator";
 import FileImporter from "../../../components/Dashboard/widgets/creation/FileImporter";
@@ -135,7 +130,6 @@ function CreateItem({ onItemCreated, currentFolderId }) {
                     onClick={() => setMenuOpen(!menuOpen)} 
                     type="button"
                 >
-                    {/* שימוש באייקון פלוס וקטורי חד ומדויק */}
                     <FiPlus className="fab-plus-icon" />
                     <span className="fab-label-text">Add New</span>
                 </button>

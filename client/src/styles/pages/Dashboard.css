@@ -3,23 +3,18 @@
 :root {
   --top-height: 70px;
   
-  /* ✅ הצבע האחיד למצב יום - תכלת/לבן חצי שקוף */
   --glass-bg: rgba(255, 255, 255, 0.65);
   --glass-border: 1px solid rgba(255, 255, 255, 0.4);
   
-  /* צבעי רקע לכרטיסייה הצפה */
   --main-bg-light: #ffffff;
   --main-bg-dark: #1e1e1e;
 }
 
 [data-theme='dark'] {
-  /* ✅ הצבע האחיד למצב לילה - שחור/אפור חצי שקוף */
-  /* זה הגוון שביקשת (כמו ה-SideBar שלך) */
   --glass-bg: rgba(30, 30, 30, 0.60); 
   --glass-border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Page layout */
 .dashboard-root {
   position: relative;
   height: 100vh;
@@ -28,7 +23,6 @@
   background-color: #000;
 }
 
-/* Background Video */
 .background-video {
   position: absolute;
   top: 0; left: 0;
@@ -44,7 +38,6 @@
   z-index: 1;
 }
 
-/* Content Overlay */
 .content-overlay {
   position: relative;
   z-index: 2;
@@ -54,7 +47,6 @@
   background-color: transparent; 
 }
 
-/* Layout Structure */
 .dashboard-body {
   flex: 1; 
   display: flex; 
@@ -63,12 +55,10 @@
   padding-top: 0;
 }
 
-/* Main Area - הכרטיסייה הצפה */
 .dashboard-main { 
   flex: 1; 
   background-color: var(--main-bg-light);
   
-  /* הפינה העגולה והמרווחים ליצירת אפקט הציפה */
   border-top-left-radius: 24px; 
   border-bottom-left-radius: 24px; 
   margin: 12px 12px 12px 0; 
@@ -83,9 +73,8 @@
   background-color: var(--main-bg-dark);
   box-shadow: -5px 0 20px rgba(0,0,0,0.2);
 }
-/* תיקון כדי שהתוכן הראשי לא יוסתר מתחת לסרגל הצד הסגור */
 .dashboard-body {
-  padding-left: 110px; /* 78px רוחב סרגל + מרווחים */
+  padding-left: 110px; 
   display: flex;
   width: 100%;
 }

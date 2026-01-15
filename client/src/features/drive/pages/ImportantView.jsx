@@ -82,12 +82,10 @@ function ImportantView({ onChangeView }) {
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
       
-      {/* ✅ טעינת הפונט Bruno Ace SC */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה (בדיוק כמו ב-Home) */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h2 style={{ 
             fontFamily: "'Bruno Ace SC', sans-serif", 

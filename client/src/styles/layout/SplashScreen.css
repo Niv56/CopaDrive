@@ -1,10 +1,8 @@
-/* SplashScreen.css */
 
 .splash-screen {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  /* אותו גרדיאנט חוף נקי */
   background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
   
   display: flex;
@@ -19,7 +17,6 @@
   pointer-events: none;
 }
 
-/* מצב לילה */
 @media (prefers-color-scheme: dark) {
   .splash-screen {
     background: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
@@ -37,7 +34,6 @@
   gap: 24px;
 }
 
-/* אנימציית קוקוס קופץ */
 @keyframes bounceCoconut {
   0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
   50% { transform: translateY(-30px) scale(1.1) rotate(5deg); }
@@ -58,7 +54,6 @@
   animation: fadeInUp 0.8s ease forwards 0.3s;
 }
 
-/* פס טעינה */
 .loading-bar {
   width: 180px;
   height: 6px;
@@ -90,7 +85,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Sparkle Button Styles (Used for Skip) --- */
 @keyframes twinkle {
   0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
   50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }

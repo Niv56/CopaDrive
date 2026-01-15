@@ -296,23 +296,19 @@ const deleteItem = async (userId, id) => {
 const deleteForever = async (userId, id) => {
   const item = fileRepository.findById(id);
 
-  // תיקון 1: אם הפריט לא קיים, פשוט נחזיר הצלחה (הוא כנראה נמחק כבר ע"י מחיקת תיקיית האב שלו)
   if (!item) return { id };
 
-  // בדיקה אם הפריט אכן נמצא בפח של המשתמש הספציפי
   if (!isTrashedForUser(item, userId)) {
     throw { status: 409, message: 'Item not found in your trash' };
   }
 
   if (item.ownerId !== userId) {
-    // לוגיקה למשתמש שאינו הבעלים: חסימה רקורסיבית
     const ids = item.type === 'folder' ? collectSubtreeIds(id) : [id];
 
     for (const dId of ids) {
       const target = fileRepository.findById(dId);
       if (!target) continue;
 
-      // תיקון 2: עדכון ישיר של הדאטה-בייס ללא קריאה ל-setTrashed (כדי לעקוף בדיקת הרשאות מיותרת במחיקה)
       const trashedBy = ensureArray(target.trashedBy).filter(x => x !== userId);
       const trashedAtBy = { ...(target.trashedAtBy || {}) };
       delete trashedAtBy[userId];
@@ -329,7 +325,6 @@ const deleteForever = async (userId, id) => {
     return { id };
   }
 
-  // לוגיקה לבעלים (Owner): מחיקה פיזית מהשרת
   const ids = item.type === 'folder' ? collectSubtreeIds(id).reverse() : [id];
   for (const dId of ids) {
     const target = fileRepository.findById(dId);
@@ -349,13 +344,11 @@ const deleteForever = async (userId, id) => {
 const emptyTrash = async (userId) => {
   const items = await listTrash(userId);
 
-  // תיקון 3: שימוש ב-Promise.allSettled או לולאה חסינה כדי ששגיאה בפריט אחד לא תעצור את כל התהליך
   for (const it of items) {
     try {
       await deleteForever(userId, it.id);
     } catch (err) {
       console.error(`Failed to delete item ${it.id} during empty trash:`, err.message);
-      // ממשיכים לפריט הבא גם אם אחד נכשל
     }
   }
   return { ok: true };

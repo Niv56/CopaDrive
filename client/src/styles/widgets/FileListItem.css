@@ -1,13 +1,10 @@
-/* FileListItem.css */
-
 .fli-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px; /* קצת פחות ריפוד למראה הדוק */
+  padding: 12px 16px; 
   border-radius: 16px;
   
-  /* ✅ השינוי החשוב: רקע זכוכית במקום צבע אטום */
   background: rgba(255, 255, 255, 0.75); 
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -15,10 +12,9 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   transition: all .2s ease;
   cursor: pointer;
-  margin-bottom: 8px; /* רווח בין שורות */
-}
+  margin-bottom: 8px; 
+} /* <--- הסוגר הזה היה חסר כאן */
 
-/* התאמה למצב חשוך */
 [data-theme="dark"] .fli-row {
   background: rgba(40, 40, 40, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -26,7 +22,7 @@
 }
 
 .fli-row:hover {
-  background: rgba(255, 255, 255, 0.95); /* כמעט לבן בהובר */
+  background: rgba(255, 255, 255, 0.95); 
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
@@ -56,7 +52,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* צבע שחור חזק לקריאות */
   color: #1a1a1a !important; 
 }
 [data-theme="dark"] .fli-name { color: #ffffff !important; }
@@ -66,13 +61,12 @@
 .fli-extra, .fli-size { font-size: 13px; font-weight: 500; }
 .fli-size { width: 72px; text-align: right; }
 
-/* Actions & Buttons */
 .fli-actions { display: flex; gap: 10px; }
 
 .fli-iconbtn, .fli-menubtn {
   width: 34px; height: 34px; border-radius: 50%;
   border: 1px solid transparent;
-  background: rgba(255,255,255,0.5); /* כפתורים חצי שקופים */
+  background: rgba(255,255,255,0.5);
   display: grid; place-items: center;
   color: var(--text-primary);
   transition: all .2s ease;
@@ -93,7 +87,6 @@
 
 .fli-row.is-trash { opacity: 0.85; filter: grayscale(0.2); }
 
-/* Owner */
 .fli-owner { display: flex; align-items: center; gap: 8px; }
 .fli-owner-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
 .fli-owner-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

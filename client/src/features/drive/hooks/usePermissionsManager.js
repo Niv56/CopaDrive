@@ -8,17 +8,11 @@ import {
     getCurrentUser,
 } from "../api/filesApi";
 
-/**
- * usePermissionsManager Hook
- * מנהל את כל הלוגיקה של הרשאות - שליפה, הוספה, עדכון (toggle), מחיקה
- * + enrichment: מביא email/image לכל permission דרך getCurrentUser(userId)
- */
 export function usePermissionsManager(itemId) {
     const [permissions, setPermissions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Cache כדי לא לקרוא שוב ושוב ל /api/users/:id
     const userCacheRef = useRef(new Map());
 
     const getUserCached = useCallback(async (userId) => {
@@ -28,21 +22,16 @@ export function usePermissionsManager(itemId) {
         if (cache.has(userId)) return cache.get(userId);
 
         try {
-            const user = await getCurrentUser(userId); // uses request() + token
+            const user = await getCurrentUser(userId); 
             cache.set(userId, user);
             return user;
         } catch (e) {
-            // לא שוברים את המסך אם אין משתמש/אין הרשאה
             cache.set(userId, null);
             return null;
         }
     }, []);
 
-    /**
-     * טעינת רשימת ההרשאות
-     * - backend יכול להחזיר array או { permissions: [] }
-     * - enrichment: מוסיף userEmail/userImage
-     */
+    
     const loadPermissions = useCallback(async () => {
         if (!itemId) return;
 
@@ -88,9 +77,7 @@ export function usePermissionsManager(itemId) {
         loadPermissions();
     }, [loadPermissions]);
 
-    /**
-     * חיפוש משתמש לפי אימייל (משמש את ה-form למעלה)
-     */
+   
     const searchUser = async (email) => {
         if (!email?.trim()) return null;
         const user = await findUserByEmail(email.trim());
@@ -98,27 +85,21 @@ export function usePermissionsManager(itemId) {
         return user;
     };
 
-    /**
-     * שיתוף - הוספת הרשאה (viewer ברירת מחדל בשרת)
-     */
+    
     const shareWithUser = async (targetUserId) => {
         if (!itemId) return;
         await addFilePermission(itemId, targetUserId);
         await loadPermissions();
     };
 
-    /**
-     * Toggle Role (PATCH) - מחליף viewer <-> editor
-     */
+   
     const toggleRole = async (permissionId) => {
         if (!itemId) return;
         await patchFilePermission(itemId, permissionId);
         await loadPermissions();
     };
 
-    /**
-     * מחיקת הרשאה (DELETE)
-     */
+   
     const deletePermission = async (permissionId) => {
         if (!itemId) return;
         await deleteFilePermission(itemId, permissionId);

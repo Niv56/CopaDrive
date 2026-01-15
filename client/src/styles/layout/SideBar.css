@@ -1,37 +1,31 @@
-/* SideBar.css */
 
 .dashboard-side {
-  /* --- מידות ומיקום לצף --- */
-  width: 78px; /* רוחב התחלתי צר - רק אייקונים */
-  height: calc(100vh - 70px - 32px); /* גובה מלא פחות טופבר ושוליים */
+  width: 78px; 
+  height: calc(100vh - 70px - 32px); 
   
-  position: fixed; /* שימוש ב-Fixed כדי שירחף באמת מעל הכל */
-  top: 86px;       /* TopBar (70px) + Margin (16px) */
-  left: 16px;      /* מרווח מהצד */
-  z-index: 50;     /* גבוה מספיק כדי לעלות מעל התוכן */
+  position: fixed; 
+  top: 86px;       
+  left: 16px;      
+  z-index: 50;    
 
-  /* --- עיצוב זכוכית --- */
   background: var(--glass-bg) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   
-  /* עיגול פינות וגבול */
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 
-  /* --- אנימציית פתיחה/סגירה --- */
   display: flex;
   flex-direction: column;
   padding: 20px 12px;
   transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.3s ease;
-  overflow: hidden; /* מונע גלישה של טקסט כשהסרגל צר */
+  overflow: hidden; 
 }
 
-/* פתיחה בהובר */
 .dashboard-side:hover {
-  width: 260px; /* הרוחב המלא כשהעכבר עליו */
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2); /* צל חזק יותר בפתיחה */
+  width: 260px; 
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2); 
 }
 
 [data-theme="dark"] .dashboard-side {
@@ -46,17 +40,15 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%; /* מוודא שהרשימה תופסת את הרוחב */
+  width: 100%; 
 }
 
-/* --- עיצוב הפריטים --- */
 .sb-item { 
   display: flex; 
   align-items: center; 
-  /* gap: 14px;  <- ביטלתי את ה-gap כאן כדי לשלוט ידנית במרווח לטקסט */
   height: 50px;
-  padding: 0; /* איפוס פדינג חיצוני */
-  padding-left: 13px; /* פדינג קבוע כדי שהאייקון תמיד יישב באמצע */
+  padding: 0; 
+  padding-left: 13px; 
   
   border-radius: 16px;
   cursor: pointer; 
@@ -65,7 +57,7 @@
   font-weight: 500; 
   background: transparent;
   transition: all 0.2s ease;
-  white-space: nowrap; /* מונע שבירת שורות של הטקסט */
+  white-space: nowrap; 
 }
 
 [data-theme="dark"] .sb-item { color: #e8eaed !important; }
@@ -86,39 +78,34 @@
   color: #6ea8fe !important; 
 }
 
-/* --- טיפול באייקון --- */
 .sb-icon { 
-  min-width: 24px; /* רוחב קבוע לאייקון כדי שלא יזוז */
+  min-width: 24px; 
   display: grid; 
   place-items: center; 
   font-size: 22px; 
   opacity: 0.9;
-  margin-right: 14px; /* המרווח בין האייקון לטקסט */
+  margin-right: 14px; 
 }
 
-/* --- טיפול בטקסט (נעלם ומופיע) --- */
 .sb-text { 
   font-size: 15px; 
-  opacity: 0; /* מוסתר כברירת מחדל */
-  transform: translateX(-10px); /* אפקט כניסה קטן */
+  opacity: 0; 
+  transform: translateX(-10px); 
   transition: opacity 0.2s ease, transform 0.2s ease;
-  pointer-events: none; /* שלא יפריע ללחיצות כשהוא נעלם */
+  pointer-events: none; 
 }
 
-/* כשהסרגל פתוח (בהובר) - הטקסט מופיע */
 .dashboard-side:hover .sb-text {
   opacity: 1;
   transform: translateX(0);
-  transition-delay: 0.1s; /* דיליי קטן כדי שיראה טבעי */
+  transition-delay: 0.1s; 
 }
 
-/* אזור האחסון */
 .sb-storage { 
   margin-top: auto; 
   padding-top: 20px; 
   border-top: 1px solid rgba(0,0,0,0.06);
   
-  /* הסתרת מד האחסון כשהסרגל סגור - אופציונלי, נראה נקי יותר */
   opacity: 0;
   transition: opacity 0.2s ease;
 }

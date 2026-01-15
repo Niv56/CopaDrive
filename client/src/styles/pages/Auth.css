@@ -147,18 +147,15 @@
   border: none !important;
   font-weight: 600;
   letter-spacing: 0.3px;
-  /* Glowing shadow matching the button color */
   box-shadow: 0 4px 15px rgba(13, 202, 240, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-/* וידוא שגם האלמנטים הפנימיים לבנים */
 .copa-auth-card :where(.btn-primary) * {
     color: #ffffff !important;
 }
 
 .copa-auth-card :where(.btn-primary:hover) {
-  /* Slightly brighter gradient on hover */
   filter: brightness(1.1);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(13, 202, 240, 0.45);
@@ -169,10 +166,9 @@
   box-shadow: 0 2px 10px rgba(13, 202, 240, 0.35);
 }
 
-/* Secondary Button (Outline) - Adapted for glass */
 .copa-auth-card :where(.btn-outline-secondary) {
     color: var(--auth-text-main);
-    border-color: rgba(0,0,0,0.15); /* Subtle border */
+    border-color: rgba(0,0,0,0.15); 
     background: transparent;
 }
 
@@ -192,21 +188,15 @@
 }
 
 
-/* ==========================================================================
-   Input Styling
-   ========================================================================== */
 .copa-auth-card :where(.form-control, .form-select) {
   transition: all .2s ease-in-out;
   
-  /* Semi-transparent white */
   background-color: var(--auth-input-bg) !important;
   color: var(--auth-input-text);
   
-  /* Remove default border */
   border: 1px solid transparent; 
 }
 
-/* Placeholder color fix */
 .copa-auth-card :where(.form-control)::placeholder {
   color: var(--auth-text-sub);
   opacity: 0.7;
@@ -218,12 +208,10 @@
 }
 
 .copa-auth-card :where(.form-control, .form-select):focus {
-  /* Solid white on focus */
   background-color: #fff !important; 
   color: #000;
   border-color: transparent;
   
-  /* Soft blue glow */
   box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
   transform: translateY(-1px);
 }
@@ -237,10 +225,6 @@
   box-shadow: none;
 }
 
-
-/* ==========================================================================
-   Avatar Preview (Register)
-   ========================================================================== */
 .copa-avatar-preview {
   width: 110px;
   height: 110px;
@@ -289,9 +273,6 @@
   height: auto;
 }
 
-/* ==========================================================================
-   Icons inside inputs
-   ========================================================================== */
 .copa-auth-card .input-wrapper {
   position: relative;
   width: 100%;
@@ -317,36 +298,26 @@
   color: var(--auth-text-sub);
 }
 
-/* ==========================================================================
-   Sparkle Button Effect (Step 5) - NEW SECTION
-   ========================================================================== */
-
-/* אנימציית נצנוץ */
 @keyframes twinkle {
   0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
   50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
 }
 
-/* מיקום הכפתור המיוחד */
 .btn-sparkle {
   position: relative;
-  overflow: visible !important; /* חשוב כדי שנראה את ה-Glow */
+  overflow: visible !important; 
   transition: all 0.3s ease;
   z-index: 1;
   
-  /* ✅ FIX: חובה צבע לבן גם פה כדי לגבור על הגדרות אחרות */
   color: #ffffff !important;
 }
 
-/* טקסט הכפתור */
 .btn-sparkle .sparkle-text {
   position: relative;
   z-index: 2;
-  /* ✅ FIX: וידוא שהטקסט הפנימי לבן */
   color: #ffffff !important;
 }
 
-/* קונטיינר לכוכבים - שלא יפריע ללחיצה */
 .btn-sparkle .sparkle-stars {
   position: absolute;
   inset: 0;
@@ -354,20 +325,17 @@
   z-index: 1;
 }
 
-/* עיצוב הכוכב עצמו באמצעות CSS בלבד (צורת יהלום) */
 .s-star {
   position: absolute;
   background-color: white;
   width: 16px;
   height: 16px;
   
-  /* יצירת צורת כוכב 4 קצוות */
   clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
   
   animation: twinkle 2s infinite ease-in-out;
 }
 
-/* מיקומים שונים וזמנים שונים לכל כוכב */
 .s-star.s-1 {
   top: 10%;
   left: 15%;
@@ -392,13 +360,11 @@
   animation-delay: 1.2s;
 }
 
-/* אפקט Hover מחוזק לכפתור הזה ספציפית */
 .btn-sparkle:hover {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 10px 25px rgba(13, 202, 240, 0.5); /* צל זוהר בצבע התכלת של הכפתור */
+  box-shadow: 0 10px 25px rgba(13, 202, 240, 0.5); 
 }
 
-/* בהובר הכוכבים מסתובבים קצת יותר מהר */
 .btn-sparkle:hover .s-star {
   animation-duration: 1s;
 }

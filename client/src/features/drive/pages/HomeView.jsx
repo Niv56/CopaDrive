@@ -93,12 +93,10 @@ export default function HomeView({ onChangeView }) {
 
   return (
     <div className="mainarea">
-      {/* טעינת הפונט Bruno Ace SC */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* הכותרת המעודכנת */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h2 style={{ 
             fontFamily: "'Bruno Ace SC', sans-serif", 
@@ -116,7 +114,6 @@ export default function HomeView({ onChangeView }) {
 
       {/* Suggested Folders Section */}
       <div className="mb-5">
-        {/* ✅ כותרת מעוצבת כמו ב-Storage */}
         <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4" 
              style={{ 
                  background: "rgba(255, 255, 255, 0.2)", 
@@ -172,7 +169,6 @@ export default function HomeView({ onChangeView }) {
 
       {/* Suggested Files Section */}
       <div className="mb-5">
-        {/* ✅ כותרת מעוצבת כמו ב-Storage */}
         <div className="d-inline-flex align-items-center gap-3 px-4 py-3 rounded-4 mb-4" 
              style={{ 
                  background: "rgba(255, 255, 255, 0.2)", 
@@ -237,7 +233,6 @@ export default function HomeView({ onChangeView }) {
         onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
       />
       
-      {/* מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>

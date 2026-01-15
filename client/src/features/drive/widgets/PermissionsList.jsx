@@ -1,11 +1,5 @@
 import React, { useMemo } from "react";
 
-/**
- * PermissionsList
- * - מציג avatar (תמונה כמו שהיא) + email בלבד
- * - role הוא כפתור Toggle: לחיצה על Editor תהפוך ל-Viewer ולהפך
- * - Remove נשאר כפתור נפרד (רק לבעלים)
- */
 function PermissionsList({ isOwner, permissions, itemOwnerId, onToggleRole, onDelete }) {
     const normalized = useMemo(() => {
         return (permissions || []).map((p) => {

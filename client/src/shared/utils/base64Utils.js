@@ -6,7 +6,6 @@ export const encodeTextToBase64 = (str) => {
   if (!str) return "";
   try {
     const bytes = new TextEncoder().encode(str);
-    // שימוש ב-fromCodePoint/fromCharCode בצורה מרוכזת ליעילות
     const binString = String.fromCodePoint(...bytes);
     return btoa(binString);
   } catch (e) {
@@ -29,7 +28,6 @@ export const decodeBase64ToText = (base64) => {
 
 export const base64ToBlob = (base64, mimeType = "application/octet-stream") => {
   try {
-    // ניקוי אפשרי של הקידומת במקרה שנשלח Data URL מלא
     const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
     
     const binString = atob(cleanBase64);

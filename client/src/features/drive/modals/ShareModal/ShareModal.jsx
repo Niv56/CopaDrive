@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useAuth } from "app/providers/AuthContext"; // שימוש בנתיב מוחלט
+import { useAuth } from "app/providers/AuthContext"; 
 import PermissionAddSection from "../permissions/PermissionAddSection";
 import PermissionListSection from "../permissions/PermissionListSection";
 import "../../../../styles/widgets/Permissions.css";

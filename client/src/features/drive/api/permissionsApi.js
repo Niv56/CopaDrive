@@ -8,7 +8,6 @@ function normalizePermission(p) {
         userId: p?.userId ?? u?.id ?? u?._id,
         email: p?.email ?? p?.userEmail ?? u?.email ?? "",
         role: p?.role ?? "viewer",
-        // שליפת פרטי הפרופיל עבור התצוגה האלגנטית
         firstName: p?.firstName ?? u?.firstName ?? "",
         lastName: p?.lastName ?? u?.lastName ?? "",
         image: p?.image ?? u?.image ?? u?.avatar ?? ""

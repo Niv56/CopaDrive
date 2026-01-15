@@ -27,7 +27,6 @@ function BinaryViewer({ file, onDownload }) {
   return (
     <div className="viewer-container text-center p-5 d-flex flex-column align-items-center justify-content-center h-100">
       <div className="mb-4">
-        {/* האייקון הגדול */}
         {getFileIcon(file.name, file.mimeType, 100)}
       </div>
       

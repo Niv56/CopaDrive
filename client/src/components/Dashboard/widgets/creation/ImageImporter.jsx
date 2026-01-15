@@ -5,7 +5,6 @@ function ImageImporter({ name, setName, content, triggerUpload }) {
   return (
     <div className="image-importer-container text-center p-4">
       {!content ? (
-        /* מצב א': לפני בחירת התמונה (Intermediate Screen) */
         <div className="selection-screen">
           <div className="mb-3">
             <i className="bi bi-camera-fill text-primary" style={{ fontSize: "3.5rem" }}></i>
@@ -17,10 +16,8 @@ function ImageImporter({ name, setName, content, triggerUpload }) {
           </button>
         </div>
       ) : (
-        /* מצב ב': אחרי הבחירה - תצוגת Preview (Review Screen) */
         <div className="review-screen text-start">
           
-          {/* 🟢 הוספה: שורת כותרת עם כפתור החלפה */}
           <div className="d-flex justify-content-between align-items-center mb-2">
             <label className="modal-label mb-0">Image Preview</label>
             <button 

@@ -14,7 +14,7 @@ export default function PermissionListSection({ fileId, isOwner, myUserId, owner
             const enriched = await Promise.all(data.permissions.map(async (perm) => {
                 try {
                     const user = await getCurrentUser(perm.userId);
-                    if (!user) return perm; // בדיקת בטיחות: אם אין משתמש, אל תמשיך
+                    if (!user) return perm; 
 
                     const isActuallyOwner = String(perm.userId) === String(ownerId);
                     return {

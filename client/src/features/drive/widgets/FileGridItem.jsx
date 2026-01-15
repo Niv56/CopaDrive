@@ -1,7 +1,6 @@
 import React from "react";
 import { formatBytes } from "shared/utils/formatBytes";
 
-// שימוש בלוגיקת האייקונים (אותם אייקונים כמו ברשימה)
 import { 
   BsFolderFill, BsFileEarmarkWordFill, BsFileEarmarkExcelFill, BsFileEarmarkPptFill, 
   BsFileEarmarkPdfFill, BsFileEarmarkImageFill, BsFileEarmarkPlayFill, 
@@ -33,7 +32,6 @@ export default function FileGridItem({ item, ownerLabel, ownerAvatar, dateLabel,
   const isFolder = item?.type === "folder";
   const sizeLabel = isFolder ? "—" : formatBytes(item?.sizeBytes ?? 0);
   
-  // תצוגה מקדימה רק אם זו תמונה שיש לה תוכן
   const hasPreview = !isFolder && item.mimeType?.startsWith("image/") && item.content;
   const imageSrc = hasPreview ? (item.content.startsWith('data:') ? item.content : `data:${item.mimeType};base64,${item.content}`) : null;
 
@@ -45,7 +43,7 @@ export default function FileGridItem({ item, ownerLabel, ownerAvatar, dateLabel,
           <img src={imageSrc} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{ opacity: 1, transform: "scale(1)" }}>
-            {getFileIcon(item.name, item.mimeType, isFolder, 64)} {/* ✅ אייקון ענק במרכז */}
+            {getFileIcon(item.name, item.mimeType, isFolder, 64)} 
           </div>
         )}
       </div>
@@ -54,7 +52,7 @@ export default function FileGridItem({ item, ownerLabel, ownerAvatar, dateLabel,
       <div className="file-card-body" style={{ padding: "12px" }}>
         <div className="d-flex align-items-center gap-2 mb-2">
            <div style={{ flexShrink: 0 }}>
-             {getFileIcon(item.name, item.mimeType, isFolder, 20)} {/* ✅ אייקון קטן ליד השם */}
+             {getFileIcon(item.name, item.mimeType, isFolder, 20)} 
            </div>
            <div className="file-card-name" title={item?.name} style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: "14px" }}>
              {item?.name}

@@ -129,12 +129,10 @@ function MyDrive() {
   return (
     <div className="mainarea">
       
-      {/* טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div className="d-flex align-items-center gap-2">
           <h2 style={{ 

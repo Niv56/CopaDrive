@@ -80,12 +80,10 @@ function RecentView() {
   return (
     <div className="mainarea">
       
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h2 style={{ 
             fontFamily: "'Bruno Ace SC', sans-serif", 
@@ -154,7 +152,6 @@ function RecentView() {
         onDelete={async () => { if (!openedFile) return; await handleDelete(openedFile); setOpenedFile(null); }} 
       />
 
-      {/* ✅ מודל העריכה */}
       {editingFile && (
         <div className="modal-overlay" onClick={() => setEditingFile(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ minWidth: "600px" }}>

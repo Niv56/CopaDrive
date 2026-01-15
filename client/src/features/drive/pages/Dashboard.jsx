@@ -17,12 +17,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-root">
-      {/* תיקון למעבר חלק:
-          במקום להחליף מקור וידאו (שגורם להבהוב), אנחנו טוענים את שניהם.
-          ה-CSS מטפל בשקיפות (Opacity) כדי לעשות מעבר נעים.
-      */}
-      
-      {/* וידאו יום */}
+     
       <video
         className={`background-video ${theme === 'light' ? 'active' : ''}`}
         autoPlay
@@ -33,7 +28,7 @@ export default function Dashboard() {
         <source src={lightVideo} type="video/mp4" />
       </video>
 
-      {/* וידאו לילה */}
+      
       <video
         className={`background-video ${theme === 'dark' ? 'active' : ''}`}
         autoPlay

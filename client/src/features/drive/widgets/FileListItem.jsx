@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "styles/widgets/FileListItem.css";
 import { formatBytes } from "shared/utils/formatBytes";
 
-// 🎨 ייבוא האייקונים מהספרייה
 import { 
   BsFolderFill, 
   BsFileEarmarkWordFill, 
@@ -18,7 +17,6 @@ import {
   BsFileEarmarkFill 
 } from "react-icons/bs";
 
-// 🛠️ פונקציית עזר
 export const getFileIcon = (name, mimeType, isFolder, size = 24) => {
   if (isFolder) return <BsFolderFill size={size} color="#5f6368" />; 
 
@@ -138,17 +136,15 @@ function FileListItem({
       <div className="fli-right" onClick={stop} style={{ width: '80px', display: 'flex', justifyContent: 'flex-end' }}>
         {!isTrash && (
           <div className="fli-actions">
-            {/* ✅ נוסף title לכפתור הכוכב */}
             <button 
                 className={`fli-iconbtn ${isStarred ? "is-on" : ""}`} 
                 onClick={(e) => { stop(e); onToggleStar?.(item, !isStarred); }} 
-                title={isStarred ? "Remove star" : "Toggle star"} // או "Toggle star" כפי שביקשת
+                title={isStarred ? "Remove star" : "Toggle star"} 
                 style={{ color: isStarred ? '#fbbc04' : 'var(--text-secondary)' }}
             >
                 {isStarred ? "★" : "☆"}
             </button>
 
-            {/* ✅ נוסף title לכפתור החשיבות */}
             <button 
                 className={`fli-iconbtn ${isImportant ? "is-danger" : ""}`} 
                 onClick={(e) => { stop(e); onToggleImportant?.(item, !isImportant); }} 
@@ -160,7 +156,6 @@ function FileListItem({
           </div>
         )}
         <div className="dropdown" onClick={stop} ref={menuRef}>
-          {/* ✅ נוסף title לכפתור התפריט */}
           <button 
             className={`fli-menubtn ${isMenuOpen ? "show" : ""}`} 
             onClick={(e) => { stop(e); setIsMenuOpen(!isMenuOpen); }} 

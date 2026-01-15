@@ -11,12 +11,10 @@ import FileViewerModal from "../widgets/FileViewerModal";
 import EditUserModal from "../widgets/EditUserModal";
 import ThemeToggle from "../widgets/ThemeToggle";
 
-// ✅ הוספתי FiMusic
 import { FiSearch, FiMusic } from "react-icons/fi";
 
 import "styles/layout/TopBar.css";
 
-// ✅ ייבוא השיר
 import songFile from "assets/videos/Song.mp3";
 
 export default function TopBar() {
@@ -33,7 +31,6 @@ export default function TopBar() {
 
   const navigate = useNavigate();
 
-  // ✅ פונקציית נגינה
   const playSong = () => {
     const audio = new Audio(songFile);
     audio.play().catch(e => console.log("Play error:", e));
@@ -109,15 +106,12 @@ export default function TopBar() {
 
   return (
     <>
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
       <header className="dashboard-top">
-        {/* Left: Logo */}
         <div className="dashboard-top-left" style={{ gap: '15px', alignItems: 'center' }}>
-          {/* ✅ לוגו מוגדל */}
           <img 
             src={appLogo} 
             alt="CopaDrive logo" 
@@ -125,7 +119,6 @@ export default function TopBar() {
             style={{ width: "48px", height: "48px" }} 
           />
           
-          {/* ✅ טקסט בפונט המותאם */}
           <h2 className="app-title" style={{ 
               fontFamily: "'Bruno Ace SC', sans-serif",
               fontSize: "1.8rem", 
@@ -133,7 +126,7 @@ export default function TopBar() {
               margin: 0,
               letterSpacing: "1px",
               textTransform: "uppercase",
-              paddingTop: "4px" // יישור קל מול הלוגו
+              paddingTop: "4px" 
           }}>
             CopaDrive
           </h2>
@@ -195,7 +188,6 @@ export default function TopBar() {
         {/* Right: Actions & Profile */}
         <div className="dashboard-top-right">
           
-          {/* ✅ כפתור שיר מנצנץ */}
           <button className="btn-sparkle-sm" onClick={playSong}>
             <FiMusic style={{ color: 'white' }} />
             <span className="sparkle-text">PlaySong</span>

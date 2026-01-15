@@ -3,7 +3,6 @@ import React, { useState } from "react";
 function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
   const [localData, setLocalData] = useState(initialData);
   
-  // זיהוי סוגי קבצים
   const isTxt = localData.mimeType === "text/plain" || localData.name.toLowerCase().endsWith(".txt");
   const isImage = localData.mimeType.startsWith("image/") || /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(localData.name);
   const isFolder = file.type === "folder";
@@ -15,7 +14,7 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target.result;
-      const finalContent = result.split(',')[1]; // חילוץ Base64
+      const finalContent = result.split(',')[1]; 
 
       setLocalData(prev => ({
         ...prev,
@@ -29,7 +28,6 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
 
   return (
     <div className="file-editor">
-      {/* File Name Section */}
       <div className="mb-3">
         <label className="form-label fw-bold">FILE NAME</label>
         <input 
@@ -40,7 +38,6 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
         />
       </div>
 
-      {/* Location Section */}
       <div className="mb-3">
         <label className="form-label fw-bold">LOCATION</label>
         <select 
@@ -55,7 +52,6 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
         </select>
       </div>
 
-      {/* Text Editor: מופיע רק עבור קבצי טקסט */}
       {isTxt && (
         <div className="mb-3">
           <label className="form-label fw-bold">EDIT CONTENT</label>
@@ -73,12 +69,10 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
         </div>
       )}
 
-      {/* Replace Section: מופיע עבור קבצים בינאריים (לא טקסט ולא תיקייה) */}
       {!isFolder && !isTxt && (
         <div className="replace-content-section border rounded p-3 bg-light mt-4">
           <h6 className="fw-bold mb-3">Replace with File</h6>
           
-          {/* 🎯 הוספת תצוגה מקדימה של התמונה הנוכחית */}
           {isImage && localData.content && (
             <div className="current-image-preview mb-3 text-center border rounded p-2 bg-white">
               <div className="text-muted small mb-2">CURRENT IMAGE</div>
@@ -94,7 +88,7 @@ function FileEditorView({ file, initialData, folders, onSave, onCancel }) {
             type="file" 
             className="form-control" 
             onChange={handleFileChange} 
-            accept={isImage ? "image/*" : "*/*"} // סינון קבצים בהתאם לסוג הנוכחי
+            accept={isImage ? "image/*" : "*/*"} 
           />
           <div className="form-text mt-2">
             Upload a new file to replace the current content. The file name and type will be updated automatically.

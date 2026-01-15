@@ -16,12 +16,10 @@
   justify-content: space-between;
   padding: 0 24px;
   
-  /* ✅ שימוש במשתנה האחיד - מבטיח זהות ל-SideBar */
   background: var(--glass-bg) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   
-  /* ביטול הגבול התחתון לחיבור מושלם */
   border-bottom: none !important;
   box-shadow: none !important;
   
@@ -29,25 +27,20 @@
 }
 
 [data-theme="dark"] .dashboard-top {
-  /* שימוש באותו משתנה בדיוק */
   background: var(--glass-bg) !important;
   border-bottom: none !important;
 }
 
-/* ✅ עיצוב כפתור ה-Log out (Danger) */
 .user-dropdown-item.danger {
-  color: #dc3545; /* צבע טקסט אדום כברירת מחדל */
+  color: #dc3545; 
 }
 
 .user-dropdown-item.danger:hover {
-  /* ✅ רקע אדום שקוף ועדין בריחוף */
   background-color: rgba(220, 53, 69, 0.12) !important;
   
-  /* אדום טיפה כהה יותר לקריאות */
   color: #b02a37 !important; 
 }
 
-/* שאר האלמנטים (לוגו, חיפוש) ללא שינוי... */
 .dashboard-top-left { display: flex; align-items: center; gap: 12px; min-width: 220px; }
 .app-logo { height: 40px; width: auto; }
 .app-title { font-size: 22px; font-weight: 700; margin: 0; color: var(--text-primary); }
@@ -60,13 +53,11 @@
 [data-theme="dark"] .dashboard-search { background-color: rgba(255, 255, 255, 0.1) !important; border-color: rgba(255, 255, 255, 0.1) !important; color: #fff; }
 [data-theme="dark"] .dashboard-search:focus { background-color: #303030 !important; }
 .dashboard-top-right { display: flex; align-items: center; gap: 16px; min-width: 220px; justify-content: flex-end; }
-/* User Menu Pill */
 .user-menu { position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; background-color: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.05); padding: 4px 6px 4px 16px; border-radius: 32px; transition: background 0.2s ease, box-shadow 0.2s ease; }
 .user-menu:hover { background-color: rgba(0, 0, 0, 0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 [data-theme="dark"] .user-menu { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.1); }
 [data-theme="dark"] .user-menu:hover { background-color: rgba(255, 255, 255, 0.15); }
 
-/* Dropdowns... (same as before) */
 .search-dropdown-results { position: absolute; top: 110%; left: 0; right: 0; background: var(--bg-paper); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; max-height: 300px; overflow-y: auto; }
 .user-dropdown { position: absolute; top: 60px; right: 0; width: 240px; background: var(--bg-paper); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 8px; z-index: 1000; }
 .user-dropdown-email { padding: 8px 12px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
@@ -74,9 +65,6 @@
 .user-dropdown-item:hover { background-color: var(--hover-bg); }
 .user-dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
 
-/* ==========================================================================
-   Sparkle Button Specific for TopBar (Play Song)
-   ========================================================================== */
 @keyframes twinkle {
   0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.4; }
   50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.8)); }
@@ -98,7 +86,7 @@
   align-items: center;
   gap: 8px;
   overflow: hidden;
-  margin-right: 8px; /* מרווח קטן מהאלמנט הבא */
+  margin-right: 8px;
 }
 
 .btn-sparkle-sm:hover {

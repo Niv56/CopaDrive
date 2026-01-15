@@ -83,20 +83,16 @@ export function useFileActions(myUserId, onRefresh) {
 
   const handleSaveEdit = async (updatedData) => {
     try {
-      // ✅ יצירת אובייקט נקי עם השדות המותרים בלבד
-      // השרת חוסם עדכון של 'type', לכן לא נכלול אותו ב-Payload
+      
       const patch = {
         name: updatedData.name,
         parentId: updatedData.parentId || null
       };
 
-      // אם מדובר בקובץ (ולא תיקייה), נוסיף את התוכן
       if (editingFile.type === "file") {
         patch.content = updatedData.content;
         
-        // הערה: אם אתה מחליף קובץ פיזי (למשל תמונה בתמונה אחרת), 
-        // ייתכן שהשרת יצפה גם ל-mimeType החדש. 
-        // אם השגיאה נמשכת, נסה להסיר את השורה הבאה:
+        
         patch.mimeType = updatedData.mimeType;
       }
 
@@ -105,7 +101,6 @@ export function useFileActions(myUserId, onRefresh) {
       setEditingFile(null); 
       if (onRefresh) onRefresh(); 
     } catch (e) {
-        // כאן נקבל את הודעת השגיאה המדויקת מהשרת אם עדיין יש בעיה
         alert("Failed to save changes: " + e.message);
     }
   };

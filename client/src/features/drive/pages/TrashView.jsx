@@ -109,12 +109,10 @@ function TrashView() {
   return (
     <div className="mainarea" style={{ height: "100%", overflowY: "auto", padding: "24px" }}>
       
-      {/* ✅ טעינת הפונט */}
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap');`}
       </style>
 
-      {/* ✅ כותרת מעוצבת אחידה */}
       <div className="page-title-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h2 style={{ 
             fontFamily: "'Bruno Ace SC', sans-serif", 
@@ -141,7 +139,6 @@ function TrashView() {
         </div>
       </div>
 
-      {/* הודעה עדינה */}
       <div className="d-inline-flex align-items-center gap-2 mb-4 px-3 py-2 rounded-pill"
         style={{
           background: "rgba(255, 255, 255, 0.25)",

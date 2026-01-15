@@ -264,13 +264,12 @@ export default function EditUserModal({
 
   return (
     <>
-      {/* ✅ CSS מעודכן: תיבות מעוגלות, רקע אפור ברור (contrast), ופוקוס יפה */}
       <style>{`
         .edit-user-input {
-          background-color: #f1f3f4 !important; /* רקע אפור בולט יותר */
+          background-color: #f1f3f4 !important; 
           border: 1px solid transparent !important;
-          border-radius: 50px !important; /* מעוגל כמו החיפוש */
-          padding: 10px 20px !important; /* ריווח פנימי נוח */
+          border-radius: 50px !important; 
+          padding: 10px 20px !important; 
           color: #202124 !important;
           transition: all 0.2s ease-in-out !important;
         }
@@ -278,11 +277,10 @@ export default function EditUserModal({
         .edit-user-input:focus {
           background-color: #ffffff !important;
           border-color: transparent !important;
-          box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important; /* צללית יפה בפוקוס */
+          box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important; 
           color: #202124 !important;
         }
 
-        /* התאמה למצב לילה - שיהיה קריא גם שם */
         [data-theme="dark"] .edit-user-input {
           background-color: #303134 !important;
           color: #e8eaed !important;
@@ -302,7 +300,7 @@ export default function EditUserModal({
         onClick={requestClose}
       >
         <div className="modal-dialog modal-lg modal-dialog-centered" role="document" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-content shadow" style={{ borderRadius: 24, border: "none" }}> {/* גם למודל עצמו עיגול יפה יותר */}
+          <div className="modal-content shadow" style={{ borderRadius: 24, border: "none" }}> 
             <div className="modal-header border-0 pb-0 pt-4 px-4">
               <h4 className="modal-title fw-bold">Edit user</h4>
               <button type="button" className="btn-close" aria-label="Close" onClick={requestClose} />
@@ -312,7 +310,6 @@ export default function EditUserModal({
               {errors.general && <div className="alert alert-danger rounded-4">{errors.general}</div>}
 
               <div className="row g-4">
-                {/* Left Column: Avatar */}
                 <div className="col-12 col-md-4 border-end">
                   <div className="d-flex flex-column align-items-center h-100 justify-content-center">
                     <div
@@ -360,7 +357,6 @@ export default function EditUserModal({
                   </div>
                 </div>
 
-                {/* Right Column: Fields */}
                 <div className="col-12 col-md-8 ps-md-4">
                   <div className="row g-3">
                     <div className="col-12 col-md-6">
