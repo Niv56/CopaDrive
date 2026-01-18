@@ -55,12 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     setToken(null);
     setSessionExpired(false);
-  };
+    setIsHydrating(false);
+  }
 
-  const triggerSessionExpired = () => {
+  const triggerSessionExpired = async () => {
     setSessionExpired(true);
-    // אופציונלי: נרוקן טוקן
-    // setToken(null);
+    await logout();
   };
 
   const value = useMemo<AuthValue>(
