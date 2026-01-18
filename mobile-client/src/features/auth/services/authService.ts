@@ -35,7 +35,7 @@ async function jsonRequest(path: string, options?: RequestInit) {
 }
 
 export async function authenticateUser(email: string, password: string): Promise<LoginApiResult> {
-  const { ok, data } = await jsonRequest("/tokens", {
+  const { ok, data } = await jsonRequest("/api/tokens", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
@@ -50,18 +50,8 @@ export async function authenticateUser(email: string, password: string): Promise
   return { ok: true, token };
 }
 
-// === התיקון נמצא כאן: הוספת השדות החסרים ===
-export async function registerUser(payload: {
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  dateOfBirth?: string; // <--- הוספנו את זה
-  gender?: string;      // <--- הוספנו את זה
-}): Promise<RegisterApiResult> {
-  
-  const { ok, data } = await jsonRequest("/users", {
+export async function registerUser(payload: any): Promise<RegisterApiResult> {
+  const { ok, data } = await jsonRequest("/api/users", {
     method: "POST",
     body: JSON.stringify(payload),
   });
