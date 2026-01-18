@@ -1,108 +1,95 @@
-const { files } = require('../utils/storage');
+const File = require('../models/file');
 
-const normalizeParentId = (parentId) => (parentId === undefined ? null : parentId);
+const normalizeParentId = (parentId) => 
+    (parentId === undefined || parentId === 'root' || parentId === 'null' || parentId === null) ? null : parentId;
 
-// Finds non-trashed files within a specific folder
-const findByParent = (parentId, ownerId) => {
-  const p = normalizeParentId(parentId);
-  return files.filter(f => {
-    if (f.trashed === true) return false;
-    const fp = normalizeParentId(f.parentId);
-    const parentMatch = fp === p;
-    const ownerMatch = ownerId ? f.ownerId === ownerId : true; 
-    return parentMatch && ownerMatch;
-  });
+const findByParent = async (parentId, ownerId) => {
+    const p = normalizeParentId(parentId);
+    const query = {
+        parentId: p,
+        trashed: { $ne: true } 
+    };
+    if (ownerId) query.ownerId = ownerId;
+
+    return await File.find(query);
 };
 
-// Returns all files in storage
-const findAll = () => files;
+const findAll = async () => await File.find({});
 
-// Finds a file by ID (including trashed files)
-const findById = (id, ownerId) => {
-  if (!ownerId) return files.find(f => f.id === id);
-  return files.find(f => f.id === id && f.ownerId === ownerId);
+const findById = async (id, ownerId) => {
+    const query = { _id: id };
+    if (ownerId) query.ownerId = ownerId;
+    
+    return await File.findOne(query);
 };
 
-// Creates a new file entry
-const create = (fileData) => {
-  const newFileData = {
-    mimeType: "",
-    trashed: false,
-    trashedAt: null,
-    originalParentId: null,
-    lastAccessedBy: {},
-    blockedBy: [],
-    ...fileData
-  };
+const create = async (fileData) => {
+    const newFile = new File({
+        mimeType: "",
+        trashed: false,
+        trashedAt: null,
+        originalParentId: null,
+        starredBy: [],
+        importantBy: [],
+        trashedBy: [],
+        blockedBy: [],
+        trashedAtBy: {},
+        lastAccessedBy: {},
+        ...fileData
+    });
 
-  files.push(newFileData);
-  return newFileData;
+    return await newFile.save();
 };
 
-// Updates an existing file entry
-const update = (id, updates, ownerId) => {
-  const idx = files.findIndex(f => {
-    if (!ownerId) return f.id === id;
-    return f.id === id && f.ownerId === ownerId;
-  });
+const update = async (id, updates, ownerId) => {
+    const query = { _id: id };
+    if (ownerId) query.ownerId = ownerId;
 
-  if (idx === -1) return null;
-
-  files[idx] = { ...files[idx], ...updates };
-  return files[idx];
+    return await File.findOneAndUpdate(query, updates, { new: true });
 };
 
-// Removes a file entry from storage
-const remove = (id, ownerId) => {
-  const idx = files.findIndex(f => {
-    if (!ownerId) return f.id === id;
-    return f.id === id && f.ownerId === ownerId;
-  });
+const remove = async (id, ownerId) => {
+    const query = { _id: id };
+    if (ownerId) query.ownerId = ownerId;
 
-  if (idx === -1) return null;
-  return files.splice(idx, 1)[0];
+    return await File.findOneAndDelete(query);
 };
 
-// Checks if a folder contains any non-trashed files
-const hasChildren = (parentId, ownerId) => {
-  return files.some(f => {
-    if (f.trashed === true) return false;
-    const ownerMatch = ownerId ? f.ownerId === ownerId : true;
-    return ownerMatch && (f.parentId ?? null) === parentId;
-  });
+const hasChildren = async (parentId, ownerId) => {
+    const p = normalizeParentId(parentId);
+    const count = await File.countDocuments({
+        parentId: p,
+        ownerId: ownerId,
+        trashed: { $ne: true }
+    });
+    return count > 0;
 };
 
-// Searches for non-trashed files by name or content
-const searchFiles = (userId, query) => {
-  const normalizedQuery = query.toLowerCase();
-
-  return files.filter(file =>
-    file.ownerId === userId &&
-    file.trashed !== true &&
-    (
-      file.name.toLowerCase().includes(normalizedQuery) ||
-      (file.content && file.content.toLowerCase().includes(normalizedQuery))
-    )
-  );
+const searchFiles = async (userId, query) => {
+    return await File.find({
+        ownerId: userId,
+        trashed: { $ne: true },
+        name: { $regex: query, $options: 'i' } 
+    });
 };
 
-// Finds all files marked as trashed for a specific user
-const findTrashed = (ownerId) => {
-  return files.filter(f => f.ownerId === ownerId && f.trashed === true);
+const findTrashed = async (ownerId) => {
+    return await File.find({ ownerId: ownerId, trashed: true });
 };
 
-// Finds multiple files by an array of IDs
-const findByIds = (idsArray) => files.filter(f => idsArray.includes(f.id));
+const findByIds = async (idsArray) => {
+    return await File.find({ _id: { $in: idsArray } });
+};
 
 module.exports = {
-  findByParent,
-  findById,
-  create,
-  update,
-  remove,
-  hasChildren,
-  searchFiles,
-  findByIds,
-  findAll,
-  findTrashed,
+    findByParent,
+    findById,
+    create,
+    update,
+    remove,
+    hasChildren,
+    searchFiles,
+    findByIds,
+    findAll,
+    findTrashed,
 };

@@ -1,13 +1,21 @@
-require('dotenv').config();
+const mongoose = require('mongoose');
+require('custom-env').env(process.env.NODE_ENV, './config');
 const { getProvider } = require("./storage/storageProvider");
 console.log("Provider:", getProvider().name);
 
 console.log("JWT_SECRET exists?", !!process.env.JWT_SECRET);
 
+mongoose.connect(process.env.CONNECTION_STRING)
+.then(() => {
+    console.log("Connected to MongoDB successfully");
+}).catch((err) => {
+    console.error("Could not connect to MongoDB", err);
+});
+
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const fileRoutes = require('./routes/fileRoutes');
 const userRoutes = require('./routes/userRoutes');

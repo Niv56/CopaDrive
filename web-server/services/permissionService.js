@@ -1,7 +1,7 @@
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
 const userRepository = require('../repositories/userRepository');
-const { generateId } = require('../utils/idGenerator');
+const { generateId } = require('../../Archive/idGenerator');
 
 // Verify that the user owns the file
 const verifyOwnership = (ownerId, fileId) => {

@@ -26,8 +26,7 @@ services:
     networks:
       - copadrive-network
     env_file:
-      - ./web-server/.env
-
+      - ./web-server/config/.env.local
   client:
     build:
       context: ./client

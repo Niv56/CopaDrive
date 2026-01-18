@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 
-// Validate JWT from Authorization header and attach the user to req.user.
-const requireAuth = (req, res, next) => {
+/**
+ * Validate JWT from Authorization header and attach the user to req.user.
+ */
+const requireAuth = async (req, res, next) => { 
   try {
     const authHeader = req.headers['authorization'];
 
@@ -26,6 +28,7 @@ const requireAuth = (req, res, next) => {
       throw error;
     }
 
+    // Verify the token and extract payload
     const payload = jwt.verify(token, secret);
 
     const userId = payload?.userId;
@@ -35,7 +38,9 @@ const requireAuth = (req, res, next) => {
       throw error;
     }
 
-    const user = userRepository.findById(userId);
+    
+    const user = await userRepository.findById(payload.userId);
+    
     if (!user) {
       const error = new Error("Invalid token user");
       error.status = 401;

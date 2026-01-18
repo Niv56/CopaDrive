@@ -1,25 +1,24 @@
-const { users } = require('../utils/storage');
+const User = require('../models/user');
 
 // Find a user by their unique ID
-const findById = (id) => users.find(u => u.id === id);
+const findById = async (id) =>{
+  return await User.findById(id);
+} 
 
 // Find a user by email
-const findByEmail = (email) => users.find(u => u.email === email);
+const findByEmail = async (email) => {
+  return await User.findOne({email: email})
+};
 
 // Create a new user
-const create = (userData) => {
-  users.push(userData);
-  return userData;
-};
+const create = async (userData) => {
+  const newUser = new User(userData);
+  return await newUser.save()
+  };
 
-// Update an existing user
-const update = (id, patch) => {
-  const idx = users.findIndex(u => u.id === id);
-  if (idx === -1) return null;
-
-  users[idx] = { ...users[idx], ...patch };
-  return users[idx];
-};
+const update = async (id ,patch ) =>{
+  return await User.findByIdAndUpdate(id, patch, { new: true });
+}
 
 module.exports = {
   findById,

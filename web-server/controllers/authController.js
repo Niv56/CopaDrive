@@ -3,20 +3,21 @@ const authService = require('../services/authService');
 const { validateFields } = require('../utils/validation');
 
 // Authenticates user credentials and issues a JWT
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => { // Added async
   try {
     validateFields(req.body, ['email', 'password']);
 
     const { email, password } = req.body;
 
-    const userExists = authService.getUserByEmail(email);
+    
+    const userExists = await authService.getUserByEmail(email);
     if (!userExists) {
       const error = new Error("User not found");
       error.status = 404;
       throw error;
     }
 
-    const user = authService.verifyCredentials(email, password);
+    const user = await authService.verifyCredentials(email, password);
     if (!user) {
       const error = new Error("Incorrect password");
       error.status = 401;
@@ -31,7 +32,7 @@ exports.login = (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user._id },
       secret,
       { expiresIn: '1h' }
     );
