@@ -1,111 +1,134 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-// תיקון נתיב: יוצאים מתיקיית Register ונכנסים ל-services
 import { registerUser } from "../../services/authService";
+import AuthLayout from "../../components/AuthLayout";
+import { authStyles } from "../../styles/auth.styles";
+
+import Step1 from "./steps/Step1";
+import Step2 from "./steps/Step2";
+import Step3 from "./steps/Step3";
+import Step4 from "./steps/Step4";
+import Step5 from "./steps/Step5";
+
+import {
+  validateStep1, validateStep2, validateStep3, validateStep4
+} from "../../validators/registerValidators";
+
+const TOTAL_STEPS = 4;
+
 export default function RegisterScreen() {
   const router = useRouter();
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [verifyPassword, setVerifyPassword] = useState("");
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<any>({});
 
-  const passwordsMatch = password.length > 0 && verifyPassword.length > 0 && password === verifyPassword;
+  const [formData, setFormData] = useState({
+    firstName: "", lastName: "", phoneNumber: "", image: null,
+    dateOfBirth: "", gender: "", email: "", password: "", verifyPassword: "",
+  });
 
-  const canSubmit = useMemo(() => {
-    return (
-      firstName.trim().length >= 2 &&
-      email.trim().length > 0 &&
-      password.length >= 8 &&
-      password === verifyPassword &&
-      !loading
-    );
-  }, [firstName, email, password, verifyPassword, loading]);
+  const getHeaderTitle = () => {
+    switch(step) {
+      case 1: return "Who are you?";
+      case 2: return "Contact Info";
+      case 3: return "Personal Info";
+      case 4: return "Security";
+      case 5: return "Welcome!";
+      default: return "";
+    }
+  };
 
-  const onSubmit = async () => {
-    if (!canSubmit) return;
+  const validateCurrentStep = () => {
+    let stepErrors = {};
+    if (step === 1) stepErrors = validateStep1(formData);
+    if (step === 2) stepErrors = validateStep2(formData);
+    if (step === 3) stepErrors = validateStep3(formData);
+    if (step === 4) stepErrors = validateStep4(formData);
+    setErrors(stepErrors);
+    return Object.keys(stepErrors).length === 0;
+  };
 
+  const handleNext = async () => {
+    if (!validateCurrentStep()) return;
+    if (step < TOTAL_STEPS) setStep(step + 1);
+    else await handleSubmit();
+  };
+
+  const handleBack = () => {
+    if (step > 1 && step <= TOTAL_STEPS) {
+      setStep(step - 1);
+      setErrors({});
+    } else {
+      router.replace("/login");
+    }
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
     const res = await registerUser({
-      firstName: firstName.trim(),
-      lastName: lastName.trim() || undefined,
-      phoneNumber: phoneNumber.trim() || undefined,
-      email: email.trim().toLowerCase(),
-      password,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phoneNumber: formData.phoneNumber,
+      dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender,
+      email: formData.email.toLowerCase(),
+      password: formData.password,
     });
     setLoading(false);
 
-    if (!res.success) {
-      Alert.alert("Register failed", res.error);
-      return;
-    }
-
-    Alert.alert("Success", "Account created!");
-    router.replace("/(auth)/login");
+    if (res.success) setStep(5);
+    else Alert.alert("Registration Failed", res.error || "Unknown error");
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.brand}>Create account</Text>
-      <Text style={styles.sub}>Join CopaDrive</Text>
+    // שימוש ב-AuthLayout עם הכותרת המשתנה
+    <AuthLayout subtitle={getHeaderTitle()}>
+      
+      {/* תוכן השלבים */}
+      <View style={{ minHeight: 300 }}>
+        {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} />}
+        {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} />}
+        {step === 3 && <Step3 formData={formData} setFormData={setFormData} errors={errors} />}
+        {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} />}
+        {step === 5 && <Step5 />}
+      </View>
 
-      <Text style={styles.label}>First name</Text>
-      <TextInput value={firstName} onChangeText={setFirstName} placeholder="Amit" style={styles.input} />
+      {/* כפתורים */}
+      <View style={{ marginTop: 20 }}>
+        {step === 5 ? (
+          <Pressable style={authStyles.btnPrimary} onPress={() => router.replace("/login")}>
+            <Text style={authStyles.btnTextPrimary}>Proceed to Login</Text>
+          </Pressable>
+        ) : (
+          <View style={{ flexDirection: "row", gap: 15 }}>
+            <Pressable style={[authStyles.btnSecondary, { flex: 1 }]} onPress={handleBack}>
+              <Text style={authStyles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
+            </Pressable>
+            
+            <Pressable style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]} onPress={handleNext}>
+              {loading ? <ActivityIndicator color="#fff" /> : 
+                <Text style={authStyles.btnTextPrimary}>{step === TOTAL_STEPS ? "Submit" : "Next"}</Text>
+              }
+            </Pressable>
+          </View>
+        )}
+      </View>
 
-      <Text style={styles.label}>Last name (optional)</Text>
-      <TextInput value={lastName} onChangeText={setLastName} placeholder="Lev" style={styles.input} />
-
-      <Text style={styles.label}>Phone (optional)</Text>
-      <TextInput value={phoneNumber} onChangeText={setPhoneNumber} placeholder="054-123-4567" keyboardType="phone-pad" style={styles.input} />
-
-      <Text style={styles.label}>Email</Text>
-      <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="username@copa.com" style={styles.input} />
-
-      <Text style={styles.label}>Password</Text>
-      <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="min 8 chars" style={styles.input} />
-
-      <Text style={styles.label}>Verify password</Text>
-      <TextInput value={verifyPassword} onChangeText={setVerifyPassword} secureTextEntry placeholder="repeat password" style={styles.input} />
-
-      {!passwordsMatch && verifyPassword.length > 0 ? <Text style={styles.warn}>Passwords don't match</Text> : null}
-
-      <Pressable disabled={!canSubmit} onPress={onSubmit} style={[styles.btn, !canSubmit && styles.btnDisabled]}>
-        {loading ? <ActivityIndicator /> : <Text style={styles.btnText}>Register</Text>}
-      </Pressable>
-
-      <Pressable onPress={() => router.replace("/(auth)/login")} style={styles.linkBtn}>
-        <Text style={styles.linkText}>Back to login</Text>
-      </Pressable>
-    </View>
+      {/* אינדיקטור נקודות */}
+      {step <= TOTAL_STEPS && (
+        <View style={localStyles.dots}>
+          {[1, 2, 3, 4].map(i => (
+            <View key={i} style={[localStyles.dot, i === step && localStyles.dotActive]} />
+          ))}
+        </View>
+      )}
+    </AuthLayout>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: "center" },
-  brand: { fontSize: 28, fontWeight: "800", textAlign: "center" },
-  sub: { fontSize: 16, opacity: 0.7, textAlign: "center", marginTop: 8, marginBottom: 22 },
-
-  label: { fontSize: 13, fontWeight: "600", marginTop: 10, marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-
-  warn: { marginTop: 8, color: "crimson", fontWeight: "600" },
-
-  btn: { marginTop: 18, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: "#111", alignItems: "center" },
-  btnDisabled: { opacity: 0.45 },
-  btnText: { fontSize: 16, fontWeight: "700" },
-
-  linkBtn: { marginTop: 14, alignItems: "center" },
-  linkText: { fontSize: 14, fontWeight: "700", textDecorationLine: "underline" },
+const localStyles = StyleSheet.create({
+  dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 25 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ddd" },
+  dotActive: { backgroundColor: "#007bff", width: 20 },
 });

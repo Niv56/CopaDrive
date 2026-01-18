@@ -1,8 +1,10 @@
 {
   "dependencies": {
+    "@expo-google-fonts/bruno-ace-sc": "^0.4.1",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/poppins": "^5.2.7",
     "bootstrap": "^5.3.8",
+    "expo-font": "^14.0.10",
     "react-icons": "^5.5.0"
   }
 }
