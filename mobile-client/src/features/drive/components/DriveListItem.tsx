@@ -4,12 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { DriveItem } from "../types/driveItem";
 import { driveStyles } from "../styles/myDrive.styles";
 
-interface Props {
-    item: DriveItem;
-    onPress: (item: DriveItem) => void;
-}
-
-export default function DriveListItem({ item, onPress }: Props) {
+export default function DriveListItem({ item, onPress }: { item: DriveItem, onPress: (i: DriveItem) => void }) {
     const isFolder = item.type === 'folder';
 
     return (
@@ -24,10 +19,10 @@ export default function DriveListItem({ item, onPress }: Props) {
             <View style={{ flex: 1 }}>
                 <Text style={driveStyles.fileName} numberOfLines={1}>{item.name}</Text>
                 <Text style={driveStyles.fileInfo}>
-                    {isFolder ? "Folder" : `${item.size} KB`} • {item.updatedAt}
+                    {isFolder ? "Folder" : "File"} • {new Date(item.updatedAt).toLocaleDateString()}
                 </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#ccc" />
+            <Ionicons name="ellipsis-vertical" size={18} color="#5f6368" />
         </Pressable>
     );
 }

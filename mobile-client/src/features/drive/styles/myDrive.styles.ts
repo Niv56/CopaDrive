@@ -81,4 +81,28 @@ export const driveStyles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.3)', // כותרת שקופה עדינה
+        padding: 10,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+        marginHorizontal: 15,
+        marginBottom: 10,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    sectionText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333'
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 50,
+        color: '#666',
+        fontFamily: 'BrunoAceSC_400Regular'
+    }
 });
