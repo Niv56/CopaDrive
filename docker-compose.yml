@@ -1,4 +1,16 @@
 services:
+
+  # MongoDB Database
+  database:
+    image: mongo:latest
+    container_name: copadrive_db
+    ports:
+      - "27017:27017"
+    networks:
+      - copadrive-network
+    volumes:
+      - mongo-data:/data/db
+
   # C++ Server
   server:
     build:
@@ -23,11 +35,13 @@ services:
     environment:
       - CPP_SERVER_HOST=server
       - CPP_SERVER_PORT=5555
+      - MONGO_URI=mongodb://database:27017/copadrive
     networks:
       - copadrive-network
     env_file:
       - ./web-server/.env
 
+  # Client
   client:
     build:
       context: ./client
@@ -46,6 +60,23 @@ services:
       - web-server
     networks:
       - copadrive-network
+
+  # Mobile Client
+  mobile-client:
+    build:
+      context: ./mobile-client
+      dockerfile: Dockerfile
+    container_name: copadrive_mobile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - web-server
+    networks:
+      - copadrive-network
+
 networks:
   copadrive-network:
     driver: bridge
+
+volumes:
+  mongo-data:
