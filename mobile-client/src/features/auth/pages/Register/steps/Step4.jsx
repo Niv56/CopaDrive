@@ -3,9 +3,9 @@ import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step4({ formData, setFormData, errors }: any) {
+export default function Step4({ formData, setFormData, errors }) {
   
-  const handleEmailChange = (text: string) => {
+  const handleEmailChange = (text) => {
     let val = text;
     if (val.endsWith("@") && val.length > (formData.email || "").length) {
       if ((val.match(/@/g) || []).length === 1) {

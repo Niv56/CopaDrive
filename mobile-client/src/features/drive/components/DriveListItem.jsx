@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { DriveItem } from "../types/driveItem";
 import { driveStyles } from "../styles/myDrive.styles";
 
-export default function DriveListItem({ item, onPress }: { item: DriveItem, onPress: (i: DriveItem) => void }) {
+export default function DriveListItem({ item, onPress }) {
     const isFolder = item.type === 'folder';
 
     return (

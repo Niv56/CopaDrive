@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { authStyles } from "../../../styles/auth.styles";
-export default function Step1({ formData, setFormData, errors }: any) {
+
+export default function Step1({ formData, setFormData, errors }) {
   return (
     <View>
       <Text style={authStyles.label}>First Name</Text>

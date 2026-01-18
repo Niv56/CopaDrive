@@ -3,14 +3,9 @@ import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { driveStyles } from "../features/drive/styles/myDrive.styles";
 
-interface BottomBarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export default function BottomBar({ activeTab, setActiveTab }: BottomBarProps) {
+export default function BottomBar({ activeTab, setActiveTab }) {
   
-  const NavItem = ({ icon, label, id }: any) => (
+  const NavItem = ({ icon, label, id }) => (
     <Pressable style={driveStyles.navItem} onPress={() => setActiveTab(id)}>
       <Ionicons 
         name={icon} 

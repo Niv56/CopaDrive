@@ -8,7 +8,7 @@ import { useMyDrive } from "../../features/drive/hooks/useMyDrive";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// Layout Components [NEW]
+// Layout Components
 import TopBar from "../../layout/TopBar";
 import BottomBar from "../../layout/BottomBar";
 import Fab from "../../layout/Fab";
@@ -26,8 +26,8 @@ export default function Home() {
 
   if (!fontsLoaded) return <ActivityIndicator size="large" color="#007bff" style={{ flex: 1 }} />;
 
-  // פונקציית עזר לכותרות (השארתי כאן כי זה חלק מהתוכן של הרשימה)
-  const SectionHeader = ({ icon, title, style }: any) => (
+  // פונקציית עזר לכותרות (הוסר ה-Type :any)
+  const SectionHeader = ({ icon, title, style }) => (
     <View style={[driveStyles.sectionHeader, style]}>
       <Ionicons name={icon} size={18} color="#333" />
       <Text style={driveStyles.sectionText}>{title}</Text>

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
 import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step3({ formData, setFormData, errors }: any) {
+export default function Step3({ formData, setFormData, errors }) {
   
   const genders = ["male", "female", "other"];
 
