@@ -8,7 +8,6 @@ export const validateStep1 = (data: any) => {
 
 export const validateStep2 = (data: any) => {
   const errors: any = {};
-  // בדיקת טלפון ישראלי בסיסית
   if (data.phoneNumber && !/^05\d-?\d{3}-?\d{4}$/.test(data.phoneNumber)) {
     errors.phoneNumber = "Invalid Israeli phone number";
   }
@@ -33,10 +32,10 @@ export const validateStep4 = (data: any) => {
   if (!data.password || data.password.length < 8) {
     errors.password = "Password must be at least 8 chars";
   }
-  
+
   if (data.password !== data.verifyPassword) {
     errors.verifyPassword = "Passwords do not match";
   }
-  
+
   return errors;
 };

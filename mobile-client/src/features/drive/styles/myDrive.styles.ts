@@ -4,11 +4,10 @@ export const driveStyles = StyleSheet.create({
     backgroundImage: { flex: 1, width: "100%", height: "100%" },
     safeArea: { flex: 1 },
 
-    // Top Bar - חיפוש ארוך שבתוכו המבורגר ופרופיל
     topBarSearchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // לבן חלבי אטום יותר
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         marginHorizontal: 15,
         marginTop: Platform.OS === 'ios' ? 10 : 40,
         height: 52,
@@ -25,7 +24,6 @@ export const driveStyles = StyleSheet.create({
         backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center'
     },
 
-    // כותרת HOME - עכשיו ישירות על הרקע
     homeTitle: {
         fontSize: 32,
         fontFamily: "BrunoAceSC_400Regular",
@@ -34,30 +32,28 @@ export const driveStyles = StyleSheet.create({
         marginVertical: 15,
     },
 
-    // כרטיסיית קובץ בודדת (Individual Glass Card)
     fileCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(255, 255, 255, 0.75)", // זכוכית חלבית לכל קובץ
+        backgroundColor: "rgba(255, 255, 255, 0.75)",
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 15,
-        marginBottom: 8, // רווח בין הכרטיסיות כדי לראות את הרקע
+        marginBottom: 8,
         borderWidth: 1,
         borderColor: "rgba(255, 255, 255, 0.3)",
     },
 
-    // Bottom Navigation - נמוך ומכסה את התחתית
     bottomNav: {
         flexDirection: 'row',
-        height: 90, // הגדלת הגובה כדי לכסות את כל התחתית
-        backgroundColor: 'rgba(255, 255, 255, 0.95)', // לבן חלבי כמעט אטום
+        height: 90,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderTopWidth: 1,
         borderTopColor: '#e0e0e0',
         justifyContent: 'space-around',
         alignItems: 'center',
-        paddingBottom: 30, // דוחף את האייקונים מעט למעלה מהקצה הפיזי של המסך
-        position: 'absolute', // מקבע אותו לתחתית המסך כלו
+        paddingBottom: 30,
+        position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
@@ -69,7 +65,7 @@ export const driveStyles = StyleSheet.create({
     fab: {
         position: 'absolute',
         right: 20,
-        bottom: 110, // העלאת הכפתור מעל ה-LowerBar החדש כדי שלא יכוסה
+        bottom: 110,
         width: 60,
         height: 60,
         borderRadius: 30,
@@ -81,4 +77,28 @@ export const driveStyles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
     },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        padding: 10,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+        marginHorizontal: 15,
+        marginBottom: 10,
+        gap: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    sectionText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333'
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 50,
+        color: '#666',
+        fontFamily: 'BrunoAceSC_400Regular'
+    }
 });
