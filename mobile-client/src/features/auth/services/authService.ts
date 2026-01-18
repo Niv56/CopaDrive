@@ -1,17 +1,16 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 if (!API_BASE_URL) {
-  // לא נזרוק פה כדי לא להפיל בזמן build, אבל זה עוזר להבין מהר מה חסר
   console.warn("Missing EXPO_PUBLIC_API_BASE_URL in .env");
 }
 
 type LoginApiResult =
-  | { ok: true; token: string }
-  | { ok: false; error: string };
+  | { ok: true; token: string; error?: null }
+  | { ok: false; error: string; token?: null };
 
 type RegisterApiResult =
-  | { success: true; user?: any }
-  | { success: false; error: string };
+  | { success: true; user?: any; error?: null }
+  | { success: false; error: string; user?: null };
 
 async function jsonRequest(path: string, options?: RequestInit) {
   const url = `${API_BASE_URL}${path}`;
@@ -45,20 +44,23 @@ export async function authenticateUser(email: string, password: string): Promise
     return { ok: false, error: data?.error || data?.message || "Invalid credentials" };
   }
 
-  // תתאים לשם שמוחזר אצלך מהשרת:
   const token = data?.token || data?.accessToken || data?.jwt;
   if (!token) return { ok: false, error: "Server did not return a token" };
 
   return { ok: true, token };
 }
 
+// === התיקון נמצא כאן: הוספת השדות החסרים ===
 export async function registerUser(payload: {
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  dateOfBirth?: string; // <--- הוספנו את זה
+  gender?: string;      // <--- הוספנו את זה
 }): Promise<RegisterApiResult> {
+  
   const { ok, data } = await jsonRequest("/users", {
     method: "POST",
     body: JSON.stringify(payload),
