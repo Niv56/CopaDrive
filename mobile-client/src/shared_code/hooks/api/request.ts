@@ -7,7 +7,7 @@ type RequestOptions = {
 
 // חשוב: במובייל "localhost" לא עובד מול המחשב.
 // תשים פה את ה-IP של המחשב שלך באותה רשת (כמו 192.168.1.102)
-const BASE_URL = "http://192.168.1.102:3000"; // תעדכן לפי ה-web-server שלך
+const BASE_URL = "http://192.168.1.226:3000"; // תעדכן לפי ה-web-server שלך
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
