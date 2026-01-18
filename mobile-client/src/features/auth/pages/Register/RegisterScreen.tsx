@@ -29,7 +29,7 @@ export default function RegisterScreen() {
   });
 
   const getHeaderTitle = () => {
-    switch(step) {
+    switch (step) {
       case 1: return "Who are you?";
       case 2: return "Contact Info";
       case 3: return "Personal Info";
@@ -82,9 +82,8 @@ export default function RegisterScreen() {
   };
 
   return (
-    // שימוש ב-AuthLayout עם הכותרת המשתנה
     <AuthLayout subtitle={getHeaderTitle()}>
-      
+
       {/* תוכן השלבים */}
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} />}
@@ -105,9 +104,9 @@ export default function RegisterScreen() {
             <Pressable style={[authStyles.btnSecondary, { flex: 1 }]} onPress={handleBack}>
               <Text style={authStyles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
             </Pressable>
-            
+
             <Pressable style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]} onPress={handleNext}>
-              {loading ? <ActivityIndicator color="#fff" /> : 
+              {loading ? <ActivityIndicator color="#fff" /> :
                 <Text style={authStyles.btnTextPrimary}>{step === TOTAL_STEPS ? "Submit" : "Next"}</Text>
               }
             </Pressable>

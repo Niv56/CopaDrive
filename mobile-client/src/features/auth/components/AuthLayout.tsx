@@ -12,7 +12,6 @@ import {
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
 import { authStyles } from "../styles/auth.styles";
 
-// נתיב לתמונת הרקע
 const bgImage = require("../../../assets/images/back.png");
 
 interface AuthLayoutProps {
@@ -22,14 +21,13 @@ interface AuthLayoutProps {
 }
 
 export default function AuthLayout({ children, title = "CopaDrive", subtitle }: AuthLayoutProps) {
-  // טעינת הפונט במקום מרכזי אחד
   let [fontsLoaded] = useFonts({
     BrunoAceSC_400Regular,
   });
 
   if (!fontsLoaded) {
     return (
-      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#007bff" />
       </View>
     );
@@ -47,7 +45,7 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }: 
               <Text style={authStyles.brandText}>{title}</Text>
               {subtitle && <Text style={authStyles.subText}>{subtitle}</Text>}
             </View>
-            
+
             {children}
           </View>
         </KeyboardAvoidingView>

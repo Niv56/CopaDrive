@@ -3,7 +3,6 @@ import { StyleSheet, Dimensions } from "react-native";
 const { width } = Dimensions.get("window");
 
 export const authStyles = StyleSheet.create({
-  // רקע כללי
   backgroundImage: {
     flex: 1,
     width: "100%",
@@ -15,12 +14,11 @@ export const authStyles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  
-  // הכרטיס הלבן המרכזי
+
   cardContainer: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "rgba(255, 255, 255, 0.9)", // Glassmorphism
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 24,
     paddingVertical: 30,
     paddingHorizontal: 24,
@@ -31,14 +29,13 @@ export const authStyles = StyleSheet.create({
     elevation: 10,
   },
 
-  // כותרות
   header: {
     alignItems: "center",
     marginBottom: 30,
   },
   brandText: {
     fontSize: 34,
-    fontFamily: "BrunoAceSC_400Regular", // הפונט המיוחד
+    fontFamily: "BrunoAceSC_400Regular",
     color: "#1a1a1a",
     marginBottom: 8,
     textAlign: "center",
@@ -50,7 +47,6 @@ export const authStyles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // שדות קלט (Inputs)
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -79,7 +75,6 @@ export const authStyles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // כפתורים
   btnPrimary: {
     backgroundColor: "#007bff",
     borderRadius: 50,
@@ -118,8 +113,7 @@ export const authStyles = StyleSheet.create({
     fontWeight: "700",
     color: "#333",
   },
-  
-  // טקסט שגיאה
+
   errorText: {
     color: "#ff4444",
     fontSize: 12,
@@ -128,7 +122,6 @@ export const authStyles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  // קישורים למטה
   linkBtn: {
     marginTop: 20,
     alignItems: "center",
