@@ -3,23 +3,27 @@ import { useAuth } from "../../../app/providers/AuthContext";
 import { getFiles } from "../services/fileService";
 
 export function useMyDrive() {
-    const { token } = useAuth();
-    const [items, setItems] = useState([]);
+    const { token, logout } = useAuth();
+    const [items, setItems] = useState<DriveItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
 
     const fetchItems = useCallback(async () => {
         if (!token) return;
         try {
             const data = await getFiles(token);
             setItems(data);
-        } catch (error) {
-            console.error("Failed to fetch files:", error);
+        } catch (error: any) {
+            if (error.message.includes("token") || error.message.includes("401")) {
+                console.error("Session invalid, logging out...");
+                await logout();
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [token]);
+    }, [token, logout]);
 
     useEffect(() => { fetchItems(); }, [fetchItems]);
 
