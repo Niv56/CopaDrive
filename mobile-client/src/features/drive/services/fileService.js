@@ -5,4 +5,11 @@ export async function getFiles(token) {
         method: "GET",
         token: token
     });
+    
 }
+export async function getUsage(token) {
+    return request("/api/files/usage", {
+        method: "GET",
+        token: token
+    }); 
+    }

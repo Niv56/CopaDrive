@@ -6,25 +6,23 @@ export default function AppLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
-        // כאן אנחנו מחברים את ה-SideBar המעוצב שלנו למגירה
         drawerContent={(props) => <SideBar {...props} />}
-        
         screenOptions={{
-          headerShown: false, // מסתיר את הבר המקורי של המערכת
-          drawerType: 'front', // המגירה תעלה מעל המסך
-          drawerStyle: {
-            width: 280,
-            backgroundColor: 'transparent', // חשוב כדי שנראה את אפקט הזכוכית
-          },
-          overlayColor: 'rgba(0,0,0,0.3)', // הצללה כהה מאחורי התפריט
-          swipeEnabled: true, // מאפשר פתיחה בהחלקה
+          headerShown: false,
+          drawerType: 'front',
+          drawerStyle: { width: 280, backgroundColor: 'transparent' },
+          overlayColor: 'rgba(0,0,0,0.3)',
+          swipeEnabled: true,
         }}
       >
-        {/* הגדרת מסך הבית בתוך המגירה */}
+        <Drawer.Screen name="home" />
+
+        {/* הגדרת הסטורג' כמודל שקופץ על הכל */}
         <Drawer.Screen 
-          name="home" 
+          name="storage" 
           options={{
-            swipeEnabled: true
+            unmountOnBlur: true, // משמיד את הדף כשיוצאים ממנו
+            swipeEnabled: false, // מבטל החלקה מהצד כדי שלא יתנגש עם כפתור חזור
           }}
         />
       </Drawer>
