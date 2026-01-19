@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
 import { authenticateUser } from "../../features/auth/services/authService";
 
 const TOKEN_KEY = "token";
@@ -9,13 +10,15 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
+  const router = useRouter();
 
-  // hydrate token once
   useEffect(() => {
     (async () => {
       try {
         const saved = await SecureStore.getItemAsync(TOKEN_KEY);
         setToken(saved ?? null);
+      } catch (e) {
+        console.error("Failed to load token during hydration", e);
       } finally {
         setIsHydrating(false);
       }
@@ -33,6 +36,8 @@ export function AuthProvider({ children }) {
       await SecureStore.setItemAsync(TOKEN_KEY, newToken);
       setToken(newToken);
       setSessionExpired(false);
+      
+      router.replace("/(app)/home");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e?.message || "Login failed" };
@@ -40,11 +45,16 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    setToken(null);
-    setSessionExpired(false);
-    setIsHydrating(false);
-  }
+    try {
+      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      setToken(null);
+      setSessionExpired(false);
+      setIsHydrating(false);
+      router.replace("/(auth)/login");
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+  };
 
   const triggerSessionExpired = async () => {
     setSessionExpired(true);
@@ -67,9 +77,11 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** ✅ זה ההוק הרשמי באפליקציה */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
+
+// ייצוא דיפולטיבי כדי להעלים את אזהרת ה-Router
+export default AuthProvider;

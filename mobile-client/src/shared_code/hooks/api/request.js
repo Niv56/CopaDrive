@@ -1,36 +1,43 @@
-// חשוב: במובייל "localhost" לא עובד מול המחשב.
-// תשים פה את ה-IP של המחשב שלך באותה רשת (כמו 192.168.1.102)
-const BASE_URL = "http://192.168.1.226:3000"; // תעדכן לפי ה-web-server שלך
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export async function request(path, options = {}) {
-  const method = options.method ?? "GET";
+  // הסרת /api מהנתיב אם הוא כבר קיים ב-BASE_URL כדי למנוע /api/api
+  const cleanPath = path.startsWith('/api') ? path.replace('/api', '') : path;
+  const url = `${API_BASE_URL}${cleanPath}`;
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers ?? {}),
-  };
+  console.log(`📡 DEBUG: Fetching from ${url}`);
 
-  if (options.token) headers.Authorization = `Bearer ${options.token}`;
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+    // הוספת טוקן אם הוא קיים ב-options
+    if (options.token) {
+      headers["Authorization"] = `Bearer ${options.token}`;
+    }
 
-  const text = await res.text();
-  const data = text ? safeJson(text) : null;
+    const res = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  if (!res.ok) {
-    const msg =
-      (data && (data.message || data.error)) ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
+    const text = await res.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+
+    if (!res.ok) {
+        throw new Error(data?.message || data?.error || `Request failed with status ${res.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("❌ Request Error:", error.message);
+    throw error;
   }
-
-  return data;
-}
-
-function safeJson(text) {
-  try { return JSON.parse(text); } catch { return null; }
 }

@@ -17,4 +17,11 @@ export async function createFile(token, fileData) {
         token: token,
         body: fileData // מכיל { name, type: 'file', content, mimeType }
     });
+    
 }
+export async function getUsage(token) {
+    return request("/api/files/usage", {
+        method: "GET",
+        token: token
+    }); 
+    }

@@ -21,7 +21,8 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
+  // תיקון: הוסר ה-<any> שגרם לקריסה
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", phoneNumber: "", image: null,
@@ -83,8 +84,6 @@ export default function RegisterScreen() {
 
   return (
     <AuthLayout subtitle={getHeaderTitle()}>
-
-      {/* תוכן השלבים */}
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} />}
         {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} />}
@@ -93,7 +92,6 @@ export default function RegisterScreen() {
         {step === 5 && <Step5 />}
       </View>
 
-      {/* כפתורים */}
       <View style={{ marginTop: 20 }}>
         {step === 5 ? (
           <Pressable style={authStyles.btnPrimary} onPress={() => router.replace("/login")}>
@@ -114,7 +112,6 @@ export default function RegisterScreen() {
         )}
       </View>
 
-      {/* אינדיקטור נקודות */}
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
           {[1, 2, 3, 4].map(i => (
