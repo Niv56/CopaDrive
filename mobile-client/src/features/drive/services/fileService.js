@@ -2,9 +2,9 @@ import { request } from "../../../shared_code/hooks/api/request";
 
 /** מושך את כל הקבצים בתיקיית השורש */
 export async function getFiles(token) {
-    return request("/api/files", { 
-        method: "GET", 
-        token: token 
+    return request("/api/files", {
+        method: "GET",
+        token: token
     });
 }
 
@@ -14,26 +14,24 @@ export async function getFiles(token) {
 
 /** * פונקציה ראשית ליצירת פריט (תיקייה או קובץ).
  * ה-FAB משתמש בפונקציה הזו כדי לתמוך בכל הסוגים.
- *
  */
 export async function createItem(token, { name, type, parentId = null, content = "", mimeType = "" }) {
+    // ✅ תיקון: שליחת האובייקט ישירות. ה-request יבצע stringify פעם אחת בלבד.
     return request("/api/files", {
         method: "POST",
         token: token,
-        body: JSON.stringify({
+        body: {
             name,
             type,
             parentId,
-            // תוכן נשלח רק אם זה קובץ, אחרת מחרוזת ריקה
-            content: type === "file" ? content : "", 
+            content: type === "file" ? content : "",
             mimeType: type === "file" ? mimeType : ""
-        })
+        }
     });
 }
 
 /** מעטפת ליצירת קובץ (משתמשת ב-createItem) */
 export async function createFile(token, fileData) {
-    // fileData מכיל: { name, content, mimeType }
     return createItem(token, { ...fileData, type: 'file' });
 }
 
@@ -50,7 +48,7 @@ export async function getUsage(token) {
     return request("/api/files/usage", {
         method: "GET",
         token: token
-    }); 
+    });
 }
 
 /* ===========================================================
@@ -70,10 +68,11 @@ export async function getTrashFiles(token) {
 }
 
 export async function restoreFromTrash(token, fileId) {
+    // ✅ תיקון: הסרת JSON.stringify
     return request(`/api/files/${fileId}/trash`, {
         method: "PATCH",
         token: token,
-        body: JSON.stringify({ trashed: false }),
+        body: { trashed: false },
     });
 }
 
@@ -104,37 +103,34 @@ export function formatLastAccessed(dateString) {
     const date = new Date(dateString);
     const diffMs = new Date() - date;
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} mins ago`;
     if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
     return date.toLocaleDateString();
 }
+
 export async function setStarred(token, fileId, starred) {
-  // TODO: if your backend uses a different route – change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { starred: !!starred },
-  });
+    // ✅ תיקון: הסרת JSON.stringify (היא בוצעה בתוך request.js אם עקבת אחרי התיקון הקודם)
+    return request(`/api/files/${fileId}/star`, { // שים לב: הנתיב בשרת שלך הוא /star
+        method: "PATCH",
+        token,
+        body: { starred: !!starred },
+    });
 }
 
-// ✅ toggle important
 export async function setImportant(token, fileId, important) {
-  // TODO: if your backend uses a different route – change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { important: !!important },
-  });
+    return request(`/api/files/${fileId}/important`, { // שים לב: הנתיב בשרת שלך הוא /important
+        method: "PATCH",
+        token,
+        body: { important: !!important },
+    });
 }
 
-// ✅ rename (file or folder)
 export async function renameItem(token, fileId, name) {
-  // TODO: if your backend uses a different route – change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { name },
-  });
+    return request(`/api/files/${fileId}`, {
+        method: "PATCH",
+        token,
+        body: { name },
+    });
 }

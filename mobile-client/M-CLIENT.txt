@@ -803,14 +803,23 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { authenticateUser } from "../../features/auth/services/authService";
+import { getUserProfile } from "../../features/user/services/userService";
 
 const TOKEN_KEY = "token";
-const USER_KEY = "user_info";
+const USER_KEY = "user_data";
 const AuthContext = createContext(null);
+
+/** ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳¢׳–׳¨ ׳׳₪׳¢׳ ׳•׳— userId ׳׳×׳•׳ ׳”-JWT ׳׳׳ ׳¡׳₪׳¨׳™׳•׳× ׳—׳™׳¦׳•׳ ׳™׳•׳× */
+function getUserIdFromToken(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.userId;
+  } catch (e) { return null; }
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null); // ׳›׳׳ ׳ ׳©׳׳¨׳™׳ ׳₪׳¨׳˜׳™ ׳”׳׳©׳×׳׳© ׳›׳•׳׳ ׳”׳×׳׳•׳ ׳”
+  const [user, setUser] = useState(null);
   const [isHydrating, setIsHydrating] = useState(true);
   const router = useRouter();
 
@@ -821,8 +830,18 @@ export function AuthProvider({ children }) {
         const savedUser = await SecureStore.getItemAsync(USER_KEY);
         if (savedToken) setToken(savedToken);
         if (savedUser) setUser(JSON.parse(savedUser));
+        
+        // ׳׳ ׳™׳© ׳˜׳•׳§׳ ׳׳‘׳ ׳׳™׳ ׳׳©׳×׳׳© (׳׳׳©׳ ׳׳—׳¨׳™ ׳¨׳™׳¡׳˜׳¨׳˜), ׳ ׳ ׳¡׳” ׳׳׳©׳•׳ ׳׳•׳×׳•
+        if (savedToken && !savedUser) {
+          const uid = getUserIdFromToken(savedToken);
+          const userData = await getUserProfile(savedToken, uid);
+          if (userData) {
+            setUser(userData);
+            await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+          }
+        }
       } catch (e) {
-        console.error("Failed to load auth data", e);
+        console.error("Hydration error", e);
       } finally {
         setIsHydrating(false);
       }
@@ -832,22 +851,24 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const res = await authenticateUser(email, password);
-      if (!res.ok) return { ok: false, error: res.error || "Login failed" };
+      if (!res.ok) return { ok: false, error: res.error };
 
-      // ׳”׳©׳¨׳× ׳¦׳¨׳™׳ ׳׳”׳—׳–׳™׳¨ { token, user: { firstName, image, ... } }
       const newToken = res.token;
-      const userData = res.user;
+      const userId = getUserIdFromToken(newToken);
+      
+      // ׳©׳׳™׳₪׳× ׳ ׳×׳•׳ ׳™ ׳”׳׳©׳×׳׳© ׳׳™׳“ ׳׳׳—׳¨ ׳§׳‘׳׳× ׳”׳˜׳•׳§׳ (׳‘׳“׳™׳•׳§ ׳›׳׳• ׳‘-Web)
+      const userData = await getUserProfile(newToken, userId);
 
       await SecureStore.setItemAsync(TOKEN_KEY, newToken);
       if (userData) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
 
       setToken(newToken);
       setUser(userData);
-
+      
       router.replace("/(app)/home");
       return { ok: true };
     } catch (e) {
-      return { ok: false, error: e.message };
+      return { ok: false, error: "Login failed" };
     }
   };
 
@@ -860,18 +881,13 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(() => ({
-    token,
-    user,
-    isAuthenticated: !!token,
-    isHydrating,
-    login,
-    logout,
+    token, user, isAuthenticated: !!token, isHydrating, login, logout
   }), [token, user, isHydrating]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() { return useContext(AuthContext); }
+export const useAuth = () => useContext(AuthContext);
 export default AuthProvider;
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\index.jsx =====
 import React from "react";
@@ -2885,7 +2901,7 @@ export function getFileIconMeta(name, mimeType, isFolder) {
   return { icon: "document-outline", color: "#9aa0a6" };
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\user\components\EditProfileModal.jsx =====
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -2899,13 +2915,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
+  Dimensions
 } from "react-native";
 import { BlurView } from "expo-blur";
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "../../../app/providers/AuthContext";
 import { updateUserProfile, changeUserPassword } from "../services/userService";
 
-// --- helpers ---
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
 const formatIsraeliPhone = (raw) => {
   let v = String(raw || "").replace(/\D/g, "");
   if (v.length > 10) v = v.slice(0, 10);
@@ -2914,22 +2935,6 @@ const formatIsraeliPhone = (raw) => {
   return `${v.slice(0, 3)}-${v.slice(3, 6)}-${v.slice(6)}`;
 };
 
-const validatePhone = (value) => {
-  const clean = String(value || "").replace(/\D/g, "");
-  if (!clean) return "Phone number is required";
-  if (clean.length !== 10) return "Number must be exactly 10 digits";
-  if (!clean.startsWith("05")) return "Must start with 05";
-  return "";
-};
-
-
-const passwordStrength = (pwd) => ({
-  hasLength: (pwd || "").length >= 8,
-  hasUpper: /[A-Z]/.test(pwd || ""),
-  hasLower: /[a-z]/.test(pwd || ""),
-  hasNumber: /[0-9]/.test(pwd || ""),
-});
-
 export default function EditProfileModal({
   visible,
   onClose,
@@ -2937,320 +2942,230 @@ export default function EditProfileModal({
   initialFirstName = "",
   initialLastName = "",
   initialPhoneNumber = "",
-  initialDateOfBirth = "",
-  initialImage = "", // not used yet (you can add image later)
+  initialImage = "",
 }) {
   const { token } = useAuth();
-
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [phoneNumber, setPhoneNumber] = useState(formatIsraeliPhone(initialPhoneNumber));
-  const [dateOfBirth, setDateOfBirth] = useState(initialDateOfBirth);
+  const [image, setImage] = useState(initialImage);
+  const [saving, setSaving] = useState(false);
 
+  // Password fields
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({
-    firstName: "",
-    phoneNumber: "",
-    currentPassword: "",
-    newPassword: "",
-    confirmNewPassword: "",
-  });
-
   useEffect(() => {
     if (!visible) return;
-    setFirstName(initialFirstName || "");
-    setLastName(initialLastName || "");
-    setPhoneNumber(formatIsraeliPhone(initialPhoneNumber || ""));
-    setDateOfBirth(initialDateOfBirth || "");
+    setFirstName(initialFirstName);
+    setLastName(initialLastName);
+    setPhoneNumber(formatIsraeliPhone(initialPhoneNumber));
+    setImage(initialImage);
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
-    setErrors({
-      firstName: "",
-      phoneNumber: "",
-      dateOfBirth: "",
-      currentPassword: "",
-      newPassword: "",
-      confirmNewPassword: "",
-    });
-  }, [visible, initialFirstName, initialLastName, initialPhoneNumber, initialDateOfBirth]);
+  }, [visible, initialFirstName, initialLastName, initialPhoneNumber, initialImage]);
 
-  const pwdFlags = useMemo(() => passwordStrength(newPassword), [newPassword]);
-  const pwdStrongEnough = pwdFlags.hasLength && pwdFlags.hasUpper && pwdFlags.hasLower && pwdFlags.hasNumber;
-
-  const validateBeforeSave = () => {
-    const next = {
-      firstName: "",
-      phoneNumber: "",
-      dateOfBirth: "",
-      currentPassword: "",
-      newPassword: "",
-      confirmNewPassword: "",
-    };
-
-    if (!firstName.trim()) next.firstName = "First name is required";
-    next.phoneNumber = validatePhone(phoneNumber);
-    next.dateOfBirth = validateDOB(dateOfBirth);
-
-    const wantsPwd = !!(currentPassword || newPassword || confirmNewPassword);
-    if (wantsPwd) {
-      if (!currentPassword) next.currentPassword = "Current password is required";
-      if (!newPassword) next.newPassword = "New password is required";
-      if (!confirmNewPassword) next.confirmNewPassword = "Please confirm the new password";
-      if (currentPassword && newPassword && currentPassword === newPassword) {
-        next.newPassword = "New password cannot be the same as current password";
-      }
-      if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
-        next.confirmNewPassword = "Passwords don't match";
-      }
-      if (newPassword && !pwdStrongEnough) {
-        next.newPassword = "Password is too weak";
-      }
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Permission Required", "Please allow access to photos.");
+      return;
     }
-
-    setErrors(next);
-    return Object.values(next).some(Boolean);
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
 
   const handleSave = async () => {
-    if (!token) {
-      Alert.alert("Not logged in", "No token found.");
+    if (!firstName.trim()) {
+      Alert.alert("Validation Error", "First name is a required field.");
       return;
     }
-    if (!userId) {
-      Alert.alert("Missing userId", "Cannot update profile without userId.");
-      return;
-    }
-    if (validateBeforeSave()) return;
 
     setSaving(true);
     try {
-      const patch = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phoneNumber: phoneNumber.trim(),
-        dateOfBirth: dateOfBirth.trim(),
-        image: initialImage || "", // (keep as-is for now)
-      };
-
+      const patch = { firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phoneNumber.trim(), image };
       await updateUserProfile(token, userId, patch);
 
-      const wantsPwd = !!(currentPassword || newPassword || confirmNewPassword);
-      if (wantsPwd) {
+      if (currentPassword && newPassword) {
         await changeUserPassword(token, userId, currentPassword, newPassword);
       }
-
-      Alert.alert("Saved", "Profile updated successfully.");
       onClose?.();
     } catch (e) {
-      const msg = e?.message || "Failed to update profile";
-      // If backend returns "current password" errors
-      if (String(msg).toLowerCase().includes("current password")) {
-        setErrors((p) => ({ ...p, currentPassword: msg }));
-      } else {
-        Alert.alert("Error", msg);
-      }
+      Alert.alert("Error", e.message);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={saving ? undefined : onClose}>
-        <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, styles.dim]} />
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.overlay}>
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.centerWrap}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardWrapper}
         >
           <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.title}>Edit profile</Text>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.scrollArea}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Profile Image Section */}
+              <View style={styles.imageSection}>
+                <Pressable onPress={handlePickImage} style={styles.avatarWrapper}>
+                  {image ? (
+                    <Image source={{ uri: image }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                      <Ionicons name="person" size={50} color="#ccc" />
+                    </View>
+                  )}
+                  <View style={styles.cameraIconBadge}>
+                    <Ionicons name="camera" size={20} color="#fff" />
+                  </View>
+                </Pressable>
+                <Text style={styles.changePhotoText}>Tap to change photo</Text>
+              </View>
+
+              {/* ׳׳¢׳•׳’׳׳™׳ Pills Fields */}
+              <Field label="FIRST NAME" value={firstName} onChangeText={setFirstName} />
+              <Field label="LAST NAME" value={lastName} onChangeText={setLastName} />
               <Field
-                label="First name"
-                value={firstName}
-                onChangeText={(t) => { setFirstName(t); if (errors.firstName) setErrors((p) => ({ ...p, firstName: "" })); }}
-                error={errors.firstName}
-              />
-              <Field
-                label="Last name"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-              <Field
-                label="Phone number"
+                label="PHONE NUMBER"
                 value={phoneNumber}
+                onChangeText={(t) => setPhoneNumber(formatIsraeliPhone(t))}
                 keyboardType="phone-pad"
-                onChangeText={(t) => {
-                  setPhoneNumber(formatIsraeliPhone(t));
-                  if (errors.phoneNumber) setErrors((p) => ({ ...p, phoneNumber: "" }));
-                }}
-                placeholder="05X-XXX-XXXX"
-                error={errors.phoneNumber}
               />
 
               <View style={styles.divider} />
 
-              <Text style={styles.sectionTitle}>Change password (optional)</Text>
+              <Text style={styles.sectionTitle}>Security Settings</Text>
+              <Field label="CURRENT PASSWORD" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
+              {/* ׳©׳“׳” ׳¡׳™׳¡׳׳” ׳׳׳ ׳”׳•׳“׳¢׳” ׳₪׳ ׳™׳׳™׳× (Placeholder ׳¨׳™׳§) */}
+              <Field label="NEW PASSWORD" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="" />
+              <Field label="CONFIRM NEW PASSWORD" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
 
-              <Field
-                label="Current password"
-                value={currentPassword}
-                secureTextEntry
-                onChangeText={(t) => { setCurrentPassword(t); if (errors.currentPassword) setErrors((p) => ({ ...p, currentPassword: "" })); }}
-                error={errors.currentPassword}
-              />
-              <Field
-                label="New password"
-                value={newPassword}
-                secureTextEntry
-                onChangeText={(t) => { setNewPassword(t); if (errors.newPassword) setErrors((p) => ({ ...p, newPassword: "" })); }}
-                error={errors.newPassword}
-              />
-              <Field
-                label="Confirm new password"
-                value={confirmNewPassword}
-                secureTextEntry
-                onChangeText={(t) => { setConfirmNewPassword(t); if (errors.confirmNewPassword) setErrors((p) => ({ ...p, confirmNewPassword: "" })); }}
-                error={errors.confirmNewPassword}
-              />
-
-              {!!newPassword && (
-                <View style={styles.pwdBox}>
-                  <PwdRow ok={pwdFlags.hasLength} text="At least 8 characters" />
-                  <PwdRow ok={pwdFlags.hasUpper} text="One uppercase letter" />
-                  <PwdRow ok={pwdFlags.hasLower} text="One lowercase letter" />
-                  <PwdRow ok={pwdFlags.hasNumber} text="One number" />
-                </View>
-              )}
             </ScrollView>
 
             <View style={styles.actions}>
-              <TouchableOpacity
-                style={[styles.btn, styles.btnGhost]}
-                onPress={onClose}
-                disabled={saving}
-              >
-                <Text style={[styles.btnText, styles.btnGhostText]}>Cancel</Text>
+              <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={onClose}>
+                <Text style={styles.btnTextSecondary}>Cancel</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.btn, styles.btnPrimary, saving && { opacity: 0.7 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                {saving ? <ActivityIndicator color="#fff" /> : <Text style={[styles.btnText]}>Save</Text>}
+              <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={handleSave} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </Pressable>
         </KeyboardAvoidingView>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
 
-function Field({ label, error, ...props }) {
+function Field({ label, ...props }) {
   return (
-    <View style={{ marginBottom: 10 }}>
+    <View style={styles.fieldContainer}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput style={[styles.input, error && styles.inputError]} {...props} />
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
-  );
-}
-
-function PwdRow({ ok, text }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-      <Text style={{ width: 18, textAlign: "center", color: ok ? "#198754" : "#dc3545" }}>
-        {ok ? "ג“" : "ג€¢"}
-      </Text>
-      <Text style={{ fontSize: 13, color: ok ? "#198754" : "#dc3545" }}>{text}</Text>
+      <TextInput style={styles.input} placeholderTextColor="#ccc" {...props} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "transparent" },
-  dim: { backgroundColor: "rgba(0,0,0,0.10)" },
-
-  centerWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
-
+  overlay: { flex: 1, justifyContent: "center", alignItems: "center" },
+  keyboardWrapper: { width: '90%', maxHeight: SCREEN_HEIGHT * 0.8 },
   card: {
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderRadius: 22,
-    padding: 16,
-    maxHeight: "85%",
-    elevation: 8,
+    backgroundColor: "#fff",
+    borderRadius: 35, // ׳׳¢׳•׳’׳ ׳™׳•׳×׳¨ ׳›׳₪׳™ ׳©׳‘׳™׳§׳©׳×
+    padding: 24,
+    width: '100%',
+    elevation: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  title: {
+    fontFamily: "BrunoAceSC_400Regular",
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: "center",
+    color: '#1a1a1a'
   },
 
-  title: { fontSize: 18, fontWeight: "700", color: "#222", marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#333", marginBottom: 8 },
+  scrollArea: { maxHeight: SCREEN_HEIGHT * 0.5 },
+  scrollContent: { paddingHorizontal: 4 },
 
-  label: { fontSize: 12, fontWeight: "600", color: "#555", marginBottom: 6 },
+  imageSection: { alignItems: "center", marginBottom: 25 },
+  avatarWrapper: { position: "relative" },
+  avatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#f8f9fa' },
+  avatarPlaceholder: { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: '#eee' },
+  cameraIconBadge: {
+    position: "absolute", bottom: 5, right: 5,
+    backgroundColor: "#007bff", width: 34, height: 34,
+    borderRadius: 17, justifyContent: "center", alignItems: "center",
+    borderWidth: 3, borderColor: "#fff"
+  },
+  changePhotoText: { marginTop: 10, fontSize: 13, color: "#007bff", fontWeight: "700" },
+
+  fieldContainer: { marginBottom: 18 },
+  label: { fontSize: 11, fontWeight: "800", color: "#999", marginBottom: 8, marginLeft: 15, letterSpacing: 0.5 },
   input: {
     backgroundColor: "#f1f3f4",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: "#222",
+    borderRadius: 30, // ׳©׳“׳•׳× ׳׳¢׳•׳’׳׳™׳ ׳‘׳¦׳•׳¨׳× ׳’׳׳•׳׳”
+    paddingHorizontal: 22,
+    height: 58,
+    fontSize: 16,
+    color: '#202124',
     borderWidth: 1,
-    borderColor: "transparent",
-  },
-  inputError: { borderColor: "#dc3545" },
-  errorText: { color: "#dc3545", fontSize: 12, marginTop: 6 },
-
-  divider: { height: 1, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 12 },
-
-  pwdBox: {
-    marginTop: 8,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
+    borderColor: 'transparent'
   },
 
-  actions: { flexDirection: "row", gap: 10, marginTop: 12 },
-  btn: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnPrimary: { backgroundColor: "#0d6efd" },
-  btnGhost: { backgroundColor: "rgba(0,0,0,0.04)" },
-  btnText: { color: "#fff", fontWeight: "700" },
-  btnGhostText: { color: "#333" },
+  divider: { height: 1, backgroundColor: "#f0f0f0", marginVertical: 25 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", marginBottom: 15, color: '#1a1a1a' },
+
+  actions: { flexDirection: "row", gap: 12, marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f5f5f5' },
+  btn: { flex: 1, height: 55, borderRadius: 30, alignItems: "center", justifyContent: "center" },
+  btnPrimary: { backgroundColor: "#007bff" },
+  btnGhost: { backgroundColor: "#f1f3f4" },
+  btnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  btnTextSecondary: { color: "#666", fontWeight: "700", fontSize: 16 }
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\user\services\userService.js =====
-import { apiRequest } from "../../../shared_code/hooks/api/request";
+import { request } from "../../../shared_code/hooks/api/request";
+
+/** ׳©׳׳™׳₪׳× ׳₪׳¨׳•׳₪׳™׳ ׳׳©׳×׳׳© ׳׳₪׳™ ID */
+export async function getUserProfile(token, userId) {
+  return request(`/api/users/${userId}`, {
+    method: "GET",
+    token: token
+  });
+}
 
 export async function updateUserProfile(token, userId, patch) {
-  return apiRequest(`/api/users/${userId}`, {
+  return request(`/api/users/${userId}`, {
     method: "PATCH",
-    token,
+    token: token,
     body: patch,
   });
 }
 
 export async function changeUserPassword(token, userId, currentPassword, newPassword) {
-  return apiRequest(`/api/users/${userId}/password`, {
+  return request(`/api/users/${userId}/password`, {
     method: "POST",
-    token,
+    token: token,
     body: { currentPassword, newPassword },
   });
 }
@@ -3949,34 +3864,69 @@ import { DrawerActions } from "@react-navigation/native";
 import { driveStyles } from "../features/drive/styles/myDrive.styles";
 import { useAuth } from "../app/providers/AuthContext";
 
+import ProfileActionSheet from "./ProfileActionSheet";
+import EditProfileModal from "../features/user/components/EditProfileModal";
+
 export default function TopBar() {
   const navigation = useNavigation();
-  const { user } = useAuth(); // ׳©׳׳™׳₪׳× ׳”׳׳©׳×׳׳© ׳׳”-Context ׳”׳׳¢׳•׳“׳›׳
+  const { user } = useAuth();
+
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
-    <View style={driveStyles.topBarSearchWrapper}>
-      <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
-        <Ionicons name="menu" size={24} color="#5f6368" />
-      </Pressable>
+    <>
+      <View style={driveStyles.topBarSearchWrapper}>
+        <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={10}>
+          <Ionicons name="menu" size={24} color="#5f6368" />
+        </Pressable>
 
-      <Text style={driveStyles.searchText}>Search in CopaDrive</Text>
+        <Text style={driveStyles.searchText}>Search in CopaDrive</Text>
 
-      <Pressable style={driveStyles.profileCircle}>
-        {user?.image ? (
-          <Image
-            source={{ uri: user.image }}
-            style={localStyles.avatar}
-          />
-        ) : (
-          <Ionicons name="person" size={18} color="#fff" />
-        )}
-      </Pressable>
-    </View>
+        <Pressable
+          onPress={() => setIsProfileMenuOpen(true)}
+          hitSlop={10}
+          style={driveStyles.profileCircle}
+        >
+          {user?.image ? (
+            <Image
+              source={{ uri: user.image }}
+              style={localStyles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={18} color="#fff" />
+          )}
+        </Pressable>
+      </View>
+
+      <ProfileActionSheet
+        visible={isProfileMenuOpen}
+        onClose={() => setIsProfileMenuOpen(false)}
+        onEditProfile={() => {
+          setIsProfileMenuOpen(false);
+          setIsEditOpen(true);
+        }}
+      />
+
+      <EditProfileModal
+        visible={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        userId={user?.id || user?._id}
+        initialFirstName={user?.firstName}
+        initialLastName={user?.lastName}
+        initialPhoneNumber={user?.phoneNumber}
+        initialImage={user?.image}
+      />
+    </>
   );
 }
 
 const localStyles = StyleSheet.create({
-  avatar: { width: 32, height: 32, borderRadius: 16 },
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16, // ׳¢׳™׳’׳•׳ ׳׳•׳©׳׳
+  },
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\shared_code\hooks\api\request.js =====
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
