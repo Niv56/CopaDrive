@@ -2,23 +2,45 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { authenticateUser } from "../../features/auth/services/authService";
+import { getUserProfile } from "../../features/user/services/userService";
 
 const TOKEN_KEY = "token";
+const USER_KEY = "user_data";
 const AuthContext = createContext(null);
+
+/** פונקציית עזר לפענוח userId מתוך ה-JWT ללא ספריות חיצוניות */
+function getUserIdFromToken(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.userId;
+  } catch (e) { return null; }
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [user, setUser] = useState(null);
   const [isHydrating, setIsHydrating] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     (async () => {
       try {
-        const saved = await SecureStore.getItemAsync(TOKEN_KEY);
-        setToken(saved ?? null);
+        const savedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+        const savedUser = await SecureStore.getItemAsync(USER_KEY);
+        if (savedToken) setToken(savedToken);
+        if (savedUser) setUser(JSON.parse(savedUser));
+        
+        // אם יש טוקן אבל אין משתמש (למשל אחרי ריסטרט), ננסה למשוך אותו
+        if (savedToken && !savedUser) {
+          const uid = getUserIdFromToken(savedToken);
+          const userData = await getUserProfile(savedToken, uid);
+          if (userData) {
+            setUser(userData);
+            await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+          }
+        }
       } catch (e) {
-        console.error("Failed to load token during hydration", e);
+        console.error("Hydration error", e);
       } finally {
         setIsHydrating(false);
       }
@@ -28,60 +50,41 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const res = await authenticateUser(email, password);
-      if (!res.ok) return { ok: false, error: res.error || "Login failed" };
+      if (!res.ok) return { ok: false, error: res.error };
 
       const newToken = res.token;
-      if (!newToken) return { ok: false, error: "No token returned from server" };
+      const userId = getUserIdFromToken(newToken);
+      
+      // שליפת נתוני המשתמש מיד לאחר קבלת הטוקן (בדיוק כמו ב-Web)
+      const userData = await getUserProfile(newToken, userId);
 
       await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+      if (userData) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+
       setToken(newToken);
-      setSessionExpired(false);
+      setUser(userData);
       
       router.replace("/(app)/home");
       return { ok: true };
     } catch (e) {
-      return { ok: false, error: e?.message || "Login failed" };
+      return { ok: false, error: "Login failed" };
     }
   };
 
   const logout = async () => {
-    try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
-      setToken(null);
-      setSessionExpired(false);
-      setIsHydrating(false);
-      router.replace("/(auth)/login");
-    } catch (e) {
-      console.error("Logout failed", e);
-    }
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_KEY);
+    setToken(null);
+    setUser(null);
+    router.replace("/(auth)/login");
   };
 
-  const triggerSessionExpired = async () => {
-    setSessionExpired(true);
-    await logout();
-  };
-
-  const value = useMemo(
-    () => ({
-      token,
-      isAuthenticated: !!token,
-      sessionExpired,
-      isHydrating,
-      login,
-      logout,
-      triggerSessionExpired,
-    }),
-    [token, sessionExpired, isHydrating]
-  );
+  const value = useMemo(() => ({
+    token, user, isAuthenticated: !!token, isHydrating, login, logout
+  }), [token, user, isHydrating]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
-}
-
-// ייצוא דיפולטיבי כדי להעלים את אזהרת ה-Router
+export const useAuth = () => useContext(AuthContext);
 export default AuthProvider;

@@ -1,0 +1,1748 @@
+﻿===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\controllers\authController.js =====
+const jwt = require('jsonwebtoken');
+const authService = require('../services/authService');
+const { validateFields } = require('../utils/validation');
+
+// Authenticates user credentials and issues a JWT
+exports.login = (req, res, next) => {
+  try {
+    validateFields(req.body, ['email', 'password']);
+
+    const { email, password } = req.body;
+
+    const userExists = authService.getUserByEmail(email);
+    if (!userExists) {
+      const error = new Error("User not found");
+      error.status = 404;
+      throw error;
+    }
+
+    const user = authService.verifyCredentials(email, password);
+    if (!user) {
+      const error = new Error("Incorrect password");
+      error.status = 401;
+      throw error;
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      const error = new Error("JWT_SECRET is not configured");
+      error.status = 500;
+      throw error;
+    }
+
+    const token = jwt.sign(
+      { userId: user.id },
+      secret,
+      { expiresIn: '1h' }
+    );
+
+    return res.status(200).json({ token });
+  } catch (err) {
+    next(err);
+  }
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\controllers\fileController.js =====
+const fileService = require('../services/fileService');
+
+// Handle GET /api/files.
+exports.listAll = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listTopLevel(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle POST /api/files.
+exports.createItem = async (req, res, next) => {
+  try {
+    const ownerId = req.user.id;
+    const created = await fileService.createItem(ownerId, req.body);
+
+    res
+      .status(201)
+      .set('Location', `/api/files/${created.id}`)
+      .json(created);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/:id.
+exports.getById = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const item = await fileService.getById(userId, req.params.id);
+    res.status(200).json(item);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle PATCH /api/files/:id.
+exports.updateItem = async (req, res, next) => {
+  try {
+    const ownerId = req.user.id;
+    const updated = await fileService.updateItem(ownerId, req.params.id, req.body);
+    res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle DELETE /api/files/:id (soft delete to trash).
+exports.deleteItem = async (req, res, next) => {
+  try {
+    const ownerId = req.user.id;
+    await fileService.deleteItem(ownerId, req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle DELETE /api/files/:id/forever.
+exports.deleteForever = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await fileService.deleteForever(userId, req.params.id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/starred.
+exports.listStarred = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listStarred(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/important.
+exports.listImportant = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listImportant(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle PUT/PATCH starred flag for a file/folder.
+exports.setStarred = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { starred } = req.body;
+
+    if (typeof starred !== 'boolean') {
+      return res.status(400).json({ error: 'starred must be boolean' });
+    }
+
+    await fileService.setStarred(userId, req.params.id, starred);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle PUT/PATCH important flag for a file/folder.
+exports.setImportant = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { important } = req.body;
+
+    if (typeof important !== 'boolean') {
+      return res.status(400).json({ error: 'important must be boolean' });
+    }
+
+    await fileService.setImportant(userId, req.params.id, important);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/trash.
+exports.listTrash = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listTrash(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle PUT/PATCH trashed flag for a file/folder.
+exports.setTrashed = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { trashed } = req.body;
+
+    if (typeof trashed !== 'boolean') {
+      return res.status(400).json({ error: 'trashed must be boolean' });
+    }
+
+    await fileService.setTrashed(userId, req.params.id, trashed);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle DELETE /api/files/trash/empty (and /api/files/trash as alias).
+exports.emptyTrash = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await fileService.emptyTrash(userId);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/usage.
+exports.getUsage = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const usage = await fileService.getOwnedStorageUsage(userId);
+    res.status(200).json(usage);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle GET /api/files/recent.
+exports.listRecent = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const items = await fileService.listRecent(userId);
+    res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle POST/PUT /api/files/:id/access (record last access time).
+exports.recordAccess = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const updated = await fileService.updateAccessTime(userId, req.params.id);
+    res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\controllers\permissionController.js =====
+const permissionService = require('../services/permissionService');
+const { validateFields } = require('../utils/validation');
+
+// Adds a new permission for a file
+exports.addPermission = (req, res, next) => {
+    try {
+        validateFields(req.body, ['userId']);
+
+        const ownerId = req.user.id;
+        const fileId = req.params.id;
+        const role = "viewer";
+
+        const created = permissionService.addPermission(ownerId, fileId, req.body, role);
+        res.status(201).json(created);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Lists all permissions for a specific file
+exports.getPermissions = (req, res, next) => {
+    try {
+        const ownerId = req.user.id;
+        const fileId = req.params.id;
+
+        const permissions = permissionService.getPermissions(ownerId, fileId);
+        res.status(200).json(permissions);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Updates an existing permission role
+exports.updatePermission = (req, res, next) => {
+    try {
+        const ownerId = req.user.id;
+        const fileId = req.params.id;
+        const pId = req.params.pId;
+
+        const updated = permissionService.updatePermission(ownerId, fileId, pId);
+
+        res.status(200).json(updated);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Removes a permission from a file
+exports.deletePermission = (req, res, next) => {
+    try {
+        const ownerId = req.user.id;
+        const fileId = req.params.id;
+        const pId = req.params.pId;
+
+        permissionService.deletePermission(ownerId, fileId, pId);
+        res.status(204).end();
+    } catch (err) {
+        next(err);
+    }
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\controllers\searchController.js =====
+const fileService = require('../services/fileService');
+
+// Handle GET /api/search/:query.
+exports.search = async (req, res, next) => {
+    try {
+        const { query } = req.params;
+        const userId = req.user.id;
+
+        const results = await fileService.searchItems(userId, query);
+        res.status(200).json(results);
+    } catch (err) {
+        next(err);
+    }
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\controllers\userController.js =====
+const userService = require('../services/userService');
+const {
+  validateFields,
+  validateNonEmptyString,
+  validateDateOfBirth,
+  validateGender
+} = require('../utils/validation');
+
+// Registers a new user with required field validation
+exports.registerUser = (req, res, next) => {
+  try {
+    const required = ['firstName', 'email', 'phoneNumber', 'password', 'dateOfBirth', 'gender'];
+    validateFields(req.body, required);
+
+    // If profilePicture is provided, validate it's a string
+    if (req.body.profilePicture) {
+      validateNonEmptyString(req.body, 'profilePicture', 'profilePicture must be a non-empty string');
+    }
+
+    validateDateOfBirth(req.body, 'dateOfBirth');
+    validateGender(req.body, 'gender');
+
+    const newUser = userService.registerUser(req.body);
+    return res.status(201).json(newUser);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Retrieves a user object by ID
+exports.getUserById = (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const user = userService.getSafeUserById(userId);
+    return res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Retrieves public user details by email
+exports.getUserByEmail = (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const user = userService.getByEmail(email);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Return only public details
+    res.status(200).json({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      image: user.image
+    });
+  } catch (err) { next(err); }
+};
+
+// Updates user profile information (restricted to self)
+exports.updateUser = (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    if (!req.user || String(req.user.id) !== String(userId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const allowed = ['firstName', 'lastName', 'phoneNumber', 'image', 'profilePicture'];
+    const patch = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) patch[k] = req.body[k];
+    }
+
+    // Normalize image key
+    if (patch.profilePicture && !patch.image) {
+      patch.image = patch.profilePicture;
+      delete patch.profilePicture;
+    }
+
+    const updated = userService.updateUserProfile(userId, patch);
+    return res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Changes the user's password (restricted to self)
+exports.changePassword = (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    if (!req.user || String(req.user.id) !== String(userId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "currentPassword and newPassword are required" });
+    }
+
+    userService.changePassword(userId, currentPassword, newPassword);
+    return res.status(200).json({ message: "Password updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\middleware\authMiddleware.js =====
+const jwt = require('jsonwebtoken');
+const userRepository = require('../repositories/userRepository');
+
+// Validate JWT from Authorization header and attach the user to req.user.
+const requireAuth = (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const error = new Error("Authentication required");
+      error.status = 401;
+      throw error;
+    }
+
+    const token = authHeader.substring('Bearer '.length).trim();
+    if (!token) {
+      const error = new Error("Authentication required");
+      error.status = 401;
+      throw error;
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      const error = new Error("JWT_SECRET is not configured");
+      error.status = 500;
+      throw error;
+    }
+
+    const payload = jwt.verify(token, secret);
+
+    const userId = payload?.userId;
+    if (!userId) {
+      const error = new Error("Invalid token");
+      error.status = 401;
+      throw error;
+    }
+
+    const user = userRepository.findById(userId);
+    if (!user) {
+      const error = new Error("Invalid token user");
+      error.status = 401;
+      throw error;
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      err.status = 401;
+      err.message = "Invalid or expired token";
+    }
+    next(err);
+  }
+};
+
+module.exports = { requireAuth };
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\repositories\fileRepository.js =====
+const { files } = require('../utils/storage');
+
+const normalizeParentId = (parentId) => (parentId === undefined ? null : parentId);
+
+// Finds non-trashed files within a specific folder
+const findByParent = (parentId, ownerId) => {
+  const p = normalizeParentId(parentId);
+  return files.filter(f => {
+    if (f.trashed === true) return false;
+    const fp = normalizeParentId(f.parentId);
+    const parentMatch = fp === p;
+    const ownerMatch = ownerId ? f.ownerId === ownerId : true; 
+    return parentMatch && ownerMatch;
+  });
+};
+
+// Returns all files in storage
+const findAll = () => files;
+
+// Finds a file by ID (including trashed files)
+const findById = (id, ownerId) => {
+  if (!ownerId) return files.find(f => f.id === id);
+  return files.find(f => f.id === id && f.ownerId === ownerId);
+};
+
+// Creates a new file entry
+const create = (fileData) => {
+  const newFileData = {
+    mimeType: "",
+    trashed: false,
+    trashedAt: null,
+    originalParentId: null,
+    lastAccessedBy: {},
+    blockedBy: [],
+    ...fileData
+  };
+
+  files.push(newFileData);
+  return newFileData;
+};
+
+// Updates an existing file entry
+const update = (id, updates, ownerId) => {
+  const idx = files.findIndex(f => {
+    if (!ownerId) return f.id === id;
+    return f.id === id && f.ownerId === ownerId;
+  });
+
+  if (idx === -1) return null;
+
+  files[idx] = { ...files[idx], ...updates };
+  return files[idx];
+};
+
+// Removes a file entry from storage
+const remove = (id, ownerId) => {
+  const idx = files.findIndex(f => {
+    if (!ownerId) return f.id === id;
+    return f.id === id && f.ownerId === ownerId;
+  });
+
+  if (idx === -1) return null;
+  return files.splice(idx, 1)[0];
+};
+
+// Checks if a folder contains any non-trashed files
+const hasChildren = (parentId, ownerId) => {
+  return files.some(f => {
+    if (f.trashed === true) return false;
+    const ownerMatch = ownerId ? f.ownerId === ownerId : true;
+    return ownerMatch && (f.parentId ?? null) === parentId;
+  });
+};
+
+// Searches for non-trashed files by name or content
+const searchFiles = (userId, query) => {
+  const normalizedQuery = query.toLowerCase();
+
+  return files.filter(file =>
+    file.ownerId === userId &&
+    file.trashed !== true &&
+    (
+      file.name.toLowerCase().includes(normalizedQuery) ||
+      (file.content && file.content.toLowerCase().includes(normalizedQuery))
+    )
+  );
+};
+
+// Finds all files marked as trashed for a specific user
+const findTrashed = (ownerId) => {
+  return files.filter(f => f.ownerId === ownerId && f.trashed === true);
+};
+
+// Finds multiple files by an array of IDs
+const findByIds = (idsArray) => files.filter(f => idsArray.includes(f.id));
+
+module.exports = {
+  findByParent,
+  findById,
+  create,
+  update,
+  remove,
+  hasChildren,
+  searchFiles,
+  findByIds,
+  findAll,
+  findTrashed,
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\repositories\permissionRepository.js =====
+const { permissions } = require('../utils/storage');
+
+// Find all permissions for a given file/folder id.
+const findByFileId = (fileId) => permissions.filter(p => p.fileId === fileId);
+
+// Find a permission entry by its id.
+const findById = (id) => permissions.find(p => p.id === id);
+
+// Create a new permission entry.
+const create = (permissionData) => {
+    permissions.push(permissionData);
+    return permissionData;
+};
+
+// Update an existing permission entry.
+const update = (id, updates) => {
+    const idx = permissions.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    permissions[idx] = { ...permissions[idx], ...updates };
+    return permissions[idx];
+};
+
+// Remove a permission entry by id.
+const remove = (id) => {
+    const idx = permissions.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    return permissions.splice(idx, 1)[0];
+};
+
+// Find all permissions for a given user id.
+const findByUserId = (userId) => permissions.filter(p => p.userId === userId);
+
+module.exports = { findByFileId, findById, create, update, remove, findByUserId };
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\repositories\userRepository.js =====
+const { users } = require('../utils/storage');
+
+// Find a user by their unique ID
+const findById = (id) => users.find(u => u.id === id);
+
+// Find a user by email
+const findByEmail = (email) => users.find(u => u.email === email);
+
+// Create a new user
+const create = (userData) => {
+  users.push(userData);
+  return userData;
+};
+
+// Update an existing user
+const update = (id, patch) => {
+  const idx = users.findIndex(u => u.id === id);
+  if (idx === -1) return null;
+
+  users[idx] = { ...users[idx], ...patch };
+  return users[idx];
+};
+
+module.exports = {
+  findById,
+  findByEmail,
+  create,
+  update
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\routes\authRoutes.js =====
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+
+// Routes under /api/tokens
+router.post('/', authController.login);
+
+module.exports = router;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\routes\fileRoutes.js =====
+const express = require('express');
+const router = express.Router();
+const fileController = require('../controllers/fileController');
+const { requireAuth } = require('../middleware/authMiddleware');
+const permissionRoutes = require('./permissionRoutes');
+
+// Basic list and storage stats
+router.get('/', requireAuth, fileController.listAll);
+router.get('/usage', requireAuth, fileController.getUsage);
+router.get('/starred', requireAuth, fileController.listStarred);
+router.get('/important', requireAuth, fileController.listImportant);
+
+// Trash management (must be before /:id)
+router.get('/trash', requireAuth, fileController.listTrash);
+router.delete('/trash/empty', requireAuth, fileController.emptyTrash);
+router.delete('/trash', requireAuth, fileController.emptyTrash);
+
+// Recent activity
+router.get('/recent', requireAuth, fileController.listRecent);
+router.patch('/:id/access', requireAuth, fileController.recordAccess);
+
+// Create, Get and Permanent delete
+router.post('/', requireAuth, fileController.createItem);
+router.delete('/:id/forever', requireAuth, fileController.deleteForever);
+router.get('/:id', requireAuth, fileController.getById);
+
+// Update flags and soft delete
+router.patch('/:id/star', requireAuth, fileController.setStarred);
+router.patch('/:id/important', requireAuth, fileController.setImportant);
+router.patch('/:id/trash', requireAuth, fileController.setTrashed);
+
+// Rename, move or move to trash
+router.patch('/:id', requireAuth, fileController.updateItem);
+router.delete('/:id', requireAuth, fileController.deleteItem);
+
+// Permission sub-routes
+router.use('/:id/permissions', requireAuth, permissionRoutes);
+
+module.exports = router;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\routes\permissionRoutes.js =====
+const express = require('express');
+const router = express.Router({ mergeParams: true });
+const permissionController = require('../controllers/permissionController');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Routes under /api/files/:id/permissions
+router.get('/', requireAuth, permissionController.getPermissions);
+router.post('/', requireAuth, permissionController.addPermission);
+router.patch('/:pId', requireAuth, permissionController.updatePermission);
+router.delete('/:pId', requireAuth, permissionController.deletePermission);
+
+module.exports = router;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\routes\searchRoutes.js =====
+const express = require('express');
+const router = express.Router();
+const searchController = require('../controllers/searchController');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Search for items based on a query string
+router.get('/:query', requireAuth, searchController.search);
+
+module.exports = router;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\routes\userRoutes.js =====
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Register a new user
+router.post('/', userController.registerUser);
+
+// Get user details by ID
+router.get('/:id', userController.getUserById);
+
+// Get user details by email
+router.get('/email/:email', userController.getUserByEmail);
+
+// Update user profile
+router.patch('/:id', requireAuth, userController.updateUser);
+
+// Change user password
+router.patch('/:id/password', requireAuth, userController.changePassword);
+
+module.exports = router;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\services\authService.js =====
+const userRepository = require('../repositories/userRepository');
+
+// Retrieves a user by their email address
+exports.getUserByEmail = (email) => {
+    return userRepository.findByEmail(email);
+};
+
+// Verifies user credentials by checking email and password
+exports.verifyCredentials = (email, password) => {
+    const user = userRepository.findByEmail(email);
+
+    if (!user) {
+        return null;
+    }
+
+    // In production, use bcrypt.compare(password, user.password)
+    if (user.password !== password) {
+        return null;
+    }
+
+    return user;
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\services\fileService.js =====
+const fileRepository = require('../repositories/fileRepository');
+const permissionRepository = require('../repositories/permissionRepository');
+const { generateId } = require('../utils/idGenerator');
+const { sendTcpCommand } = require('../utils/tcpClient');
+const { getProvider } = require("../storage/storageProvider");
+const permissionService = require("./permissionService");
+
+const nowIso = () => new Date().toISOString();
+const assertValidType = (type) => type === 'file' || type === 'folder';
+
+const TRASH_TTL_DAYS = 30;
+const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024;
+
+const ensureArray = (v) => Array.isArray(v) ? v : [];
+
+const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
+  let currentId = fileId;
+  let highestRoleFound = null;
+
+  while (currentId !== null) {
+    const item = fileRepository.findById(currentId);
+    if (!item) break;
+
+    const blockedBy = ensureArray(item.blockedBy);
+    if (blockedBy.includes(userId)) return false;
+
+    if (item.ownerId === userId) return true;
+
+    const permissions = permissionRepository.findByFileId(currentId) || [];
+    const userPerm = permissions.find(p => p.userId === userId);
+
+    if (userPerm) {
+      if (userPerm.role === 'editor') return true;
+      if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
+    }
+    currentId = item.parentId;
+  }
+  return requiredRole === 'viewer' ? highestRoleFound !== null : false;
+};
+
+const contentSizeBytes = (content) => {
+  if (content === undefined || content === null) return 0;
+  const s = typeof content === 'string' ? content : String(content);
+  return Buffer.byteLength(s, 'utf8');
+};
+
+const isDescendant = (fileId, folderId) => {
+  let current = fileRepository.findById(fileId);
+  while (current && current.parentId) {
+    if (current.parentId === folderId) return true;
+    current = fileRepository.findById(current.parentId);
+  }
+  return false;
+};
+
+const wouldCreateCycle = (itemId, newParentId) => {
+  let cursor = newParentId ?? null;
+  while (cursor !== null) {
+    if (cursor === itemId) return true;
+    const node = fileRepository.findById(cursor);
+    if (!node) return false;
+    cursor = node.parentId ?? null;
+  }
+  return false;
+};
+
+const collectSubtreeIds = (rootId) => {
+  const stack = [rootId];
+  const visited = new Set();
+  const ids = [];
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+    ids.push(currentId);
+    const children = fileRepository.findByParent(currentId) || [];
+    for (const child of children) stack.push(child.id);
+  }
+  return ids;
+};
+
+const getTrashedAtForUser = (item, userId) => {
+  const map = item?.trashedAtBy && typeof item.trashedAtBy === 'object' ? item.trashedAtBy : {};
+  return map[userId] || null;
+};
+
+const calcDaysLeft = (trashedAt) => {
+  if (!trashedAt) return null;
+  const t = new Date(trashedAt).getTime();
+  if (Number.isNaN(t)) return null;
+  const expireAt = t + TRASH_TTL_MS;
+  const msLeft = expireAt - Date.now();
+  return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+};
+
+const decorateFlagsForUser = (item, userId) => {
+  const starredBy = ensureArray(item.starredBy);
+  const importantBy = ensureArray(item.importantBy);
+  const trashedBy = ensureArray(item.trashedBy);
+
+  const trashed = trashedBy.includes(userId);
+  const trashedAt = trashed ? getTrashedAtForUser(item, userId) : null;
+
+  const lastAccessedBy = (item.lastAccessedBy && typeof item.lastAccessedBy === 'object')
+    ? item.lastAccessedBy
+    : {};
+  const lastAccessed = lastAccessedBy[userId] || null;
+
+  return {
+    ...item,
+    starred: starredBy.includes(userId),
+    important: importantBy.includes(userId),
+    trashed,
+    trashedAt,
+    trashDaysLeft: trashed ? calcDaysLeft(trashedAt) : null,
+    lastAccessed
+  };
+};
+
+const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
+
+const isTrashedForUser = (item, userId) => ensureArray(item?.trashedBy).includes(userId);
+
+const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
+  const provider = getProvider();
+  if (provider.name === "local") {
+    const db = provider.readDB();
+    const items = db.files.filter(f => f.ownerId === userId);
+    const decorated = decorateListForUser(items, userId);
+    return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
+  }
+
+  const ownedRoots = fileRepository.findByParent(null, userId);
+  const userPermissions = permissionRepository.findByUserId(userId) || [];
+  const sharedRoots = userPermissions.map(perm => fileRepository.findById(perm.fileId)).filter(Boolean);
+
+  const roots = [...ownedRoots];
+  for (const item of sharedRoots) {
+    const already = roots.some(r => r.id === item.id);
+    const hasAncestorInShared = sharedRoots.some(other => other.id !== item.id && isDescendant(item.id, other.id));
+    if (!already && !hasAncestorInShared) roots.push(item);
+  }
+
+  const result = new Map();
+  for (const root of roots) {
+    const ids = collectSubtreeIds(root.id);
+    for (const id of ids) {
+      if (await checkAccess(userId, id, 'viewer')) {
+        const item = fileRepository.findById(id);
+        if (item) result.set(item.id, item);
+      }
+    }
+  }
+  const decorated = decorateListForUser(Array.from(result.values()), userId);
+  return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
+};
+
+const listTopLevel = async (userId) => listAllAccessible(userId, { includeTrashed: false });
+
+const getById = async (userId, id) => {
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: 'File or folder not found' };
+
+  if (!(await checkAccess(userId, id, 'viewer'))) {
+    throw { status: 403, message: 'Access denied' };
+  }
+
+  const result = { ...item };
+  if (item.type === 'file') {
+    try {
+      const content = await sendTcpCommand(`GET ${id}`);
+      result.content = content;
+    } catch (err) {
+      result.content = (err.message && err.message.includes('not found')) ? "" : (() => { throw err; })();
+    }
+  }
+  return decorateFlagsForUser(result, userId);
+};
+
+const createItem = async (ownerId, payload) => {
+  const { name, type, parentId = null, content = "", mimeType = "" } = payload;
+
+  if (!name || typeof name !== 'string' || name.trim() === '') throw { status: 400, message: 'Name is required' };
+  if (!type || !assertValidType(type)) throw { status: 400, message: 'Invalid type' };
+
+  if (parentId) {
+    const parent = fileRepository.findById(parentId);
+    if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Invalid parent' };
+    if (!(await checkAccess(ownerId, parentId, 'editor'))) throw { status: 403, message: 'No permission to create here' };
+  }
+
+  const id = generateId();
+  const ts = nowIso();
+  let sizeBytes = 0;
+  if (type === 'file') {
+    await sendTcpCommand(`POST ${id} ${content}`);
+    sizeBytes = contentSizeBytes(content);
+  }
+
+  const created = fileRepository.create({
+    id,
+    name: name.trim(),
+    type,
+    ownerId,
+    parentId,
+    createdAt: ts,
+    updatedAt: ts,
+    sizeBytes,
+    mimeType,
+    starredBy: [],
+    importantBy: [],
+    trashedBy: [],
+    trashedAtBy: {},
+    lastAccessedBy: {},
+    blockedBy: []
+  });
+
+  try {
+    permissionService.addPermission(ownerId, id, { userId: ownerId }, "owner");
+  } catch (_) { }
+
+  return created;
+};
+
+const updateItem = async (userId, id, patch) => {
+  if (!patch || typeof patch !== 'object') throw { status: 400, message: 'Invalid JSON body' };
+  if (patch.type !== undefined) throw { status: 400, message: 'Type cannot be updated' };
+
+  const current = fileRepository.findById(id);
+  if (!current) throw { status: 404, message: 'File or folder not found' };
+  if (!(await checkAccess(userId, id, 'editor'))) throw { status: 403, message: 'Editor access required' };
+
+  const updates = {};
+
+  if (patch.content !== undefined) {
+    if (current.type === 'folder') throw { status: 400, message: 'Cannot update content of a folder' };
+    try {
+      try { await sendTcpCommand(`DELETE ${id}`); } catch (e) { }
+      await sendTcpCommand(`POST ${id} ${patch.content}`);
+      updates.sizeBytes = contentSizeBytes(patch.content);
+    } catch (err) { throw err; }
+  }
+
+  if (patch.mimeType !== undefined) updates.mimeType = patch.mimeType;
+
+  if (patch.name !== undefined) {
+    const trimmed = patch.name.trim();
+    if (trimmed === '') throw { status: 400, message: 'Name must be a non-empty string' };
+    updates.name = trimmed;
+  }
+
+  if (patch.parentId !== undefined) {
+    const newParentId = patch.parentId ?? null;
+    if (newParentId === id) throw { status: 400, message: 'parentId cannot be the same as id' };
+
+    if (newParentId !== null) {
+      const parent = fileRepository.findById(newParentId);
+      if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Parent must be a folder' };
+      if (current.type === 'folder' && wouldCreateCycle(id, newParentId)) {
+        throw { status: 409, message: 'Cannot move a folder into its own descendant' };
+      }
+    }
+    updates.parentId = newParentId;
+  }
+
+  updates.updatedAt = nowIso();
+  return fileRepository.update(id, updates);
+};
+
+const setTrashed = async (userId, id, trashed) => {
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: "File or folder not found" };
+  if (!(await checkAccess(userId, id, "viewer"))) throw { status: 403, message: "Access denied" };
+
+  const ids = item.type === "folder" ? (trashed ? collectSubtreeIds(id) : [id]) : [id];
+  for (const tId of ids) {
+    const target = fileRepository.findById(tId);
+    if (!target) continue;
+    const cur = ensureArray(target.trashedBy);
+    let next = trashed ? [...new Set([...cur, userId])] : cur.filter(x => x !== userId);
+    const trashedAtBy = { ...(target.trashedAtBy || {}) };
+    if (trashed) { if (!trashedAtBy[userId]) trashedAtBy[userId] = nowIso(); } else { delete trashedAtBy[userId]; }
+    fileRepository.update(tId, { trashedBy: next, trashedAtBy });
+  }
+  return decorateFlagsForUser(fileRepository.findById(id), userId);
+};
+
+const listTrash = async (userId) => (await listAllAccessible(userId, { includeTrashed: true })).filter(i => i.trashed);
+
+const deleteItem = async (userId, id) => {
+  await setTrashed(userId, id, true);
+  return { id };
+};
+
+const deleteForever = async (userId, id) => {
+  const item = fileRepository.findById(id);
+
+  if (!item) return { id };
+
+  if (!isTrashedForUser(item, userId)) {
+    throw { status: 409, message: 'Item not found in your trash' };
+  }
+
+  if (item.ownerId !== userId) {
+    const ids = item.type === 'folder' ? collectSubtreeIds(id) : [id];
+
+    for (const dId of ids) {
+      const target = fileRepository.findById(dId);
+      if (!target) continue;
+
+      const trashedBy = ensureArray(target.trashedBy).filter(x => x !== userId);
+      const trashedAtBy = { ...(target.trashedAtBy || {}) };
+      delete trashedAtBy[userId];
+
+      const blockedBy = [...new Set([...ensureArray(target.blockedBy), userId])];
+
+      fileRepository.update(dId, { trashedBy, trashedAtBy, blockedBy });
+
+      const myPermission = (permissionRepository.findByFileId(dId) || []).find(p => p.userId === userId);
+      if (myPermission) {
+        permissionRepository.remove(myPermission.id);
+      }
+    }
+    return { id };
+  }
+
+  const ids = item.type === 'folder' ? collectSubtreeIds(id).reverse() : [id];
+  for (const dId of ids) {
+    const target = fileRepository.findById(dId);
+    if (!target) continue;
+
+    if (target.type === 'file') {
+      await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
+    }
+    fileRepository.remove(dId);
+
+    const allPerms = permissionRepository.findByFileId(dId) || [];
+    allPerms.forEach(p => permissionRepository.remove(p.id));
+  }
+  return { id };
+};
+
+const emptyTrash = async (userId) => {
+  const items = await listTrash(userId);
+
+  for (const it of items) {
+    try {
+      await deleteForever(userId, it.id);
+    } catch (err) {
+      console.error(`Failed to delete item ${it.id} during empty trash:`, err.message);
+    }
+  }
+  return { ok: true };
+};
+
+const setUserFlag = async (userId, id, flagKey, enabled) => {
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: 'Not found' };
+  const current = ensureArray(item[flagKey]);
+  let next = enabled ? [...new Set([...current, userId])] : current.filter(x => x !== userId);
+  const updated = fileRepository.update(id, { [flagKey]: next });
+  return decorateFlagsForUser(updated, userId);
+};
+
+const updateAccessTime = async (userId, id) => {
+  const item = fileRepository.findById(id);
+  if (!item) throw { status: 404, message: "File or folder not found" };
+
+  if (!(await checkAccess(userId, id, "viewer"))) {
+    throw { status: 403, message: "Access denied" };
+  }
+
+  const lastAccessedBy = (item.lastAccessedBy && typeof item.lastAccessedBy === "object")
+    ? { ...item.lastAccessedBy }
+    : {};
+
+  lastAccessedBy[userId] = nowIso();
+  const updated = fileRepository.update(id, { lastAccessedBy });
+  return decorateFlagsForUser(updated, userId);
+};
+
+const listRecent = async (userId) => {
+  const all = await listAllAccessible(userId, { includeTrashed: false });
+  const withAccess = all.filter(item => item.type === "file" && item.lastAccessed);
+  withAccess.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
+  return withAccess.slice(0, 20);
+};
+
+const getOwnedStorageUsage = async (userId) => {
+  const ownedFiles = fileRepository.findAll().filter(f => f.ownerId === userId && f.type === 'file');
+  const usedBytes = ownedFiles.reduce((sum, f) => sum + (typeof f.sizeBytes === 'number' ? f.sizeBytes : 0), 0);
+  const percent = QUOTA_BYTES > 0 ? usedBytes / QUOTA_BYTES : 0;
+
+  return { usedBytes, quotaBytes: QUOTA_BYTES, percent };
+};
+
+module.exports = {
+  listTopLevel,
+  createItem,
+  getById,
+  updateItem,
+  deleteItem,
+  deleteForever,
+  emptyTrash,
+
+  searchItems: async (userId, query) => {
+    const nameMatches = fileRepository.searchFiles(userId, query).filter(f => !isTrashedForUser(f, userId));
+    let contentMatchIds = [];
+    try {
+      const response = await sendTcpCommand(`SEARCH ${query}`);
+      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
+    } catch (_) { }
+
+    const contentMatches = contentMatchIds.map(id => fileRepository.findById(id)).filter(f => f && !isTrashedForUser(f, userId));
+    const unique = Array.from(new Map([...nameMatches, ...contentMatches].map(i => [i.id, i])).values());
+    return decorateListForUser(unique, userId).filter(i => !i.trashed);
+  },
+
+  setStarred: async (userId, id, starred) => setUserFlag(userId, id, 'starredBy', starred),
+  setImportant: async (userId, id, important) => setUserFlag(userId, id, 'importantBy', important),
+  listStarred: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.starred),
+  listImportant: async (userId) => (await listAllAccessible(userId, { includeTrashed: false })).filter(i => i.important),
+
+  setTrashed,
+  listTrash,
+  getOwnedStorageUsage,
+  updateAccessTime,
+  listRecent
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\services\permissionService.js =====
+const permissionRepository = require('../repositories/permissionRepository');
+const fileRepository = require('../repositories/fileRepository');
+const userRepository = require('../repositories/userRepository');
+const { generateId } = require('../utils/idGenerator');
+
+// Verify that the user owns the file
+const verifyOwnership = (ownerId, fileId) => {
+    const file = fileRepository.findById(fileId, ownerId);
+    if (!file) {
+        const err = new Error('File not found or access denied');
+        err.status = 404;
+        throw err;
+    }
+    return file;
+};
+
+// Find user's highest role by traversing file hierarchy
+const resolveRole = (userId, fileId) => {
+    let currentId = fileId;
+    let found = null;
+
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId);
+        if (!item) break;
+
+        if (item.ownerId === userId) return "owner";
+
+        const perms = permissionRepository.findByFileId(currentId) || [];
+        const userPerm = perms.find(p => p.userId === userId);
+
+        if (userPerm) {
+            if (userPerm.role === "editor") return "editor";
+            if (!found) found = "viewer";
+        }
+
+        currentId = item.parentId;
+    }
+    return found;
+};
+
+// Get all permissions including inherited ones and blocked users
+exports.getPermissions = (requesterId, fileId) => {
+    const role = resolveRole(requesterId, fileId);
+    if (!role) {
+        const err = new Error('File not found or access denied');
+        err.status = 404;
+        throw err;
+    }
+
+    const allPermissions = new Map();
+    let currentId = fileId;
+
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId);
+        if (!item) break;
+
+        const perms = permissionRepository.findByFileId(currentId) || [];
+        for (const perm of perms) {
+            if (!allPermissions.has(perm.userId)) {
+                allPermissions.set(perm.userId, perm);
+            }
+        }
+        currentId = item.parentId;
+    }
+
+    const permissions = Array.from(allPermissions.values());
+    const file = fileRepository.findById(fileId);
+    const blockedBy = file?.blockedBy && Array.isArray(file.blockedBy) ? file.blockedBy : [];
+
+    return { myRole: role, permissions, blockedBy };
+};
+
+// Add new permission and unblock user if necessary
+exports.addPermission = (ownerId, fileId, payload) => {
+    const file = verifyOwnership(ownerId, fileId);
+    const targetUserId = payload.userId;
+
+    const unblock = (id) => {
+        const item = fileRepository.findById(id);
+        if (item && Array.isArray(item.blockedBy)) {
+            const nextBlocked = item.blockedBy.filter(uid => uid !== targetUserId);
+            if (nextBlocked.length !== item.blockedBy.length) {
+                fileRepository.update(id, { blockedBy: nextBlocked });
+            }
+        }
+    };
+
+    const allFiles = fileRepository.findAll();
+    const toUnblock = [];
+
+    const collect = (pid) => {
+        allFiles.filter(f => f.parentId === pid).forEach(f => {
+            toUnblock.push(f.id);
+            if (f.type === 'folder') collect(f.id);
+        });
+    };
+
+    toUnblock.push(fileId);
+    if (file.type === 'folder') collect(fileId);
+
+    toUnblock.forEach(id => unblock(id));
+
+    const existingPermissions = permissionRepository.findByFileId(fileId);
+    const duplicate = existingPermissions.find(p => p.userId === payload.userId);
+
+    if (duplicate) {
+        const err = new Error('Permission already exists for this user');
+        err.status = 409;
+        throw err;
+    }
+
+    const newPermission = {
+        id: generateId((id) => permissionRepository.findById(id)),
+        fileId: fileId,
+        userId: payload.userId,
+        role: 'viewer'
+    };
+
+    return permissionRepository.create(newPermission);
+};
+
+// Toggle permission between viewer and editor
+exports.updatePermission = (ownerId, fileId, pId) => {
+    verifyOwnership(ownerId, fileId);
+    const permission = permissionRepository.findById(pId);
+
+    if (!permission || permission.fileId !== fileId) {
+        const error = new Error('Permission not found');
+        error.status = 404;
+        throw error;
+    }
+
+    const newRole = (permission.role === 'viewer') ? 'editor' : 'viewer';
+    return permissionRepository.update(pId, { role: newRole });
+};
+
+// Remove a permission entry
+exports.deletePermission = (ownerId, fileId, pId) => {
+    verifyOwnership(ownerId, fileId);
+
+    const removed = permissionRepository.remove(pId);
+    if (!removed) {
+        const err = new Error('Permission not found');
+        err.status = 404;
+        throw err;
+    }
+    return removed;
+};
+
+// Boolean check for specific access level
+const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
+    let currentId = fileId;
+    let foundPermission = null;
+
+    while (currentId !== null) {
+        const item = fileRepository.findById(currentId);
+        if (!item) break;
+
+        if (item.ownerId === userId) return true;
+
+        const permissions = permissionRepository.findByFileId(currentId) || [];
+        const userPerm = permissions.find(p => p.userId === userId);
+
+        if (userPerm) {
+            if (userPerm.role === 'editor') return true;
+            if (!foundPermission) foundPermission = userPerm.role;
+        }
+
+        currentId = item.parentId;
+    }
+
+    if (requiredRole === 'viewer') return foundPermission !== null;
+    if (requiredRole === 'editor') return foundPermission === 'editor';
+    return false;
+};
+
+exports.checkAccess = checkAccess;
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\services\userService.js =====
+const userRepository = require('../repositories/userRepository');
+const { generateId } = require('../utils/idGenerator');
+
+// Register a new user and return a safe (password-free) response.
+const registerUser = (userData) => {
+  if (userRepository.findByEmail(userData.email)) {
+    const error = new Error("Email already registered");
+    error.status = 409;
+    throw error;
+  }
+
+  const newUser = {
+    id: generateId((id) => userRepository.findById(id)),
+    firstName: userData.firstName,
+    lastName: userData.lastName || '',
+    email: userData.email,
+    phoneNumber: userData.phoneNumber,
+    password: userData.password,
+    image: userData.profilePicture || userData.image || '',
+    dateOfBirth: userData.dateOfBirth,
+    gender: userData.gender,
+    lastLogin: new Date().toISOString()
+  };
+
+  userRepository.create(newUser);
+
+  const safeResponse = { ...newUser };
+  delete safeResponse.password;
+  return safeResponse;
+};
+
+// Get a user by id and return a safe (password-free) DTO.
+const getSafeUserById = (userId) => {
+  const user = userRepository.findById(userId);
+
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  const userDto = { ...user };
+  delete userDto.password;
+  return userDto;
+};
+
+// Get a user by email (raw repository result).
+const getByEmail = (email) => {
+  return userRepository.findByEmail(email);
+};
+
+// Update allowed profile fields for the given user and return a safe user object.
+const updateUserProfile = (userId, patch) => {
+  const user = userRepository.findById(userId);
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  const cleanPatch = {};
+
+  if (patch.firstName !== undefined) cleanPatch.firstName = String(patch.firstName).trim();
+  if (patch.lastName !== undefined) cleanPatch.lastName = String(patch.lastName).trim();
+  if (patch.phoneNumber !== undefined) cleanPatch.phoneNumber = String(patch.phoneNumber).trim();
+  if (patch.image !== undefined) cleanPatch.image = String(patch.image);
+
+  const updated = userRepository.update(userId, cleanPatch);
+  if (!updated) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  const safe = { ...updated };
+  delete safe.password;
+  return safe;
+};
+
+// Change the user's password after validating current and new passwords.
+const changePassword = (userId, currentPassword, newPassword) => {
+  const user = userRepository.findById(userId);
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  if (typeof currentPassword !== 'string' || currentPassword.length === 0) {
+    const error = new Error("Current password is required");
+    error.status = 400;
+    throw error;
+  }
+
+  if (typeof newPassword !== 'string' || newPassword.length === 0) {
+    const error = new Error("New password is required");
+    error.status = 400;
+    throw error;
+  }
+
+  if (String(user.password) !== String(currentPassword)) {
+    const error = new Error("Current password is incorrect");
+    error.status = 400;
+    throw error;
+  }
+
+  if (String(newPassword) === String(currentPassword)) {
+    const error = new Error("New password cannot be the same as current password");
+    error.status = 400;
+    throw error;
+  }
+
+  const updated = userRepository.update(userId, { password: String(newPassword) });
+  if (!updated) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  return true;
+};
+
+module.exports = {
+  registerUser,
+  getSafeUserById,
+  getByEmail,
+  updateUserProfile,
+  changePassword
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\storage\storageProvider.js =====
+// web-server/storage/storageProvider.js
+
+const store = require('../utils/storage');
+
+/**
+ * Returns the active storage provider.
+ * For now we use an in-memory store (users/files/permissions).
+ */
+function getProvider() {
+  return { name: 'in-memory', store };
+}
+
+module.exports = { getProvider };
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\utils\idGenerator.js =====
+// Create a random ID string.
+const _makeRandomId = () => {
+    return Math.random().toString(36).slice(2, 11);
+};
+
+// Generate an ID (optionally ensure uniqueness via a checker callback).
+const generateId = (checkExists) => {
+    let id;
+    let attempts = 0;
+
+    do {
+        id = _makeRandomId();
+        attempts++;
+        if (attempts > 100) throw new Error("Unable to generate unique ID");
+    } while (checkExists && checkExists(id));
+
+    return id;
+};
+
+module.exports = {
+    generateId
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\utils\storage.js =====
+// Volatile in-memory storage. Resets on server restart
+const users = [];
+const files = [];
+const permissions = [];
+
+module.exports = {
+    users,
+    files,
+    permissions
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\utils\tcpClient.js =====
+const net = require('net');
+const SERVER_PORT = process.env.CPP_SERVER_PORT || 5555;
+const SERVER_HOST = process.env.CPP_SERVER_HOST || '127.0.0.1';
+
+// Send a command to the TCP server and resolve with the response body (or reject on non-2xx).
+const sendTcpCommand = (command) => {
+    return new Promise((resolve, reject) => {
+        const client = new net.Socket();
+        console.log(`[TCP Client] Connecting to: ${SERVER_HOST}:${SERVER_PORT}`);
+
+        client.connect(SERVER_PORT, SERVER_HOST, () => {
+            client.write(command + '\n');
+            client.end();
+        });
+
+        let receivedData = '';
+
+        client.on('data', (chunk) => {
+            receivedData += chunk.toString();
+        });
+
+        client.on('end', () => {
+            console.log("[TCP Client] Connection closed by server, parsing data...");
+
+            const lines = receivedData.split('\n');
+            if (lines.length === 0) return resolve('');
+
+            const statusLine = lines[0].trim();
+            const statusCode = parseInt(statusLine.split(' ')[0], 10);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                const separatorIndex = lines.indexOf('');
+
+                if (separatorIndex !== -1 && separatorIndex < lines.length - 1) {
+                    const body = lines.slice(separatorIndex + 1).join('\n');
+                    resolve(body);
+                } else {
+                    resolve('');
+                }
+            } else {
+                const error = new Error(statusLine);
+                error.status = statusCode;
+                reject(error);
+            }
+        });
+
+        client.on('error', (err) => {
+            console.error(`[TCP Client] Connection Error to ${SERVER_HOST}:`, err.message);
+            const error = new Error('Storage server unavailable');
+            error.status = 503;
+            reject(error);
+        });
+    });
+};
+
+module.exports = { sendTcpCommand };
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\utils\validation.js =====
+// Validates that required fields exist in the request body
+const validateFields = (body, requiredFields) => {
+  for (const field of requiredFields) {
+    if (!body[field]) {
+      const error = new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
+      error.status = 400;
+      throw error;
+    }
+  }
+};
+
+// Validates that a field is a non-empty string, throwing 400 if invalid
+const validateNonEmptyString = (body, field, message) => {
+  const value = body?.[field];
+  if (typeof value !== 'string' || value.trim() === '') {
+    const err = new Error(message || `${field} must be a non-empty string`);
+    err.status = 400;
+    throw err;
+  }
+};
+
+// Checks if a resource exists, throwing 404 if not found
+const validateExistence = (resource, resourceName) => {
+  if (!resource) {
+    const error = new Error(`${resourceName} not found`);
+    error.status = 404;
+    throw error;
+  }
+};
+
+// Validates that the date of birth follows the YYYY-MM-DD format
+const validateDateOfBirth = (body, field = 'dateOfBirth') => {
+  validateNonEmptyString(body, field, `${field} must be a non-empty string`);
+
+  const value = body[field].trim();
+  const dobOk = /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+  if (!dobOk) {
+    const error = new Error(`${field} must be in YYYY-MM-DD format`);
+    error.status = 400;
+    throw error;
+  }
+};
+
+// Validates that the gender field contains an allowed value
+const validateGender = (body, field = 'gender') => {
+  validateNonEmptyString(body, field, `${field} must be a non-empty string`);
+
+  const value = body[field].trim();
+  const allowed = new Set(['male', 'female', 'other', 'prefer_not_to_say']);
+
+  if (!allowed.has(value)) {
+    const error = new Error(`${field} must be one of: male, female, other, prefer_not_to_say`);
+    error.status = 400;
+    throw error;
+  }
+};
+
+module.exports = {
+  validateFields,
+  validateNonEmptyString,
+  validateExistence,
+  validateDateOfBirth,
+  validateGender
+};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\web-server\app.js =====
+require('dotenv').config();
+const { getProvider } = require("./storage/storageProvider");
+console.log("Provider:", getProvider().name);
+
+console.log("JWT_SECRET exists?", !!process.env.JWT_SECRET);
+
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = 3000;
+
+const fileRoutes = require('./routes/fileRoutes');
+const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+
+app.use(cors());
+// Global middleware to parse JSON bodies. Required for all API endpoints.
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Log method + path for every incoming request.
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+});
+
+// Health check route.
+app.get('/', (req, res) => {
+    res.json({ message: "CopaDrive Web Server is running" });
+});
+
+app.use('/api/users', userRoutes);
+app.use('/api/tokens', authRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/search', searchRoutes);
+
+// Return 404 JSON for undefined routes.
+app.use((req, res) => {
+    res.status(404).json({ error: "Resource not found" });
+});
+
+// Global error handler (always returns JSON).
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+
+    let statusCode = err.status || 500;
+    let errorMessage = err.message || "Internal Server Error";
+
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        statusCode = 400;
+        errorMessage = "Invalid JSON format";
+    }
+
+    res.status(statusCode).json({
+        error: errorMessage,
+        status: statusCode
+    });
+});
+
+// Start the web server.
+app.listen(port, () => {
+    console.log(`Web server listening at http://localhost:${port}`);
+});

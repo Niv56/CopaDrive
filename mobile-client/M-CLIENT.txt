@@ -36,94 +36,687 @@ function safeJson(text) {
   try { return JSON.parse(text); } catch { return null; }
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\home.jsx =====
-import React, { useState, useMemo } from "react";
-import { View, Text, FlatList, ImageBackground, SafeAreaView, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ImageBackground, SafeAreaView } from "react-native";
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
-import { Ionicons } from "@expo/vector-icons";
 
-// Hooks & Logic
-import { useMyDrive } from "../../features/drive/hooks/useMyDrive";
-import DriveListItem from "../../features/drive/components/DriveListItem";
-import { driveStyles } from "../../features/drive/styles/myDrive.styles";
-
-// Layout Components
+// Layout & Pages
 import TopBar from "../../layout/TopBar";
 import BottomBar from "../../layout/BottomBar";
-import Fab from "../../layout/Fab";
+import Fab from "../../layout/Fab"; 
+import MainHomePage from "../../features/drive/pages/MainHomePage";
+import StarredPage from "../../features/drive/pages/StarredPage";
+import SharedPage from "../../features/drive/pages/SharedPage";
+import MyDrivePage from "../../features/drive/pages/MyDrivePage";
+
+// Styles & Services
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+import { useAuth } from "../providers/AuthContext";
 
 const bgImage = require("../../assets/images/back.png");
 
-export default function Home() {
-  const { items, loading, refreshing, onRefresh } = useMyDrive();
+export default function HomeManager() {
   const [activeTab, setActiveTab] = useState("home");
+  const { token } = useAuth();
   const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
 
-  // ׳—׳׳•׳§׳” ׳—׳›׳׳” ׳©׳ ׳”׳ ׳×׳•׳ ׳™׳
-  const folders = useMemo(() => items.filter(i => i.type === 'folder'), [items]);
-  const files = useMemo(() => items.filter(i => i.type === 'file'), [items]);
+  // ׳₪׳•׳ ׳§׳¦׳™׳” ׳©׳×׳•׳¢׳‘׳¨ ׳-FAB ׳›׳“׳™ ׳׳¨׳¢׳ ׳ ׳׳× ׳”׳¨׳©׳™׳׳” ׳׳—׳¨׳™ ׳”׳¢׳׳׳”
+  const handleRefresh = () => {
+    // ׳›׳׳ ׳׳₪׳©׳¨ ׳׳”׳•׳¡׳™׳£ ׳׳•׳’׳™׳§׳” ׳׳¨׳™׳¢׳ ׳•׳ ׳”׳“׳£ ׳”׳₪׳¢׳™׳ ׳׳ ׳¦׳¨׳™׳
+    console.log("File uploaded/created, refreshing...");
+  };
 
-  if (!fontsLoaded) return <ActivityIndicator size="large" color="#007bff" style={{ flex: 1 }} />;
-
-  // ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳¢׳–׳¨ ׳׳›׳•׳×׳¨׳•׳× (׳”׳•׳¡׳¨ ׳”-Type :any)
-  const SectionHeader = ({ icon, title, style }) => (
-    <View style={[driveStyles.sectionHeader, style]}>
-      <Ionicons name={icon} size={18} color="#333" />
-      <Text style={driveStyles.sectionText}>{title}</Text>
-    </View>
-  );
+  if (!fontsLoaded) return null;
 
   return (
     <ImageBackground source={bgImage} style={driveStyles.backgroundImage} resizeMode="cover">
       <SafeAreaView style={{ flex: 1 }}>
-
-        {/* 1. Top Bar Component */}
         <TopBar />
+        
+        <View style={{ paddingHorizontal: 20 }}>
+          <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>
+            {activeTab.toUpperCase()}
+          </Text>
+        </View>
 
-        {/* Title */}
-        <Text style={driveStyles.homeTitle}>
-          {activeTab === "home" ? "HOME" : activeTab.toUpperCase()}
-        </Text>
-
-        {/* Main Content List */}
-        <FlatList
-          data={activeTab === "home" ? [] : files}
-          contentContainerStyle={{ paddingBottom: 150 }}
-          
-          // Header: ׳׳•׳¦׳’ ׳¨׳§ ׳‘׳˜׳׳‘ ׳”׳¨׳׳©׳™ - ׳׳›׳™׳ ׳×׳™׳§׳™׳•׳× ׳•׳§׳‘׳¦׳™׳ ׳׳•׳׳׳¦׳™׳
-          ListHeaderComponent={activeTab === "home" ? (
-            <View>
-              <SectionHeader icon="folder-outline" title="Suggested folders" />
-              {folders.map(item => (
-                <DriveListItem key={item.id} item={item} onPress={(i) => console.log(i.name)} />
-              ))}
-
-              <SectionHeader icon="document-text-outline" title="Suggested files" style={{ marginTop: 20 }} />
-              {files.map(item => (
-                <DriveListItem key={item.id} item={item} onPress={(i) => console.log(i.name)} />
-              ))}
-            </View>
-          ) : null}
-
-          // Items: ׳׳•׳¦׳’ ׳‘׳©׳׳¨ ׳”׳˜׳׳‘׳™׳ (׳¨׳©׳™׳׳” ׳©׳˜׳•׳—׳”)
-          renderItem={activeTab !== "home" ? ({ item }) => (
-            <DriveListItem item={item} onPress={(i) => console.log(i.name)} />
-          ) : null}
-
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          ListEmptyComponent={items.length === 0 && !loading ? <Text style={driveStyles.emptyText}>No items to show here</Text> : null}
-        />
+        <View style={{ flex: 1 }}>
+          {activeTab === "home" && <MainHomePage />}
+          {activeTab === "starred" && <StarredPage />}
+          {activeTab === "shared" && <SharedPage />}
+          {activeTab === "mydrive" && <MyDrivePage />}
+        </View>
       </SafeAreaView>
 
-      {/* 2. Floating Action Button */}
-      <Fab onPress={() => console.log("Add new item")} />
-
-      {/* 3. Bottom Navigation Bar */}
+      {/* ׳©׳™׳ ׳׳‘: ׳”׳•׳¨׳“׳ ׳• ׳׳× onPress. ׳”-Fab ׳™׳ ׳”׳ ׳׳× ׳”׳₪׳×׳™׳—׳” ׳‘׳¢׳¦׳׳• */}
+      <Fab onRefresh={handleRefresh} />
+      
       <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />
-
     </ImageBackground>
   );
 }
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\important.jsx =====
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StatusBar
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../providers/AuthContext";
+import { getImportantFiles } from "../../features/drive/services/fileService";
+import DriveListItem from "../../features/drive/components/DriveListItem";
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+
+// ג… auto-refresh bus
+import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+
+export default function ImportantPage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadImportant = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const data = await getImportantFiles(token);
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load important files:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadImportant();
+  }, [loadImportant]);
+
+  // ג… listen for global refresh events (upload/create/delete/etc.)
+  useEffect(() => {
+    const unsubscribe = subscribeDriveRefresh(() => {
+      loadImportant();
+    });
+    return unsubscribe;
+  }, [loadImportant]);
+
+  return (
+    <View style={styles.modalContainer}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.modalHeader}>
+          <View style={styles.headerLeftSpace} />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-outline" size={32} color="#6c757d" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.textHeader}>
+            <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>IMPORTANT</Text>
+            <Text style={styles.subTitle}>Items marked with high priority</Text>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <DriveListItem item={item} onPress={(i) => console.log("Open:", i.name)} />
+              )}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="alert-circle-outline" size={80} color="#f0f0f0" />
+                  <Text style={driveStyles.emptyText}>No important items yet</Text>
+                </View>
+              }
+              onRefresh={loadImportant}
+              refreshing={loading}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    height: 60
+  },
+  headerLeftSpace: { width: 40 },
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: "#f8f9fa"
+  },
+  content: { flex: 1 },
+  textHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 15
+  },
+  subTitle: {
+    fontSize: 13,
+    color: "#6c757d",
+    marginTop: -8,
+    marginLeft: 0
+  },
+  emptyContainer: { alignItems: "center", marginTop: 100 }
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\recent.jsx =====
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StatusBar,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../providers/AuthContext";
+import { getRecentFiles, formatLastAccessed } from "../../features/drive/services/fileService";
+import DriveListItem from "../../features/drive/components/DriveListItem";
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+
+// ג… auto-refresh bus
+import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+
+export default function RecentPage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadRecent = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const data = await getRecentFiles(token);
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load recent files:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadRecent();
+  }, [loadRecent]);
+
+  // ג… listen for global refresh events
+  useEffect(() => {
+    const unsubscribe = subscribeDriveRefresh(() => {
+      loadRecent();
+    });
+    return unsubscribe;
+  }, [loadRecent]);
+
+  return (
+    <View style={styles.modalContainer}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.modalHeader}>
+          <View style={styles.headerLeftSpace} />
+          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+            <Ionicons name="close-outline" size={32} color="#6c757d" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.textHeader}>
+            <Text style={[driveStyles.homeTitle, { marginLeft: 0, paddingLeft: 0 }]}>
+              RECENT
+            </Text>
+            <Text style={styles.subTitle}>Last accessed items</Text>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <DriveListItem
+                  item={{
+                    ...item,
+                    displayDate: formatLastAccessed(item.lastAccessed),
+                  }}
+                  onPress={(i) => console.log("Open:", i.name)}
+                />
+              )}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="time-outline" size={80} color="#f0f0f0" />
+                  <Text style={driveStyles.emptyText}>No recent files</Text>
+                </View>
+              }
+              onRefresh={loadRecent}
+              refreshing={loading}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    height: 60,
+  },
+  headerLeftSpace: { width: 40 },
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: "#f8f9fa",
+  },
+  content: { flex: 1 },
+  textHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    alignItems: "flex-start",
+  },
+  subTitle: { fontSize: 13, color: "#6c757d", marginTop: -8, marginLeft: 0 },
+  emptyContainer: { alignItems: "center", marginTop: 100 },
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\storage.jsx =====
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StatusBar,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../providers/AuthContext";
+import { getFiles } from "../../features/drive/services/fileService";
+import { formatBytes } from "../../shared_code/utils/formatBytes";
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+
+// ג… auto-refresh bus
+import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+
+export default function StoragePage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadFiles = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const data = await getFiles(token);
+      setFiles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load files for storage view", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
+
+  // ג… listen for global refresh events
+  useEffect(() => {
+    const unsubscribe = subscribeDriveRefresh(() => {
+      loadFiles();
+    });
+    return unsubscribe;
+  }, [loadFiles]);
+
+  const sortedFiles = useMemo(() => {
+    return [...files]
+      .filter((f) => f.type === "file")
+      .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0));
+  }, [files]);
+
+  const renderItem = ({ item }) => {
+    const isImage = item.mimeType?.startsWith("image");
+    const iconName = isImage ? "image" : "document-text";
+    const iconColor = isImage ? "#d93025" : "#4285F4";
+
+    return (
+      <View style={styles.fileRow}>
+        <View style={styles.iconWrapper}>
+          <Ionicons name={iconName} size={24} color={iconColor} />
+        </View>
+        <View style={styles.fileInfo}>
+          <Text style={styles.fileName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.fileSize}>{formatBytes(item.sizeBytes)}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.modalContainer}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.modalHeader}>
+          <View style={styles.headerLeftSpace} />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-outline" size={32} color="#6c757d" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.textHeader}>
+            <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>STORAGE</Text>
+            <Text style={styles.subTitle}>Files using storage (descending)</Text>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+          ) : (
+            <FlatList
+              data={sortedFiles}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="cloud-done-outline" size={80} color="#f0f0f0" />
+                  <Text style={driveStyles.emptyText}>No files taking up storage.</Text>
+                </View>
+              }
+              onRefresh={loadFiles}
+              refreshing={loading}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    height: 60,
+  },
+  headerLeftSpace: { width: 40 },
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: "#f8f9fa",
+  },
+  content: { flex: 1 },
+  textHeader: { paddingHorizontal: 20, marginBottom: 15 },
+  subTitle: { fontSize: 13, color: "#6c757d", marginTop: -8, marginLeft: 0 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 20 },
+  fileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f8f9fa",
+  },
+  iconWrapper: { width: 45, alignItems: "flex-start" },
+  fileInfo: { flex: 1 },
+  fileName: { fontSize: 16, color: "#212529", fontWeight: "500", marginBottom: 2 },
+  fileSize: { fontSize: 13, color: "#6c757d", fontWeight: "600" },
+  emptyContainer: { alignItems: "center", marginTop: 100 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\trash.jsx =====
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  StatusBar
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../providers/AuthContext";
+import {
+  getTrashFiles,
+  restoreFromTrash,
+  deleteForever,
+  emptyTrash,
+  getDaysLeft
+} from "../../features/drive/services/fileService";
+import DriveListItem from "../../features/drive/components/DriveListItem";
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+
+// ג… auto-refresh bus
+import {
+  subscribeDriveRefresh,
+  emitDriveRefresh
+} from "../../features/drive/services/driveEvents";
+
+export default function TrashPage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTrash = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const data = await getTrashFiles(token);
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load trash:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadTrash();
+  }, [loadTrash]);
+
+  // ג… listen for global refresh events (upload/create/delete/etc.)
+  useEffect(() => {
+    const unsubscribe = subscribeDriveRefresh(() => {
+      loadTrash();
+    });
+    return unsubscribe;
+  }, [loadTrash]);
+
+  const handleEmptyTrash = () => {
+    Alert.alert(
+      "Empty Trash?",
+      "All items in the trash will be permanently deleted. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Empty Trash",
+          style: "destructive",
+          onPress: async () => {
+            await emptyTrash(token);
+            emitDriveRefresh(); // ג… refresh everywhere
+          }
+        }
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.modalContainer}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity
+            onPress={handleEmptyTrash}
+            disabled={items.length === 0}
+            style={{ paddingLeft: 5 }}
+          >
+            <Text style={[styles.emptyAction, items.length === 0 && { opacity: 0.3 }]}>
+              Empty
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-outline" size={32} color="#6c757d" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.textHeader}>
+            <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>TRASH</Text>
+
+            <View style={styles.infoBanner}>
+              <Ionicons name="information-circle" size={16} color="#0d6efd" />
+              <Text style={styles.infoText}>Items are deleted forever after 30 days</Text>
+            </View>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+          ) : (
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <DriveListItem
+                  item={{
+                    ...item,
+                    displayDate: getDaysLeft(item.trashedAt),
+                  }}
+                  onPress={() => {
+                    Alert.alert("Trash Item", item.name, [
+                      {
+                        text: "Restore",
+                        onPress: async () => {
+                          await restoreFromTrash(token, item.id);
+                          emitDriveRefresh(); // ג… refresh everywhere
+                        },
+                      },
+                      {
+                        text: "Delete Forever",
+                        style: "destructive",
+                        onPress: async () => {
+                          await deleteForever(token, item.id);
+                          emitDriveRefresh(); // ג… refresh everywhere
+                        },
+                      },
+                      { text: "Cancel", style: "cancel" },
+                    ]);
+                  }}
+                />
+              )}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="trash-outline" size={80} color="#f0f0f0" />
+                  <Text style={driveStyles.emptyText}>Trash is empty</Text>
+                </View>
+              }
+              onRefresh={loadTrash}
+              refreshing={loading}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    height: 60,
+  },
+  emptyAction: { color: "#dc3545", fontWeight: "600", fontSize: 16 },
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 22,
+    backgroundColor: "#f8f9fa",
+  },
+  content: { flex: 1 },
+  textHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  infoBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e7f1ff",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    gap: 8,
+    alignSelf: "flex-start",
+  },
+  infoText: { fontSize: 12, color: "#0d6efd", fontWeight: "500" },
+  emptyContainer: { alignItems: "center", marginTop: 100 },
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\(app)\_layout.jsx =====
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Drawer } from 'expo-router/drawer';
@@ -133,27 +726,60 @@ export default function AppLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
-        // ׳›׳׳ ׳׳ ׳—׳ ׳• ׳׳—׳‘׳¨׳™׳ ׳׳× ׳”-SideBar ׳”׳׳¢׳•׳¦׳‘ ׳©׳׳ ׳• ׳׳׳’׳™׳¨׳”
+        // ׳—׳™׳‘׳•׳¨ ׳”-SideBar ׳”׳׳¢׳•׳¦׳‘ ׳©׳׳ ׳• ׳׳׳’׳™׳¨׳”
         drawerContent={(props) => <SideBar {...props} />}
         
         screenOptions={{
-          headerShown: false, // ׳׳¡׳×׳™׳¨ ׳׳× ׳”׳‘׳¨ ׳”׳׳§׳•׳¨׳™ ׳©׳ ׳”׳׳¢׳¨׳›׳×
-          drawerType: 'front', // ׳”׳׳’׳™׳¨׳” ׳×׳¢׳׳” ׳׳¢׳ ׳”׳׳¡׳
+          headerShown: false, // ׳”׳¡׳×׳¨׳× ׳”׳‘׳¨ ׳”׳׳•׳‘׳ ׳” ׳׳˜׳•׳‘׳× ׳”-TopBar ׳©׳׳ ׳•
+          drawerType: 'front', // ׳”׳׳’׳™׳¨׳” ׳×׳¦׳•׳£ ׳׳¢׳ ׳”׳׳¡׳
           drawerStyle: {
             width: 280,
-            backgroundColor: 'transparent', // ׳—׳©׳•׳‘ ׳›׳“׳™ ׳©׳ ׳¨׳׳” ׳׳× ׳׳₪׳§׳˜ ׳”׳–׳›׳•׳›׳™׳×
+            backgroundColor: 'transparent', // ׳׳׳₪׳©׳¨ ׳׳¨׳׳•׳× ׳׳× ׳׳₪׳§׳˜ ׳”-Blur ׳©׳ ׳”-SideBar
           },
-          overlayColor: 'rgba(0,0,0,0.3)', // ׳”׳¦׳׳׳” ׳›׳”׳” ׳׳׳—׳•׳¨׳™ ׳”׳×׳₪׳¨׳™׳˜
-          swipeEnabled: true, // ׳׳׳₪׳©׳¨ ׳₪׳×׳™׳—׳” ׳‘׳”׳—׳׳§׳”
+          overlayColor: 'rgba(0,0,0,0.3)', // ׳”׳¦׳׳׳” ׳¢׳ ׳×׳•׳›׳ ׳”׳׳¡׳ ׳›׳©׳”׳׳’׳™׳¨׳” ׳₪׳×׳•׳—׳”
+          swipeEnabled: true, // ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳ ׳©׳ ׳₪׳×׳™׳—׳” ׳‘׳”׳—׳׳§׳”
         }}
       >
-        {/* ׳”׳’׳“׳¨׳× ׳׳¡׳ ׳”׳‘׳™׳× ׳‘׳×׳•׳ ׳”׳׳’׳™׳¨׳” */}
+        {/* ׳׳¡׳ ׳”׳‘׳™׳× - ׳׳׳₪׳©׳¨ ׳₪׳×׳™׳—׳× ׳׳’׳™׳¨׳” ׳‘׳”׳—׳׳§׳” (Home) */}
         <Drawer.Screen 
           name="home" 
-          options={{
-            swipeEnabled: true
-          }}
+          options={{ swipeEnabled: true }} 
         />
+
+        {/* ׳׳¡׳ ׳”-Recent - ׳׳•׳’׳“׳¨ ׳›׳׳•׳“׳ ׳¢׳¦׳׳׳™ ׳׳׳ ׳”׳—׳׳§׳” */}
+        <Drawer.Screen 
+          name="recent" 
+          options={{ 
+            unmountOnBlur: true, // ׳ ׳™׳§׳•׳™ ׳”׳–׳™׳›׳¨׳•׳ ׳‘׳™׳¦׳™׳׳” ׳׳”׳׳¡׳
+            swipeEnabled: false  // ׳‘׳™׳˜׳•׳ ׳”׳—׳׳§׳” ׳›׳“׳™ ׳׳ ׳׳”׳₪׳¨׳™׳¢ ׳׳׳—׳•׳•׳× ׳‘׳׳¡׳ ׳”׳׳•׳“׳
+          }} 
+        />
+
+        {/* ׳׳¡׳ ׳”-Important - ׳׳•׳’׳“׳¨ ׳›׳׳•׳“׳ ׳¢׳¦׳׳׳™ ׳׳׳ ׳”׳—׳׳§׳” */}
+        <Drawer.Screen 
+          name="important" 
+          options={{ 
+            unmountOnBlur: true, 
+            swipeEnabled: false 
+          }} 
+        />
+
+        {/* ׳׳¡׳ ׳”׳¡׳˜׳•׳¨׳’' - ׳׳•׳’׳“׳¨ ׳›׳׳•׳“׳ ׳¢׳¦׳׳׳™ ׳׳׳ ׳”׳—׳׳§׳” */}
+        <Drawer.Screen 
+          name="storage" 
+          options={{
+            unmountOnBlur: true,
+            swipeEnabled: false, 
+          }}
+          
+        />
+        <Drawer.Screen 
+  name="trash" 
+  options={{ 
+    unmountOnBlur: true,
+    swipeEnabled: false 
+  }} 
+/>
       </Drawer>
     </GestureHandlerRootView>
   );
@@ -175,22 +801,28 @@ export default function RegisterRoute() {
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\providers\AuthContext.jsx =====
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
 import { authenticateUser } from "../../features/auth/services/authService";
 
 const TOKEN_KEY = "token";
+const USER_KEY = "user_info";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [user, setUser] = useState(null); // ׳›׳׳ ׳ ׳©׳׳¨׳™׳ ׳₪׳¨׳˜׳™ ׳”׳׳©׳×׳׳© ׳›׳•׳׳ ׳”׳×׳׳•׳ ׳”
   const [isHydrating, setIsHydrating] = useState(true);
+  const router = useRouter();
 
-  // hydrate token once
   useEffect(() => {
     (async () => {
       try {
-        const saved = await SecureStore.getItemAsync(TOKEN_KEY);
-        setToken(saved ?? null);
+        const savedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+        const savedUser = await SecureStore.getItemAsync(USER_KEY);
+        if (savedToken) setToken(savedToken);
+        if (savedUser) setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error("Failed to load auth data", e);
       } finally {
         setIsHydrating(false);
       }
@@ -202,52 +834,45 @@ export function AuthProvider({ children }) {
       const res = await authenticateUser(email, password);
       if (!res.ok) return { ok: false, error: res.error || "Login failed" };
 
+      // ׳”׳©׳¨׳× ׳¦׳¨׳™׳ ׳׳”׳—׳–׳™׳¨ { token, user: { firstName, image, ... } }
       const newToken = res.token;
-      if (!newToken) return { ok: false, error: "No token returned from server" };
+      const userData = res.user;
 
       await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+      if (userData) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+
       setToken(newToken);
-      setSessionExpired(false);
+      setUser(userData);
+
+      router.replace("/(app)/home");
       return { ok: true };
     } catch (e) {
-      return { ok: false, error: e?.message || "Login failed" };
+      return { ok: false, error: e.message };
     }
   };
 
   const logout = async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_KEY);
     setToken(null);
-    setSessionExpired(false);
-    setIsHydrating(false);
-  }
-
-  const triggerSessionExpired = async () => {
-    setSessionExpired(true);
-    await logout();
+    setUser(null);
+    router.replace("/(auth)/login");
   };
 
-  const value = useMemo(
-    () => ({
-      token,
-      isAuthenticated: !!token,
-      sessionExpired,
-      isHydrating,
-      login,
-      logout,
-      triggerSessionExpired,
-    }),
-    [token, sessionExpired, isHydrating]
-  );
+  const value = useMemo(() => ({
+    token,
+    user,
+    isAuthenticated: !!token,
+    isHydrating,
+    login,
+    logout,
+  }), [token, user, isHydrating]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** ג… ׳–׳” ׳”׳”׳•׳§ ׳”׳¨׳©׳׳™ ׳‘׳׳₪׳׳™׳§׳¦׳™׳” */
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
-}
+export function useAuth() { return useContext(AuthContext); }
+export default AuthProvider;
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\app\index.jsx =====
 import React from "react";
 import { Redirect } from "expo-router";
@@ -450,35 +1075,72 @@ export default function Step1({ formData, setFormData, errors }) {
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\auth\pages\Register\steps\Step2.jsx =====
 import React from "react";
-import { View, Text, TextInput, StyleSheet, Keyboard } from "react-native";
+import { View, Text, TextInput, StyleSheet, Keyboard, Image, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-// ׳©׳™׳׳•׳© ׳‘׳ ׳×׳™׳‘ ׳”׳׳“׳•׳™׳§ ׳©׳‘׳™׳§׳©׳×
+import * as ImagePicker from 'expo-image-picker'; // ׳—׳•׳‘׳” ׳׳”׳×׳§׳™׳: npx expo install expo-image-picker
 import { authStyles } from "../../../styles/auth.styles";
 
 export default function Step2({ formData, setFormData, errors }) {
-  
+
+  // ׳₪׳•׳ ׳§׳¦׳™׳” ׳׳‘׳—׳™׳¨׳× ׳×׳׳•׳ ׳” ׳׳”׳’׳׳¨׳™׳”
+  const pickImage = async () => {
+    // 1. ׳‘׳§׳©׳× ׳”׳¨׳©׳׳” ׳׳’׳™׳©׳” ׳׳’׳׳¨׳™׳” (׳“׳¨׳™׳©׳× ׳•׳׳™׳“׳¦׳™׳” ׳•׳—׳•׳•׳™׳™׳× ׳׳©׳×׳׳©) 
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert(
+        "Permission Denied",
+        "We need permission to access your photos to set a profile picture."
+      );
+      return;
+    }
+
+    // 2. ׳₪׳×׳™׳—׳× ׳”׳’׳׳¨׳™׳” ׳׳‘׳—׳™׳¨׳× ׳×׳׳•׳ ׳” 
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, // ׳׳׳₪׳©׳¨ ׳׳׳©׳×׳׳© ׳׳—׳×׳•׳ ׳׳× ׳”׳×׳׳•׳ ׳”
+      aspect: [1, 1],      // ׳™׳—׳¡ ׳×׳׳•׳ ׳” ׳©׳ 1:1 (׳¨׳™׳‘׳•׳¢) ׳¢׳‘׳•׳¨ ׳₪׳¨׳•׳₪׳™׳
+      quality: 0.7,        // ׳”׳₪׳—׳×׳× ׳׳™׳›׳•׳× ׳׳©׳׳™׳¨׳” ׳¢׳ ׳‘׳™׳¦׳•׳¢׳™׳
+    });
+
+    // 3. ׳׳ ׳”׳׳©׳×׳׳© ׳‘׳—׳¨ ׳×׳׳•׳ ׳”, ׳ ׳©׳׳•׳¨ ׳׳× ׳”-URI ׳©׳׳” ׳‘-State 
+    if (!result.canceled) {
+      setFormData({ ...formData, image: result.assets[0].uri });
+    }
+  };
+
   const handlePhoneChange = (text) => {
     let cleaned = text.replace(/\D/g, "");
     if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
-    
+
     let formatted = cleaned;
     if (cleaned.length > 3 && cleaned.length <= 6) {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
     } else if (cleaned.length > 6) {
       formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
     }
-    
+
     setFormData({ ...formData, phoneNumber: formatted });
   };
 
   return (
     <View>
-      {/* ׳׳–׳•׳¨ ׳”׳×׳׳•׳ ׳” ׳ ׳©׳׳¨ ׳¢׳ ׳¢׳™׳¦׳•׳‘ ׳׳§׳•׳׳™ ׳›׳™ ׳”׳•׳ ׳™׳™׳—׳•׳“׳™ ׳׳׳¡׳ ׳”׳–׳” */}
+      {/* ׳׳–׳•׳¨ ׳‘׳—׳™׳¨׳× ׳•׳”׳¦׳’׳× ׳×׳׳•׳ ׳× ׳”׳₪׳¨׳•׳₪׳™׳  */}
       <View style={localStyles.imageContainer}>
-        <View style={localStyles.avatarPlaceholder}>
-           <Ionicons name="image-outline" size={40} color="#ccc" />
-        </View>
-        <Text style={localStyles.imageText}>Tap to upload photo (Coming soon)</Text>
+        <Pressable onPress={pickImage} style={localStyles.avatarPlaceholder}>
+          {formData.image ? (
+            // ׳׳ ׳§׳™׳™׳׳× ׳×׳׳•׳ ׳” - ׳”׳¦׳’ ׳׳•׳×׳”
+            <Image source={{ uri: formData.image }} style={localStyles.avatarImage} />
+          ) : (
+            // ׳׳ ׳׳™׳ ׳×׳׳•׳ ׳” - ׳”׳¦׳’ ׳׳™׳™׳§׳•׳ ׳‘׳¨׳™׳¨׳× ׳׳—׳“׳
+            <Ionicons name="image-outline" size={40} color="#ccc" />
+          )}
+        </Pressable>
+        <Text style={localStyles.imageText}>
+          {formData.image ? "Tap to change photo" : "Tap to upload photo"}
+        </Text>
+        {/* ׳•׳׳™׳“׳¦׳™׳” ׳•׳™׳–׳•׳׳׳™׳× ׳׳×׳׳•׳ ׳” ׳׳ ׳ ׳“׳¨׳© [cite: 43, 52] */}
+        {errors.image && <Text style={authStyles.errorText}>{errors.image}</Text>}
       </View>
 
       <Text style={authStyles.label}>Phone Number</Text>
@@ -492,26 +1154,38 @@ export default function Step2({ formData, setFormData, errors }) {
           value={formData.phoneNumber}
           onChangeText={handlePhoneChange}
           returnKeyType="done"
-          onSubmitEditing={Keyboard.dismiss} 
+          onSubmitEditing={Keyboard.dismiss}
         />
       </View>
       <Text style={{ fontSize: 12, color: "#888", marginBottom: 5, marginLeft: 4 }}>
         Israeli mobile numbers only
       </Text>
-      
+
+      {/* ׳”׳¦׳’׳× ׳”׳•׳“׳¢׳× ׳©׳’׳™׳׳” ׳‘׳¨׳•׳¨׳” ׳׳׳©׳×׳׳© [cite: 43, 51] */}
       {errors.phoneNumber && <Text style={authStyles.errorText}>{errors.phoneNumber}</Text>}
     </View>
   );
 }
 
-// ׳¢׳™׳¦׳•׳‘׳™׳ ׳׳§׳•׳׳™׳™׳ ׳¨׳§ ׳׳¨׳›׳™׳‘׳™׳ ׳©׳§׳™׳™׳׳™׳ ׳¡׳₪׳¦׳™׳₪׳™׳× ׳‘׳׳¡׳ ׳”׳–׳” (׳›׳׳• ׳×׳׳•׳ ׳× ׳”׳₪׳¨׳•׳₪׳™׳)
 const localStyles = StyleSheet.create({
   imageContainer: { alignItems: "center", marginBottom: 20 },
   avatarPlaceholder: {
-    width: 90, height: 90, borderRadius: 45, backgroundColor: "#f3f5f7",
-    justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#e1e1e1", marginBottom: 8
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#f3f5f7",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e1e1e1",
+    marginBottom: 8,
+    overflow: "hidden" // ׳׳‘׳˜׳™׳— ׳©׳”׳×׳׳•׳ ׳” ׳׳ ׳×׳—׳¨׳•׳’ ׳׳”׳¢׳™׳’׳•׳
   },
-  imageText: { fontSize: 13, color: "#888" },
+  avatarImage: {
+    width: "100%",
+    height: "100%"
+  },
+  imageText: { fontSize: 13, color: "#888", fontWeight: "500" },
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\auth\pages\Register\steps\Step3.jsx =====
 import React from "react";
@@ -689,11 +1363,18 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    firstName: "", lastName: "", phoneNumber: "", image: null,
-    dateOfBirth: "", gender: "", email: "", password: "", verifyPassword: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    image: null,
+    dateOfBirth: "",
+    gender: "",
+    email: "",
+    password: "",
+    verifyPassword: "",
   });
 
   const getHeaderTitle = () => {
@@ -713,6 +1394,7 @@ export default function RegisterScreen() {
     if (step === 2) stepErrors = validateStep2(formData);
     if (step === 3) stepErrors = validateStep3(formData);
     if (step === 4) stepErrors = validateStep4(formData);
+
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
@@ -734,25 +1416,35 @@ export default function RegisterScreen() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const res = await registerUser({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      phoneNumber: formData.phoneNumber,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      email: formData.email.toLowerCase(),
-      password: formData.password,
-    });
+
+    // ג… ׳©׳•׳׳—׳™׳ JSON ׳©׳”׳©׳¨׳× ׳©׳׳ ׳™׳•׳“׳¢ ׳׳₪׳¨׳¡׳¨
+    // required in server: firstName, email, phoneNumber, password, dateOfBirth, gender
+    const payload = {
+      firstName: String(formData.firstName || "").trim(),
+      lastName: String(formData.lastName || "").trim(),
+      phoneNumber: String(formData.phoneNumber || "").trim(),
+      dateOfBirth: String(formData.dateOfBirth || "").trim(), // YYYY-MM-DD
+      gender: String(formData.gender || "").trim(),           // male/female/other/prefer_not_to_say
+      email: String(formData.email || "").trim().toLowerCase(),
+      password: String(formData.password || ""),
+    };
+
+    // ׳׳ ׳™׳© ׳×׳׳•׳ ׳” (URI), ׳©׳•׳׳—׳™׳ ׳׳•׳×׳” ׳›׳׳—׳¨׳•׳–׳× ׳׳©׳¨׳× (׳”׳©׳¨׳× ׳׳§׳‘׳ profilePicture ׳›-string)
+    if (formData.image) {
+      payload.image = String(formData.image);
+      // ׳׳₪׳©׳¨ ׳’׳ payload.image = String(formData.image);
+    }
+
+    const res = await registerUser(payload);
+
     setLoading(false);
 
-    if (res.success) setStep(5);
-    else Alert.alert("Registration Failed", res.error || "Unknown error");
+    if (res?.success) setStep(5);
+    else Alert.alert("Registration Failed", res?.error || "Unknown error");
   };
 
   return (
     <AuthLayout subtitle={getHeaderTitle()}>
-
-      {/* ׳×׳•׳›׳ ׳”׳©׳׳‘׳™׳ */}
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} />}
         {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} />}
@@ -761,7 +1453,6 @@ export default function RegisterScreen() {
         {step === 5 && <Step5 />}
       </View>
 
-      {/* ׳›׳₪׳×׳•׳¨׳™׳ */}
       <View style={{ marginTop: 20 }}>
         {step === 5 ? (
           <Pressable style={authStyles.btnPrimary} onPress={() => router.replace("/login")}>
@@ -773,19 +1464,26 @@ export default function RegisterScreen() {
               <Text style={authStyles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
             </Pressable>
 
-            <Pressable style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]} onPress={handleNext}>
-              {loading ? <ActivityIndicator color="#fff" /> :
-                <Text style={authStyles.btnTextPrimary}>{step === TOTAL_STEPS ? "Submit" : "Next"}</Text>
-              }
+            <Pressable
+              style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]}
+              onPress={handleNext}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={authStyles.btnTextPrimary}>
+                  {step === TOTAL_STEPS ? "Submit" : "Next"}
+                </Text>
+              )}
             </Pressable>
           </View>
         )}
       </View>
 
-      {/* ׳׳™׳ ׳“׳™׳§׳˜׳•׳¨ ׳ ׳§׳•׳“׳•׳× */}
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <View key={i} style={[localStyles.dot, i === step && localStyles.dotActive]} />
           ))}
         </View>
@@ -800,25 +1498,35 @@ const localStyles = StyleSheet.create({
   dotActive: { backgroundColor: "#007bff", width: 20 },
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\auth\services\authService.js =====
+// ===== mobile-client/src/features/auth/services/authService.js =====
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 if (!API_BASE_URL) {
-  console.warn("Missing EXPO_PUBLIC_API_BASE_URL in .env");
+  console.warn("ג ן¸ Missing EXPO_PUBLIC_API_BASE_URL in .env");
 }
 
-async function jsonRequest(path, options) {
-  const url = `${API_BASE_URL}${path}`;
+async function request(path, options = {}) {
+  const method = options.method || "GET";
+  const body = options.body;
+
+  const cleanPath = path.startsWith("/api") ? path.replace("/api", "") : path;
+  const url = `${API_BASE_URL}${cleanPath}`;
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
 
   const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
+    method,
+    headers,
+    body: body != null ? JSON.stringify(body) : undefined,
   });
 
   const text = await res.text();
   let data = null;
+
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
@@ -829,29 +1537,37 @@ async function jsonRequest(path, options) {
 }
 
 export async function authenticateUser(email, password) {
-  const { ok, data } = await jsonRequest("/api/tokens", {
+  const { ok, data } = await request("/tokens", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
   });
 
   if (!ok) {
-    return { ok: false, error: data?.error || data?.message || "Invalid credentials" };
+    return {
+      ok: false,
+      error: data?.error || data?.message || "Invalid credentials",
+    };
   }
 
   const token = data?.token || data?.accessToken || data?.jwt;
-  if (!token) return { ok: false, error: "Server did not return a token" };
-
   return { ok: true, token };
 }
 
+// ג… Register via JSON (NO FormData)
 export async function registerUser(payload) {
-  const { ok, data } = await jsonRequest("/api/users", {
+  const { ok, status, data } = await request("/users", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: payload,
   });
 
-  if (!ok) return { success: false, error: data?.error || data?.message || "Register failed" };
-  return { success: true, user: data };
+  if (ok || status === 201) {
+    return { success: true, user: data };
+  }
+
+  return {
+    success: false,
+    error: data?.error || data?.message || "Register failed",
+  };
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\auth\styles\auth.styles.js =====
 import { StyleSheet, Dimensions } from "react-native";
@@ -1034,80 +1750,962 @@ export const validateStep4 = (data) => {
 
   return errors;
 };
-===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\DriveListHeader.jsx =====
-===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\DriveListItem.jsx =====
-import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\CreateFileModal.jsx =====
+import React, { useState } from "react";
+import { View, Text, TextInput, Pressable, Modal, StyleSheet, ActivityIndicator } from "react-native";
+import { BlurView } from "expo-blur";
 import { driveStyles } from "../styles/myDrive.styles";
 
-export default function DriveListItem({ item, onPress }) {
-    const isFolder = item.type === 'folder';
+export default function CreateFileModal({ visible, onClose, onSave }) {
+    const [name, setName] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (!name.trim()) return;
+        setLoading(true);
+        await onSave({ name: name.trim(), type: 'file', content: 'Sample text' });
+        setLoading(false);
+        setName("");
+    };
 
     return (
-        <Pressable style={driveStyles.fileCard} onPress={() => onPress(item)}>
-            <View style={driveStyles.iconContainer}>
-                <Ionicons
-                    name={isFolder ? "folder" : "document-text"}
-                    size={28}
-                    color={isFolder ? "#f8d775" : "#4285F4"}
-                />
+        <Modal visible={visible} transparent animationType="fade">
+            <View style={localStyles.overlay}>
+                <BlurView intensity={90} tint="light" style={localStyles.modalCard}>
+                    <Text style={[driveStyles.sectionText, { fontSize: 20, marginBottom: 20 }]}>Create New File</Text>
+
+                    <TextInput
+                        style={localStyles.input}
+                        placeholder="File Name (e.g. notes.txt)"
+                        value={name}
+                        onChangeText={setName}
+                        autoFocus
+                    />
+
+                    <View style={localStyles.actions}>
+                        <Pressable style={localStyles.btnCancel} onPress={onClose}>
+                            <Text style={{ color: '#666' }}>Cancel</Text>
+                        </Pressable>
+                        <Pressable style={localStyles.btnSave} onPress={handleSave} disabled={loading}>
+                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff' }}>Create</Text>}
+                        </Pressable>
+                    </View>
+                </BlurView>
             </View>
-            <View style={{ flex: 1 }}>
-                <Text style={driveStyles.fileName} numberOfLines={1}>{item.name}</Text>
-                <Text style={driveStyles.fileInfo}>
-                    {isFolder ? "Folder" : "File"} ג€¢ {new Date(item.updatedAt).toLocaleDateString()}
-                </Text>
-            </View>
-            <Ionicons name="ellipsis-vertical" size={18} color="#5f6368" />
-        </Pressable>
+        </Modal>
     );
 }
+
+const localStyles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
+    modalCard: { width: '85%', padding: 25, borderRadius: 24, overflow: 'hidden', borderWeight: 1, borderColor: 'rgba(255,255,255,0.4)' },
+    input: { backgroundColor: 'rgba(255,255,255,0.8)', padding: 15, borderRadius: 15, marginBottom: 20, fontSize: 16 },
+    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+    btnCancel: { padding: 12, borderRadius: 10 },
+    btnSave: { backgroundColor: '#1a73e8', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10 }
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\DriveListHeader.jsx =====
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\DriveListItem.jsx =====
+// mobile-client/src/features/drive/components/DriveListItem.jsx
+
+import React, { useRef, useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Alert,
+  Dimensions,
+  Platform,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { driveStyles } from "../styles/myDrive.styles";
+import { getFileIconMeta } from "../utils/fileIcon";
+
+import { BlurView } from "expo-blur";
+
+import { useAuth } from "../../../app/providers/AuthContext";
+import { emitDriveRefresh } from "../services/driveEvents";
+import { setStarred, setImportant, renameItem } from "../services/fileService";
+
+export default function DriveListItem({ item, onPress }) {
+  const isFolder = item.type === "folder";
+  const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
+
+  const { token } = useAuth();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState(item.name || "");
+
+  const isStarred = !!item.starred;
+  const isImportant = !!item.important;
+
+  const dotsRef = useRef(null);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const comingSoon = (label) => {
+    closeMenu();
+    Alert.alert("CopaDrive", `${label} (Coming soon)`);
+  };
+
+  const menuOptions = useMemo(() => {
+    return [
+      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => comingSoon("Share") },
+      { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
+
+      {
+        key: "star",
+        icon: isStarred ? "star" : "star-outline",
+        label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
+        onPress: async () => {
+          if (!token) return Alert.alert("Not logged in", "No token found.");
+          closeMenu();
+          try {
+            await setStarred(token, item.id, !isStarred);
+            emitDriveRefresh();
+          } catch (e) {
+            Alert.alert("Failed", e?.message || "Could not update Starred");
+          }
+        },
+      },
+      {
+        key: "important",
+        icon: isImportant ? "alert-circle" : "alert-circle-outline",
+        label: isImportant ? "REMOVE IMPORTANT" : "ADD TO IMPORTANT",
+        onPress: async () => {
+          if (!token) return Alert.alert("Not logged in", "No token found.");
+          closeMenu();
+          try {
+            await setImportant(token, item.id, !isImportant);
+            emitDriveRefresh();
+          } catch (e) {
+            Alert.alert("Failed", e?.message || "Could not update Important");
+          }
+        },
+      },
+
+      { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: () => comingSoon("Download") },
+
+      {
+        key: "rename",
+        icon: "pencil-outline",
+        label: "RENAME",
+        onPress: () => {
+          closeMenu();
+          setRenameValue(item.name || "");
+          setRenameOpen(true);
+        },
+      },
+    ];
+  }, [token, item.id, item.name, isStarred, isImportant]);
+
+  const openMenu = () => {
+    if (!dotsRef.current) return setMenuOpen(true);
+
+    dotsRef.current.measureInWindow((x, y, w, h) => {
+      const { width: screenW, height: screenH } = Dimensions.get("window");
+
+      const MENU_W = 260;
+      const BTN_H = 54;
+      const GAP = 12;
+      const MENU_H = menuOptions.length * BTN_H + (menuOptions.length - 1) * GAP;
+
+      const anchorX = x + w / 2;
+      const anchorY = y + h / 2;
+
+      let left = anchorX - MENU_W - 12;
+      let top = anchorY - MENU_H / 2;
+
+      const PADDING = 10;
+      left = Math.max(PADDING, Math.min(left, screenW - MENU_W - PADDING));
+      top = Math.max(PADDING + 50, Math.min(top, screenH - MENU_H - PADDING));
+
+      setMenuPos({ top, left });
+      setMenuOpen(true);
+    });
+  };
+
+  const doRenameSubmit = async () => {
+    const next = renameValue.trim();
+    if (!next) return;
+    if (!token) return Alert.alert("Not logged in", "No token found.");
+
+    try {
+      await renameItem(token, item.id, next);
+      setRenameOpen(false);
+      emitDriveRefresh();
+    } catch (e) {
+      Alert.alert("Rename Failed", e?.message || "Could not rename item");
+    }
+  };
+
+  return (
+    <>
+      <Pressable style={driveStyles.fileCard} onPress={() => onPress(item)}>
+        <View style={driveStyles.iconContainer}>
+          <Ionicons name={icon} size={28} color={color} />
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text style={driveStyles.fileName} numberOfLines={1}>
+            {item.name}
+          </Text>
+
+          <Text style={driveStyles.fileInfo}>
+            {isFolder ? "Folder" : "File"} ג€¢{" "}
+            {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
+          </Text>
+        </View>
+
+        {/* hamburger */}
+        <Pressable
+          ref={dotsRef}
+          onPress={() => (menuOpen ? closeMenu() : openMenu())}
+          hitSlop={14}
+          style={{ padding: 6 }}
+        >
+          <Ionicons name="ellipsis-vertical" size={18} color="#5f6368" />
+        </Pressable>
+      </Pressable>
+
+      {/* ג… Floating menu with blurred backdrop */}
+      <Modal visible={menuOpen} transparent animationType="none">
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
+          {/* Blur overlay (tap outside closes) */}
+          <BlurView
+            intensity={22}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+          {/* small extra dim so text pops */}
+          <View style={[StyleSheet.absoluteFill, styles.dim]} />
+
+          {/* Menu itself */}
+          <Pressable
+            style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
+            onPress={() => {}}
+          >
+            {menuOptions.map((opt) => (
+              <StackOption
+                key={opt.key}
+                icon={opt.icon}
+                label={opt.label}
+                onPress={opt.onPress}
+              />
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Rename modal */}
+      <Modal visible={renameOpen} transparent animationType="fade">
+        <Pressable style={styles.renameBackdrop} onPress={() => setRenameOpen(false)}>
+          <Pressable style={styles.renameCard} onPress={() => {}}>
+            <Text style={styles.renameTitle}>RENAME</Text>
+
+            <TextInput
+              value={renameValue}
+              onChangeText={setRenameValue}
+              style={styles.renameInput}
+              placeholder="New name"
+              autoFocus
+            />
+
+            <View style={styles.renameActions}>
+              <TouchableOpacity onPress={() => setRenameOpen(false)} style={styles.renameBtnGhost}>
+                <Text style={styles.renameGhostText}>CANCEL</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={doRenameSubmit} style={styles.renameBtnPrimary}>
+                <Text style={styles.renamePrimaryText}>SAVE</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+function StackOption({ icon, label, onPress }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.stackBtn}>
+      {/* ג… icon LEFT */}
+      <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
+
+      {/* ג… text LEFT (default font) */}
+      <Text
+        style={styles.stackLabel}
+        numberOfLines={1}
+        ellipsizeMode="clip"
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
+
+  stackMenu: {
+    position: "absolute",
+    width: 260,
+    gap: 12,
+  },
+
+  stackBtn: {
+    height: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start", // ג… left
+    backgroundColor: "rgba(255,255,255,0.98)",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 30,
+
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+
+    minWidth: 260,
+  },
+
+  stackLabel: {
+    flex: 1,
+    textAlign: "left",
+    fontSize: 12,
+    color: "#333",
+    letterSpacing: 1.2,
+    // ג… no custom font -> default system font
+  },
+
+  // rename modal
+  renameBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  renameCard: {
+    backgroundColor: "white",
+    borderRadius: 18,
+    padding: 18,
+  },
+  renameTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
+    letterSpacing: 1.5,
+  },
+  renameInput: {
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+  },
+  renameActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 14,
+  },
+  renameBtnGhost: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  renameGhostText: {
+    color: "#6c757d",
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  renameBtnPrimary: {
+    backgroundColor: "#0d6efd",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  renamePrimaryText: {
+    color: "white",
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\EmptyState.jsx =====
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\ScreenLayout.jsx =====
+import React from "react";
+import { ImageBackground, SafeAreaView, Text, Alert, View } from "react-native";
+import TopBar from "../../../layout/TopBar";
+import Fab from "../../../layout/Fab";
+import { driveStyles } from "../styles/myDrive.styles";
+
+const bgImage = require("../../../assets/images/back.png");
+
+export default function ScreenLayout({ title, children }) {
+    const handleFeatureAlert = () => {
+        Alert.alert("Development Note", "You need to implement MongoDB logic for this action.");
+    };
+
+    return (
+        <ImageBackground source={bgImage} style={driveStyles.backgroundImage} resizeMode="cover">
+            <SafeAreaView style={{ flex: 1 }}>
+                <TopBar />
+                <Text style={driveStyles.homeTitle}>{title}</Text>
+                {children}
+            </SafeAreaView>
+
+            <Fab onPress={handleFeatureAlert} />
+        </ImageBackground>
+    );
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\components\StorageTree.jsx =====
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { formatBytes } from "../../../shared_code/utils/formatBytes";
+
+export default function StorageTree({ usedBytes = 0, quotaBytes = 15 * 1024 * 1024 * 1024 }) {
+  const used = Math.max(0, Number(usedBytes) || 0);
+  const quota = Math.max(1, Number(quotaBytes) || 1);
+  
+  // ׳—׳™׳©׳•׳‘ ׳”׳׳—׳•׳–׳™׳
+  const percentage = Math.min(100, (used / quota) * 100);
+
+  return (
+    <View style={styles.container}>
+      {/* ׳׳™׳›׳ ׳”׳¢׳¥ */}
+      <View style={styles.treeContainer}>
+        {/* ׳©׳›׳‘׳” 1: ׳”׳¢׳¥ ׳”׳׳₪׳•׳¨ (׳¨׳§׳¢) */}
+        <Text style={styles.treeIconBase}>נ´</Text>
+
+        {/* ׳©׳›׳‘׳” 2: ׳”׳¢׳¥ ׳”׳¦׳‘׳¢׳•׳ ׳™ (׳׳™׳׳•׳™) - ׳ ׳—׳×׳ ׳׳₪׳™ ׳”׳’׳•׳‘׳” */}
+        <View style={[styles.fillWrapper, { height: `${percentage}%` }]}>
+          <Text style={styles.treeIconFill}>נ´</Text>
+        </View>
+      </View>
+
+      {/* ׳˜׳§׳¡׳˜ ׳׳׳˜׳” */}
+      <Text style={styles.text}>
+        {formatBytes(used)} of {formatBytes(quota)} used
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    marginTop: "auto", // ׳“׳•׳—׳£ ׳׳× ׳”׳¨׳›׳™׳‘ ׳׳×׳—׳×׳™׳× ׳׳ ׳”׳•׳ ׳‘׳×׳•׳ Flex
+  },
+  treeContainer: {
+    width: 60,
+    height: 60,
+    position: "relative",
+    marginBottom: 5,
+  },
+  treeIconBase: {
+    fontSize: 50,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    opacity: 0.3, // ׳׳₪׳•׳¨/׳©׳§׳•׳£
+    color: "#5f6368",
+    filter: "grayscale(100%)", // ׳”׳¢׳¨׳”: ׳‘-RN ׳–׳” ׳׳ ׳×׳׳™׳“ ׳¢׳•׳‘׳“, ׳”׳©׳§׳™׳₪׳•׳× ׳׳¡׳₪׳™׳§׳”
+  },
+  fillWrapper: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: "hidden", // ׳–׳” ׳”׳§׳¡׳ ׳©׳™׳•׳¦׳¨ ׳׳× ׳”׳—׳™׳×׳•׳
+    justifyContent: "flex-end", // ׳׳¦׳׳™׳“ ׳׳× ׳”׳˜׳§׳¡׳˜ ׳”׳₪׳ ׳™׳׳™ ׳׳×׳—׳×׳™׳×
+  },
+  treeIconFill: {
+    fontSize: 50,
+    textAlign: "center",
+    // ׳—׳©׳•׳‘: ׳”׳’׳•׳“׳ ׳—׳™׳™׳‘ ׳׳”׳™׳•׳× ׳–׳”׳” ׳׳‘׳¡׳™׳¡ ׳›׳“׳™ ׳©׳™׳×׳׳‘׳© ׳‘׳•׳
+    height: 60, 
+    lineHeight: 60, // ׳¢׳•׳–׳¨ ׳׳™׳™׳©׳•׳¨
+  },
+  text: {
+    fontSize: 12,
+    color: "#5f6368",
+    fontWeight: "600",
+  },
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\hooks\useMyDrive.js =====
+// mobile-client/src/features/drive/hooks/useMyDrive.js
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../app/providers/AuthContext";
 import { getFiles } from "../services/fileService";
+import { subscribeDriveRefresh } from "../services/driveEvents";
 
 export function useMyDrive() {
-    const { token, logout } = useAuth();
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+  const { token, logout } = useAuth();
 
-    const fetchItems = useCallback(async () => {
-        if (!token) return;
-        try {
-            const data = await getFiles(token);
-            setItems(data);
-        } catch (error) {
-            if (error?.message && (error.message.includes("token") || error.message.includes("401"))) {
-                console.error("Session invalid, logging out...");
-                await logout();
-            }
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [token, logout]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => { fetchItems(); }, [fetchItems]);
+  const fetchItems = useCallback(async () => {
+    if (!token) return;
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchItems();
+    try {
+      const data = await getFiles(token);
+      setItems(Array.isArray(data) ? data : []);
+    } catch (error) {
+      if (
+        error?.message &&
+        (error.message.includes("token") || error.message.includes("401"))
+      ) {
+        await logout();
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token, logout]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  // ג… listen for global refresh events (upload/create/delete/etc.)
+  useEffect(() => {
+    const unsubscribe = subscribeDriveRefresh(() => {
+      setRefreshing(true);
+      fetchItems();
+    });
+    return unsubscribe;
+  }, [fetchItems]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchItems();
+  };
+
+  return { items, loading, refreshing, onRefresh };
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\modals\EditUserModal.jsx =====
+import React, { useState } from 'react';
+import { Modal, View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../../shared_code/hooks/useAuth';
+
+export default function EditUserModal({ visible, onClose }) {
+    const { user, updateUserData } = useAuth(); // ׳©׳™׳׳•׳© ׳‘-AuthContext ׳׳׳™׳“׳¢ ׳”׳§׳™׳™׳
+    const [formData, setFormData] = useState({
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+        phoneNumber: user?.phoneNumber || '',
+        image: user?.profilePic || null,
+    });
+
+    const handlePickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true, aspect: [1, 1], quality: 0.7,
+        });
+        if (!result.canceled) setFormData({ ...formData, image: result.assets[0].uri });
     };
 
-    return { items, loading, refreshing, onRefresh };
+    const handleSave = async () => {
+        // ׳›׳׳ ׳×׳©׳×׳׳© ׳‘-FormData ׳›׳₪׳™ ׳©׳׳׳“׳ ׳• ׳›׳“׳™ ׳׳©׳׳•׳— ׳׳©׳¨׳× ׳”-NodeJS 
+        const data = new FormData();
+        data.append('firstName', formData.firstName);
+        // ... ׳”׳•׳¡׳₪׳× ׳©׳׳¨ ׳”׳©׳“׳•׳×
+        await updateUserData(data);
+        onClose();
+    };
+
+    return (
+        <Modal visible={visible} transparent animationType="fade">
+            <View style={styles.overlay}>
+                <View style={styles.container}>
+                    <Text style={styles.title}>Edit user</Text>
+
+                    {/* ׳׳–׳•׳¨ ׳”׳×׳׳•׳ ׳” - ׳‘׳”׳©׳¨׳׳× ׳”-Web */}
+                    <View style={styles.imageSection}>
+                        <Image source={{ uri: formData.image }} style={styles.avatar} />
+                        <Pressable style={styles.changeBtn} onPress={handlePickImage}>
+                            <Text style={styles.changeBtnText}>Change photo</Text>
+                        </Pressable>
+                    </View>
+
+                    {/* ׳©׳“׳•׳× ׳§׳׳˜ ׳¢׳ ׳•׳׳™׳“׳¦׳™׳” ׳›׳ ׳“׳¨׳© [cite: 43] */}
+                    <TextInput
+                        style={styles.input}
+                        value={formData.firstName}
+                        onChangeText={(t) => setFormData({ ...formData, firstName: t })}
+                        placeholder="FIRST NAME"
+                    />
+                    {/* ׳”׳•׳¡׳£ ׳›׳׳ ׳׳× ׳©׳׳¨ ׳”׳©׳“׳•׳×: Last Name, Phone Number */}
+
+                    <View style={styles.actions}>
+                        <Pressable onPress={onClose}><Text>Cancel</Text></Pressable>
+                        <Pressable onPress={handleSave} style={styles.saveBtn}>
+                            <Text style={styles.saveBtnText}>Save changes</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\pages\MainHomePage.jsx =====
+import React, { useMemo } from "react";
+import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useMyDrive } from "../hooks/useMyDrive";
+import DriveListItem from "../components/DriveListItem";
+import { driveStyles } from "../styles/myDrive.styles";
+
+export default function MainHomePage() {
+    const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+    // ׳׳•׳’׳™׳§׳” ׳₪׳ ׳™׳׳™׳× ׳©׳ ׳”׳“׳£: ׳—׳׳•׳§׳” ׳׳×׳™׳§׳™׳•׳× ׳•׳§׳‘׳¦׳™׳
+    const folders = useMemo(() => items.filter(i => i.type === 'folder'), [items]);
+    const files = useMemo(() => items.filter(i => i.type === 'file'), [items]);
+
+    if (loading && items.length === 0) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+
+    return (
+        <FlatList
+            data={[]}
+            ListHeaderComponent={
+                <View>
+                    <SectionHeader icon="folder-outline" title="Suggested folders" />
+                    {folders.map(item => <DriveListItem key={item.id} item={item} onPress={() => { }} />)}
+
+                    <SectionHeader icon="document-text-outline" title="Suggested files" style={{ marginTop: 20 }} />
+                    {files.map(item => <DriveListItem key={item.id} item={item} onPress={() => { }} />)}
+                </View>
+            }
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            contentContainerStyle={{ paddingBottom: 150 }}
+        />
+    );
+}
+
+const SectionHeader = ({ icon, title, style }) => (
+    <View style={[driveStyles.sectionHeader, style]}>
+        <Ionicons name={icon} size={18} color="#333" />
+        <Text style={driveStyles.sectionText}>{title}</Text>
+    </View>
+);
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\pages\MyDrivePage.jsx =====
+import React, { useMemo } from "react";
+import { FlatList, Text, Alert, ActivityIndicator } from "react-native";
+import { useMyDrive } from "../hooks/useMyDrive";
+import DriveListItem from "../components/DriveListItem";
+import { driveStyles } from "../styles/myDrive.styles";
+
+export default function MyDrivePage() {
+    const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+    // ׳₪׳™׳׳˜׳¨ ׳—׳›׳: ׳׳¦׳™׳’ ׳¨׳§ ׳₪׳¨׳™׳˜׳™׳ ׳׳¡׳•׳’ file
+    const onlyFiles = useMemo(() =>
+        items.filter(i => i.type === 'file'),
+        [items]
+    );
+
+    const handleMongoDBAlert = () => {
+        Alert.alert("MongoDB Required", "File actions in My Drive will be enabled after MongoDB integration.");
+    };
+
+    if (loading && items.length === 0) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+
+    return (
+        <FlatList
+            data={onlyFiles}
+            contentContainerStyle={{ paddingBottom: 150 }}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+                <DriveListItem item={item} onPress={handleMongoDBAlert} />
+            )}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            ListEmptyComponent={
+                <Text style={driveStyles.emptyText}>No files found in your drive.</Text>
+            }
+            showsVerticalScrollIndicator={false}
+        />
+    );
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\pages\SharedPage.jsx =====
+import React, { useState, useMemo } from "react";
+import { FlatList, Pressable, View, Text, ActivityIndicator, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useMyDrive } from "../hooks/useMyDrive";
+import { useAuth } from "../../../app/providers/AuthContext";
+import DriveListItem from "../components/DriveListItem";
+import { driveStyles } from "../styles/myDrive.styles";
+
+export default function SharedPage() {
+    const { items, loading, refreshing, onRefresh } = useMyDrive();
+    const { userId } = useAuth();
+    const [selectedOwnerId, setSelectedOwnerId] = useState(null);
+
+    // ׳¡׳™׳ ׳•׳ ׳₪׳¨׳™׳˜׳™׳ ׳©׳©׳•׳×׳₪׳• ׳׳™׳×׳™
+    const sharedItems = useMemo(() => items.filter(i => i.ownerId !== userId), [items, userId]);
+
+    // ׳™׳¦׳™׳¨׳× ׳¨׳©׳™׳׳× ׳‘׳¢׳׳™׳
+    const owners = useMemo(() => {
+        const uniqueIds = [...new Set(sharedItems.map(i => i.ownerId))];
+        return uniqueIds.map(id => ({
+            id,
+            email: sharedItems.find(i => i.ownerId === id).ownerEmail || 'Shared User'
+        }));
+    }, [sharedItems]);
+
+    const filesByOwner = useMemo(() =>
+        sharedItems.filter(i => i.ownerId === selectedOwnerId),
+        [sharedItems, selectedOwnerId]
+    );
+
+    if (loading && items.length === 0) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+
+    if (selectedOwnerId) {
+        return (
+            <View style={{ flex: 1 }}>
+                <Pressable onPress={() => setSelectedOwnerId(null)} style={{ margin: 15, flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="arrow-back" size={20} color="#1a73e8" />
+                    <Text style={{ color: '#1a73e8', fontWeight: 'bold', marginLeft: 5 }}>Back to Users</Text>
+                </Pressable>
+                <FlatList
+                    data={filesByOwner}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => <DriveListItem item={item} onPress={() => Alert.alert("MongoDB Needed")} />}
+                />
+            </View>
+        );
+    }
+
+    return (
+        <FlatList
+            data={owners}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+                <Pressable style={driveStyles.fileCard} onPress={() => setSelectedOwnerId(item.id)}>
+                    <Ionicons name="person-circle" size={40} color="#5f6368" style={{ marginRight: 15 }} />
+                    <Text style={driveStyles.fileName}>{item.email}</Text>
+                </Pressable>
+            )}
+            ListEmptyComponent={<Text style={driveStyles.emptyText}>No shared items yet</Text>}
+        />
+    );
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\pages\StarredPage.jsx =====
+import React, { useMemo } from "react";
+import { FlatList, Alert, Text, ActivityIndicator } from "react-native";
+import { useMyDrive } from "../hooks/useMyDrive";
+import DriveListItem from "../components/DriveListItem";
+import { driveStyles } from "../styles/myDrive.styles";
+
+export default function StarredPage() {
+    const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+    const starredItems = useMemo(() => items.filter(i => i.starred), [items]);
+
+    const handleMongoDBAlert = () => {
+        Alert.alert("CopaDrive", "MongoDB integration required for file actions.");
+    };
+
+    if (loading && items.length === 0) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+
+    return (
+        <FlatList
+            data={starredItems}
+            contentContainerStyle={{ paddingBottom: 150 }}
+            keyExtractor={(item) => item.id}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            renderItem={({ item }) => (
+                <DriveListItem item={item} onPress={handleMongoDBAlert} />
+            )}
+            ListEmptyComponent={
+                <Text style={driveStyles.emptyText}>No starred items yet</Text>
+            }
+        />
+    );
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\services\driveEvents.js =====
+import { DeviceEventEmitter } from "react-native";
+
+const EVENT_NAME = "COPADRIVE_REFRESH";
+
+export function emitDriveRefresh(payload = {}) {
+  DeviceEventEmitter.emit(EVENT_NAME, payload);
+}
+
+export function subscribeDriveRefresh(handler) {
+  const sub = DeviceEventEmitter.addListener(EVENT_NAME, handler);
+  return () => sub.remove();
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\services\fileService.js =====
 import { request } from "../../../shared_code/hooks/api/request";
 
+/** ׳׳•׳©׳ ׳׳× ׳›׳ ׳”׳§׳‘׳¦׳™׳ ׳‘׳×׳™׳§׳™׳™׳× ׳”׳©׳•׳¨׳© */
 export async function getFiles(token) {
+    return request("/api/files", { 
+        method: "GET", 
+        token: token 
+    });
+}
+
+/* ===========================================================
+    נ“ ׳™׳¦׳™׳¨׳× ׳₪׳¨׳™׳˜׳™׳ (׳§׳‘׳¦׳™׳ ׳•׳×׳™׳§׳™׳•׳×) - ׳¢׳‘׳•׳¨ ׳”-FAB נ“
+   =========================================================== */
+
+/** * ׳₪׳•׳ ׳§׳¦׳™׳” ׳¨׳׳©׳™׳× ׳׳™׳¦׳™׳¨׳× ׳₪׳¨׳™׳˜ (׳×׳™׳§׳™׳™׳” ׳׳• ׳§׳•׳‘׳¥).
+ * ׳”-FAB ׳׳©׳×׳׳© ׳‘׳₪׳•׳ ׳§׳¦׳™׳” ׳”׳–׳• ׳›׳“׳™ ׳׳×׳׳•׳ ׳‘׳›׳ ׳”׳¡׳•׳’׳™׳.
+ *
+ */
+export async function createItem(token, { name, type, parentId = null, content = "", mimeType = "" }) {
     return request("/api/files", {
+        method: "POST",
+        token: token,
+        body: JSON.stringify({
+            name,
+            type,
+            parentId,
+            // ׳×׳•׳›׳ ׳ ׳©׳׳— ׳¨׳§ ׳׳ ׳–׳” ׳§׳•׳‘׳¥, ׳׳—׳¨׳× ׳׳—׳¨׳•׳–׳× ׳¨׳™׳§׳”
+            content: type === "file" ? content : "", 
+            mimeType: type === "file" ? mimeType : ""
+        })
+    });
+}
+
+/** ׳׳¢׳˜׳₪׳× ׳׳™׳¦׳™׳¨׳× ׳§׳•׳‘׳¥ (׳׳©׳×׳׳©׳× ׳‘-createItem) */
+export async function createFile(token, fileData) {
+    // fileData ׳׳›׳™׳: { name, content, mimeType }
+    return createItem(token, { ...fileData, type: 'file' });
+}
+
+/** ׳׳¢׳˜׳₪׳× ׳׳™׳¦׳™׳¨׳× ׳×׳™׳§׳™׳™׳” (׳׳©׳×׳׳©׳× ׳‘-createItem) */
+export async function createFolder(token, name, parentId = null) {
+    return createItem(token, { name, type: 'folder', parentId });
+}
+
+/* ===========================================================
+    נ“ ׳ ׳×׳•׳ ׳™׳ ׳•׳¡׳˜׳˜׳™׳¡׳˜׳™׳§׳•׳× נ“
+   =========================================================== */
+
+export async function getUsage(token) {
+    return request("/api/files/usage", {
         method: "GET",
         token: token
+    }); 
+}
+
+/* ===========================================================
+    נ“ ׳₪׳•׳ ׳§׳¦׳™׳•׳× ׳ ׳•׳¡׳₪׳•׳× (Recent, Trash, Important) נ“
+   =========================================================== */
+
+export async function getRecentFiles(token) {
+    return request("/api/files/recent", { method: "GET", token });
+}
+
+export async function getImportantFiles(token) {
+    return request("/api/files/important", { method: "GET", token });
+}
+
+export async function getTrashFiles(token) {
+    return request("/api/files/trash", { method: "GET", token });
+}
+
+export async function restoreFromTrash(token, fileId) {
+    return request(`/api/files/${fileId}/trash`, {
+        method: "PATCH",
+        token: token,
+        body: JSON.stringify({ trashed: false }),
     });
+}
+
+export async function deleteForever(token, fileId) {
+    return request(`/api/files/${fileId}/forever`, { method: "DELETE", token });
+}
+
+export async function emptyTrash(token) {
+    return request("/api/files/trash/empty", { method: "DELETE", token });
+}
+
+/* ===========================================================
+    נ“ ׳¢׳–׳¨׳™ ׳×׳׳¨׳™׳›׳™׳ (Helpers) נ“
+   =========================================================== */
+
+export function getDaysLeft(trashedAt) {
+    if (!trashedAt) return "";
+    const trashDate = new Date(trashedAt);
+    const deleteDate = new Date(trashDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const diffTime = deleteDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? `${diffDays} days left` : "Deleting soon";
+}
+
+export function formatLastAccessed(dateString) {
+    if (!dateString) return "Never";
+    const date = new Date(dateString);
+    const diffMs = new Date() - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
+    return date.toLocaleDateString();
+}
+export async function setStarred(token, fileId, starred) {
+  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { starred: !!starred },
+  });
+}
+
+// ג… toggle important
+export async function setImportant(token, fileId, important) {
+  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { important: !!important },
+  });
+}
+
+// ג… rename (file or folder)
+export async function renameItem(token, fileId, name) {
+  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { name },
+  });
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\styles\myDrive.styles.js =====
 import { StyleSheet, Platform } from "react-native";
@@ -1231,6 +2829,431 @@ export const driveStyles = StyleSheet.create({
  */
 
 export default {};
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\utils\fileIcon.js =====
+// mobile-client/src/features/drive/utils/fileIcon.js
+
+/**
+ * Returns icon meta (Ionicons name + color) by file name/mime + folder flag
+ */
+export function getFileIconMeta(name, mimeType, isFolder) {
+  if (isFolder) return { icon: "folder", color: "#f8d775" };
+
+  const safeName = String(name || "");
+  const ext = safeName.includes(".") ? safeName.split(".").pop().toLowerCase() : "";
+  const mime = String(mimeType || "").toLowerCase();
+
+  // Documents
+  if (["doc", "docx", "odt"].includes(ext) || mime.includes("word"))
+    return { icon: "document-text", color: "#4285f4" };
+
+  // Spreadsheets
+  if (["xls", "xlsx", "csv", "ods"].includes(ext) || mime.includes("spreadsheet") || mime.includes("excel"))
+    return { icon: "grid", color: "#34a853" };
+
+  // Presentations
+  if (["ppt", "pptx", "odp"].includes(ext) || mime.includes("presentation") || mime.includes("powerpoint"))
+    return { icon: "easel", color: "#f4b400" };
+
+  // PDF
+  if (ext === "pdf" || mime === "application/pdf")
+    return { icon: "document", color: "#ea4335" };
+
+  // Images
+  if (["jpg", "jpeg", "png", "gif", "svg", "webp", "heic"].includes(ext) || mime.startsWith("image/"))
+    return { icon: "image", color: "#ea4335" };
+
+  // Video
+  if (["mp4", "mkv", "avi", "mov"].includes(ext) || mime.startsWith("video/"))
+    return { icon: "play-circle", color: "#ea4335" };
+
+  // Audio
+  if (["mp3", "wav", "ogg", "m4a"].includes(ext) || mime.startsWith("audio/"))
+    return { icon: "musical-notes", color: "#a142f4" };
+
+  // Archives
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext) || mime.includes("zip") || mime.includes("compressed"))
+    return { icon: "archive", color: "#fbbc04" };
+
+  // Code
+  if (["js", "jsx", "ts", "tsx", "html", "css", "json", "py", "java", "c", "cpp"].includes(ext))
+    return { icon: "code-slash", color: "#4285f4" };
+
+  // Text
+  if (ext === "txt" || mime === "text/plain" || mime.startsWith("text/"))
+    return { icon: "document-text", color: "#4285f4" };
+
+  return { icon: "document-outline", color: "#9aa0a6" };
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\user\components\EditProfileModal.jsx =====
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { BlurView } from "expo-blur";
+
+import { useAuth } from "../../../app/providers/AuthContext";
+import { updateUserProfile, changeUserPassword } from "../services/userService";
+
+// --- helpers ---
+const formatIsraeliPhone = (raw) => {
+  let v = String(raw || "").replace(/\D/g, "");
+  if (v.length > 10) v = v.slice(0, 10);
+  if (v.length <= 3) return v;
+  if (v.length <= 6) return `${v.slice(0, 3)}-${v.slice(3)}`;
+  return `${v.slice(0, 3)}-${v.slice(3, 6)}-${v.slice(6)}`;
+};
+
+const validatePhone = (value) => {
+  const clean = String(value || "").replace(/\D/g, "");
+  if (!clean) return "Phone number is required";
+  if (clean.length !== 10) return "Number must be exactly 10 digits";
+  if (!clean.startsWith("05")) return "Must start with 05";
+  return "";
+};
+
+
+const passwordStrength = (pwd) => ({
+  hasLength: (pwd || "").length >= 8,
+  hasUpper: /[A-Z]/.test(pwd || ""),
+  hasLower: /[a-z]/.test(pwd || ""),
+  hasNumber: /[0-9]/.test(pwd || ""),
+});
+
+export default function EditProfileModal({
+  visible,
+  onClose,
+  userId,
+  initialFirstName = "",
+  initialLastName = "",
+  initialPhoneNumber = "",
+  initialDateOfBirth = "",
+  initialImage = "", // not used yet (you can add image later)
+}) {
+  const { token } = useAuth();
+
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
+  const [phoneNumber, setPhoneNumber] = useState(formatIsraeliPhone(initialPhoneNumber));
+  const [dateOfBirth, setDateOfBirth] = useState(initialDateOfBirth);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({
+    firstName: "",
+    phoneNumber: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  });
+
+  useEffect(() => {
+    if (!visible) return;
+    setFirstName(initialFirstName || "");
+    setLastName(initialLastName || "");
+    setPhoneNumber(formatIsraeliPhone(initialPhoneNumber || ""));
+    setDateOfBirth(initialDateOfBirth || "");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setErrors({
+      firstName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    });
+  }, [visible, initialFirstName, initialLastName, initialPhoneNumber, initialDateOfBirth]);
+
+  const pwdFlags = useMemo(() => passwordStrength(newPassword), [newPassword]);
+  const pwdStrongEnough = pwdFlags.hasLength && pwdFlags.hasUpper && pwdFlags.hasLower && pwdFlags.hasNumber;
+
+  const validateBeforeSave = () => {
+    const next = {
+      firstName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    };
+
+    if (!firstName.trim()) next.firstName = "First name is required";
+    next.phoneNumber = validatePhone(phoneNumber);
+    next.dateOfBirth = validateDOB(dateOfBirth);
+
+    const wantsPwd = !!(currentPassword || newPassword || confirmNewPassword);
+    if (wantsPwd) {
+      if (!currentPassword) next.currentPassword = "Current password is required";
+      if (!newPassword) next.newPassword = "New password is required";
+      if (!confirmNewPassword) next.confirmNewPassword = "Please confirm the new password";
+      if (currentPassword && newPassword && currentPassword === newPassword) {
+        next.newPassword = "New password cannot be the same as current password";
+      }
+      if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
+        next.confirmNewPassword = "Passwords don't match";
+      }
+      if (newPassword && !pwdStrongEnough) {
+        next.newPassword = "Password is too weak";
+      }
+    }
+
+    setErrors(next);
+    return Object.values(next).some(Boolean);
+  };
+
+  const handleSave = async () => {
+    if (!token) {
+      Alert.alert("Not logged in", "No token found.");
+      return;
+    }
+    if (!userId) {
+      Alert.alert("Missing userId", "Cannot update profile without userId.");
+      return;
+    }
+    if (validateBeforeSave()) return;
+
+    setSaving(true);
+    try {
+      const patch = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phoneNumber: phoneNumber.trim(),
+        dateOfBirth: dateOfBirth.trim(),
+        image: initialImage || "", // (keep as-is for now)
+      };
+
+      await updateUserProfile(token, userId, patch);
+
+      const wantsPwd = !!(currentPassword || newPassword || confirmNewPassword);
+      if (wantsPwd) {
+        await changeUserPassword(token, userId, currentPassword, newPassword);
+      }
+
+      Alert.alert("Saved", "Profile updated successfully.");
+      onClose?.();
+    } catch (e) {
+      const msg = e?.message || "Failed to update profile";
+      // If backend returns "current password" errors
+      if (String(msg).toLowerCase().includes("current password")) {
+        setErrors((p) => ({ ...p, currentPassword: msg }));
+      } else {
+        Alert.alert("Error", msg);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={saving ? undefined : onClose}>
+        <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, styles.dim]} />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.centerWrap}
+        >
+          <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.title}>Edit profile</Text>
+
+            <ScrollView contentContainerStyle={{ paddingBottom: 10 }} showsVerticalScrollIndicator={false}>
+              <Field
+                label="First name"
+                value={firstName}
+                onChangeText={(t) => { setFirstName(t); if (errors.firstName) setErrors((p) => ({ ...p, firstName: "" })); }}
+                error={errors.firstName}
+              />
+              <Field
+                label="Last name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+              <Field
+                label="Phone number"
+                value={phoneNumber}
+                keyboardType="phone-pad"
+                onChangeText={(t) => {
+                  setPhoneNumber(formatIsraeliPhone(t));
+                  if (errors.phoneNumber) setErrors((p) => ({ ...p, phoneNumber: "" }));
+                }}
+                placeholder="05X-XXX-XXXX"
+                error={errors.phoneNumber}
+              />
+
+              <View style={styles.divider} />
+
+              <Text style={styles.sectionTitle}>Change password (optional)</Text>
+
+              <Field
+                label="Current password"
+                value={currentPassword}
+                secureTextEntry
+                onChangeText={(t) => { setCurrentPassword(t); if (errors.currentPassword) setErrors((p) => ({ ...p, currentPassword: "" })); }}
+                error={errors.currentPassword}
+              />
+              <Field
+                label="New password"
+                value={newPassword}
+                secureTextEntry
+                onChangeText={(t) => { setNewPassword(t); if (errors.newPassword) setErrors((p) => ({ ...p, newPassword: "" })); }}
+                error={errors.newPassword}
+              />
+              <Field
+                label="Confirm new password"
+                value={confirmNewPassword}
+                secureTextEntry
+                onChangeText={(t) => { setConfirmNewPassword(t); if (errors.confirmNewPassword) setErrors((p) => ({ ...p, confirmNewPassword: "" })); }}
+                error={errors.confirmNewPassword}
+              />
+
+              {!!newPassword && (
+                <View style={styles.pwdBox}>
+                  <PwdRow ok={pwdFlags.hasLength} text="At least 8 characters" />
+                  <PwdRow ok={pwdFlags.hasUpper} text="One uppercase letter" />
+                  <PwdRow ok={pwdFlags.hasLower} text="One lowercase letter" />
+                  <PwdRow ok={pwdFlags.hasNumber} text="One number" />
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnGhost]}
+                onPress={onClose}
+                disabled={saving}
+              >
+                <Text style={[styles.btnText, styles.btnGhostText]}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.btn, styles.btnPrimary, saving && { opacity: 0.7 }]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={[styles.btnText]}>Save</Text>}
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function Field({ label, error, ...props }) {
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput style={[styles.input, error && styles.inputError]} {...props} />
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+}
+
+function PwdRow({ ok, text }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+      <Text style={{ width: 18, textAlign: "center", color: ok ? "#198754" : "#dc3545" }}>
+        {ok ? "ג“" : "ג€¢"}
+      </Text>
+      <Text style={{ fontSize: 13, color: ok ? "#198754" : "#dc3545" }}>{text}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.10)" },
+
+  centerWrap: { flex: 1, justifyContent: "center", paddingHorizontal: 16 },
+
+  card: {
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderRadius: 22,
+    padding: 16,
+    maxHeight: "85%",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+  },
+
+  title: { fontSize: 18, fontWeight: "700", color: "#222", marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#333", marginBottom: 8 },
+
+  label: { fontSize: 12, fontWeight: "600", color: "#555", marginBottom: 6 },
+  input: {
+    backgroundColor: "#f1f3f4",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#222",
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  inputError: { borderColor: "#dc3545" },
+  errorText: { color: "#dc3545", fontSize: 12, marginTop: 6 },
+
+  divider: { height: 1, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 12 },
+
+  pwdBox: {
+    marginTop: 8,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+
+  actions: { flexDirection: "row", gap: 10, marginTop: 12 },
+  btn: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnPrimary: { backgroundColor: "#0d6efd" },
+  btnGhost: { backgroundColor: "rgba(0,0,0,0.04)" },
+  btnText: { color: "#fff", fontWeight: "700" },
+  btnGhostText: { color: "#333" },
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\user\services\userService.js =====
+import { apiRequest } from "../../../shared_code/hooks/api/request";
+
+export async function updateUserProfile(token, userId, patch) {
+  return apiRequest(`/api/users/${userId}`, {
+    method: "PATCH",
+    token,
+    body: patch,
+  });
+}
+
+export async function changeUserPassword(token, userId, currentPassword, newPassword) {
+  return apiRequest(`/api/users/${userId}/password`, {
+    method: "POST",
+    token,
+    body: { currentPassword, newPassword },
+  });
+}
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\BottomBar.jsx =====
 import React from "react";
 import { View, Text, Pressable } from "react-native";
@@ -1262,24 +3285,556 @@ export default function BottomBar({ activeTab, setActiveTab }) {
   );
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\Fab.jsx =====
-import React from "react";
-import { Pressable } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { driveStyles } from "../features/drive/styles/myDrive.styles";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { BlurView } from "expo-blur";
 
-export default function Fab({ onPress })  {  return (
-    <Pressable style={driveStyles.fab} onPress={onPress}>
-      <Ionicons name="add" size={36} color="#1a73e8" />
-    </Pressable>
+import { useAuth } from "../app/providers/AuthContext";
+import { createItem } from "../features/drive/services/fileService";
+
+// ג… auto-refresh bus (updates all pages that subscribe)
+import { emitDriveRefresh } from "../features/drive/services/driveEvents";
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export default function Fab({ onRefresh }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // ג… prevents "Different document picking in progress"
+  const pickerInProgressRef = useRef(false);
+
+  const { token } = useAuth();
+
+  const lockPicker = () => {
+    if (pickerInProgressRef.current) return false;
+    pickerInProgressRef.current = true;
+    return true;
+  };
+
+  const unlockPicker = () => {
+    pickerInProgressRef.current = false;
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    // ג… safety: if something got stuck, release it
+    unlockPicker();
+  };
+
+  // --- helper upload ---
+  const processAndUpload = async (uri, fileName, mimeType) => {
+    if (!token) {
+      Alert.alert("Not logged in", "No token found.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: "base64",
+      });
+
+      await createItem(token, {
+        name: fileName,
+        type: "file",
+        content: base64,
+        mimeType: mimeType || "application/octet-stream",
+      });
+
+      // ג… trigger global refresh + optional local refresh callback
+      emitDriveRefresh({ reason: "upload", name: fileName });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      Alert.alert("Upload Failed", err?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+      // ג… FAILSAFE: never let picker stay locked
+      unlockPicker();
+    }
+  };
+
+  // --- pick document ---
+  const handlePickDocument = async () => {
+    if (!lockPicker()) return;
+
+    try {
+      closeMenu();
+      await wait(200);
+
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        type: "*/*",
+        multiple: false,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const file = result.assets[0];
+        await processAndUpload(
+          file.uri,
+          file.name || `file_${Date.now()}`,
+          file.mimeType
+        );
+      }
+    } catch (err) {
+      Alert.alert("Error", "Picker failed: " + (err?.message || "Unknown error"));
+    } finally {
+      unlockPicker();
+    }
+  };
+
+  // --- pick image (camera/gallery) ---
+  const handlePickImage = async (useCamera = false) => {
+    if (!lockPicker()) return;
+
+    try {
+      closeMenu();
+
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert("Permission Denied", "Please allow access in settings.");
+        return;
+      }
+
+      await wait(200);
+
+      const options = {
+        // (keeping your existing line)
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
+        allowsEditing: false,
+      };
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+
+        let fileName = asset.fileName;
+        if (!fileName) {
+          const uriParts = String(asset.uri).split("/");
+          fileName =
+            uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
+        }
+        if (fileName && !fileName.includes(".")) fileName += ".jpg";
+
+        await processAndUpload(
+          asset.uri,
+          fileName,
+          asset.mimeType || "image/jpeg"
+        );
+      }
+    } catch (err) {
+      Alert.alert("Error", "Action failed: " + (err?.message || "Unknown error"));
+    } finally {
+      unlockPicker();
+    }
+  };
+
+  // --- create folder/file ---
+  const handleCreateSubmit = async () => {
+    if (!name.trim()) return;
+
+    if (!token) {
+      Alert.alert("Not logged in", "No token found.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const isFolder = modalType === "createfolder";
+      const trimmed = name.trim();
+      const finalName = isFolder
+        ? trimmed
+        : trimmed.endsWith(".txt")
+        ? trimmed
+        : `${trimmed}.txt`;
+
+      await createItem(token, {
+        name: finalName,
+        type: isFolder ? "folder" : "file",
+        content: "",
+        mimeType: isFolder ? "" : "text/plain",
+      });
+
+      setName("");
+      setModalType(null);
+
+      // ג… trigger global refresh + optional local refresh callback
+      emitDriveRefresh({
+        reason: "create",
+        name: finalName,
+        type: isFolder ? "folder" : "file",
+      });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      Alert.alert("Error", err?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+      // ג… safety: also release picker lock (in case user opened menu mid-flow)
+      unlockPicker();
+    }
+  };
+
+  // ג… only loading disables UI (fixes "stuck transparent +")
+  const disableActions = loading;
+
+  return (
+    <>
+      {loading && (
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color="#0d6efd" />
+          <Text style={styles.loaderText}>UPLOADING...</Text>
+        </View>
+      )}
+
+      {/* OPEN MENU */}
+      <Modal visible={isOpen} transparent animationType="none">
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
+          {/* ג… Blur like hamburger menu */}
+          <BlurView
+            intensity={22}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.dim]} />
+
+          <View style={styles.menuContainer}>
+            <MenuOption
+              icon="folder-outline"
+              label="New Folder"
+              disabled={disableActions}
+              onPress={() => {
+                closeMenu();
+                setModalType("createfolder");
+              }}
+            />
+            <MenuOption
+              icon="document-text-outline"
+              label="New File"
+              disabled={disableActions}
+              onPress={() => {
+                closeMenu();
+                setModalType("createfile");
+              }}
+            />
+            <MenuOption
+              icon="image-outline"
+              label="Upload Pic"
+              disabled={disableActions}
+              onPress={() => handlePickImage(false)}
+            />
+            <MenuOption
+              icon="camera-outline"
+              label="Take Photo"
+              disabled={disableActions}
+              onPress={() => handlePickImage(true)}
+            />
+            <MenuOption
+              icon="cloud-upload-outline"
+              label="Import File"
+              disabled={disableActions}
+              onPress={handlePickDocument}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* MAIN BUTTON */}
+      {!isOpen && (
+        <View style={styles.fabPosition}>
+          <TouchableOpacity
+            style={[styles.fabMain, disableActions && { opacity: 0.7 }]}
+            onPress={() => {
+              if (loading) return;
+              // ג… if picker is still in progress, don't reopen (but don't disable permanently)
+              if (pickerInProgressRef.current) return;
+              setIsOpen(true);
+            }}
+            activeOpacity={0.9}
+            disabled={disableActions}
+          >
+            <Ionicons name="add" size={35} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* CREATE MODAL */}
+      <Modal visible={!!modalType} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {modalType === "createfolder"
+                ? "CREATE NEW FOLDER"
+                : "CREATE NEW FILE"}
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder={
+                modalType === "createfolder" ? "Folder Name" : "File Name"
+              }
+              value={name}
+              onChangeText={setName}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalType(null);
+                  setName("");
+                  unlockPicker();
+                }}
+                disabled={loading}
+              >
+                <Text style={styles.cancelText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.createBtn, loading && { opacity: 0.7 }]}
+                onPress={handleCreateSubmit}
+                disabled={loading}
+              >
+                <Text style={styles.confirmText}>CREATE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
+
+function MenuOption({ icon, label, onPress, disabled }) {
+  return (
+    <TouchableOpacity
+      style={[styles.singleContainer, disabled && { opacity: 0.6 }]}
+      onPress={disabled ? undefined : onPress}
+      activeOpacity={0.9}
+    >
+      {/* ג… icon LEFT */}
+      <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
+
+      {/* ג… text LEFT + default font */}
+      <Text
+        style={styles.labelText}
+        numberOfLines={1}
+        ellipsizeMode="clip"
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {label.toUpperCase()}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  fabPosition: { position: "absolute", bottom: 90, right: 25, zIndex: 9999 },
+  fabMain: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#0d6efd",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+  },
+
+  // ג… blur backdrop
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
+
+  menuContainer: {
+    position: "absolute",
+    bottom: 165,
+    right: 25,
+    alignItems: "flex-end",
+    gap: 15,
+  },
+
+  singleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start", // ג… left
+    backgroundColor: "rgba(255,255,255,0.98)",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    minWidth: 200,
+  },
+
+  labelText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#333",
+    letterSpacing: 1,
+    textAlign: "left",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 30,
+  },
+  modalCard: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
+  },
+
+  input: {
+    width: "100%",
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 25,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    alignItems: "center",
+  },
+  cancelText: { color: "#6c757d", fontSize: 14, padding: 10 },
+  createBtn: {
+    backgroundColor: "#0d6efd",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+  },
+  confirmText: { color: "white", fontSize: 14 },
+
+  loaderOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10000,
+  },
+  loaderText: { marginTop: 15, color: "white", fontSize: 16, letterSpacing: 2 },
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\ProfileActionSheet.jsx =====
+import React from "react";
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+
+export default function ProfileActionSheet({ visible, onClose, onEditProfile }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        {/* ג… Blur background */}
+        <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, styles.dim]} />
+
+        {/* ג… The small menu near top-right */}
+        <Pressable style={styles.menu} onPress={(e) => e.stopPropagation()}>
+          <MenuItem icon="moon-outline" label="Night mode" disabled />
+          <MenuItem icon="musical-notes-outline" label="Play song" disabled />
+          <MenuItem icon="create-outline" label="Edit profile" onPress={onEditProfile} />
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function MenuItem({ icon, label, onPress, disabled }) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={disabled ? undefined : onPress}
+      style={[styles.item, disabled && { opacity: 0.45 }]}
+    >
+      <Ionicons name={icon} size={18} color="#333" style={{ marginRight: 10 }} />
+      <Text style={styles.itemText} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
+
+  menu: {
+    position: "absolute",
+    top: 70,
+    right: 14,
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderRadius: 16,
+    paddingVertical: 8,
+    width: 190,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+  },
+
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  itemText: {
+    fontSize: 14,
+    color: "#222",
+  },
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\SideBar.jsx =====
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useAuth } from '../app/providers/AuthContext'; 
+import { getUsage } from '../features/drive/services/fileService';
+import StorageTree from '../features/drive/components/StorageTree';
 
 const MENU_ITEMS = [
   { id: 'home', icon: 'home', label: 'Home', route: '/home' },
@@ -1292,19 +3847,48 @@ const MENU_ITEMS = [
 export default function SideBar(props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { token, logout } = useAuth(); // ׳©׳™׳׳•׳© ׳‘-logout ׳׳”-Context
+  
+  const [usage, setUsage] = useState({
+    usedBytes: 0,
+    quotaBytes: 15 * 1024 * 1024 * 1024,
+  });
 
-  const handleNavigation = (route) => {
-    if (route === '/home') {
-        router.push(route);
-    } else {
-        console.log(`Navigation to ${route} is not implemented yet`);
+  useEffect(() => {
+    let alive = true;
+    async function loadUsage() {
+      if (!token) return;
+      try {
+        const u = await getUsage(token);
+        if (!alive) return;
+        if (u) setUsage({ usedBytes: u.usedBytes ?? 0, quotaBytes: u.quotaBytes ?? 15 * 1024 * 1024 * 1024 });
+      } catch (e) {}
     }
+    loadUsage();
+    const interval = setInterval(loadUsage, 10000); 
+    return () => { alive = false; clearInterval(interval); };
+  }, [token]);
+
+  // ׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳”׳ ׳™׳×׳•׳§ ׳¢׳ ׳׳™׳©׳•׳¨ ׳׳”׳׳©׳×׳׳©
+  const handleLogoutAction = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to disconnect?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Logout", 
+          style: "destructive", 
+          onPress: async () => {
+            await logout(); // ׳§׳¨׳™׳׳” ׳׳₪׳•׳ ׳§׳¦׳™׳™׳× ׳”׳ ׳™׳×׳•׳§ ׳”׳׳׳™׳×׳™׳×
+          } 
+        }
+      ]
+    );
   };
 
   return (
     <BlurView intensity={80} tint="light" style={styles.container}>
-      
-      {/* ׳›׳•׳×׳¨׳× ׳”׳×׳₪׳¨׳™׳˜ */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>CopaDrive</Text>
       </View>
@@ -1312,180 +3896,145 @@ export default function SideBar(props) {
       <DrawerContentScrollView {...props} contentContainerStyle={styles.scrollContent}>
         <View style={styles.list}>
           {MENU_ITEMS.map((item) => {
-            const isActive = pathname === item.route || (item.id === 'home' && pathname === '/');
-            
+            const isActive = pathname.includes(item.route);
             return (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => handleNavigation(item.route)}
+                onPress={() => router.push(item.route)}
                 style={[styles.item, isActive && styles.itemActive]}
-                activeOpacity={0.6}
               >
-                <Feather
-                  name={item.icon}
-                  size={20}
-                  color={isActive ? '#0d6efd' : '#444'}
-                  style={styles.icon}
-                />
-                <Text style={[styles.text, isActive && styles.textActive]}>
-                  {item.label}
-                </Text>
+                <Feather name={item.icon} size={20} color={isActive ? '#0d6efd' : '#444'} />
+                <Text style={[styles.text, isActive && styles.textActive]}>{item.label}</Text>
               </TouchableOpacity>
             );
           })}
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity onPress={handleLogoutAction} style={styles.logoutItem}>
+            <Feather name="log-out" size={20} color="#d93025" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
         </View>
       </DrawerContentScrollView>
       
-      {/* ׳₪׳•׳˜׳¨ */}
       <View style={styles.footer}>
-          <View style={styles.storageBarBg}>
-             <View style={styles.storageBarFill} />
-          </View>
-          <Text style={styles.storageText}>93.0 MB of 15.0 GB used</Text>
+          <StorageTree usedBytes={usage.usedBytes} quotaBytes={usage.quotaBytes} />
       </View>
     </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)', 
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    marginBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontFamily: 'BrunoAceSC_400Regular', 
-    color: '#333',
-    letterSpacing: 1.5,
-  },
-  scrollContent: {
-    paddingTop: 0,
-  },
-  list: {
-    paddingHorizontal: 16,
-    gap: 6,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    paddingLeft: 16,
-    borderRadius: 24,
-    marginBottom: 4,
-  },
-  itemActive: {
-    backgroundColor: 'rgba(13, 110, 253, 0.12)',
-  },
-  icon: {
-    marginRight: 16,
-    opacity: 0.8,
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#444',
-  },
-  textActive: {
-    color: '#0d6efd',
-    fontWeight: '700',
-  },
-  footer: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  storageBarBg: {
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 2,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  storageBarFill: {
-    width: '10%', 
-    height: '100%',
-    backgroundColor: '#0d6efd',
-  },
-  storageText: {
-    fontSize: 12,
-    color: '#666',
-  }
+  container: { flex: 1, backgroundColor: 'rgba(255, 255, 255, 0.75)' },
+  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 20, marginBottom: 10 },
+  headerTitle: { fontSize: 24, fontFamily: 'BrunoAceSC_400Regular', color: '#333', letterSpacing: 1.5 },
+  scrollContent: { paddingTop: 0 },
+  list: { paddingHorizontal: 16, gap: 6 },
+  item: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16, borderRadius: 24, marginBottom: 4 },
+  itemActive: { backgroundColor: 'rgba(13, 110, 253, 0.12)' },
+  text: { fontSize: 15, fontWeight: '500', color: '#444', marginLeft: 16 },
+  textActive: { color: '#0d6efd', fontWeight: '700' },
+  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 15, marginHorizontal: 10 },
+  logoutItem: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16 },
+  logoutText: { fontSize: 15, fontWeight: '600', color: '#d93025', marginLeft: 16 },
+  footer: { paddingBottom: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\TopBar.jsx =====
-import React from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { driveStyles } from "../features/drive/styles/myDrive.styles"; 
+import { driveStyles } from "../features/drive/styles/myDrive.styles";
+import { useAuth } from "../app/providers/AuthContext";
 
 export default function TopBar() {
   const navigation = useNavigation();
-
-  const toggleDrawer = () => {
-    navigation.dispatch(DrawerActions.openDrawer());
-  };
+  const { user } = useAuth(); // ׳©׳׳™׳₪׳× ׳”׳׳©׳×׳׳© ׳׳”-Context ׳”׳׳¢׳•׳“׳›׳
 
   return (
     <View style={driveStyles.topBarSearchWrapper}>
-      <Pressable onPress={toggleDrawer} hitSlop={10}>
+      <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
         <Ionicons name="menu" size={24} color="#5f6368" />
       </Pressable>
-      
+
       <Text style={driveStyles.searchText}>Search in CopaDrive</Text>
-      
-      <View style={driveStyles.profileCircle}>
-        <Ionicons name="person" size={18} color="#fff" />
-      </View>
+
+      <Pressable style={driveStyles.profileCircle}>
+        {user?.image ? (
+          <Image
+            source={{ uri: user.image }}
+            style={localStyles.avatar}
+          />
+        ) : (
+          <Ionicons name="person" size={18} color="#fff" />
+        )}
+      </Pressable>
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  avatar: { width: 32, height: 32, borderRadius: 16 },
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\shared_code\hooks\api\request.js =====
-// ׳—׳©׳•׳‘: ׳‘׳׳•׳‘׳™׳™׳ "localhost" ׳׳ ׳¢׳•׳‘׳“ ׳׳•׳ ׳”׳׳—׳©׳‘.
-// ׳×׳©׳™׳ ׳₪׳” ׳׳× ׳”-IP ׳©׳ ׳”׳׳—׳©׳‘ ׳©׳׳ ׳‘׳׳•׳×׳” ׳¨׳©׳× (׳›׳׳• 192.168.1.102)
-const BASE_URL = "http://192.168.1.226:3000"; // ׳×׳¢׳“׳›׳ ׳׳₪׳™ ׳”-web-server ׳©׳׳
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export async function request(path, options = {}) {
-  const method = options.method ?? "GET";
+  const cleanPath = path.startsWith('/api') ? path.replace('/api', '') : path;
+  const url = `${API_BASE_URL}${cleanPath}`;
+
+  const isFormData = options.body instanceof FormData;
 
   const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers ?? {}),
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(options.headers || {}),
   };
 
-  if (options.token) headers.Authorization = `Bearer ${options.token}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const text = await res.text();
-  const data = text ? safeJson(text) : null;
-
-  if (!res.ok) {
-    const msg =
-      (data && (data.message || data.error)) ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
+  if (options.token) {
+    headers["Authorization"] = `Bearer ${options.token}`;
   }
 
-  return data;
-}
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      body: isFormData ? options.body : JSON.stringify(options.body),
+    });
 
-function safeJson(text) {
-  try { return JSON.parse(text); } catch { return null; }
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+    if (!res.ok) throw new Error(data?.message || `Error ${res.status}`);
+    return data;
+  } catch (error) {
+    console.error("ג Request Error:", error.message);
+    throw error;
+  }
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\shared_code\hooks\useAuth.js =====
 import { useAuth } from "../../app/providers/AuthContext";
 export default function useAuthHook() {
   return useAuth();
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\shared_code\utils\formatBytes.js =====
+// src/shared_code/utils/formatBytes.js
+
+export function formatBytes(bytes, decimals = 1) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(Math.floor(Math.log(n) / Math.log(k)), sizes.length - 1);
+
+  const value = n / Math.pow(k, i);
+  // ׳׳ ׳”׳׳¡׳₪׳¨ ׳©׳׳, ׳׳ ׳׳¦׳™׳’׳™׳ ׳ ׳§׳•׳“׳” ׳¢׳©׳¨׳•׳ ׳™׳×
+  const fixed = Number.isInteger(value) ? 0 : decimals;
+  
+  return `${value.toFixed(fixed)} ${sizes[i]}`;
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\index.js =====
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\babel.config.js =====
