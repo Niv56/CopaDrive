@@ -84,8 +84,9 @@ const collectSubtreeIds = async (rootId) => {
     if (visited.has(currentId.toString())) continue;
     visited.add(currentId.toString());
     ids.push(currentId);
-    const children = await fileRepository.findByParent(currentId) || [];
-    for (const child of children) stack.push(child.id);
+    
+    const children = await fileRepository.findByParentIncludingTrashed(currentId) || [];
+    for (const child of children) stack.push(child._id); 
   }
   return ids;
 };
@@ -136,12 +137,22 @@ const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
   return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
 };
 
+
 const createItem = async (ownerId, payload) => {
-  console.log(`[DEBUG] createItem: ownerId=${ownerId}, name=${payload.name}`);
   const { name, type, parentId = null, content = "", mimeType = "" } = payload;
 
   if (!name?.trim()) throw { status: 400, message: 'Name is required' };
   if (!assertValidType(type)) throw { status: 400, message: 'Invalid type' };
+
+  const newItemSize = type === 'file' ? contentSizeBytes(content) : 0;
+  const storageUsage = await getOwnedStorageUsage(ownerId);  
+  
+  if (storageUsage.usedBytes + newItemSize > QUOTA_BYTES) {
+    throw { 
+      status: 403, 
+      message: `Storage quota exceeded. Used: ${(storageUsage.usedBytes / (1024 ** 3)).toFixed(2)}GB / 15GB` 
+    };
+  }
 
   if (parentId && parentId !== 'root') {
     const parent = await fileRepository.findById(parentId);
@@ -157,7 +168,7 @@ const createItem = async (ownerId, payload) => {
     parentId: (parentId === 'root' || !parentId) ? null : parentId,
     createdAt: ts,
     updatedAt: ts,
-    sizeBytes: type === 'file' ? contentSizeBytes(content) : 0,
+    sizeBytes: newItemSize,
     mimeType
   });
 
@@ -165,13 +176,15 @@ const createItem = async (ownerId, payload) => {
     try {
       await sendTcpCommand(`POST ${created.id} ${content}`);
     } catch (err) {
-      console.error(`[DEBUG] TCP Error - rolling back: ${err.message}`);
-      await fileRepository.remove(created.id);
+      await fileRepository.remove(created.id, ownerId);
       throw err;
     }
   }
 
-  try { await permissionService.addPermission(ownerId, created.id, { userId: ownerId }, "owner"); } catch (_) { }
+  try { 
+    await permissionService.addPermission(ownerId, created.id, { userId: ownerId }, "owner");
+  } catch (_) { }
+
   return created;
 };
 
@@ -181,13 +194,26 @@ const updateItem = async (userId, id, patch) => {
   if (!(await checkAccess(userId, id, 'editor'))) throw { status: 403, message: 'Editor access required' };
 
   const updates = {};
+
   if (patch.content !== undefined && current.type === 'file') {
+    const newSize = contentSizeBytes(patch.content);
+    const sizeDiff = newSize - (current.sizeBytes || 0);
+
+    if (sizeDiff > 0) {
+      const storageUsage = await module.exports.getOwnedStorageUsage(current.ownerId);
+      if (storageUsage.usedBytes + sizeDiff > QUOTA_BYTES) {
+        throw { status: 403, message: 'Quota exceeded' };
+      }
+    }
+
     await sendTcpCommand(`DELETE ${id}`).catch(() => { });
     await sendTcpCommand(`POST ${id} ${patch.content}`);
-    updates.sizeBytes = contentSizeBytes(patch.content);
+    updates.sizeBytes = newSize;
   }
 
   if (patch.name) updates.name = patch.name.trim();
+  if (patch.mimeType) updates.mimeType = patch.mimeType;
+  
   if (patch.parentId !== undefined) {
     const newParentId = (patch.parentId === 'root' || !patch.parentId) ? null : patch.parentId;
     if (newParentId && await wouldCreateCycle(id, newParentId)) throw { status: 409, message: 'Cycle detected' };
@@ -230,7 +256,7 @@ const deleteForever = async (userId, id) => {
   for (const dId of ids) {
     const target = await fileRepository.findById(dId);
     if (target?.type === 'file') await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
-    await fileRepository.remove(dId);
+    await fileRepository.remove(dId , userId);
   }
   return { id };
 };
@@ -264,31 +290,30 @@ module.exports = {
     return { ok: true };
   },
   searchItems: async (userId, query) => {
-    const nameMatches = await fileRepository.searchFiles(userId, query);
+    const userPermissions = await permissionRepository.findByUserId(userId) || []; 
+    const sharedIds = userPermissions.map(p => p.fileId);
+
+    const nameMatches = await fileRepository.searchFiles(userId, sharedIds, query);
+
     let contentMatchIds = [];
     try {
       const response = await sendTcpCommand(`SEARCH ${query}`);
-      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0);
+      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0); 
     } catch (_) { }
+
     const contentMatches = [];
     for (const cId of contentMatchIds) {
-      const f = await fileRepository.findById(cId);
-      if (f && f.ownerId.toString() === userId.toString()) contentMatches.push(f);
+      const f = await fileRepository.findById(cId); 
+      
+      if (f && (f.ownerId.toString() === userId.toString() || sharedIds.some(id => id.toString() === f._id.toString()))) { 
+        contentMatches.push(f);
+      }
     }
-    const combined = [...nameMatches, ...contentMatches];
-    const unique = Array.from(new Map(combined.map(i => [i.id, i])).values());
-    return decorateListForUser(unique, userId).filter(i => !i.trashed);
-  },
-  setStarred: async (userId, id, enabled) => setUserFlag(userId, id, 'starredBy', enabled),
-  setImportant: async (userId, id, enabled) => setUserFlag(userId, id, 'importantBy', enabled),
-  listStarred: async (userId) => (await listAllAccessible(userId)).filter(i => i.starred),
-  listImportant: async (userId) => (await listAllAccessible(userId)).filter(i => i.important),
-  setTrashed,
-  listTrash: async (userId) => (await listAllAccessible(userId, { includeTrashed: true })).filter(i => i.trashed),
-  getOwnedStorageUsage: async (userId) => {
-    const files = await fileRepository.findAllByOwner(userId);
-    const usedBytes = files.reduce((sum, f) => sum + (f.sizeBytes || 0), 0);
-    return { usedBytes, quotaBytes: QUOTA_BYTES, percent: usedBytes / QUOTA_BYTES };
+
+    const combined = [...nameMatches, ...contentMatches]; 
+    const unique = Array.from(new Map(combined.map(i => [i.id, i])).values()); 
+    
+    return decorateListForUser(unique, userId).filter(i => !i.trashed); 
   },
   updateAccessTime: async (userId, id) => {
     const update = { [`lastAccessedBy.${userId}`]: nowIso() };
@@ -300,4 +325,10 @@ module.exports = {
     const withAccess = all.filter(i => i.type === 'file' && i.lastAccessed);
     return withAccess.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed)).slice(0, 20);
   }
+};
+
+const getOwnedStorageUsage = async (userId) => {
+  const items = await fileRepository.findAllByOwner(userId);
+  const usedBytes = items.reduce((acc, item) => acc + (item.sizeBytes || 0), 0);
+  return { usedBytes };
 };

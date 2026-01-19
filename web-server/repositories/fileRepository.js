@@ -65,10 +65,13 @@ const hasChildren = async (parentId, ownerId) => {
     return count > 0;
 };
 
-const searchFiles = async (userId, query) => {
+const searchFiles = async (userId, sharedIds, query) => {
     return await File.find({
-        ownerId: userId,
-        trashed: { $ne: true },
+        $or: [
+            { ownerId: userId },           
+            { _id: { $in: sharedIds } }    
+        ],
+        trashed: { $ne: true },            
         name: { $regex: query, $options: 'i' } 
     });
 };
@@ -79,6 +82,15 @@ const findTrashed = async (ownerId) => {
 
 const findByIds = async (idsArray) => {
     return await File.find({ _id: { $in: idsArray } });
+};
+
+const findAllByOwner = async (ownerId) => {
+    return await File.find({ ownerId: ownerId });
+};
+
+const findByParentIncludingTrashed = async (parentId) => {
+    const p = normalizeParentId(parentId);
+    return await File.find({ parentId: p });
 };
 
 module.exports = {
@@ -92,4 +104,6 @@ module.exports = {
     findByIds,
     findAll,
     findTrashed,
+    findAllByOwner,
+    findByParentIncludingTrashed,
 };
