@@ -113,7 +113,7 @@ async function findRecent(userId, limit = 20) {
  */
 async function calculateOwnedStorage(userId) {
     const result = await File.aggregate([
-        { $match: { ownerId: mongoose.Types.ObjectId(userId), type: 'file', trashed: false } },
+        { $match: { ownerId: new mongoose.Types.ObjectId(userId), type: 'file', trashed: false } },
         { $group: { _id: null, total: { $sum: '$sizeBytes' } } }
     ]);
     

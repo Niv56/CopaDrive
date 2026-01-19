@@ -1,14 +1,14 @@
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
 
-/**
- * Adds a new permission
- */
+
+// Give a new permission
+ 
 async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {
     const file = await fileRepository.findById(fileId);
     
     if (!file || String(file.ownerId) !== String(ownerId)) {
-        const err = new Error('Forbidden');
+        const err = new Error('Only the owner can share this file.');
         err.status = 403;
         throw err;
     }
@@ -27,9 +27,9 @@ async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {
     });
 }
 
-/**
- * Gets all permissions for a file with user's role
- */
+
+ // Gets all permissions for a file with user's role
+ 
 async function getPermissions(userId, fileId) {
     const file = await fileRepository.findById(fileId);
     
@@ -65,20 +65,19 @@ async function getPermissions(userId, fileId) {
     };
 }
 
-/**
- * Updates a permission role
- */
+// Updates a permission role
 async function updatePermission(ownerId, fileId, permissionId, newRole) {
     const file = await fileRepository.findById(fileId);
     
     if (!file || String(file.ownerId) !== String(ownerId)) {
-        const err = new Error('Forbidden');
+        const err = new Error('Only the owner can change sharing permissions.');
         err.status = 403;
         throw err;
     }
     
-    const perm = await permissionRepository.findByUserAndFile(permissionId, fileId);
-    if (!perm) {
+    // Find permission by its ID directly
+    const perm = await permissionRepository.findById(permissionId);
+    if (!perm || String(perm.fileId) !== String(fileId)) {
         const err = new Error('Permission not found');
         err.status = 404;
         throw err;
@@ -89,14 +88,14 @@ async function updatePermission(ownerId, fileId, permissionId, newRole) {
     return await permissionRepository.update(perm._id, { role: newRole || toggledRole });
 }
 
-/**
- * Deletes a permission
- */
+
+// Deletes a permission
+ 
 async function deletePermission(ownerId, fileId, permissionId) {
     const file = await fileRepository.findById(fileId);
     
     if (!file || String(file.ownerId) !== String(ownerId)) {
-        const err = new Error('Forbidden');
+        const err = new Error('Only the owner can remove sharing permissions.');
         err.status = 403;
         throw err;
     }

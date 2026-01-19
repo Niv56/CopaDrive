@@ -4,15 +4,13 @@ const mongoose = require('mongoose');
 
 const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
-/**
- * Helper: Get current ISO timestamp
- */
+
 function now() {
     return new Date().toISOString();
 }
 
 /**
- * Helper: Calculate file size from base64 content
+ * Calculate file size from base64 content
  */
 function getContentSize(content) {
     if (!content) return 0;
@@ -21,7 +19,7 @@ function getContentSize(content) {
 }
 
 /**
- * Helper: Check if user has permission to access a file
+ * Check if user has permission to access a file
  */
 async function canAccess(userId, fileId) {
     const file = await fileRepository.findById(fileId);
@@ -34,7 +32,7 @@ async function canAccess(userId, fileId) {
 }
 
 /**
- * Helper: Get user's role for a file
+ * Get user's role for a file
  */
 async function getUserRole(userId, fileId) {
     const file = await fileRepository.findById(fileId);
@@ -47,7 +45,29 @@ async function getUserRole(userId, fileId) {
 }
 
 /**
- * Lists top-level accessible items
+ * Transform file object to include starred and important booleans for a specific user
+ */
+function transformFileForUser(file, userId) {
+    if (!file) return null;
+    
+    const obj = file.toObject ? file.toObject() : { ...file };
+    
+    const userIdStr = String(userId);
+    obj.starred = Array.isArray(obj.starredBy) && obj.starredBy.some(id => String(id) === userIdStr);
+    obj.important = Array.isArray(obj.importantBy) && obj.importantBy.some(id => String(id) === userIdStr);
+    
+    return obj;
+}
+
+/**
+ * Transform array of files for a specific user
+ */
+function transformFilesForUser(files, userId) {
+    return files.map(f => transformFileForUser(f, userId)).filter(Boolean);
+}
+
+/**
+ * Lists top-level items
  */
 async function listTopLevel(userId) {
     const owned = await fileRepository.findTopLevel(userId);
@@ -62,7 +82,8 @@ async function listTopLevel(userId) {
             .map(id => fileRepository.findById(id))
     );
     
-    return [...owned, ...sharedFiles.filter(Boolean)];
+    const allFiles = [...owned, ...sharedFiles.filter(Boolean)];
+    return transformFilesForUser(allFiles, userId);
 }
 
 /**
@@ -86,7 +107,6 @@ async function createItem(ownerId, data) {
     const timestamp = now();
     const sizeBytes = type === 'file' ? getContentSize(content) : 0;
     
-    // Check quota
     if (type === 'file') {
         const currentUsage = await fileRepository.calculateOwnedStorage(ownerId);
         if (currentUsage + sizeBytes > QUOTA_BYTES) {
@@ -113,13 +133,13 @@ async function createItem(ownerId, data) {
     
     const created = await fileRepository.create(fileData);
     
-    // Store content in C++ server if file
+    // save content in C++ server if file
     if (type === 'file' && content) {
         const cppService = require('./cppStorageService');
         await cppService.storeFile(created._id, content);
     }
     
-    return created;
+    return transformFileForUser(created, ownerId);
 }
 
 /**
@@ -133,32 +153,52 @@ async function getById(userId, fileId) {
     }
     
     const file = await fileRepository.findById(fileId);
+    const result = transformFileForUser(file, userId);
     
     // Fetch content from C++ server if file
-    if (file.type === 'file') {
+    if (result.type === 'file') {
         const cppService = require('./cppStorageService');
-        file.content = await cppService.getFile(fileId);
+        result.content = await cppService.getFile(fileId);
     }
     
-    return file;
+    return result;
 }
 
 /**
- * Updates file metadata
+ * Updates file item data
  */
 async function updateItem(userId, fileId, patch) {
     const role = await getUserRole(userId, fileId);
     
-    if (!role || (role === 'viewer' && !patch.name)) {
-        const err = new Error('Forbidden');
+    // No access at all
+    if (!role) {
+        const err = new Error('You do not have access to this file.');
         err.status = 403;
         throw err;
     }
     
-    const allowed = ['name', 'parentId', 'content', 'mimeType'];
+    // Viewer cannot update anything
+    if (role === 'viewer') {
+        const err = new Error('You have view-only access. Contact the owner to request edit permission.');
+        err.status = 403;
+        throw err;
+    }
+    
+    // Editor cannot move files (change parentId)
+    if (role === 'editor' && patch.parentId !== undefined) {
+        const err = new Error('Only the owner can move this file to a different folder.');
+        err.status = 403;
+        throw err;
+    }
+    
+    // Define allowed fields based on role
+    const allowedFields = role === 'owner' 
+        ? ['name', 'parentId', 'content', 'mimeType']
+        : ['name', 'content', 'mimeType']; // editor
+    
     const update = { updatedAt: now() };
     
-    for (const key of allowed) {
+    for (const key of allowedFields) {
         if (patch[key] !== undefined) update[key] = patch[key];
     }
     
@@ -172,17 +212,18 @@ async function updateItem(userId, fileId, patch) {
         }
     }
     
-    return await fileRepository.update(fileId, update);
+    const updated = await fileRepository.update(fileId, update);
+    return transformFileForUser(updated, userId);
 }
 
 /**
- * Soft-deletes a file (moves to trash)
+ * moves file to trash
  */
 async function deleteItem(userId, fileId) {
     const role = await getUserRole(userId, fileId);
     
     if (role !== 'owner') {
-        const err = new Error('Forbidden');
+        const err = new Error('Only the owner can delete this file.');
         err.status = 403;
         throw err;
     }
@@ -190,18 +231,20 @@ async function deleteItem(userId, fileId) {
     const file = await fileRepository.findById(fileId);
     
     await fileRepository.update(fileId, {
-        trashed: true,
-        trashedAt: new Date(),
-        originalParentId: file.parentId,
-        parentId: null,
-        $addToSet: { trashedBy: userId },
-        $set: { [`trashedAtBy.${userId}`]: new Date() }
+        $set: {
+            trashed: true,
+            trashedAt: new Date(),
+            originalParentId: file.parentId,
+            parentId: null,
+            [`trashedAtBy.${userId}`]: new Date()
+        },
+        $addToSet: { trashedBy: userId }
     });
 }
 
-/**
- * Permanently deletes a file
- */
+
+ // Deletes a file
+ 
 async function deleteForever(userId, fileId) {
     const file = await fileRepository.findById(fileId);
     
@@ -229,9 +272,9 @@ async function deleteForever(userId, fileId) {
     await fileRepository.deleteById(fileId);
 }
 
-/**
- * Sets starred flag
- */
+
+ // Sets starred flag - Any user with access 
+ 
 async function setStarred(userId, fileId, starred) {
     if (!await canAccess(userId, fileId)) {
         const err = new Error('Not found');
@@ -243,12 +286,13 @@ async function setStarred(userId, fileId, starred) {
         ? { $addToSet: { starredBy: userId } }
         : { $pull: { starredBy: userId } };
     
-    await fileRepository.update(fileId, update);
+    const updated = await fileRepository.update(fileId, update);
+    return transformFileForUser(updated, userId);
 }
 
-/**
- * Sets important flag
- */
+
+ // Sets important flag - Any user with access 
+ 
 async function setImportant(userId, fileId, important) {
     if (!await canAccess(userId, fileId)) {
         const err = new Error('Not found');
@@ -260,18 +304,19 @@ async function setImportant(userId, fileId, important) {
         ? { $addToSet: { importantBy: userId } }
         : { $pull: { importantBy: userId } };
     
-    await fileRepository.update(fileId, update);
+    const updated = await fileRepository.update(fileId, update);
+    return transformFileForUser(updated, userId);
 }
 
-/**
- * Sets trashed flag (restore from trash)
- */
+
+ // Sets trashed flag (restore from trash)
+
 async function setTrashed(userId, fileId, trashed) {
     const file = await fileRepository.findById(fileId);
     
     if (!file || String(file.ownerId) !== String(userId)) {
-        const err = new Error('Not found');
-        err.status = 404;
+        const err = new Error('Only the owner can move files to trash or restore them.');
+        err.status = 403;
         throw err;
     }
     
@@ -280,40 +325,47 @@ async function setTrashed(userId, fileId, trashed) {
     } else {
         // Restore
         await fileRepository.update(fileId, {
-            trashed: false,
-            trashedAt: null,
-            parentId: file.originalParentId,
-            originalParentId: null,
+            $set: {
+                trashed: false,
+                trashedAt: null,
+                parentId: file.originalParentId,
+                originalParentId: null
+            },
             $pull: { trashedBy: userId },
             $unset: { [`trashedAtBy.${userId}`]: '' }
         });
     }
+    
+    const updated = await fileRepository.findById(fileId);
+    return transformFileForUser(updated, userId);
 }
 
-/**
- * Lists starred items
- */
+
+// Lists starred items
 async function listStarred(userId) {
-    return await fileRepository.findStarred(userId);
+    const files = await fileRepository.findStarred(userId);
+    return transformFilesForUser(files, userId);
 }
 
-/**
- * Lists important items
- */
+
+ // Lists important items
+ 
 async function listImportant(userId) {
-    return await fileRepository.findImportant(userId);
+    const files = await fileRepository.findImportant(userId);
+    return transformFilesForUser(files, userId);
 }
 
-/**
- * Lists trash
- */
+
+ // Lists trash
+
 async function listTrash(userId) {
-    return await fileRepository.findTrashed(userId);
+    const files = await fileRepository.findTrashed(userId);
+    return transformFilesForUser(files, userId);
 }
 
-/**
- * Empties trash
- */
+
+ // Empties trash
+ 
 async function emptyTrash(userId) {
     const trashed = await fileRepository.findTrashed(userId);
     
@@ -322,9 +374,9 @@ async function emptyTrash(userId) {
     }
 }
 
-/**
- * Gets storage usage
- */
+
+// Gets storage usage
+ 
 async function getOwnedStorageUsage(userId) {
     const usedBytes = await fileRepository.calculateOwnedStorage(userId);
     
@@ -334,16 +386,17 @@ async function getOwnedStorageUsage(userId) {
     };
 }
 
-/**
- * Lists recent files
- */
+
+ // Lists recent files
+ 
 async function listRecent(userId) {
-    return await fileRepository.findRecent(userId);
+    const files = await fileRepository.findRecent(userId);
+    return transformFilesForUser(files, userId);
 }
 
-/**
- * Updates access time
- */
+
+ // Updates access time
+ 
 async function updateAccessTime(userId, fileId) {
     if (!await canAccess(userId, fileId)) {
         const err = new Error('Not found');
@@ -355,19 +408,18 @@ async function updateAccessTime(userId, fileId) {
         $set: { [`lastAccessedBy.${userId}`]: new Date() }
     });
     
-    return await fileRepository.findById(fileId);
+    const file = await fileRepository.findById(fileId);
+    return transformFileForUser(file, userId);
 }
 
-/**
- * Searches items
- */
+
+ // Searches items
+
 async function searchItems(userId, query) {
     if (!query) return [];
     
     const results = await fileRepository.search(userId, query);
-    
-    // Also search shared files
-    const shared = await permissionRepository.findSharedFiles(userId);
+        const shared = await permissionRepository.findSharedFiles(userId);
     const sharedFiles = await Promise.all(
         shared.map(p => fileRepository.findById(p.fileId))
     );
@@ -379,11 +431,13 @@ async function searchItems(userId, query) {
     const combined = [...results, ...matchingShared];
     const seen = new Set();
     
-    return combined.filter(item => {
+    const deduplicated = combined.filter(item => {
         if (!item || seen.has(String(item._id))) return false;
         seen.add(String(item._id));
         return true;
     });
+    
+    return transformFilesForUser(deduplicated, userId);
 }
 
 module.exports = {

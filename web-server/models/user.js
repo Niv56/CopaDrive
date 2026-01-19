@@ -25,7 +25,15 @@ userSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
   transform: function (doc, ret) {
-    delete ret._id; // Removes the version with the underscore
+    delete ret._id; e
+  }
+});
+
+userSchema.set('toObject', {
+  virtuals: true,
+  versionKey: false,
+  transform: function (doc, ret) {
+    delete ret._id; 
   }
 });
 

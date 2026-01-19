@@ -1,4 +1,15 @@
 services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: copadrive_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - copadrive-network
+
   # C++ Server
   server:
     build:
@@ -21,12 +32,17 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - CPP_SERVER_HOST=server
-      - CPP_SERVER_PORT=5555
+      - CPP_HOST=server
+      - CPP_PORT=5555
+      - CONNECTION_STRING=mongodb://mongodb:27017/copadrive
+      - JWT_SECRET=your_super_secret_jwt_key_change_in_production
+    depends_on:
+      - mongodb
+      - server
     networks:
       - copadrive-network
-    env_file:
-      - ./web-server/config/.env.local
+    #env_file:
+     # - ./web-server/config/.env.local
   client:
     build:
       context: ./client
@@ -48,3 +64,6 @@ services:
 networks:
   copadrive-network:
     driver: bridge
+
+volumes:
+  mongodb_data:

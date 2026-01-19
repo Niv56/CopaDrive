@@ -34,6 +34,20 @@ fileSchema.set('toJSON', {
     versionKey: false,
     transform: function (doc, ret) {
         delete ret._id;
+        if (ret.ownerId) ret.ownerId = ret.ownerId.toString();
+        if (ret.parentId) ret.parentId = ret.parentId.toString();
+        if (ret.originalParentId) ret.originalParentId = ret.originalParentId.toString();
+    }
+});
+
+fileSchema.set('toObject', {
+    virtuals: true,
+    versionKey: false,
+    transform: function (doc, ret) {
+        delete ret._id;
+        if (ret.ownerId) ret.ownerId = ret.ownerId.toString();
+        if (ret.parentId) ret.parentId = ret.parentId.toString();
+        if (ret.originalParentId) ret.originalParentId = ret.originalParentId.toString();
     }
 });
 

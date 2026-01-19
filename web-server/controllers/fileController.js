@@ -105,8 +105,8 @@ exports.setStarred = async (req, res, next) => {
     if (typeof starred !== 'boolean') return res.status(400).json({ error: 'starred must be boolean' });
 
     console.log(`[CONTROLLER] setStarred: User ${userId}, Item ${req.params.id}, State: ${starred}`);
-    await fileService.setStarred(userId, req.params.id, starred);
-    res.status(204).end();
+    const updated = await fileService.setStarred(userId, req.params.id, starred);
+    res.status(200).json(updated);
   } catch (err) {
     next(err);
   }
@@ -119,8 +119,8 @@ exports.setImportant = async (req, res, next) => {
     if (typeof important !== 'boolean') return res.status(400).json({ error: 'important must be boolean' });
 
     console.log(`[CONTROLLER] setImportant: User ${userId}, Item ${req.params.id}, State: ${important}`);
-    await fileService.setImportant(userId, req.params.id, important);
-    res.status(204).end();
+    const updated = await fileService.setImportant(userId, req.params.id, important);
+    res.status(200).json(updated);
   } catch (err) {
     next(err);
   }
@@ -217,8 +217,8 @@ exports.setTrashed = async (req, res, next) => {
     }
 
     console.log(`[CONTROLLER] setTrashed: User ${userId}, Item ${req.params.id}, State: ${trashed}`);
-    await fileService.setTrashed(userId, req.params.id, trashed);
-    res.status(204).end();
+    const updated = await fileService.setTrashed(userId, req.params.id, trashed);
+    res.status(200).json(updated);
   } catch (err) {
     console.error(`[CONTROLLER ERROR] setTrashed: ${err.message}`);
     next(err);
