@@ -25,7 +25,7 @@ userSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
   transform: function (doc, ret) {
-    delete ret._id; e
+    delete ret._id; // Removes the version with the underscore
   }
 });
 
@@ -33,7 +33,7 @@ userSchema.set('toObject', {
   virtuals: true,
   versionKey: false,
   transform: function (doc, ret) {
-    delete ret._id; 
+    delete ret._id; // Removes the version with the underscore
   }
 });
 

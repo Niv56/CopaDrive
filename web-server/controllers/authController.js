@@ -3,7 +3,7 @@ const authService = require('../services/authService');
 const { validateFields } = require('../utils/validation');
 
 // Authenticates user credentials and issues a JWT
-exports.login = async (req, res, next) => { 
+exports.login = async (req, res, next) => { // Added async
   try {
     validateFields(req.body, ['email', 'password']);
 

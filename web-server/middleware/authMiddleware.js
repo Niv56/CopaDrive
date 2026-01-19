@@ -28,6 +28,7 @@ const requireAuth = async (req, res, next) => {
 
     const payload = jwt.verify(token, secret);
     const userId = payload?.userId;
+    
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       const error = new Error("Invalid token payload");

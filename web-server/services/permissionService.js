@@ -1,13 +1,18 @@
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
 
-
-// Give a new permission
- 
-async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {
+/**
+ * Adds a new permission
+ */
+async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {    
     const file = await fileRepository.findById(fileId);
     
-    if (!file || String(file.ownerId) !== String(ownerId)) {
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
         const err = new Error('Only the owner can share this file.');
         err.status = 403;
         throw err;
@@ -27,10 +32,11 @@ async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {
     });
 }
 
-
- // Gets all permissions for a file with user's role
- 
+/**
+ * Gets all permissions for a file with user's role
+ */
 async function getPermissions(userId, fileId) {
+    
     const file = await fileRepository.findById(fileId);
     
     if (!file) {
@@ -39,9 +45,14 @@ async function getPermissions(userId, fileId) {
         throw err;
     }
     
-    const isOwner = String(file.ownerId) === String(userId);
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file.ownerId?.toString ? file.ownerId.toString() : String(file.ownerId);
+    const userIdStr = userId?.toString ? userId.toString() : String(userId);
+    
+    const isOwner = fileOwnerIdStr === userIdStr;
     const myPerm = await permissionRepository.findByUserAndFile(userId, fileId);
     const myRole = isOwner ? 'owner' : (myPerm ? myPerm.role : null);
+    
     
     if (!myRole) {
         const err = new Error('Forbidden');
@@ -65,17 +76,23 @@ async function getPermissions(userId, fileId) {
     };
 }
 
-// Updates a permission role
+/**
+ * Updates a permission role
+ */
 async function updatePermission(ownerId, fileId, permissionId, newRole) {
     const file = await fileRepository.findById(fileId);
     
-    if (!file || String(file.ownerId) !== String(ownerId)) {
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
         const err = new Error('Only the owner can change sharing permissions.');
         err.status = 403;
         throw err;
     }
     
-    // Find permission by its ID directly
+    // Find permission by its ID directly, not by user+file
     const perm = await permissionRepository.findById(permissionId);
     if (!perm || String(perm.fileId) !== String(fileId)) {
         const err = new Error('Permission not found');
@@ -88,13 +105,17 @@ async function updatePermission(ownerId, fileId, permissionId, newRole) {
     return await permissionRepository.update(perm._id, { role: newRole || toggledRole });
 }
 
-
-// Deletes a permission
- 
+/**
+ * Deletes a permission
+ */
 async function deletePermission(ownerId, fileId, permissionId) {
     const file = await fileRepository.findById(fileId);
     
-    if (!file || String(file.ownerId) !== String(ownerId)) {
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
         const err = new Error('Only the owner can remove sharing permissions.');
         err.status = 403;
         throw err;

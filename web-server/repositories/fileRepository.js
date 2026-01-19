@@ -5,8 +5,10 @@ const mongoose = require('mongoose');
  * Creates a new file/folder document
  */
 async function create(data) {
+    
     const file = new File(data);
-    return await file.save();
+    const saved = await file.save(); 
+    return saved;
 }
 
 /**
@@ -34,16 +36,25 @@ async function deleteById(id) {
 }
 
 /**
- * Lists all top-level items (no parent) for a user
+ * Lists all owned items for a user (any parent) to allow client-side folder filtering
  */
 async function findTopLevel(userId) {
-    return await File.find({
+    
+    const allFiles = await File.find({}).limit(10);
+    allFiles.forEach(f => {
+        console.log(`  - File: ${f.name}, ownerId: ${f.ownerId} (type: ${typeof f.ownerId}), parentId: ${f.parentId}, trashed: ${f.trashed}`);
+    });
+    
+    const results = await File.find({
         $or: [
-            { ownerId: userId, parentId: null, trashed: false },
+            { ownerId: userId, trashed: false },
             { starredBy: userId, trashed: false },
             { importantBy: userId, trashed: false }
         ]
     }).sort({ createdAt: -1 });
+    
+    
+    return results;
 }
 
 /**
