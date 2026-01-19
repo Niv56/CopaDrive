@@ -4,15 +4,7 @@ if (!API_BASE_URL) {
   console.warn("Missing EXPO_PUBLIC_API_BASE_URL in .env");
 }
 
-type LoginApiResult =
-  | { ok: true; token: string; error?: null }
-  | { ok: false; error: string; token?: null };
-
-type RegisterApiResult =
-  | { success: true; user?: any; error?: null }
-  | { success: false; error: string; user?: null };
-
-async function jsonRequest(path: string, options?: RequestInit) {
+async function jsonRequest(path, options) {
   const url = `${API_BASE_URL}${path}`;
 
   const res = await fetch(url, {
@@ -24,7 +16,7 @@ async function jsonRequest(path: string, options?: RequestInit) {
   });
 
   const text = await res.text();
-  let data: any = null;
+  let data = null;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
@@ -34,7 +26,7 @@ async function jsonRequest(path: string, options?: RequestInit) {
   return { ok: res.ok, status: res.status, data };
 }
 
-export async function authenticateUser(email: string, password: string): Promise<LoginApiResult> {
+export async function authenticateUser(email, password) {
   const { ok, data } = await jsonRequest("/api/tokens", {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -50,7 +42,7 @@ export async function authenticateUser(email: string, password: string): Promise
   return { ok: true, token };
 }
 
-export async function registerUser(payload: any): Promise<RegisterApiResult> {
+export async function registerUser(payload) {
   const { ok, data } = await jsonRequest("/api/users", {
     method: "POST",
     body: JSON.stringify(payload),

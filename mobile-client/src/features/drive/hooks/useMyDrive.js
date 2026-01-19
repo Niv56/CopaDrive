@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../../app/providers/AuthContext";
 import { getFiles } from "../services/fileService";
-import { DriveItem } from "../types/driveItem";
 
 export function useMyDrive() {
     const { token, logout } = useAuth();

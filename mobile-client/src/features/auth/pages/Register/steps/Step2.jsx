@@ -4,9 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 // שימוש בנתיב המדויק שביקשת
 import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step2({ formData, setFormData, errors }: any) {
+export default function Step2({ formData, setFormData, errors }) {
   
-  const handlePhoneChange = (text: string) => {
+  const handlePhoneChange = (text) => {
     let cleaned = text.replace(/\D/g, "");
     if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
     

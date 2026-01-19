@@ -1,15 +1,16 @@
 {
-  "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
-    "strict": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "jsx": "react-native"
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "src/app/(app)/home.tsx, "src/shared_code/hooks/useAuth.js", "src/shared_code/hooks/api/request.js", "src/features/drive/types/driveItem.js", "src/features/drive/styles/myDrive.styles.js", "src/features/drive/services/fileService.js", "src/features/drive/hooks/useMyDrive.js", "src/features/auth/validators/registerValidators.js", "src/features/auth/styles/auth.styles.js", "src/features/auth/services/authService.js"", "src/features/auth/services/authService.jsx", "src/features/auth/pages/Register/RegisterScreen.js", "src/features/auth/pages/Register/steps/Step5.js", "src/features/auth/pages/Register/steps/Step4.js", "src/features/auth/pages/Register/steps/Step3.js", "src/features/auth/pages/Register/steps/Step2.js", "src/features/auth/pages/Register/steps/Step1.js", "src/features/auth/pages/Login/LoginScreen.js", "src/features/auth/components/AuthLayout.js", "src/app/index.js", "src/app/_layout.js", "src/app/providers/AuthContext.js", "src/app/(auth)/register.js", "src/app/(auth)/login.js", "src/features/drive/components/EmptyState.jsx", "src/features/drive/components/DriveListItem.jsx", "src/features/auth/pages/Register/RegisterScreen.jsx", "src/features/auth/pages/Register/steps/Step5.jsx", "src/features/auth/pages/Register/steps/Step4.jsx", "src/features/auth/pages/Register/steps/Step3.jsx", "src/features/auth/pages/Register/steps/Step2.jsx", "src/features/auth/pages/Register/steps/Step1.jsx", "src/features/auth/pages/Login/LoginScreen.jsx", "src/features/auth/components/AuthLayout.jsx", ".expo/types/router.d.js", "src/layout/TopBar.jsx", "src/layout/Fab.jsx", "src/layout/BottomBar.jsx", "src/app/index.jsx", "src/app/_layout.jsx", "src/app/providers/AuthContext.jsx", "src/app/(auth)/register.jsx", "src/app/(auth)/login.jsx", "src/app/(app)/home.jsx"  ]
+    "**/*.js",
+    "**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

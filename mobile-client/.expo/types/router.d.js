@@ -1,14 +1,36 @@
-/* eslint-disable */
-import * as Router from 'expo-router';
+// חשוב: במובייל "localhost" לא עובד מול המחשב.
+// תשים פה את ה-IP של המחשב שלך באותה רשת (כמו 192.168.1.102)
+const BASE_URL = "http://192.168.1.226:3000"; // תעדכן לפי ה-web-server שלך
 
-export * from 'expo-router';
+export async function request(path, options = {}) {
+  const method = options.method ?? "GET";
 
-declare module 'expo-router' {
-  export namespace ExpoRouter {
-    export interface __routes<T extends string | object = string> {
-      hrefInputParams: { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/../layout/TopBar`; params?: Router.UnknownInputParams; } | { pathname: `/../layout/BottomBar`; params?: Router.UnknownInputParams; } | { pathname: `/../layout/Fab`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/RegisterScreen`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step5`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step4`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step3`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step2`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step1`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Login/LoginScreen`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/components/AuthLayout`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/providers/AuthContext`; params?: Router.UnknownInputParams; } | { pathname: `${'/(auth)'}/register` | `/register`; params?: Router.UnknownInputParams; } | { pathname: `${'/(auth)'}/login` | `/login`; params?: Router.UnknownInputParams; } | { pathname: `${'/(app)'}/home` | `/home`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; };
-      hrefOutputParams: { pathname: Router.RelativePathString, params?: Router.UnknownOutputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownOutputParams } | { pathname: `/../layout/TopBar`; params?: Router.UnknownOutputParams; } | { pathname: `/../layout/BottomBar`; params?: Router.UnknownOutputParams; } | { pathname: `/../layout/Fab`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/RegisterScreen`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step5`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step4`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step3`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step2`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step1`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/pages/Login/LoginScreen`; params?: Router.UnknownOutputParams; } | { pathname: `/../features/auth/components/AuthLayout`; params?: Router.UnknownOutputParams; } | { pathname: `/`; params?: Router.UnknownOutputParams; } | { pathname: `/providers/AuthContext`; params?: Router.UnknownOutputParams; } | { pathname: `${'/(auth)'}/register` | `/register`; params?: Router.UnknownOutputParams; } | { pathname: `${'/(auth)'}/login` | `/login`; params?: Router.UnknownOutputParams; } | { pathname: `${'/(app)'}/home` | `/home`; params?: Router.UnknownOutputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownOutputParams; };
-      href: Router.RelativePathString | Router.ExternalPathString | `/../layout/TopBar${`?${string}` | `#${string}` | ''}` | `/../layout/BottomBar${`?${string}` | `#${string}` | ''}` | `/../layout/Fab${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/RegisterScreen${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/steps/Step5${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/steps/Step4${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/steps/Step3${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/steps/Step2${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Register/steps/Step1${`?${string}` | `#${string}` | ''}` | `/../features/auth/pages/Login/LoginScreen${`?${string}` | `#${string}` | ''}` | `/../features/auth/components/AuthLayout${`?${string}` | `#${string}` | ''}` | `/${`?${string}` | `#${string}` | ''}` | `/providers/AuthContext${`?${string}` | `#${string}` | ''}` | `${'/(auth)'}/register${`?${string}` | `#${string}` | ''}` | `/register${`?${string}` | `#${string}` | ''}` | `${'/(auth)'}/login${`?${string}` | `#${string}` | ''}` | `/login${`?${string}` | `#${string}` | ''}` | `${'/(app)'}/home${`?${string}` | `#${string}` | ''}` | `/home${`?${string}` | `#${string}` | ''}` | `/_sitemap${`?${string}` | `#${string}` | ''}` | { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/../layout/TopBar`; params?: Router.UnknownInputParams; } | { pathname: `/../layout/BottomBar`; params?: Router.UnknownInputParams; } | { pathname: `/../layout/Fab`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/RegisterScreen`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step5`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step4`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step3`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step2`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Register/steps/Step1`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/pages/Login/LoginScreen`; params?: Router.UnknownInputParams; } | { pathname: `/../features/auth/components/AuthLayout`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/providers/AuthContext`; params?: Router.UnknownInputParams; } | { pathname: `${'/(auth)'}/register` | `/register`; params?: Router.UnknownInputParams; } | { pathname: `${'/(auth)'}/login` | `/login`; params?: Router.UnknownInputParams; } | { pathname: `${'/(app)'}/home` | `/home`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; };
-    }
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers ?? {}),
+  };
+
+  if (options.token) headers.Authorization = `Bearer ${options.token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const text = await res.text();
+  const data = text ? safeJson(text) : null;
+
+  if (!res.ok) {
+    const msg =
+      (data && (data.message || data.error)) ||
+      `Request failed (${res.status})`;
+    throw new Error(msg);
   }
+
+  return data;
+}
+
+function safeJson(text) {
+  try { return JSON.parse(text); } catch { return null; }
 }

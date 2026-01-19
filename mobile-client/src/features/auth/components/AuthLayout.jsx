@@ -14,13 +14,7 @@ import { authStyles } from "../styles/auth.styles";
 
 const bgImage = require("../../../assets/images/back.png");
 
-interface AuthLayoutProps {
-  children: React.ReactNode;
-  title?: string;
-  subtitle?: string;
-}
-
-export default function AuthLayout({ children, title = "CopaDrive", subtitle }: AuthLayoutProps) {
+export default function AuthLayout({ children, title = "CopaDrive", subtitle }) {
   let [fontsLoaded] = useFonts({
     BrunoAceSC_400Regular,
   });
