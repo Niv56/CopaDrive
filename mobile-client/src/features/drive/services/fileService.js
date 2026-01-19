@@ -110,3 +110,31 @@ export function formatLastAccessed(dateString) {
     if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
     return date.toLocaleDateString();
 }
+export async function setStarred(token, fileId, starred) {
+  // TODO: if your backend uses a different route – change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { starred: !!starred },
+  });
+}
+
+// ✅ toggle important
+export async function setImportant(token, fileId, important) {
+  // TODO: if your backend uses a different route – change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { important: !!important },
+  });
+}
+
+// ✅ rename (file or folder)
+export async function renameItem(token, fileId, name) {
+  // TODO: if your backend uses a different route – change ONLY this URL.
+  return request(`/api/files/${fileId}`, {
+    method: "PATCH",
+    token,
+    body: { name },
+  });
+}
