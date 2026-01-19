@@ -2587,9 +2587,9 @@ import { request } from "../../../shared_code/hooks/api/request";
 
 /** ׳׳•׳©׳ ׳׳× ׳›׳ ׳”׳§׳‘׳¦׳™׳ ׳‘׳×׳™׳§׳™׳™׳× ׳”׳©׳•׳¨׳© */
 export async function getFiles(token) {
-    return request("/api/files", { 
-        method: "GET", 
-        token: token 
+    return request("/api/files", {
+        method: "GET",
+        token: token
     });
 }
 
@@ -2599,26 +2599,24 @@ export async function getFiles(token) {
 
 /** * ׳₪׳•׳ ׳§׳¦׳™׳” ׳¨׳׳©׳™׳× ׳׳™׳¦׳™׳¨׳× ׳₪׳¨׳™׳˜ (׳×׳™׳§׳™׳™׳” ׳׳• ׳§׳•׳‘׳¥).
  * ׳”-FAB ׳׳©׳×׳׳© ׳‘׳₪׳•׳ ׳§׳¦׳™׳” ׳”׳–׳• ׳›׳“׳™ ׳׳×׳׳•׳ ׳‘׳›׳ ׳”׳¡׳•׳’׳™׳.
- *
  */
 export async function createItem(token, { name, type, parentId = null, content = "", mimeType = "" }) {
+    // ג… ׳×׳™׳§׳•׳: ׳©׳׳™׳—׳× ׳”׳׳•׳‘׳™׳™׳§׳˜ ׳™׳©׳™׳¨׳•׳×. ׳”-request ׳™׳‘׳¦׳¢ stringify ׳₪׳¢׳ ׳׳—׳× ׳‘׳׳‘׳“.
     return request("/api/files", {
         method: "POST",
         token: token,
-        body: JSON.stringify({
+        body: {
             name,
             type,
             parentId,
-            // ׳×׳•׳›׳ ׳ ׳©׳׳— ׳¨׳§ ׳׳ ׳–׳” ׳§׳•׳‘׳¥, ׳׳—׳¨׳× ׳׳—׳¨׳•׳–׳× ׳¨׳™׳§׳”
-            content: type === "file" ? content : "", 
+            content: type === "file" ? content : "",
             mimeType: type === "file" ? mimeType : ""
-        })
+        }
     });
 }
 
 /** ׳׳¢׳˜׳₪׳× ׳׳™׳¦׳™׳¨׳× ׳§׳•׳‘׳¥ (׳׳©׳×׳׳©׳× ׳‘-createItem) */
 export async function createFile(token, fileData) {
-    // fileData ׳׳›׳™׳: { name, content, mimeType }
     return createItem(token, { ...fileData, type: 'file' });
 }
 
@@ -2635,7 +2633,7 @@ export async function getUsage(token) {
     return request("/api/files/usage", {
         method: "GET",
         token: token
-    }); 
+    });
 }
 
 /* ===========================================================
@@ -2655,10 +2653,11 @@ export async function getTrashFiles(token) {
 }
 
 export async function restoreFromTrash(token, fileId) {
+    // ג… ׳×׳™׳§׳•׳: ׳”׳¡׳¨׳× JSON.stringify
     return request(`/api/files/${fileId}/trash`, {
         method: "PATCH",
         token: token,
-        body: JSON.stringify({ trashed: false }),
+        body: { trashed: false },
     });
 }
 
@@ -2689,39 +2688,53 @@ export function formatLastAccessed(dateString) {
     const date = new Date(dateString);
     const diffMs = new Date() - date;
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins} mins ago`;
     if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
     return date.toLocaleDateString();
 }
+
 export async function setStarred(token, fileId, starred) {
-  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { starred: !!starred },
-  });
+    // ג… ׳×׳™׳§׳•׳: ׳”׳¡׳¨׳× JSON.stringify (׳”׳™׳ ׳‘׳•׳¦׳¢׳” ׳‘׳×׳•׳ request.js ׳׳ ׳¢׳§׳‘׳× ׳׳—׳¨׳™ ׳”׳×׳™׳§׳•׳ ׳”׳§׳•׳“׳)
+    return request(`/api/files/${fileId}/star`, { // ׳©׳™׳ ׳׳‘: ׳”׳ ׳×׳™׳‘ ׳‘׳©׳¨׳× ׳©׳׳ ׳”׳•׳ /star
+        method: "PATCH",
+        token,
+        body: { starred: !!starred },
+    });
 }
 
-// ג… toggle important
 export async function setImportant(token, fileId, important) {
-  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { important: !!important },
-  });
+    return request(`/api/files/${fileId}/important`, { // ׳©׳™׳ ׳׳‘: ׳”׳ ׳×׳™׳‘ ׳‘׳©׳¨׳× ׳©׳׳ ׳”׳•׳ /important
+        method: "PATCH",
+        token,
+        body: { important: !!important },
+    });
 }
 
-// ג… rename (file or folder)
 export async function renameItem(token, fileId, name) {
-  // TODO: if your backend uses a different route ג€“ change ONLY this URL.
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: { name },
-  });
+    return request(`/api/files/${fileId}`, {
+        method: "PATCH",
+        token,
+        body: { name },
+    });
+}
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\services\searchService.js =====
+import { request } from "../../../shared_code/hooks/api/request";
+
+export async function getSearchResults(token, query) {
+    if (!query || query.trim().length === 0) return [];
+    try {
+        // ׳§׳™׳“׳•׳“ ׳”׳©׳׳™׳׳×׳” ׳׳׳ ׳™׳¢׳× ׳©׳’׳™׳׳•׳× ׳‘-URL
+        const encoded = encodeURIComponent(query.trim());
+        return await request(`/api/search/${encoded}`, {
+            method: "GET",
+            token: token,
+        });
+    } catch (error) {
+        console.error("Search failed:", error.message);
+        return [];
+    }
 }
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\features\drive\styles\myDrive.styles.js =====
 import { StyleSheet, Platform } from "react-native";
@@ -3169,6 +3182,133 @@ export async function changeUserPassword(token, userId, currentPassword, newPass
     body: { currentPassword, newPassword },
   });
 }
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\SearchBar\SearchBar.jsx =====
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Keyboard } from "react-native";
+import SearchDropdown from "./SearchDropdown";
+import { getSearchResults } from "../../features/drive/services/searchService";
+
+export default function SearchBar({ token }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [isFocused, setIsFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      const data = await getSearchResults(token, query);
+      setResults(data || []);
+      setLoading(false);
+    }, 200); // 200ms ׳׳˜׳¢׳™׳ ׳” ׳׳”׳™׳¨׳” ׳‘׳׳™׳•׳—׳“
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.inputBar}>
+        <Text style={styles.treeIcon}>נ´</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={isFocused ? "" : "Search in CopaDrive"}
+          placeholderTextColor="rgba(95, 99, 104, 0.5)"
+          value={query}
+          onChangeText={setQuery}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+        />
+        {loading && <ActivityIndicator size="small" color="#0d6efd" />}
+      </View>
+
+      {isFocused && (query.length > 0 || loading) && (
+        <SearchDropdown
+          results={results}
+          loading={loading}
+          query={query}
+          onResultPress={(file) => {
+            setQuery("");
+            Keyboard.dismiss();
+            console.log("Selected:", file.name);
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, zIndex: 5000 },
+  inputBar: { flex: 1, flexDirection: "row", alignItems: "center", paddingLeft: 5 },
+  treeIcon: { fontSize: 20, marginRight: 8 },
+  input: { flex: 1, fontSize: 16, color: "#202124", height: "100%" },
+});
+===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\SearchBar\SearchDropdown.jsx =====
+import React from "react";
+import { FlatList, Text, Pressable, StyleSheet, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import { getFileIconMeta } from "../../features/drive/utils/fileIcon";
+
+export default function SearchDropdown({ results, loading, query, onResultPress }) {
+    const renderItem = ({ item }) => {
+        const { icon, color } = getFileIconMeta(item.name, item.mimeType, item.type === "folder");
+        return (
+            <Pressable style={styles.item} onPress={() => onResultPress(item)}>
+                <Ionicons name={icon} size={22} color={color} style={styles.icon} />
+                <Text style={styles.text} numberOfLines={1}>{item.name}</Text>
+            </Pressable>
+        );
+    };
+
+    return (
+        <BlurView intensity={85} tint="light" style={styles.dropdown}>
+            {/* ׳©׳›׳‘׳× ׳”׳’׳ ׳” ׳׳׳ ׳™׳¢׳× ׳–׳׳™׳’׳× ׳˜׳§׳¡׳˜ ׳׳”׳¨׳§׳¢ */}
+            <View style={styles.overlay} />
+
+            <FlatList
+                data={results}
+                keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="always"
+                renderItem={renderItem}
+                ListEmptyComponent={!loading && query.length > 0 && (
+                    <Text style={styles.emptyText}>No matches found for "{query}"</Text>
+                )}
+            />
+        </BlurView>
+    );
+}
+
+const styles = StyleSheet.create({
+    dropdown: {
+        position: "absolute",
+        top: 55, // ׳׳×׳—׳× ׳׳©׳•׳¨׳× ׳”׳—׳™׳₪׳•׳©
+        left: 0,
+        right: 0,
+        borderRadius: 20,
+        maxHeight: 350,
+        overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.5)",
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(255, 255, 255, 0.4)", // ׳”׳•׳₪׳ ׳׳× ׳”׳–׳›׳•׳›׳™׳× ׳"׳—׳׳‘׳™׳×" ׳™׳•׳×׳¨
+    },
+    item: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 15,
+        borderBottomWidth: 0.5,
+        borderBottomColor: "rgba(0,0,0,0.05)",
+    },
+    icon: { marginRight: 15 },
+    text: { fontSize: 16, color: "#202124", flex: 1, fontWeight: "500" },
+    emptyText: { padding: 20, textAlign: "center", color: "#70757a" }
+});
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\BottomBar.jsx =====
 import React from "react";
 import { View, Text, Pressable } from "react-native";
@@ -3857,42 +3997,34 @@ const styles = StyleSheet.create({
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\layout\TopBar.jsx =====
 import React, { useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
+import { View, Pressable, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
-import { driveStyles } from "../features/drive/styles/myDrive.styles";
 import { useAuth } from "../app/providers/AuthContext";
-
+import SearchBar from "./SearchBar/SearchBar";
 import ProfileActionSheet from "./ProfileActionSheet";
 import EditProfileModal from "../features/user/components/EditProfileModal";
+import { driveStyles } from "../features/drive/styles/myDrive.styles";
 
 export default function TopBar() {
   const navigation = useNavigation();
-  const { user } = useAuth();
-
+  const { user, token } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
-    <>
+    <View style={styles.masterZIndex}>
       <View style={driveStyles.topBarSearchWrapper}>
-        <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={10}>
+        <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={15}>
           <Ionicons name="menu" size={24} color="#5f6368" />
         </Pressable>
 
-        <Text style={driveStyles.searchText}>Search in CopaDrive</Text>
+        <SearchBar token={token} />
 
-        <Pressable
-          onPress={() => setIsProfileMenuOpen(true)}
-          hitSlop={10}
-          style={driveStyles.profileCircle}
-        >
+        <Pressable onPress={() => setIsProfileMenuOpen(true)} style={driveStyles.profileCircle}>
           {user?.image ? (
-            <Image
-              source={{ uri: user.image }}
-              style={localStyles.avatarImage}
-            />
+            <Image source={{ uri: user.image }} style={styles.avatar} />
           ) : (
             <Ionicons name="person" size={18} color="#fff" />
           )}
@@ -3902,10 +4034,7 @@ export default function TopBar() {
       <ProfileActionSheet
         visible={isProfileMenuOpen}
         onClose={() => setIsProfileMenuOpen(false)}
-        onEditProfile={() => {
-          setIsProfileMenuOpen(false);
-          setIsEditOpen(true);
-        }}
+        onEditProfile={() => { setIsProfileMenuOpen(false); setIsEditOpen(true); }}
       />
 
       <EditProfileModal
@@ -3917,16 +4046,13 @@ export default function TopBar() {
         initialPhoneNumber={user?.phoneNumber}
         initialImage={user?.image}
       />
-    </>
+    </View>
   );
 }
 
-const localStyles = StyleSheet.create({
-  avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16, // ׳¢׳™׳’׳•׳ ׳׳•׳©׳׳
-  },
+const styles = StyleSheet.create({
+  masterZIndex: { zIndex: 10000, position: 'relative' },
+  avatar: { width: 32, height: 32, borderRadius: 16 }
 });
 ===== C:\Users\Yocha\Desktop\Studies BIU\SemesterC\AP\CopaDrive\mobile-client\src\shared_code\hooks\api\request.js =====
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -3935,29 +4061,34 @@ export async function request(path, options = {}) {
   const cleanPath = path.startsWith('/api') ? path.replace('/api', '') : path;
   const url = `${API_BASE_URL}${cleanPath}`;
 
-  const isFormData = options.body instanceof FormData;
-
-  const headers = {
-    ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(options.headers || {}),
-  };
-
-  if (options.token) {
-    headers["Authorization"] = `Bearer ${options.token}`;
-  }
-
   try {
+    const isFormData = options.body instanceof FormData;
+
+    const headers = {
+      // ׳”׳•׳¡׳₪׳× JSON Content-Type ׳¨׳§ ׳׳ ׳–׳” ׳׳ FormData
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    };
+
+    if (options.token) {
+      headers["Authorization"] = `Bearer ${options.token}`;
+    }
+
     const res = await fetch(url, {
       ...options,
       headers,
-      body: isFormData ? options.body : JSON.stringify(options.body),
+      // ׳”׳׳¨׳× ׳׳•׳‘׳™׳™׳§׳˜ ׳-JSON ׳¨׳§ ׳׳ ׳”׳•׳ ׳׳•׳‘׳™׳™׳§׳˜ ׳•׳׳ FormData
+      body: isFormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     });
 
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
 
-    if (!res.ok) throw new Error(data?.message || `Error ${res.status}`);
+    if (!res.ok) {
+      throw new Error(data?.error || data?.message || `Request failed with status ${res.status}`);
+    }
+
     return data;
   } catch (error) {
     console.error("ג Request Error:", error.message);
