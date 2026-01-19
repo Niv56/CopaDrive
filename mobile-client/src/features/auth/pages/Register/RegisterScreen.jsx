@@ -27,7 +27,7 @@ export default function RegisterScreen() {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    image: null, // נשמר מקומית; נשלח כ-string אם קיים
+    image: null,
     dateOfBirth: "",
     gender: "",
     email: "",
