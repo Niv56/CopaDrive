@@ -2,15 +2,16 @@ const permissionService = require('../services/permissionService');
 const { validateFields } = require('../utils/validation');
 
 // Adds a new permission for a file
-exports.addPermission = (req, res, next) => {
+exports.addPermission = async (req, res, next) => { 
     try {
         validateFields(req.body, ['userId']);
 
         const ownerId = req.user.id;
         const fileId = req.params.id;
-        const role = "viewer";
+        const { userId, role = "viewer" } = req.body; 
 
-        const created = permissionService.addPermission(ownerId, fileId, req.body, role);
+        const created = await permissionService.addPermission(ownerId, fileId, userId, role);
+        
         res.status(201).json(created);
     } catch (err) {
         next(err);
@@ -18,12 +19,12 @@ exports.addPermission = (req, res, next) => {
 };
 
 // Lists all permissions for a specific file
-exports.getPermissions = (req, res, next) => {
+exports.getPermissions = async (req, res, next) => { 
     try {
         const ownerId = req.user.id;
         const fileId = req.params.id;
 
-        const permissions = permissionService.getPermissions(ownerId, fileId);
+        const permissions = await permissionService.getPermissions(ownerId, fileId);
         res.status(200).json(permissions);
     } catch (err) {
         next(err);
@@ -31,13 +32,14 @@ exports.getPermissions = (req, res, next) => {
 };
 
 // Updates an existing permission role
-exports.updatePermission = (req, res, next) => {
+exports.updatePermission = async (req, res, next) => { 
     try {
         const ownerId = req.user.id;
         const fileId = req.params.id;
-        const pId = req.params.pId;
+        const pId = req.params.pId; 
+        const { role } = req.body;  
 
-        const updated = permissionService.updatePermission(ownerId, fileId, pId);
+        const updated = await permissionService.updatePermission(ownerId, fileId, pId, role);
 
         res.status(200).json(updated);
     } catch (err) {
@@ -46,13 +48,13 @@ exports.updatePermission = (req, res, next) => {
 };
 
 // Removes a permission from a file
-exports.deletePermission = (req, res, next) => {
+exports.deletePermission = async (req, res, next) => {
     try {
         const ownerId = req.user.id;
         const fileId = req.params.id;
         const pId = req.params.pId;
 
-        permissionService.deletePermission(ownerId, fileId, pId);
+        await permissionService.deletePermission(ownerId, fileId, pId);
         res.status(204).end();
     } catch (err) {
         next(err);

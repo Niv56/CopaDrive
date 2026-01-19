@@ -1,0 +1,95 @@
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+}
+
+.toast-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+  font-size: 14px;
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  border-left: 4px solid #e53e3e;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  border-left: 4px solid #38a169;
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+  border-left: 4px solid #3182ce;
+}
+
+.toast-icon {
+  font-size: 18px;
+}
+
+.toast-message {
+  flex: 1;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 0;
+  color: #2d3748;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .toast-item {
+  background: #2d3748;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .toast-error {
+  background: linear-gradient(135deg, #2d2020 0%, #4a2020 100%);
+}
+
+[data-theme="dark"] .toast-success {
+  background: linear-gradient(135deg, #1a2e1a 0%, #2d4a2d 100%);
+}
+
+[data-theme="dark"] .toast-info {
+  background: linear-gradient(135deg, #1a2535 0%, #2d3a4a 100%);
+}
+
+[data-theme="dark"] .toast-message,
+[data-theme="dark"] .toast-close {
+  color: #e2e8f0;
+}
