@@ -8,11 +8,13 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import { BlurView } from "expo-blur";
 
 import { useAuth } from "../app/providers/AuthContext";
 import { createItem } from "../features/drive/services/fileService";
@@ -43,6 +45,12 @@ export default function Fab({ onRefresh }) {
     pickerInProgressRef.current = false;
   };
 
+  const closeMenu = () => {
+    setIsOpen(false);
+    // ✅ safety: if something got stuck, release it
+    unlockPicker();
+  };
+
   // --- helper upload ---
   const processAndUpload = async (uri, fileName, mimeType) => {
     if (!token) {
@@ -71,6 +79,8 @@ export default function Fab({ onRefresh }) {
       Alert.alert("Upload Failed", err?.message || "Unknown error");
     } finally {
       setLoading(false);
+      // ✅ FAILSAFE: never let picker stay locked
+      unlockPicker();
     }
   };
 
@@ -79,7 +89,7 @@ export default function Fab({ onRefresh }) {
     if (!lockPicker()) return;
 
     try {
-      setIsOpen(false);
+      closeMenu();
       await wait(200);
 
       const result = await DocumentPicker.getDocumentAsync({
@@ -108,7 +118,7 @@ export default function Fab({ onRefresh }) {
     if (!lockPicker()) return;
 
     try {
-      setIsOpen(false);
+      closeMenu();
 
       const permission = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -122,7 +132,8 @@ export default function Fab({ onRefresh }) {
       await wait(200);
 
       const options = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // warning OK
+        // (keeping your existing line)
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
         allowsEditing: false,
       };
@@ -135,12 +146,11 @@ export default function Fab({ onRefresh }) {
         const asset = result.assets[0];
 
         let fileName = asset.fileName;
-
         if (!fileName) {
           const uriParts = String(asset.uri).split("/");
-          fileName = uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
+          fileName =
+            uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
         }
-
         if (fileName && !fileName.includes(".")) fileName += ".jpg";
 
         await processAndUpload(
@@ -186,17 +196,23 @@ export default function Fab({ onRefresh }) {
       setModalType(null);
 
       // ✅ trigger global refresh + optional local refresh callback
-      emitDriveRefresh({ reason: "create", name: finalName, type: isFolder ? "folder" : "file" });
+      emitDriveRefresh({
+        reason: "create",
+        name: finalName,
+        type: isFolder ? "folder" : "file",
+      });
       if (onRefresh) onRefresh();
     } catch (err) {
       Alert.alert("Error", err?.message || "Unknown error");
     } finally {
       setLoading(false);
+      // ✅ safety: also release picker lock (in case user opened menu mid-flow)
+      unlockPicker();
     }
   };
 
-  const disableActions = loading; // disable only while uploading/creating
-  const disableMenu = loading || pickerInProgressRef.current;
+  // ✅ only loading disables UI (fixes "stuck transparent +")
+  const disableActions = loading;
 
   return (
     <>
@@ -209,71 +225,69 @@ export default function Fab({ onRefresh }) {
 
       {/* OPEN MENU */}
       <Modal visible={isOpen} transparent animationType="none">
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => setIsOpen(false)}
-        >
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
+          {/* ✅ Blur like hamburger menu */}
+          <BlurView
+            intensity={22}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.dim]} />
+
           <View style={styles.menuContainer}>
             <MenuOption
               icon="folder-outline"
               label="New Folder"
-              disabled={disableMenu}
+              disabled={disableActions}
               onPress={() => {
-                setIsOpen(false);
+                closeMenu();
                 setModalType("createfolder");
               }}
             />
             <MenuOption
               icon="document-text-outline"
               label="New File"
-              disabled={disableMenu}
+              disabled={disableActions}
               onPress={() => {
-                setIsOpen(false);
+                closeMenu();
                 setModalType("createfile");
               }}
             />
             <MenuOption
               icon="image-outline"
               label="Upload Pic"
-              disabled={disableMenu}
+              disabled={disableActions}
               onPress={() => handlePickImage(false)}
             />
             <MenuOption
               icon="camera-outline"
               label="Take Photo"
-              disabled={disableMenu}
+              disabled={disableActions}
               onPress={() => handlePickImage(true)}
             />
             <MenuOption
               icon="cloud-upload-outline"
               label="Import File"
-              disabled={disableMenu}
+              disabled={disableActions}
               onPress={handlePickDocument}
             />
           </View>
-
-          <View style={styles.fabPosition}>
-            <TouchableOpacity
-              style={[styles.fabClose, disableActions && { opacity: 0.6 }]}
-              onPress={() => setIsOpen(false)}
-              activeOpacity={0.9}
-              disabled={disableMenu}
-            >
-              <Ionicons name="close" size={32} color="white" />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
 
       {/* MAIN BUTTON */}
       {!isOpen && (
         <View style={styles.fabPosition}>
           <TouchableOpacity
-            style={[styles.fabMain, disableMenu && { opacity: 0.7 }]}
-            onPress={() => setIsOpen(true)}
+            style={[styles.fabMain, disableActions && { opacity: 0.7 }]}
+            onPress={() => {
+              if (loading) return;
+              // ✅ if picker is still in progress, don't reopen (but don't disable permanently)
+              if (pickerInProgressRef.current) return;
+              setIsOpen(true);
+            }}
             activeOpacity={0.9}
-            disabled={disableMenu}
+            disabled={disableActions}
           >
             <Ionicons name="add" size={35} color="white" />
           </TouchableOpacity>
@@ -303,6 +317,7 @@ export default function Fab({ onRefresh }) {
                 onPress={() => {
                   setModalType(null);
                   setName("");
+                  unlockPicker();
                 }}
                 disabled={loading}
               >
@@ -330,8 +345,19 @@ function MenuOption({ icon, label, onPress, disabled }) {
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.9}
     >
-      <Text style={styles.labelText}>{label.toUpperCase()}</Text>
-      <Ionicons name={icon} size={22} color="#444" style={{ marginLeft: 10 }} />
+      {/* ✅ icon LEFT */}
+      <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
+
+      {/* ✅ text LEFT + default font */}
+      <Text
+        style={styles.labelText}
+        numberOfLines={1}
+        ellipsizeMode="clip"
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {label.toUpperCase()}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -347,16 +373,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 5,
   },
-  fabClose: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#dc3545",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-  },
+
+  // ✅ blur backdrop
   backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
+
   menuContainer: {
     position: "absolute",
     bottom: 165,
@@ -368,8 +389,8 @@ const styles = StyleSheet.create({
   singleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    backgroundColor: "white",
+    justifyContent: "flex-start", // ✅ left
+    backgroundColor: "rgba(255,255,255,0.98)",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
@@ -378,9 +399,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    minWidth: 160,
+    minWidth: 200,
   },
-  labelText: { fontSize: 13, color: "#333", letterSpacing: 1 },
+
+  labelText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#333",
+    letterSpacing: 1,
+    textAlign: "left",
+  },
 
   modalOverlay: {
     flex: 1,
