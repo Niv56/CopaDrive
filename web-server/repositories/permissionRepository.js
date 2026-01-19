@@ -1,35 +1,62 @@
-const Permission = require('../models/permission'); 
+const Permission = require('../models/permission');
+const mongoose = require('mongoose');
 
-// Find all permissions for a given file/folder id.
-const findByFileId = async (fileId) => {
-    return await Permission.find({ fileId });
-};
+/**
+ * Creates a new permission
+ */
+async function create(data) {
+    const perm = new Permission(data);
+    return await perm.save();
+}
 
-// Find a permission entry by its id.
-const findById = async (id) => {
-    return await Permission.findById(id);
-};
+/**
+ * Finds permission by user and file
+ */
+async function findByUserAndFile(userId, fileId) {
+    return await Permission.findOne({ userId, fileId });
+}
 
-// Create a new permission entry.
-const create = async (permissionData) => {
-    // במונגו, create גם יוצר וגם שומר אוטומטית
-    return await Permission.create(permissionData);
-};
+/**
+ * Lists all permissions for a file
+ */
+async function findByFile(fileId) {
+    return await Permission.find({ fileId }).populate('userId', 'firstName lastName email image');
+}
 
-// Update an existing permission role.
-const update = async (id, updates) => {
-    // { new: true } מבטיח שנחזיר את האובייקט המעודכן ולא את הישן
-    return await Permission.findByIdAndUpdate(id, updates, { new: true });
-};
-
-// Remove a permission entry by id.
-const remove = async (id) => {
-    return await Permission.findByIdAndDelete(id);
-};
-
-// Find all permissions for a given user id.
-const findByUserId = async (userId) => {
+/**
+ * Lists all files shared with a user
+ */
+async function findSharedFiles(userId) {
     return await Permission.find({ userId });
-};
+}
 
-module.exports = { findByFileId, findById, create, update, remove, findByUserId };
+/**
+ * Updates a permission
+ */
+async function update(id, patch) {
+    return await Permission.findByIdAndUpdate(id, patch, { new: true });
+}
+
+/**
+ * Deletes a permission
+ */
+async function deleteById(id) {
+    return await Permission.findByIdAndDelete(id);
+}
+
+/**
+ * Deletes all permissions for a file
+ */
+async function deleteByFile(fileId) {
+    return await Permission.deleteMany({ fileId });
+}
+
+module.exports = {
+    create,
+    findByUserAndFile,
+    findByFile,
+    findSharedFiles,
+    update,
+    deleteById,
+    deleteByFile
+};

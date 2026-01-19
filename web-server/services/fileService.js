@@ -1,334 +1,407 @@
 const fileRepository = require('../repositories/fileRepository');
 const permissionRepository = require('../repositories/permissionRepository');
-const { sendTcpCommand } = require('../utils/tcpClient');
-const permissionService = require("./permissionService");
+const mongoose = require('mongoose');
 
-const nowIso = () => new Date().toISOString();
-const assertValidType = (type) => type === 'file' || type === 'folder';
+const QUOTA_BYTES = 15 * 1024 * 1024 * 1024; // 15GB
 
-const TRASH_TTL_DAYS = 30;
-const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
-const QUOTA_BYTES = 15 * 1024 * 1024 * 1024;
+/**
+ * Helper: Get current ISO timestamp
+ */
+function now() {
+    return new Date().toISOString();
+}
 
-const ensureArray = (v) => Array.isArray(v) ? v : [];
+/**
+ * Helper: Calculate file size from base64 content
+ */
+function getContentSize(content) {
+    if (!content) return 0;
+    const base64 = content.includes(',') ? content.split(',')[1] : content;
+    return Math.ceil((base64.length * 3) / 4);
+}
 
-
-const contentSizeBytes = (content) => {
-  if (content === undefined || content === null) return 0;
-  const s = typeof content === 'string' ? content : String(content);
-  return Buffer.byteLength(s, 'utf8');
-};
-
-const calcDaysLeft = (trashedAt) => {
-  if (!trashedAt) return null;
-  const t = new Date(trashedAt).getTime();
-  if (Number.isNaN(t)) return null;
-  const expireAt = t + TRASH_TTL_MS;
-  const msLeft = expireAt - Date.now();
-  return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
-};
-
-
-const checkAccess = async (userId, fileId, requiredRole = 'viewer') => {
-  console.log(`[DEBUG] checkAccess: userId=${userId}, fileId=${fileId}`);
-  let currentId = fileId;
-  let highestRoleFound = null;
-
-  while (currentId !== null) {
-    const item = await fileRepository.findById(currentId);
-    if (!item) break;
-
-    const blockedBy = ensureArray(item.blockedBy);
-    if (blockedBy.some(id => id.toString() === userId.toString())) return false;
-
-    if (item.ownerId.toString() === userId.toString()) return true;
-
-    const permissions = await permissionRepository.findByFileId(currentId) || [];
-    const userPerm = permissions.find(p => p.userId.toString() === userId.toString());
-
-    if (userPerm) {
-      if (userPerm.role === 'editor') return true;
-      if (userPerm.role === 'viewer') highestRoleFound = 'viewer';
-    }
-    currentId = item.parentId;
-  }
-  return requiredRole === 'viewer' ? highestRoleFound !== null : false;
-};
-
-const isDescendant = async (fileId, folderId) => {
-  let current = await fileRepository.findById(fileId);
-  while (current && current.parentId) {
-    if (current.parentId.toString() === folderId.toString()) return true;
-    current = await fileRepository.findById(current.parentId);
-  }
-  return false;
-};
-
-const wouldCreateCycle = async (itemId, newParentId) => {
-  let cursor = newParentId ?? null;
-  while (cursor !== null) {
-    if (cursor.toString() === itemId.toString()) return true;
-    const node = await fileRepository.findById(cursor);
-    if (!node) return false;
-    cursor = node.parentId ?? null;
-  }
-  return false;
-};
-
-const collectSubtreeIds = async (rootId) => {
-  const stack = [rootId];
-  const visited = new Set();
-  const ids = [];
-  while (stack.length > 0) {
-    const currentId = stack.pop();
-    if (visited.has(currentId.toString())) continue;
-    visited.add(currentId.toString());
-    ids.push(currentId);
+/**
+ * Helper: Check if user has permission to access a file
+ */
+async function canAccess(userId, fileId) {
+    const file = await fileRepository.findById(fileId);
+    if (!file) return false;
     
-    const children = await fileRepository.findByParentIncludingTrashed(currentId) || [];
-    for (const child of children) stack.push(child._id); 
-  }
-  return ids;
-};
+    if (String(file.ownerId) === String(userId)) return true;
+    
+    const perm = await permissionRepository.findByUserAndFile(userId, fileId);
+    return !!perm;
+}
 
+/**
+ * Helper: Get user's role for a file
+ */
+async function getUserRole(userId, fileId) {
+    const file = await fileRepository.findById(fileId);
+    if (!file) return null;
+    
+    if (String(file.ownerId) === String(userId)) return 'owner';
+    
+    const perm = await permissionRepository.findByUserAndFile(userId, fileId);
+    return perm ? perm.role : null;
+}
 
-const decorateFlagsForUser = (item, userId) => {
-  if (!item) return null;
-  const i = item.toObject ? item.toObject() : { ...item };
-  const uid = userId.toString();
+/**
+ * Lists top-level accessible items
+ */
+async function listTopLevel(userId) {
+    const owned = await fileRepository.findTopLevel(userId);
+    const shared = await permissionRepository.findSharedFiles(userId);
+    
+    const sharedIds = new Set(shared.map(p => String(p.fileId)));
+    const ownedIds = new Set(owned.map(f => String(f._id)));
+    
+    const sharedFiles = await Promise.all(
+        Array.from(sharedIds)
+            .filter(id => !ownedIds.has(id))
+            .map(id => fileRepository.findById(id))
+    );
+    
+    return [...owned, ...sharedFiles.filter(Boolean)];
+}
 
-  const starredBy = ensureArray(i.starredBy).map(id => id.toString());
-  const importantBy = ensureArray(i.importantBy).map(id => id.toString());
-  const trashedBy = ensureArray(i.trashedBy).map(id => id.toString());
-
-  const trashed = trashedBy.includes(uid);
-  const trashedAt = trashed ? (i.trashedAtBy?.[uid] || null) : null;
-
-  const lastAccessedBy = i.lastAccessedBy || {};
-  const lastAccessed = lastAccessedBy[uid] || null;
-
-  return {
-    ...i,
-    starred: starredBy.includes(uid),
-    important: importantBy.includes(uid),
-    trashed,
-    trashedAt,
-    trashDaysLeft: trashed ? calcDaysLeft(trashedAt) : null,
-    lastAccessed
-  };
-};
-
-const decorateListForUser = (items, userId) => items.map(i => decorateFlagsForUser(i, userId));
-
-
-const listAllAccessible = async (userId, { includeTrashed = false } = {}) => {
-  const ownedItems = await fileRepository.findAllByOwner(userId);
-  const userPermissions = await permissionRepository.findByUserId(userId) || [];
-
-  const sharedItems = [];
-  for (const perm of userPermissions) {
-    const item = await fileRepository.findById(perm.fileId);
-    if (item) sharedItems.push(item);
-  }
-
-  const all = [...ownedItems, ...sharedItems];
-  const unique = Array.from(new Map(all.map(item => [item.id, item])).values());
-  const decorated = decorateListForUser(unique, userId);
-  return includeTrashed ? decorated : decorated.filter(i => !i.trashed);
-};
-
-
-const createItem = async (ownerId, payload) => {
-  const { name, type, parentId = null, content = "", mimeType = "" } = payload;
-
-  if (!name?.trim()) throw { status: 400, message: 'Name is required' };
-  if (!assertValidType(type)) throw { status: 400, message: 'Invalid type' };
-
-  const newItemSize = type === 'file' ? contentSizeBytes(content) : 0;
-  const storageUsage = await getOwnedStorageUsage(ownerId);  
-  
-  if (storageUsage.usedBytes + newItemSize > QUOTA_BYTES) {
-    throw { 
-      status: 403, 
-      message: `Storage quota exceeded. Used: ${(storageUsage.usedBytes / (1024 ** 3)).toFixed(2)}GB / 15GB` 
+/**
+ * Creates a new file or folder
+ */
+async function createItem(ownerId, data) {
+    const { name, type, parentId = null, content = '', mimeType = '' } = data;
+    
+    if (!name || !type) {
+        const err = new Error('name and type are required');
+        err.status = 400;
+        throw err;
+    }
+    
+    if (parentId && !mongoose.Types.ObjectId.isValid(parentId)) {
+        const err = new Error('Invalid parentId');
+        err.status = 400;
+        throw err;
+    }
+    
+    const timestamp = now();
+    const sizeBytes = type === 'file' ? getContentSize(content) : 0;
+    
+    // Check quota
+    if (type === 'file') {
+        const currentUsage = await fileRepository.calculateOwnedStorage(ownerId);
+        if (currentUsage + sizeBytes > QUOTA_BYTES) {
+            const err = new Error('Storage quota exceeded');
+            err.status = 413;
+            throw err;
+        }
+    }
+    
+    const fileData = {
+        name,
+        type,
+        ownerId,
+        parentId,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        sizeBytes,
+        mimeType: type === 'file' ? mimeType : '',
+        trashed: false,
+        starredBy: [],
+        importantBy: [],
+        trashedBy: []
     };
-  }
-
-  if (parentId && parentId !== 'root') {
-    const parent = await fileRepository.findById(parentId);
-    if (!parent || parent.type !== 'folder') throw { status: 400, message: 'Invalid parent' };
-    if (!(await checkAccess(ownerId, parentId, 'editor'))) throw { status: 403, message: 'No permission to create here' };
-  }
-
-  const ts = nowIso();
-  const created = await fileRepository.create({
-    name: name.trim(),
-    type,
-    ownerId,
-    parentId: (parentId === 'root' || !parentId) ? null : parentId,
-    createdAt: ts,
-    updatedAt: ts,
-    sizeBytes: newItemSize,
-    mimeType
-  });
-
-  if (type === 'file') {
-    try {
-      await sendTcpCommand(`POST ${created.id} ${content}`);
-    } catch (err) {
-      await fileRepository.remove(created.id, ownerId);
-      throw err;
+    
+    const created = await fileRepository.create(fileData);
+    
+    // Store content in C++ server if file
+    if (type === 'file' && content) {
+        const cppService = require('./cppStorageService');
+        await cppService.storeFile(created._id, content);
     }
-  }
+    
+    return created;
+}
 
-  try { 
-    await permissionService.addPermission(ownerId, created.id, { userId: ownerId }, "owner");
-  } catch (_) { }
-
-  return created;
-};
-
-const updateItem = async (userId, id, patch) => {
-  const current = await fileRepository.findById(id);
-  if (!current) throw { status: 404, message: 'Not found' };
-  if (!(await checkAccess(userId, id, 'editor'))) throw { status: 403, message: 'Editor access required' };
-
-  const updates = {};
-
-  if (patch.content !== undefined && current.type === 'file') {
-    const newSize = contentSizeBytes(patch.content);
-    const sizeDiff = newSize - (current.sizeBytes || 0);
-
-    if (sizeDiff > 0) {
-      const storageUsage = await module.exports.getOwnedStorageUsage(current.ownerId);
-      if (storageUsage.usedBytes + sizeDiff > QUOTA_BYTES) {
-        throw { status: 403, message: 'Quota exceeded' };
-      }
+/**
+ * Gets file by ID with permission check
+ */
+async function getById(userId, fileId) {
+    if (!await canAccess(userId, fileId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
     }
+    
+    const file = await fileRepository.findById(fileId);
+    
+    // Fetch content from C++ server if file
+    if (file.type === 'file') {
+        const cppService = require('./cppStorageService');
+        file.content = await cppService.getFile(fileId);
+    }
+    
+    return file;
+}
 
-    await sendTcpCommand(`DELETE ${id}`).catch(() => { });
-    await sendTcpCommand(`POST ${id} ${patch.content}`);
-    updates.sizeBytes = newSize;
-  }
+/**
+ * Updates file metadata
+ */
+async function updateItem(userId, fileId, patch) {
+    const role = await getUserRole(userId, fileId);
+    
+    if (!role || (role === 'viewer' && !patch.name)) {
+        const err = new Error('Forbidden');
+        err.status = 403;
+        throw err;
+    }
+    
+    const allowed = ['name', 'parentId', 'content', 'mimeType'];
+    const update = { updatedAt: now() };
+    
+    for (const key of allowed) {
+        if (patch[key] !== undefined) update[key] = patch[key];
+    }
+    
+    // Update content in C++ server if changed
+    if (patch.content !== undefined) {
+        const file = await fileRepository.findById(fileId);
+        if (file.type === 'file') {
+            const cppService = require('./cppStorageService');
+            await cppService.storeFile(fileId, patch.content);
+            update.sizeBytes = getContentSize(patch.content);
+        }
+    }
+    
+    return await fileRepository.update(fileId, update);
+}
 
-  if (patch.name) updates.name = patch.name.trim();
-  if (patch.mimeType) updates.mimeType = patch.mimeType;
-  
-  if (patch.parentId !== undefined) {
-    const newParentId = (patch.parentId === 'root' || !patch.parentId) ? null : patch.parentId;
-    if (newParentId && await wouldCreateCycle(id, newParentId)) throw { status: 409, message: 'Cycle detected' };
-    updates.parentId = newParentId;
-  }
+/**
+ * Soft-deletes a file (moves to trash)
+ */
+async function deleteItem(userId, fileId) {
+    const role = await getUserRole(userId, fileId);
+    
+    if (role !== 'owner') {
+        const err = new Error('Forbidden');
+        err.status = 403;
+        throw err;
+    }
+    
+    const file = await fileRepository.findById(fileId);
+    
+    await fileRepository.update(fileId, {
+        trashed: true,
+        trashedAt: new Date(),
+        originalParentId: file.parentId,
+        parentId: null,
+        $addToSet: { trashedBy: userId },
+        $set: { [`trashedAtBy.${userId}`]: new Date() }
+    });
+}
 
-  updates.updatedAt = nowIso();
-  const updated = await fileRepository.update(id, updates);
-  return decorateFlagsForUser(updated, userId);
-};
+/**
+ * Permanently deletes a file
+ */
+async function deleteForever(userId, fileId) {
+    const file = await fileRepository.findById(fileId);
+    
+    if (!file || String(file.ownerId) !== String(userId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+    }
+    
+    // Recursively delete children
+    if (file.type === 'folder') {
+        const children = await fileRepository.findChildren(fileId);
+        for (const child of children) {
+            await deleteForever(userId, child._id);
+        }
+    }
+    
+    // Delete from C++ server
+    if (file.type === 'file') {
+        const cppService = require('./cppStorageService');
+        await cppService.deleteFile(fileId);
+    }
+    
+    await permissionRepository.deleteByFile(fileId);
+    await fileRepository.deleteById(fileId);
+}
 
-const setTrashed = async (userId, id, trashed) => {
-  const item = await fileRepository.findById(id);
-  if (!item) throw { status: 404, message: "Not found" };
+/**
+ * Sets starred flag
+ */
+async function setStarred(userId, fileId, starred) {
+    if (!await canAccess(userId, fileId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+    }
+    
+    const update = starred
+        ? { $addToSet: { starredBy: userId } }
+        : { $pull: { starredBy: userId } };
+    
+    await fileRepository.update(fileId, update);
+}
 
-  const ids = item.type === "folder" ? (trashed ? await collectSubtreeIds(id) : [id]) : [id];
-  for (const tId of ids) {
-    const target = await fileRepository.findById(tId);
-    if (!target) continue;
-    const uid = userId.toString();
-    const cur = ensureArray(target.trashedBy).map(x => x.toString());
-    let next = trashed ? [...new Set([...cur, uid])] : cur.filter(x => x !== uid);
-    const trashedAtBy = { ...(target.trashedAtBy || {}) };
-    if (trashed) trashedAtBy[uid] = nowIso(); else delete trashedAtBy[uid];
-    await fileRepository.update(tId, { trashedBy: next, trashedAtBy });
-  }
-  return decorateFlagsForUser(await fileRepository.findById(id), userId);
-};
+/**
+ * Sets important flag
+ */
+async function setImportant(userId, fileId, important) {
+    if (!await canAccess(userId, fileId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+    }
+    
+    const update = important
+        ? { $addToSet: { importantBy: userId } }
+        : { $pull: { importantBy: userId } };
+    
+    await fileRepository.update(fileId, update);
+}
 
-const deleteForever = async (userId, id) => {
-  const item = await fileRepository.findById(id);
-  if (!item) return { id };
+/**
+ * Sets trashed flag (restore from trash)
+ */
+async function setTrashed(userId, fileId, trashed) {
+    const file = await fileRepository.findById(fileId);
+    
+    if (!file || String(file.ownerId) !== String(userId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+    }
+    
+    if (trashed) {
+        await deleteItem(userId, fileId);
+    } else {
+        // Restore
+        await fileRepository.update(fileId, {
+            trashed: false,
+            trashedAt: null,
+            parentId: file.originalParentId,
+            originalParentId: null,
+            $pull: { trashedBy: userId },
+            $unset: { [`trashedAtBy.${userId}`]: '' }
+        });
+    }
+}
 
-  if (item.ownerId.toString() !== userId.toString()) {
-    await fileRepository.update(id, { $addToSet: { blockedBy: userId }, $pull: { trashedBy: userId } });
-    return { id };
-  }
+/**
+ * Lists starred items
+ */
+async function listStarred(userId) {
+    return await fileRepository.findStarred(userId);
+}
 
-  const ids = item.type === 'folder' ? (await collectSubtreeIds(id)).reverse() : [id];
-  for (const dId of ids) {
-    const target = await fileRepository.findById(dId);
-    if (target?.type === 'file') await sendTcpCommand(`DELETE ${dId}`).catch(() => { });
-    await fileRepository.remove(dId , userId);
-  }
-  return { id };
-};
+/**
+ * Lists important items
+ */
+async function listImportant(userId) {
+    return await fileRepository.findImportant(userId);
+}
 
-const setUserFlag = async (userId, id, flagKey, enabled) => {
-  const update = enabled ? { $addToSet: { [flagKey]: userId } } : { $pull: { [flagKey]: userId } };
-  const updated = await fileRepository.update(id, update);
-  return decorateFlagsForUser(updated, userId);
-};
+/**
+ * Lists trash
+ */
+async function listTrash(userId) {
+    return await fileRepository.findTrashed(userId);
+}
+
+/**
+ * Empties trash
+ */
+async function emptyTrash(userId) {
+    const trashed = await fileRepository.findTrashed(userId);
+    
+    for (const item of trashed) {
+        await deleteForever(userId, item._id);
+    }
+}
+
+/**
+ * Gets storage usage
+ */
+async function getOwnedStorageUsage(userId) {
+    const usedBytes = await fileRepository.calculateOwnedStorage(userId);
+    
+    return {
+        usedBytes,
+        quotaBytes: QUOTA_BYTES
+    };
+}
+
+/**
+ * Lists recent files
+ */
+async function listRecent(userId) {
+    return await fileRepository.findRecent(userId);
+}
+
+/**
+ * Updates access time
+ */
+async function updateAccessTime(userId, fileId) {
+    if (!await canAccess(userId, fileId)) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+    }
+    
+    await fileRepository.update(fileId, {
+        $set: { [`lastAccessedBy.${userId}`]: new Date() }
+    });
+    
+    return await fileRepository.findById(fileId);
+}
+
+/**
+ * Searches items
+ */
+async function searchItems(userId, query) {
+    if (!query) return [];
+    
+    const results = await fileRepository.search(userId, query);
+    
+    // Also search shared files
+    const shared = await permissionRepository.findSharedFiles(userId);
+    const sharedFiles = await Promise.all(
+        shared.map(p => fileRepository.findById(p.fileId))
+    );
+    
+    const regex = new RegExp(query, 'i');
+    const matchingShared = sharedFiles.filter(f => f && regex.test(f.name));
+    
+    // Combine and deduplicate
+    const combined = [...results, ...matchingShared];
+    const seen = new Set();
+    
+    return combined.filter(item => {
+        if (!item || seen.has(String(item._id))) return false;
+        seen.add(String(item._id));
+        return true;
+    });
+}
 
 module.exports = {
-  listTopLevel: async (userId) => {
-    const items = await fileRepository.findByParent(null, userId);
-    return decorateListForUser(items, userId).filter(i => !i.trashed);
-  },
-  createItem,
-  getById: async (userId, id) => {
-    const item = await fileRepository.findById(id);
-    if (!item) throw { status: 404, message: 'Not found' };
-    if (!(await checkAccess(userId, id, 'viewer'))) throw { status: 403, message: 'Denied' };
-    let content = "";
-    if (item.type === 'file') content = await sendTcpCommand(`GET ${id}`).catch(() => "");
-    return decorateFlagsForUser({ ...item.toObject(), content }, userId);
-  },
-  updateItem,
-  deleteItem: async (userId, id) => setTrashed(userId, id, true),
-  deleteForever,
-  emptyTrash: async (userId) => {
-    const trashed = (await listAllAccessible(userId, { includeTrashed: true })).filter(i => i.trashed);
-    for (const item of trashed) await deleteForever(userId, item.id);
-    return { ok: true };
-  },
-  searchItems: async (userId, query) => {
-    const userPermissions = await permissionRepository.findByUserId(userId) || []; 
-    const sharedIds = userPermissions.map(p => p.fileId);
-
-    const nameMatches = await fileRepository.searchFiles(userId, sharedIds, query);
-
-    let contentMatchIds = [];
-    try {
-      const response = await sendTcpCommand(`SEARCH ${query}`);
-      if (response) contentMatchIds = response.split('\n').filter(l => l.length > 0); 
-    } catch (_) { }
-
-    const contentMatches = [];
-    for (const cId of contentMatchIds) {
-      const f = await fileRepository.findById(cId); 
-      
-      if (f && (f.ownerId.toString() === userId.toString() || sharedIds.some(id => id.toString() === f._id.toString()))) { 
-        contentMatches.push(f);
-      }
-    }
-
-    const combined = [...nameMatches, ...contentMatches]; 
-    const unique = Array.from(new Map(combined.map(i => [i.id, i])).values()); 
-    
-    return decorateListForUser(unique, userId).filter(i => !i.trashed); 
-  },
-  updateAccessTime: async (userId, id) => {
-    const update = { [`lastAccessedBy.${userId}`]: nowIso() };
-    const updated = await fileRepository.update(id, update);
-    return decorateFlagsForUser(updated, userId);
-  },
-  listRecent: async (userId) => {
-    const all = await listAllAccessible(userId);
-    const withAccess = all.filter(i => i.type === 'file' && i.lastAccessed);
-    return withAccess.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed)).slice(0, 20);
-  }
-};
-
-const getOwnedStorageUsage = async (userId) => {
-  const items = await fileRepository.findAllByOwner(userId);
-  const usedBytes = items.reduce((acc, item) => acc + (item.sizeBytes || 0), 0);
-  return { usedBytes };
+    listTopLevel,
+    createItem,
+    getById,
+    updateItem,
+    deleteItem,
+    deleteForever,
+    setStarred,
+    setImportant,
+    setTrashed,
+    listStarred,
+    listImportant,
+    listTrash,
+    emptyTrash,
+    getOwnedStorageUsage,
+    listRecent,
+    updateAccessTime,
+    searchItems
 };

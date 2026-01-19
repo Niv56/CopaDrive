@@ -1,109 +1,144 @@
 const File = require('../models/file');
+const mongoose = require('mongoose');
 
-const normalizeParentId = (parentId) => 
-    (parentId === undefined || parentId === 'root' || parentId === 'null' || parentId === null) ? null : parentId;
+/**
+ * Creates a new file/folder document
+ */
+async function create(data) {
+    const file = new File(data);
+    return await file.save();
+}
 
-const findByParent = async (parentId, ownerId) => {
-    const p = normalizeParentId(parentId);
-    const query = {
-        parentId: p,
-        trashed: { $ne: true } 
-    };
-    if (ownerId) query.ownerId = ownerId;
+/**
+ * Finds a file by ID
+ */
+async function findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await File.findById(id);
+}
 
-    return await File.find(query);
-};
+/**
+ * Updates a file document
+ */
+async function update(id, patch) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await File.findByIdAndUpdate(id, patch, { new: true });
+}
 
-const findAll = async () => await File.find({});
+/**
+ * Deletes a file permanently
+ */
+async function deleteById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await File.findByIdAndDelete(id);
+}
 
-const findById = async (id, ownerId) => {
-    const query = { _id: id };
-    if (ownerId) query.ownerId = ownerId;
-    
-    return await File.findOne(query);
-};
-
-const create = async (fileData) => {
-    const newFile = new File({
-        mimeType: "",
-        trashed: false,
-        trashedAt: null,
-        originalParentId: null,
-        starredBy: [],
-        importantBy: [],
-        trashedBy: [],
-        blockedBy: [],
-        trashedAtBy: {},
-        lastAccessedBy: {},
-        ...fileData
-    });
-
-    return await newFile.save();
-};
-
-const update = async (id, updates, ownerId) => {
-    const query = { _id: id };
-    if (ownerId) query.ownerId = ownerId;
-
-    return await File.findOneAndUpdate(query, updates, { new: true });
-};
-
-const remove = async (id, ownerId) => {
-    const query = { _id: id };
-    if (ownerId) query.ownerId = ownerId;
-
-    return await File.findOneAndDelete(query);
-};
-
-const hasChildren = async (parentId, ownerId) => {
-    const p = normalizeParentId(parentId);
-    const count = await File.countDocuments({
-        parentId: p,
-        ownerId: ownerId,
-        trashed: { $ne: true }
-    });
-    return count > 0;
-};
-
-const searchFiles = async (userId, sharedIds, query) => {
+/**
+ * Lists all top-level items (no parent) for a user
+ */
+async function findTopLevel(userId) {
     return await File.find({
         $or: [
-            { ownerId: userId },           
-            { _id: { $in: sharedIds } }    
-        ],
-        trashed: { $ne: true },            
-        name: { $regex: query, $options: 'i' } 
+            { ownerId: userId, parentId: null, trashed: false },
+            { starredBy: userId, trashed: false },
+            { importantBy: userId, trashed: false }
+        ]
+    }).sort({ createdAt: -1 });
+}
+
+/**
+ * Lists all children of a folder
+ */
+async function findChildren(parentId) {
+    return await File.find({ parentId, trashed: false });
+}
+
+/**
+ * Search files by name or content
+ */
+async function search(userId, query) {
+    const regex = new RegExp(query, 'i');
+    return await File.find({
+        $or: [
+            { ownerId: userId, name: regex, trashed: false },
+            { starredBy: userId, name: regex, trashed: false }
+        ]
     });
-};
+}
 
-const findTrashed = async (ownerId) => {
-    return await File.find({ ownerId: ownerId, trashed: true });
-};
+/**
+ * Lists starred items for a user
+ */
+async function findStarred(userId) {
+    return await File.find({
+        starredBy: userId,
+        trashed: false
+    }).sort({ updatedAt: -1 });
+}
 
-const findByIds = async (idsArray) => {
-    return await File.find({ _id: { $in: idsArray } });
-};
+/**
+ * Lists important items for a user
+ */
+async function findImportant(userId) {
+    return await File.find({
+        importantBy: userId,
+        trashed: false
+    }).sort({ updatedAt: -1 });
+}
 
-const findAllByOwner = async (ownerId) => {
-    return await File.find({ ownerId: ownerId });
-};
+/**
+ * Lists trashed items for a user
+ */
+async function findTrashed(userId) {
+    return await File.find({
+        trashedBy: userId,
+        trashed: true
+    }).sort({ ['trashedAtBy.' + userId]: -1 });
+}
 
-const findByParentIncludingTrashed = async (parentId) => {
-    const p = normalizeParentId(parentId);
-    return await File.find({ parentId: p });
-};
+/**
+ * Lists recently accessed items
+ */
+async function findRecent(userId, limit = 20) {
+    const files = await File.find({
+        [`lastAccessedBy.${userId}`]: { $exists: true },
+        trashed: false
+    }).sort({ [`lastAccessedBy.${userId}`]: -1 }).limit(limit);
+    
+    return files;
+}
+
+/**
+ * Calculates total storage used by owned files
+ */
+async function calculateOwnedStorage(userId) {
+    const result = await File.aggregate([
+        { $match: { ownerId: mongoose.Types.ObjectId(userId), type: 'file', trashed: false } },
+        { $group: { _id: null, total: { $sum: '$sizeBytes' } } }
+    ]);
+    
+    return result.length > 0 ? result[0].total : 0;
+}
+
+/**
+ * Bulk delete operation
+ */
+async function deleteMany(filter) {
+    return await File.deleteMany(filter);
+}
 
 module.exports = {
-    findByParent,
-    findById,
     create,
+    findById,
     update,
-    remove,
-    hasChildren,
-    searchFiles,
-    findByIds,
-    findAll,
+    deleteById,
+    findTopLevel,
+    findChildren,
+    search,
+    findStarred,
+    findImportant,
     findTrashed,
-    findAllByOwner,
-    findByParentIncludingTrashed,
+    findRecent,
+    calculateOwnedStorage,
+    deleteMany
 };
