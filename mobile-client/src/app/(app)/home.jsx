@@ -50,7 +50,7 @@ export default function Home() {
         <FlatList
           data={activeTab === "home" ? [] : files}
           contentContainerStyle={{ paddingBottom: 150 }}
-          
+
           // Header: מוצג רק בטאב הראשי - מכיל תיקיות וקבצים מומלצים
           ListHeaderComponent={activeTab === "home" ? (
             <View>

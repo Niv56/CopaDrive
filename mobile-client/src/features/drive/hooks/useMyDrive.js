@@ -4,18 +4,17 @@ import { getFiles } from "../services/fileService";
 
 export function useMyDrive() {
     const { token, logout } = useAuth();
-    const [items, setItems] = useState<DriveItem[]>([]);
+    const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-
 
     const fetchItems = useCallback(async () => {
         if (!token) return;
         try {
             const data = await getFiles(token);
             setItems(data);
-        } catch (error: any) {
-            if (error.message.includes("token") || error.message.includes("401")) {
+        } catch (error) {
+            if (error?.message && (error.message.includes("token") || error.message.includes("401"))) {
                 console.error("Session invalid, logging out...");
                 await logout();
             }
