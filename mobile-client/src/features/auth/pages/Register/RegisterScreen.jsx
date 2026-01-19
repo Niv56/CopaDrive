@@ -67,15 +67,32 @@ export default function RegisterScreen() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const res = await registerUser({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      phoneNumber: formData.phoneNumber,
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      email: formData.email.toLowerCase(),
-      password: formData.password,
-    });
+
+    // יצירת אובייקט FormData עבור העלאת קבצים (Multipart/Form-Data)
+    const data = new FormData();
+    data.append("firstName", formData.firstName);
+    data.append("lastName", formData.lastName);
+    data.append("phoneNumber", formData.phoneNumber);
+    data.append("dateOfBirth", formData.dateOfBirth);
+    data.append("gender", formData.gender);
+    data.append("email", formData.email.toLowerCase());
+    data.append("password", formData.password);
+
+    // הוספת התמונה במידה וקיימת
+    if (formData.image) {
+      const uri = formData.image;
+      const fileName = uri.split('/').pop();
+      const fileType = fileName.split('.').pop();
+
+      data.append("profilePic", {
+        uri,
+        name: fileName || "profile.jpg",
+        type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+      });
+    }
+
+    // שליחת ה-FormData ל-service
+    const res = await registerUser(data);
     setLoading(false);
 
     if (res.success) setStep(5);
