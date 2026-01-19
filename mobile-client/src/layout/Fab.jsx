@@ -1,11 +1,442 @@
-import React from "react";
-import { Pressable } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { driveStyles } from "../features/drive/styles/myDrive.styles";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 
-export default function Fab({ onPress })  {  return (
-    <Pressable style={driveStyles.fab} onPress={onPress}>
-      <Ionicons name="add" size={36} color="#1a73e8" />
-    </Pressable>
+import { useAuth } from "../app/providers/AuthContext";
+import { createItem } from "../features/drive/services/fileService";
+
+// ✅ auto-refresh bus (updates all pages that subscribe)
+import { emitDriveRefresh } from "../features/drive/services/driveEvents";
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export default function Fab({ onRefresh }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // ✅ prevents "Different document picking in progress"
+  const pickerInProgressRef = useRef(false);
+
+  const { token } = useAuth();
+
+  const lockPicker = () => {
+    if (pickerInProgressRef.current) return false;
+    pickerInProgressRef.current = true;
+    return true;
+  };
+
+  const unlockPicker = () => {
+    pickerInProgressRef.current = false;
+  };
+
+  // --- helper upload ---
+  const processAndUpload = async (uri, fileName, mimeType) => {
+    if (!token) {
+      Alert.alert("Not logged in", "No token found.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: "base64",
+      });
+
+      await createItem(token, {
+        name: fileName,
+        type: "file",
+        content: base64,
+        mimeType: mimeType || "application/octet-stream",
+      });
+
+      // ✅ trigger global refresh + optional local refresh callback
+      emitDriveRefresh({ reason: "upload", name: fileName });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      Alert.alert("Upload Failed", err?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- pick document ---
+  const handlePickDocument = async () => {
+    if (!lockPicker()) return;
+
+    try {
+      setIsOpen(false);
+      await wait(200);
+
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        type: "*/*",
+        multiple: false,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const file = result.assets[0];
+        await processAndUpload(
+          file.uri,
+          file.name || `file_${Date.now()}`,
+          file.mimeType
+        );
+      }
+    } catch (err) {
+      Alert.alert("Error", "Picker failed: " + (err?.message || "Unknown error"));
+    } finally {
+      unlockPicker();
+    }
+  };
+
+  // --- pick image (camera/gallery) ---
+  const handlePickImage = async (useCamera = false) => {
+    if (!lockPicker()) return;
+
+    try {
+      setIsOpen(false);
+
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert("Permission Denied", "Please allow access in settings.");
+        return;
+      }
+
+      await wait(200);
+
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // warning OK
+        quality: 0.7,
+        allowsEditing: false,
+      };
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+
+        let fileName = asset.fileName;
+
+        if (!fileName) {
+          const uriParts = String(asset.uri).split("/");
+          fileName = uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
+        }
+
+        if (fileName && !fileName.includes(".")) fileName += ".jpg";
+
+        await processAndUpload(
+          asset.uri,
+          fileName,
+          asset.mimeType || "image/jpeg"
+        );
+      }
+    } catch (err) {
+      Alert.alert("Error", "Action failed: " + (err?.message || "Unknown error"));
+    } finally {
+      unlockPicker();
+    }
+  };
+
+  // --- create folder/file ---
+  const handleCreateSubmit = async () => {
+    if (!name.trim()) return;
+
+    if (!token) {
+      Alert.alert("Not logged in", "No token found.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const isFolder = modalType === "createfolder";
+      const trimmed = name.trim();
+      const finalName = isFolder
+        ? trimmed
+        : trimmed.endsWith(".txt")
+        ? trimmed
+        : `${trimmed}.txt`;
+
+      await createItem(token, {
+        name: finalName,
+        type: isFolder ? "folder" : "file",
+        content: "",
+        mimeType: isFolder ? "" : "text/plain",
+      });
+
+      setName("");
+      setModalType(null);
+
+      // ✅ trigger global refresh + optional local refresh callback
+      emitDriveRefresh({ reason: "create", name: finalName, type: isFolder ? "folder" : "file" });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      Alert.alert("Error", err?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const disableActions = loading; // disable only while uploading/creating
+  const disableMenu = loading || pickerInProgressRef.current;
+
+  return (
+    <>
+      {loading && (
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color="#0d6efd" />
+          <Text style={styles.loaderText}>UPLOADING...</Text>
+        </View>
+      )}
+
+      {/* OPEN MENU */}
+      <Modal visible={isOpen} transparent animationType="none">
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setIsOpen(false)}
+        >
+          <View style={styles.menuContainer}>
+            <MenuOption
+              icon="folder-outline"
+              label="New Folder"
+              disabled={disableMenu}
+              onPress={() => {
+                setIsOpen(false);
+                setModalType("createfolder");
+              }}
+            />
+            <MenuOption
+              icon="document-text-outline"
+              label="New File"
+              disabled={disableMenu}
+              onPress={() => {
+                setIsOpen(false);
+                setModalType("createfile");
+              }}
+            />
+            <MenuOption
+              icon="image-outline"
+              label="Upload Pic"
+              disabled={disableMenu}
+              onPress={() => handlePickImage(false)}
+            />
+            <MenuOption
+              icon="camera-outline"
+              label="Take Photo"
+              disabled={disableMenu}
+              onPress={() => handlePickImage(true)}
+            />
+            <MenuOption
+              icon="cloud-upload-outline"
+              label="Import File"
+              disabled={disableMenu}
+              onPress={handlePickDocument}
+            />
+          </View>
+
+          <View style={styles.fabPosition}>
+            <TouchableOpacity
+              style={[styles.fabClose, disableActions && { opacity: 0.6 }]}
+              onPress={() => setIsOpen(false)}
+              activeOpacity={0.9}
+              disabled={disableMenu}
+            >
+              <Ionicons name="close" size={32} color="white" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* MAIN BUTTON */}
+      {!isOpen && (
+        <View style={styles.fabPosition}>
+          <TouchableOpacity
+            style={[styles.fabMain, disableMenu && { opacity: 0.7 }]}
+            onPress={() => setIsOpen(true)}
+            activeOpacity={0.9}
+            disabled={disableMenu}
+          >
+            <Ionicons name="add" size={35} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* CREATE MODAL */}
+      <Modal visible={!!modalType} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {modalType === "createfolder"
+                ? "CREATE NEW FOLDER"
+                : "CREATE NEW FILE"}
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder={
+                modalType === "createfolder" ? "Folder Name" : "File Name"
+              }
+              value={name}
+              onChangeText={setName}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalType(null);
+                  setName("");
+                }}
+                disabled={loading}
+              >
+                <Text style={styles.cancelText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.createBtn, loading && { opacity: 0.7 }]}
+                onPress={handleCreateSubmit}
+                disabled={loading}
+              >
+                <Text style={styles.confirmText}>CREATE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
+
+function MenuOption({ icon, label, onPress, disabled }) {
+  return (
+    <TouchableOpacity
+      style={[styles.singleContainer, disabled && { opacity: 0.6 }]}
+      onPress={disabled ? undefined : onPress}
+      activeOpacity={0.9}
+    >
+      <Text style={styles.labelText}>{label.toUpperCase()}</Text>
+      <Ionicons name={icon} size={22} color="#444" style={{ marginLeft: 10 }} />
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  fabPosition: { position: "absolute", bottom: 90, right: 25, zIndex: 9999 },
+  fabMain: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#0d6efd",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+  },
+  fabClose: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#dc3545",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+  },
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  menuContainer: {
+    position: "absolute",
+    bottom: 165,
+    right: 25,
+    alignItems: "flex-end",
+    gap: 15,
+  },
+
+  singleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    backgroundColor: "white",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    minWidth: 160,
+  },
+  labelText: { fontSize: 13, color: "#333", letterSpacing: 1 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 30,
+  },
+  modalCard: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
+  },
+
+  input: {
+    width: "100%",
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 25,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    alignItems: "center",
+  },
+  cancelText: { color: "#6c757d", fontSize: 14, padding: 10 },
+  createBtn: {
+    backgroundColor: "#0d6efd",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+  },
+  confirmText: { color: "white", fontSize: 14 },
+
+  loaderOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10000,
+  },
+  loaderText: { marginTop: 15, color: "white", fontSize: 16, letterSpacing: 2 },
+});
