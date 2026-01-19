@@ -21,12 +21,18 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  // תיקון: הוסר ה-<any> שגרם לקריסה
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    firstName: "", lastName: "", phoneNumber: "", image: null,
-    dateOfBirth: "", gender: "", email: "", password: "", verifyPassword: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    image: null, // נשמר מקומית; נשלח כ-string אם קיים
+    dateOfBirth: "",
+    gender: "",
+    email: "",
+    password: "",
+    verifyPassword: "",
   });
 
   const getHeaderTitle = () => {
@@ -46,6 +52,7 @@ export default function RegisterScreen() {
     if (step === 2) stepErrors = validateStep2(formData);
     if (step === 3) stepErrors = validateStep3(formData);
     if (step === 4) stepErrors = validateStep4(formData);
+
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
@@ -68,35 +75,30 @@ export default function RegisterScreen() {
   const handleSubmit = async () => {
     setLoading(true);
 
-    // יצירת אובייקט FormData עבור העלאת קבצים (Multipart/Form-Data)
-    const data = new FormData();
-    data.append("firstName", formData.firstName);
-    data.append("lastName", formData.lastName);
-    data.append("phoneNumber", formData.phoneNumber);
-    data.append("dateOfBirth", formData.dateOfBirth);
-    data.append("gender", formData.gender);
-    data.append("email", formData.email.toLowerCase());
-    data.append("password", formData.password);
+    // ✅ שולחים JSON שהשרת שלך יודע לפרסר
+    // required in server: firstName, email, phoneNumber, password, dateOfBirth, gender
+    const payload = {
+      firstName: String(formData.firstName || "").trim(),
+      lastName: String(formData.lastName || "").trim(),
+      phoneNumber: String(formData.phoneNumber || "").trim(),
+      dateOfBirth: String(formData.dateOfBirth || "").trim(), // YYYY-MM-DD
+      gender: String(formData.gender || "").trim(),           // male/female/other/prefer_not_to_say
+      email: String(formData.email || "").trim().toLowerCase(),
+      password: String(formData.password || ""),
+    };
 
-    // הוספת התמונה במידה וקיימת
+    // אם יש תמונה (URI), שולחים אותה כמחרוזת לשרת (השרת מקבל profilePicture כ-string)
     if (formData.image) {
-      const uri = formData.image;
-      const fileName = uri.split('/').pop();
-      const fileType = fileName.split('.').pop();
-
-      data.append("profilePic", {
-        uri,
-        name: fileName || "profile.jpg",
-        type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
-      });
+      payload.image = String(formData.image);
+      // אפשר גם payload.image = String(formData.image);
     }
 
-    // שליחת ה-FormData ל-service
-    const res = await registerUser(data);
+    const res = await registerUser(payload);
+
     setLoading(false);
 
-    if (res.success) setStep(5);
-    else Alert.alert("Registration Failed", res.error || "Unknown error");
+    if (res?.success) setStep(5);
+    else Alert.alert("Registration Failed", res?.error || "Unknown error");
   };
 
   return (
@@ -120,10 +122,18 @@ export default function RegisterScreen() {
               <Text style={authStyles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
             </Pressable>
 
-            <Pressable style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]} onPress={handleNext}>
-              {loading ? <ActivityIndicator color="#fff" /> :
-                <Text style={authStyles.btnTextPrimary}>{step === TOTAL_STEPS ? "Submit" : "Next"}</Text>
-              }
+            <Pressable
+              style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]}
+              onPress={handleNext}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={authStyles.btnTextPrimary}>
+                  {step === TOTAL_STEPS ? "Submit" : "Next"}
+                </Text>
+              )}
             </Pressable>
           </View>
         )}
@@ -131,7 +141,7 @@ export default function RegisterScreen() {
 
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <View key={i} style={[localStyles.dot, i === step && localStyles.dotActive]} />
           ))}
         </View>
