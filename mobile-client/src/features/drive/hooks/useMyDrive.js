@@ -14,7 +14,6 @@ export function useMyDrive() {
             const data = await getFiles(token);
             setItems(data);
         } catch (error) {
-            // הוספתי בדיקה קטנה ש-error.message קיים כדי למנוע קריסה
             if (error?.message && (error.message.includes("token") || error.message.includes("401"))) {
                 console.error("Session invalid, logging out...");
                 await logout();

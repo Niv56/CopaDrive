@@ -7,6 +7,7 @@ export default function AppLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
         drawerContent={(props) => <SideBar {...props} />}
+
         screenOptions={{
           headerShown: false,
           drawerType: 'front',
@@ -20,6 +21,9 @@ export default function AppLayout() {
         {/* הגדרת הסטורג' כמודל שקופץ על הכל */}
         <Drawer.Screen 
           name="storage" 
+        {/* הגדרת מסך הבית בתוך המגירה */}
+        <Drawer.Screen
+          name="home"
           options={{
             unmountOnBlur: true, // משמיד את הדף כשיוצאים ממנו
             swipeEnabled: false, // מבטל החלקה מהצד כדי שלא יתנגש עם כפתור חזור
