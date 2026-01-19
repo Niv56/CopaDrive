@@ -8,7 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-  StatusBar
+  StatusBar,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,7 +18,7 @@ import {
   restoreFromTrash,
   deleteForever,
   emptyTrash,
-  getDaysLeft
+  getDaysLeft,
 } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
@@ -26,14 +26,21 @@ import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 // ✅ auto-refresh bus
 import {
   subscribeDriveRefresh,
-  emitDriveRefresh
+  emitDriveRefresh,
 } from "../../features/drive/services/driveEvents";
+
+// ✅ Preview modal
+import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function TrashPage() {
   const router = useRouter();
   const { token } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✅ preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const loadTrash = useCallback(async () => {
     if (!token) return;
@@ -52,13 +59,25 @@ export default function TrashPage() {
     loadTrash();
   }, [loadTrash]);
 
-  // ✅ listen for global refresh events (upload/create/delete/etc.)
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => {
       loadTrash();
     });
     return unsubscribe;
   }, [loadTrash]);
+
+  // ✅ X always closes reliably
+  const closeScreen = useCallback(() => {
+    try {
+      if (typeof router.canGoBack === "function" && router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/home");
+      }
+    } catch {
+      router.replace("/home");
+    }
+  }, [router]);
 
   const handleEmptyTrash = () => {
     Alert.alert(
@@ -71,11 +90,41 @@ export default function TrashPage() {
           style: "destructive",
           onPress: async () => {
             await emptyTrash(token);
-            emitDriveRefresh(); // ✅ refresh everywhere
-          }
-        }
+            emitDriveRefresh();
+          },
+        },
       ]
     );
+  };
+
+  const openOrActions = (item) => {
+    if (!item) return;
+
+    Alert.alert("Trash Item", item.name, [
+      {
+        text: "Preview",
+        onPress: () => {
+          setSelectedId(item.id);
+          setPreviewOpen(true);
+        },
+      },
+      {
+        text: "Restore",
+        onPress: async () => {
+          await restoreFromTrash(token, item.id);
+          emitDriveRefresh();
+        },
+      },
+      {
+        text: "Delete Forever",
+        style: "destructive",
+        onPress: async () => {
+          await deleteForever(token, item.id);
+          emitDriveRefresh();
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   return (
@@ -92,11 +141,8 @@ export default function TrashPage() {
               Empty
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.closeButton}
-            activeOpacity={0.7}
-          >
+
+          <TouchableOpacity onPress={closeScreen} style={styles.closeButton} activeOpacity={0.7}>
             <Ionicons name="close-outline" size={32} color="#6c757d" />
           </TouchableOpacity>
         </View>
@@ -119,30 +165,8 @@ export default function TrashPage() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <DriveListItem
-                  item={{
-                    ...item,
-                    displayDate: getDaysLeft(item.trashedAt),
-                  }}
-                  onPress={() => {
-                    Alert.alert("Trash Item", item.name, [
-                      {
-                        text: "Restore",
-                        onPress: async () => {
-                          await restoreFromTrash(token, item.id);
-                          emitDriveRefresh(); // ✅ refresh everywhere
-                        },
-                      },
-                      {
-                        text: "Delete Forever",
-                        style: "destructive",
-                        onPress: async () => {
-                          await deleteForever(token, item.id);
-                          emitDriveRefresh(); // ✅ refresh everywhere
-                        },
-                      },
-                      { text: "Cancel", style: "cancel" },
-                    ]);
-                  }}
+                  item={{ ...item, displayDate: getDaysLeft(item.trashedAt) }}
+                  onPress={openOrActions}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
@@ -154,10 +178,17 @@ export default function TrashPage() {
               }
               onRefresh={loadTrash}
               refreshing={loading}
+              showsVerticalScrollIndicator={false}
             />
           )}
         </View>
       </SafeAreaView>
+
+      <FilePreviewModal
+        open={previewOpen}
+        fileId={selectedId}
+        onClose={() => setPreviewOpen(false)}
+      />
     </View>
   );
 }
@@ -181,10 +212,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
   },
   content: { flex: 1 },
-  textHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 15,
-  },
+  textHeader: { paddingHorizontal: 20, marginBottom: 15 },
   infoBanner: {
     flexDirection: "row",
     alignItems: "center",
