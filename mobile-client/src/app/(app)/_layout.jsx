@@ -8,7 +8,7 @@ export default function AppLayout() {
       <Drawer
         // כאן אנחנו מחברים את ה-SideBar המעוצב שלנו למגירה
         drawerContent={(props) => <SideBar {...props} />}
-        
+
         screenOptions={{
           headerShown: false, // מסתיר את הבר המקורי של המערכת
           drawerType: 'front', // המגירה תעלה מעל המסך
@@ -21,8 +21,8 @@ export default function AppLayout() {
         }}
       >
         {/* הגדרת מסך הבית בתוך המגירה */}
-        <Drawer.Screen 
-          name="home" 
+        <Drawer.Screen
+          name="home"
           options={{
             swipeEnabled: true
           }}

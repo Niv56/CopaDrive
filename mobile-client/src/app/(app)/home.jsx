@@ -1,88 +1,66 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, FlatList, ImageBackground, SafeAreaView, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ImageBackground, SafeAreaView, Alert } from "react-native";
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
-import { Ionicons } from "@expo/vector-icons";
 
-// Hooks & Logic
-import { useMyDrive } from "../../features/drive/hooks/useMyDrive";
-import DriveListItem from "../../features/drive/components/DriveListItem";
-import { driveStyles } from "../../features/drive/styles/myDrive.styles";
-
-// Layout Components
+// Layout & Pages
 import TopBar from "../../layout/TopBar";
 import BottomBar from "../../layout/BottomBar";
 import Fab from "../../layout/Fab";
+import MainHomePage from "../../features/drive/pages/MainHomePage";
+import StarredPage from "../../features/drive/pages/StarredPage";
+import SharedPage from "../../features/drive/pages/SharedPage";
+import MyDrivePage from "../../features/drive/pages/MyDrivePage";
+import CreateFileModal from "../../features/drive/components/CreateFileModal";
+
+// Styles & Services
+import { driveStyles } from "../../features/drive/styles/myDrive.styles";
+import { createFile } from "../../features/drive/services/fileService";
+import { useAuth } from "../providers/AuthContext";
 
 const bgImage = require("../../assets/images/back.png");
 
-export default function Home() {
-  const { items, loading, refreshing, onRefresh } = useMyDrive();
+export default function HomeManager() {
   const [activeTab, setActiveTab] = useState("home");
+  const [modalVisible, setModalVisible] = useState(false);
+  const { token } = useAuth();
   const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
 
-  // חלוקה חכמה של הנתונים
-  const folders = useMemo(() => items.filter(i => i.type === 'folder'), [items]);
-  const files = useMemo(() => items.filter(i => i.type === 'file'), [items]);
+  /* ===========================================================
+     📍 אזור קריאה לשרת - לשינוי עבור MONGODB 📍
+     =========================================================== */
+  const handleCreateFile = async (fileData) => {
+    try {
+      await createFile(token, fileData);
+      setModalVisible(false);
+      Alert.alert("Success", "File added to MongoDB/Server");
+      // כאן נצטרך דרך לרענן את הדף הפעיל (למשל ע"י Event emitter או פשוט לסמוך על הריפרוש הידני)
+    } catch (e) { Alert.alert("Error", "Check Connection"); }
+  };
 
-  if (!fontsLoaded) return <ActivityIndicator size="large" color="#007bff" style={{ flex: 1 }} />;
-
-  // פונקציית עזר לכותרות (הוסר ה-Type :any)
-  const SectionHeader = ({ icon, title, style }) => (
-    <View style={[driveStyles.sectionHeader, style]}>
-      <Ionicons name={icon} size={18} color="#333" />
-      <Text style={driveStyles.sectionText}>{title}</Text>
-    </View>
-  );
+  if (!fontsLoaded) return null;
 
   return (
     <ImageBackground source={bgImage} style={driveStyles.backgroundImage} resizeMode="cover">
       <SafeAreaView style={{ flex: 1 }}>
-
-        {/* 1. Top Bar Component */}
         <TopBar />
+        <Text style={driveStyles.homeTitle}>{activeTab.toUpperCase()}</Text>
 
-        {/* Title */}
-        <Text style={driveStyles.homeTitle}>
-          {activeTab === "home" ? "HOME" : activeTab.toUpperCase()}
-        </Text>
-
-        {/* Main Content List */}
-        <FlatList
-          data={activeTab === "home" ? [] : files}
-          contentContainerStyle={{ paddingBottom: 150 }}
-          
-          // Header: מוצג רק בטאב הראשי - מכיל תיקיות וקבצים מומלצים
-          ListHeaderComponent={activeTab === "home" ? (
-            <View>
-              <SectionHeader icon="folder-outline" title="Suggested folders" />
-              {folders.map(item => (
-                <DriveListItem key={item.id} item={item} onPress={(i) => console.log(i.name)} />
-              ))}
-
-              <SectionHeader icon="document-text-outline" title="Suggested files" style={{ marginTop: 20 }} />
-              {files.map(item => (
-                <DriveListItem key={item.id} item={item} onPress={(i) => console.log(i.name)} />
-              ))}
-            </View>
-          ) : null}
-
-          // Items: מוצג בשאר הטאבים (רשימה שטוחה)
-          renderItem={activeTab !== "home" ? ({ item }) => (
-            <DriveListItem item={item} onPress={(i) => console.log(i.name)} />
-          ) : null}
-
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          ListEmptyComponent={items.length === 0 && !loading ? <Text style={driveStyles.emptyText}>No items to show here</Text> : null}
-        />
+        <View style={{ flex: 1 }}>
+          {activeTab === "home" && <MainHomePage />}
+          {activeTab === "starred" && <StarredPage />}
+          {activeTab === "shared" && <SharedPage />}
+          {activeTab === "mydrive" && <MyDrivePage />}
+        </View>
       </SafeAreaView>
 
-      {/* 2. Floating Action Button */}
-      <Fab onPress={() => console.log("Add new item")} />
-
-      {/* 3. Bottom Navigation Bar */}
+      <Fab onPress={() => setModalVisible(true)} />
       <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />
 
+      <CreateFileModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSave={handleCreateFile}
+      />
     </ImageBackground>
   );
 }
