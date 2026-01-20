@@ -2,19 +2,22 @@ import React from "react";
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../app/providers/ThemeContext";
 
 export default function ProfileActionSheet({ visible, onClose, onEditProfile }) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        {/* ✅ Blur background */}
-        <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, styles.dim]} />
+        <BlurView intensity={22} tint={theme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
 
-        {/* ✅ The small menu near top-right */}
-        <Pressable style={styles.menu} onPress={(e) => e.stopPropagation()}>
-          <MenuItem icon="moon-outline" label="Night mode" disabled />
-          <MenuItem icon="musical-notes-outline" label="Play song" disabled />
+        <Pressable style={[styles.menu, { backgroundColor: theme === "dark" ? "#222" : "#fff" }]}>
+          <MenuItem
+            icon={theme === "dark" ? "sunny-outline" : "moon-outline"}
+            label={theme === "dark" ? "Day mode" : "Night mode"}
+            onPress={() => { toggleTheme(); onClose(); }} // הפעלה
+          />
           <MenuItem icon="create-outline" label="Edit profile" onPress={onEditProfile} />
         </Pressable>
       </Pressable>
