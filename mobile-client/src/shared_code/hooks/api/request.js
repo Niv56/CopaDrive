@@ -1,12 +1,16 @@
-const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+// Base URL without /api - paths include /api prefix (e.g., /api/users, /api/files)
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.1.114:3000").replace(/\/api\/?$/, "").replace(/\/$/, "");
+
+console.log("🔧 API_BASE_URL:", API_BASE_URL);
 
 export async function request(path, options = {}) {
-  const baseHasApi = /\/api$/i.test(API_BASE_URL);
-  const rawPath = path.startsWith("/") ? path : `/${path}`;
-  const pathHasApi = rawPath === "/api" || rawPath.startsWith("/api/");
-
-  const finalPath = baseHasApi && pathHasApi ? rawPath.replace(/^\/api/, "") : rawPath;
-  const url = `${API_BASE_URL}${finalPath}`;
+  // Ensure path starts with /
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  
+  // Build the full URL
+  const url = `${API_BASE_URL}${normalizedPath}`;
+  
+  console.log("📡 Request:", options.method || "GET", url);
 
   try {
     const isFormData = options.body instanceof FormData;
@@ -24,7 +28,6 @@ export async function request(path, options = {}) {
     const res = await fetch(url, {
       ...options,
       headers,
-      // המרת אובייקט ל-JSON רק אם הוא אובייקט ולא FormData
       body: isFormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     });
 
@@ -46,7 +49,7 @@ export async function request(path, options = {}) {
 
     return data;
   } catch (error) {
-    console.error("❌ Request Error:", error?.message || error);
+    console.error("Request Error:", error?.message || error);
     throw error;
   }
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi";
+import { setStarred, setImportant, moveToTrash, openItem, updateItem, getFileById } from "../api/filesApi";
 import { getPermissions } from "../api/permissionsApi";
 import { useToast } from "app/providers/ToastContext";
 
@@ -82,9 +82,24 @@ export function useFileActions(myUserId, onRefresh) {
   };
 
   // Switches view from preview to edit mode 
-  const handleEdit = (file) => {
+  // Fetches full file content if not already present (e.g., when called from 3-dots menu)
+  const handleEdit = async (file) => {
     setOpenedFile(null);
-    setEditingFile(file);
+    
+    // If it's a file without content, fetch the full file data first
+    if (file.type === 'file' && file.content === undefined) {
+      try {
+        setLoadingFile(true);
+        const fullFile = await getFileById(file.id || file._id);
+        setEditingFile(fullFile);
+      } catch (e) {
+        addToast(e.message || "Failed to load file content", "error");
+      } finally {
+        setLoadingFile(false);
+      }
+    } else {
+      setEditingFile(file);
+    }
   };
 
   // Detects changes, sanitizes text content, and persists updates 
