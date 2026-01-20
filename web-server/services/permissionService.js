@@ -1,177 +1,132 @@
 const permissionRepository = require('../repositories/permissionRepository');
 const fileRepository = require('../repositories/fileRepository');
-const userRepository = require('../repositories/userRepository');
-const { generateId } = require('../utils/idGenerator');
 
-// Verify that the user owns the file
-const verifyOwnership = (ownerId, fileId) => {
-    const file = fileRepository.findById(fileId, ownerId);
+/**
+ * Adds a new permission
+ */
+async function addPermission(ownerId, fileId, targetUserId, role = 'viewer') {    
+    const file = await fileRepository.findById(fileId);
+    
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
+        const err = new Error('Only the owner can share this file.');
+        err.status = 403;
+        throw err;
+    }
+    
+    const existing = await permissionRepository.findByUserAndFile(targetUserId, fileId);
+    if (existing) {
+        const err = new Error('Permission already exists');
+        err.status = 400;
+        throw err;
+    }
+    
+    return await permissionRepository.create({
+        userId: targetUserId,
+        fileId,
+        role
+    });
+}
+
+/**
+ * Gets all permissions for a file with user's role
+ */
+async function getPermissions(userId, fileId) {
+    
+    const file = await fileRepository.findById(fileId);
+    
     if (!file) {
-        const err = new Error('File not found or access denied');
+        const err = new Error('Not found');
         err.status = 404;
         throw err;
     }
-    return file;
-};
-
-// Find user's highest role by traversing file hierarchy
-const resolveRole = (userId, fileId) => {
-    let currentId = fileId;
-    let found = null;
-
-    while (currentId !== null) {
-        const item = fileRepository.findById(currentId);
-        if (!item) break;
-
-        if (item.ownerId === userId) return "owner";
-
-        const perms = permissionRepository.findByFileId(currentId) || [];
-        const userPerm = perms.find(p => p.userId === userId);
-
-        if (userPerm) {
-            if (userPerm.role === "editor") return "editor";
-            if (!found) found = "viewer";
-        }
-
-        currentId = item.parentId;
-    }
-    return found;
-};
-
-// Get all permissions including inherited ones and blocked users
-exports.getPermissions = (requesterId, fileId) => {
-    const role = resolveRole(requesterId, fileId);
-    if (!role) {
-        const err = new Error('File not found or access denied');
-        err.status = 404;
+    
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file.ownerId?.toString ? file.ownerId.toString() : String(file.ownerId);
+    const userIdStr = userId?.toString ? userId.toString() : String(userId);
+    
+    const isOwner = fileOwnerIdStr === userIdStr;
+    const myPerm = await permissionRepository.findByUserAndFile(userId, fileId);
+    const myRole = isOwner ? 'owner' : (myPerm ? myPerm.role : null);
+    
+    
+    if (!myRole) {
+        const err = new Error('Forbidden');
+        err.status = 403;
         throw err;
     }
-
-    const allPermissions = new Map();
-    let currentId = fileId;
-
-    while (currentId !== null) {
-        const item = fileRepository.findById(currentId);
-        if (!item) break;
-
-        const perms = permissionRepository.findByFileId(currentId) || [];
-        for (const perm of perms) {
-            if (!allPermissions.has(perm.userId)) {
-                allPermissions.set(perm.userId, perm);
-            }
-        }
-        currentId = item.parentId;
-    }
-
-    const permissions = Array.from(allPermissions.values());
-    const file = fileRepository.findById(fileId);
-    const blockedBy = file?.blockedBy && Array.isArray(file.blockedBy) ? file.blockedBy : [];
-
-    return { myRole: role, permissions, blockedBy };
-};
-
-// Add new permission and unblock user if necessary
-exports.addPermission = (ownerId, fileId, payload) => {
-    const file = verifyOwnership(ownerId, fileId);
-    const targetUserId = payload.userId;
-
-    const unblock = (id) => {
-        const item = fileRepository.findById(id);
-        if (item && Array.isArray(item.blockedBy)) {
-            const nextBlocked = item.blockedBy.filter(uid => uid !== targetUserId);
-            if (nextBlocked.length !== item.blockedBy.length) {
-                fileRepository.update(id, { blockedBy: nextBlocked });
-            }
-        }
+    
+    const permissions = await permissionRepository.findByFile(fileId);
+    
+    return {
+        myRole,
+        permissions: permissions.map(p => ({
+            id: p._id,
+            userId: p.userId._id || p.userId,
+            email: p.userId.email,
+            firstName: p.userId.firstName,
+            lastName: p.userId.lastName,
+            image: p.userId.image,
+            role: p.role
+        }))
     };
+}
 
-    const allFiles = fileRepository.findAll();
-    const toUnblock = [];
-
-    const collect = (pid) => {
-        allFiles.filter(f => f.parentId === pid).forEach(f => {
-            toUnblock.push(f.id);
-            if (f.type === 'folder') collect(f.id);
-        });
-    };
-
-    toUnblock.push(fileId);
-    if (file.type === 'folder') collect(fileId);
-
-    toUnblock.forEach(id => unblock(id));
-
-    const existingPermissions = permissionRepository.findByFileId(fileId);
-    const duplicate = existingPermissions.find(p => p.userId === payload.userId);
-
-    if (duplicate) {
-        const err = new Error('Permission already exists for this user');
-        err.status = 409;
+/**
+ * Updates a permission role
+ */
+async function updatePermission(ownerId, fileId, permissionId, newRole) {
+    const file = await fileRepository.findById(fileId);
+    
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
+        const err = new Error('Only the owner can change sharing permissions.');
+        err.status = 403;
         throw err;
     }
-
-    const newPermission = {
-        id: generateId((id) => permissionRepository.findById(id)),
-        fileId: fileId,
-        userId: payload.userId,
-        role: 'viewer'
-    };
-
-    return permissionRepository.create(newPermission);
-};
-
-// Toggle permission between viewer and editor
-exports.updatePermission = (ownerId, fileId, pId) => {
-    verifyOwnership(ownerId, fileId);
-    const permission = permissionRepository.findById(pId);
-
-    if (!permission || permission.fileId !== fileId) {
-        const error = new Error('Permission not found');
-        error.status = 404;
-        throw error;
-    }
-
-    const newRole = (permission.role === 'viewer') ? 'editor' : 'viewer';
-    return permissionRepository.update(pId, { role: newRole });
-};
-
-// Remove a permission entry
-exports.deletePermission = (ownerId, fileId, pId) => {
-    verifyOwnership(ownerId, fileId);
-
-    const removed = permissionRepository.remove(pId);
-    if (!removed) {
+    
+    // Find permission by its ID directly, not by user+file
+    const perm = await permissionRepository.findById(permissionId);
+    if (!perm || String(perm.fileId) !== String(fileId)) {
         const err = new Error('Permission not found');
         err.status = 404;
         throw err;
     }
-    return removed;
-};
+    
+    const toggledRole = perm.role === 'viewer' ? 'editor' : 'viewer';
+    
+    return await permissionRepository.update(perm._id, { role: newRole || toggledRole });
+}
 
-// Boolean check for specific access level
-const checkAccess = (userId, fileId, requiredRole = 'viewer') => {
-    let currentId = fileId;
-    let foundPermission = null;
-
-    while (currentId !== null) {
-        const item = fileRepository.findById(currentId);
-        if (!item) break;
-
-        if (item.ownerId === userId) return true;
-
-        const permissions = permissionRepository.findByFileId(currentId) || [];
-        const userPerm = permissions.find(p => p.userId === userId);
-
-        if (userPerm) {
-            if (userPerm.role === 'editor') return true;
-            if (!foundPermission) foundPermission = userPerm.role;
-        }
-
-        currentId = item.parentId;
+/**
+ * Deletes a permission
+ */
+async function deletePermission(ownerId, fileId, permissionId) {
+    const file = await fileRepository.findById(fileId);
+    
+    // Ensure both IDs are strings for comparison
+    const fileOwnerIdStr = file?.ownerId?.toString ? file.ownerId.toString() : String(file?.ownerId);
+    const ownerIdStr = ownerId?.toString ? ownerId.toString() : String(ownerId);
+    
+    if (!file || fileOwnerIdStr !== ownerIdStr) {
+        const err = new Error('Only the owner can remove sharing permissions.');
+        err.status = 403;
+        throw err;
     }
+    
+    await permissionRepository.deleteById(permissionId);
+}
 
-    if (requiredRole === 'viewer') return foundPermission !== null;
-    if (requiredRole === 'editor') return foundPermission === 'editor';
-    return false;
+module.exports = {
+    addPermission,
+    getPermissions,
+    updatePermission,
+    deletePermission
 };
-
-exports.checkAccess = checkAccess;
