@@ -100,5 +100,38 @@ export const driveStyles = StyleSheet.create({
         marginTop: 50,
         color: '#666',
         fontFamily: 'BrunoAceSC_400Regular'
-    }
+    },
+
+    // Breadcrumb navigation styles
+    breadcrumbContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: "rgba(255,255,255,0.9)",
+        marginHorizontal: 16,
+        marginBottom: 8,
+        borderRadius: 12,
+    },
+    backButton: {
+        padding: 4,
+        marginRight: 8,
+    },
+    breadcrumbItem: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    breadcrumbText: {
+        fontSize: 14,
+        color: "#0d6efd",
+        maxWidth: 100,
+    },
+    breadcrumbActive: {
+        fontWeight: "600",
+        color: "#333",
+    },
+    breadcrumbSeparator: {
+        marginHorizontal: 6,
+        color: "#999",
+    },
 });
