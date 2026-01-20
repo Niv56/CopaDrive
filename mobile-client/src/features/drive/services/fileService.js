@@ -40,6 +40,7 @@ export async function createItem(
 }
 
 export async function createFile(token, fileData) {
+  // fileData: { name, content, mimeType, parentId? }
   return createItem(token, { ...fileData, type: "file" });
 }
 
@@ -81,7 +82,6 @@ export async function deleteForever(token, fileId) {
 export async function emptyTrash(token) {
   return request("/api/files/trash/empty", { method: "DELETE", token });
 }
-
 
 export async function setStarred(token, fileId, starred) {
   return request(`/api/files/${fileId}/star`, {

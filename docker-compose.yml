@@ -41,8 +41,6 @@ services:
       - server
     networks:
       - copadrive-network
-    # env_file remains commented to prioritize Docker environment variables
-    # - ./web-server/config/.env.local
 
   # Web Client (React)
   client:
@@ -63,20 +61,6 @@ services:
       - web-server
     networks:
       - copadrive-network
-
-  # Mobile Client (React Native) - DISABLED for local development
-  # Run mobile separately with: npx expo start -c
-  # mobile-client:
-  #   build:
-  #     context: ./mobile-client
-  #     dockerfile: Dockerfile
-  #   container_name: copadrive_mobile
-  #   ports:
-  #     - "8081:8081"
-  #   depends_on:
-  #     - web-server
-  #   networks:
-  #     - copadrive-network
 
 networks:
   copadrive-network:

@@ -5,10 +5,10 @@ console.log("🔧 API_BASE_URL:", API_BASE_URL);
 
 export async function request(path, options = {}) {
   // Ensure path starts with /
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const normalizedPath = path.startsWith("/") ? path : /${path};
   
   // Build the full URL
-  const url = `${API_BASE_URL}${normalizedPath}`;
+  const url = ${API_BASE_URL}${normalizedPath};
   
   console.log("📡 Request:", options.method || "GET", url);
 
@@ -22,7 +22,7 @@ export async function request(path, options = {}) {
     };
 
     if (options.token) {
-      headers["Authorization"] = `Bearer ${options.token}`;
+      headers["Authorization"] = Bearer ${options.token};
     }
 
     const res = await fetch(url, {
@@ -43,7 +43,7 @@ export async function request(path, options = {}) {
       const msg =
         (data && (data.message || data.error)) ||
         (typeof data === "string" && data) ||
-        `Request failed (${res.status})`;
+        Request failed (${res.status});
       throw new Error(msg);
     }
 
