@@ -8,22 +8,24 @@ export async function request(path, options = {}) {
   const finalPath = baseHasApi && pathHasApi ? rawPath.replace(/^\/api/, "") : rawPath;
   const url = `${API_BASE_URL}${finalPath}`;
 
-  const isFormData = options.body instanceof FormData;
-
-  const headers = {
-    ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(options.headers || {}),
-  };
-
-  if (options.token) {
-    headers["Authorization"] = `Bearer ${options.token}`;
-  }
-
   try {
+    const isFormData = options.body instanceof FormData;
+
+    const headers = {
+      // הוספת JSON Content-Type רק אם זה לא FormData
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    };
+
+    if (options.token) {
+      headers["Authorization"] = `Bearer ${options.token}`;
+    }
+
     const res = await fetch(url, {
       ...options,
       headers,
-      body: isFormData ? options.body : JSON.stringify(options.body),
+      // המרת אובייקט ל-JSON רק אם הוא אובייקט ולא FormData
+      body: isFormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     });
 
     const text = await res.text();
@@ -42,6 +44,13 @@ export async function request(path, options = {}) {
       throw new Error(msg);
     }
 
+<<<<<<< HEAD
+    if (!res.ok) {
+      throw new Error(data?.error || data?.message || `Request failed with status ${res.status}`);
+    }
+
+=======
+>>>>>>> main5
     return data;
   } catch (error) {
     console.error("❌ Request Error:", error?.message || error);

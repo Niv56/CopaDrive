@@ -3,6 +3,12 @@ import { request } from "../../../shared_code/hooks/api/request";
 
 /** מושך את כל הקבצים בתיקיית השורש */
 export async function getFiles(token) {
+<<<<<<< HEAD
+    return request("/api/files", {
+        method: "GET",
+        token: token
+    });
+=======
   return request("/api/files", {
     method: "GET",
     token,
@@ -28,6 +34,7 @@ export async function updateItem(token, fileId, patch) {
     token,
     body: JSON.stringify(patch),
   });
+>>>>>>> main5
 }
 
 /* ===========================================================
@@ -38,6 +45,21 @@ export async function updateItem(token, fileId, patch) {
  * פונקציה ראשית ליצירת פריט (תיקייה או קובץ).
  * ה-FAB משתמש בפונקציה הזו כדי לתמוך בכל הסוגים.
  */
+<<<<<<< HEAD
+export async function createItem(token, { name, type, parentId = null, content = "", mimeType = "" }) {
+    // ✅ תיקון: שליחת האובייקט ישירות. ה-request יבצע stringify פעם אחת בלבד.
+    return request("/api/files", {
+        method: "POST",
+        token: token,
+        body: {
+            name,
+            type,
+            parentId,
+            content: type === "file" ? content : "",
+            mimeType: type === "file" ? mimeType : ""
+        }
+    });
+=======
 export async function createItem(
   token,
   { name, type, parentId = null, content = "", mimeType = "" }
@@ -54,12 +76,17 @@ export async function createItem(
       mimeType: type === "file" ? mimeType : "",
     }),
   });
+>>>>>>> main5
 }
 
 /** מעטפת ליצירת קובץ (משתמשת ב-createItem) */
 export async function createFile(token, fileData) {
+<<<<<<< HEAD
+    return createItem(token, { ...fileData, type: 'file' });
+=======
   // fileData מכיל: { name, content, mimeType }
   return createItem(token, { ...fileData, type: "file" });
+>>>>>>> main5
 }
 
 /** מעטפת ליצירת תיקייה (משתמשת ב-createItem) */
@@ -72,10 +99,17 @@ export async function createFolder(token, name, parentId = null) {
    =========================================================== */
 
 export async function getUsage(token) {
+<<<<<<< HEAD
+    return request("/api/files/usage", {
+        method: "GET",
+        token: token
+    });
+=======
   return request("/api/files/usage", {
     method: "GET",
     token,
   });
+>>>>>>> main5
 }
 
 /* ===========================================================
@@ -95,11 +129,20 @@ export async function getTrashFiles(token) {
 }
 
 export async function restoreFromTrash(token, fileId) {
+<<<<<<< HEAD
+    // ✅ תיקון: הסרת JSON.stringify
+    return request(`/api/files/${fileId}/trash`, {
+        method: "PATCH",
+        token: token,
+        body: { trashed: false },
+    });
+=======
   return request(`/api/files/${fileId}/trash`, {
     method: "PATCH",
     token,
     body: JSON.stringify({ trashed: false }),
   });
+>>>>>>> main5
 }
 
 export async function deleteForever(token, fileId) {
@@ -153,6 +196,43 @@ export function getDaysLeft(trashedAt) {
 }
 
 export function formatLastAccessed(dateString) {
+<<<<<<< HEAD
+    if (!dateString) return "Never";
+    const date = new Date(dateString);
+    const diffMs = new Date() - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
+    return date.toLocaleDateString();
+}
+
+export async function setStarred(token, fileId, starred) {
+    // ✅ תיקון: הסרת JSON.stringify (היא בוצעה בתוך request.js אם עקבת אחרי התיקון הקודם)
+    return request(`/api/files/${fileId}/star`, { // שים לב: הנתיב בשרת שלך הוא /star
+        method: "PATCH",
+        token,
+        body: { starred: !!starred },
+    });
+}
+
+export async function setImportant(token, fileId, important) {
+    return request(`/api/files/${fileId}/important`, { // שים לב: הנתיב בשרת שלך הוא /important
+        method: "PATCH",
+        token,
+        body: { important: !!important },
+    });
+}
+
+export async function renameItem(token, fileId, name) {
+    return request(`/api/files/${fileId}`, {
+        method: "PATCH",
+        token,
+        body: { name },
+    });
+}
+=======
   if (!dateString) return "Never";
   const date = new Date(dateString);
   const diffMs = new Date() - date;
@@ -163,3 +243,4 @@ export function formatLastAccessed(dateString) {
   if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
   return date.toLocaleDateString();
 }
+>>>>>>> main5
