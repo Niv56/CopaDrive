@@ -1,5 +1,3 @@
-// ===== mobile-client/src/features/auth/services/authService.js =====
-
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 if (!API_BASE_URL) {
@@ -53,7 +51,7 @@ export async function authenticateUser(email, password) {
   return { ok: true, token };
 }
 
-// ✅ Register via JSON (NO FormData)
+// Register via JSON (NO FormData)
 export async function registerUser(payload) {
   const { ok, status, data } = await request("/users", {
     method: "POST",

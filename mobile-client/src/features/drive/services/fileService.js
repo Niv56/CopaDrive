@@ -71,10 +71,10 @@ export async function createFolder(token, name, parentId = null) {
    =========================================================== */
 
 export async function getUsage(token) {
-  return request("/api/files/usage", {
-    method: "GET",
-    token,
-  });
+    return request("/api/files/usage", {
+        method: "GET",
+        token: token
+    });
 }
 
 /* ===========================================================
@@ -94,11 +94,12 @@ export async function getTrashFiles(token) {
 }
 
 export async function restoreFromTrash(token, fileId) {
-  return request(`/api/files/${fileId}/trash`, {
-    method: "PATCH",
-    token,
-    body: JSON.stringify({ trashed: false }),
-  });
+    // ✅ תיקון: הסרת JSON.stringify
+    return request(`/api/files/${fileId}/trash`, {
+        method: "PATCH",
+        token: token,
+        body: { trashed: false },
+    });
 }
 
 export async function deleteForever(token, fileId) {
@@ -156,13 +157,38 @@ export function getDaysLeft(trashedAt) {
 }
 
 export function formatLastAccessed(dateString) {
-  if (!dateString) return "Never";
-  const date = new Date(dateString);
-  const diffMs = new Date() - date;
-  const diffMins = Math.floor(diffMs / 60000);
+    if (!dateString) return "Never";
+    const date = new Date(dateString);
+    const diffMs = new Date() - date;
+    const diffMins = Math.floor(diffMs / 60000);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins} mins ago`;
-  if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
-  return date.toLocaleDateString();
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
+    return date.toLocaleDateString();
+}
+
+export async function setStarred(token, fileId, starred) {
+    // ✅ תיקון: הסרת JSON.stringify (היא בוצעה בתוך request.js אם עקבת אחרי התיקון הקודם)
+    return request(`/api/files/${fileId}/star`, { // שים לב: הנתיב בשרת שלך הוא /star
+        method: "PATCH",
+        token,
+        body: { starred: !!starred },
+    });
+}
+
+export async function setImportant(token, fileId, important) {
+    return request(`/api/files/${fileId}/important`, { // שים לב: הנתיב בשרת שלך הוא /important
+        method: "PATCH",
+        token,
+        body: { important: !!important },
+    });
+}
+
+export async function renameItem(token, fileId, name) {
+    return request(`/api/files/${fileId}`, {
+        method: "PATCH",
+        token,
+        body: { name },
+    });
 }

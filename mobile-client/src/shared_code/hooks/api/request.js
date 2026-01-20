@@ -1,71 +1,55 @@
-// src/shared_code/hooks/api/request.js
+// Base URL without /api - paths include /api prefix (e.g., /api/users, /api/files)
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.1.114:3000").replace(/\/api\/?$/, "").replace(/\/$/, "");
 
-// 👇 תעדכן ל-IP של השרת שלך (כמו בלוגים שלך)
-const DEFAULT_BASE_URL = "http://192.168.1.146:3000";
+console.log("🔧 API_BASE_URL:", API_BASE_URL);
 
 export async function request(path, options = {}) {
-  const { method = "GET", token, body, headers = {}, signal } = options;
-
-  const url = path.startsWith("http") ? path : `${DEFAULT_BASE_URL}${path}`;
-
-  const finalHeaders = {
-    Accept: "application/json",
-    ...headers,
-  };
-
-  if (token) {
-    finalHeaders.Authorization = `Bearer ${token}`;
-  }
-
-  let finalBody = body;
-
-  if (body !== undefined && body !== null) {
-    const isString = typeof body === "string";
-    finalHeaders["Content-Type"] = finalHeaders["Content-Type"] || "application/json";
-    if (!isString) {
-      finalBody = JSON.stringify(body);
-    }
-  }
+  // Ensure path starts with /
+  const normalizedPath = path.startsWith("/") ? path : /${path};
+  
+  // Build the full URL
+  const url = ${API_BASE_URL}${normalizedPath};
+  
+  console.log("📡 Request:", options.method || "GET", url);
 
   try {
+    const isFormData = options.body instanceof FormData;
+
+    const headers = {
+      // הוספת JSON Content-Type רק אם זה לא FormData
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    };
+
+    if (options.token) {
+      headers["Authorization"] = Bearer ${options.token};
+    }
+
     const res = await fetch(url, {
-      method,
-      headers: finalHeaders,
-      body: finalBody,
-      signal,
+      ...options,
+      headers,
+      body: isFormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     });
 
     const text = await res.text();
-
-    // ✅ אם זה HTML (לא JSON) – הדפס תקציר ברור במקום מגילה
-    if (text && text.trim().startsWith("<!DOCTYPE html")) {
-      console.log("❌ Request Error: Server returned HTML (wrong BASE_URL / route). URL:", url);
-      throw new Error("Server returned HTML instead of JSON. Check DEFAULT_BASE_URL / route.");
-    }
-
     let data = null;
     try {
       data = text ? JSON.parse(text) : null;
     } catch {
-      data = text || null;
+      data = text;
     }
 
     if (!res.ok) {
       const msg =
-        (data && (data.error || data.message)) ||
-        (typeof data === "string" ? data : null) ||
-        `Request failed (${res.status})`;
-
-      console.log("❌ Request Error:", msg);
-      const err = new Error(msg);
-      err.status = res.status;
-      err.data = data;
-      throw err;
+        (data && (data.message || data.error)) ||
+        (typeof data === "string" && data) ||
+        Request failed (${res.status});
+      throw new Error(msg);
     }
 
     return data;
-  } catch (err) {
-    console.log("❌ Request Error:", err?.message || err);
-    throw err;
+  } catch (error) {
+    console.error("Request Error:", error?.message || error);
+    throw error;
   }
 }
