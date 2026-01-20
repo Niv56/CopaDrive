@@ -7,3 +7,5 @@ UML/
 
 npm-debug.log*
 yarn-error.log*
+
+web-server/config/*.env*
