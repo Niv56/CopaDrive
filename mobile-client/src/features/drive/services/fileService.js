@@ -49,7 +49,6 @@ export async function createItem(
       name,
       type,
       parentId,
-      // תוכן נשלח רק אם זה קובץ, אחרת מחרוזת ריקה
       content: type === "file" ? content : "",
       mimeType: type === "file" ? mimeType : "",
     }),
@@ -58,7 +57,7 @@ export async function createItem(
 
 /** מעטפת ליצירת קובץ (משתמשת ב-createItem) */
 export async function createFile(token, fileData) {
-  // fileData מכיל: { name, content, mimeType }
+  // fileData: { name, content, mimeType, parentId? }
   return createItem(token, { ...fileData, type: "file" });
 }
 
@@ -112,9 +111,13 @@ export async function emptyTrash(token) {
 }
 
 /* ===========================================================
-    📍 Flags & Rename (used by DriveListItem) 📍
+    📍 Flags & Rename (used by DriveListItem + Preview) 📍
    =========================================================== */
 
+/**
+ * חשוב: לפי השרת שלך (כמו בדוגמאות הקוד שלך),
+ * עדכון flags נעשה דרך PATCH ל- /api/files/:id עם body מתאים.
+ */
 export async function setStarred(token, fileId, starred) {
   return request(`/api/files/${fileId}`, {
     method: "PATCH",
