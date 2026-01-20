@@ -1,33 +1,71 @@
-const { permissions } = require('../utils/storage');
+const Permission = require('../models/permission');
+const mongoose = require('mongoose');
 
-// Find all permissions for a given file/folder id.
-const findByFileId = (fileId) => permissions.filter(p => p.fileId === fileId);
+/**
+ * Creates a new permission
+ */
+async function create(data) {
+    const perm = new Permission(data);
+    return await perm.save();
+}
 
-// Find a permission entry by its id.
-const findById = (id) => permissions.find(p => p.id === id);
+/**
+ * Finds permission by ID
+ */
+async function findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await Permission.findById(id);
+}
 
-// Create a new permission entry.
-const create = (permissionData) => {
-    permissions.push(permissionData);
-    return permissionData;
+/**
+ * Finds permission by user and file
+ */
+async function findByUserAndFile(userId, fileId) {
+    return await Permission.findOne({ userId, fileId });
+}
+
+/**
+ * Lists all permissions for a file
+ */
+async function findByFile(fileId) {
+    return await Permission.find({ fileId }).populate('userId', 'firstName lastName email image');
+}
+
+/**
+ * Lists all files shared with a user
+ */
+async function findSharedFiles(userId) {
+    return await Permission.find({ userId });
+}
+
+/**
+ * Updates a permission
+ */
+async function update(id, patch) {
+    return await Permission.findByIdAndUpdate(id, patch, { new: true });
+}
+
+/**
+ * Deletes a permission
+ */
+async function deleteById(id) {
+    return await Permission.findByIdAndDelete(id);
+}
+
+/**
+ * Deletes all permissions for a file
+ */
+async function deleteByFile(fileId) {
+    return await Permission.deleteMany({ fileId });
+}
+
+module.exports = {
+    create,
+    findById,
+    findByUserAndFile,
+    findByFile,
+    findSharedFiles,
+    update,
+    deleteById,
+    deleteByFile
 };
-
-// Update an existing permission entry.
-const update = (id, updates) => {
-    const idx = permissions.findIndex(p => p.id === id);
-    if (idx === -1) return null;
-    permissions[idx] = { ...permissions[idx], ...updates };
-    return permissions[idx];
-};
-
-// Remove a permission entry by id.
-const remove = (id) => {
-    const idx = permissions.findIndex(p => p.id === id);
-    if (idx === -1) return null;
-    return permissions.splice(idx, 1)[0];
-};
-
-// Find all permissions for a given user id.
-const findByUserId = (userId) => permissions.filter(p => p.userId === userId);
-
-module.exports = { findByFileId, findById, create, update, remove, findByUserId };

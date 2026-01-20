@@ -8,6 +8,8 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
+  Pressable,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,11 +21,18 @@ import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 // ✅ auto-refresh bus
 import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
 
+// ✅ Preview modal
+import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
+
 export default function StoragePage() {
   const router = useRouter();
   const { token } = useAuth();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✅ preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const loadFiles = useCallback(async () => {
     if (!token) return;
@@ -42,7 +51,6 @@ export default function StoragePage() {
     loadFiles();
   }, [loadFiles]);
 
-  // ✅ listen for global refresh events
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => {
       loadFiles();
@@ -51,10 +59,35 @@ export default function StoragePage() {
   }, [loadFiles]);
 
   const sortedFiles = useMemo(() => {
-    return [...files]
-      .filter((f) => f.type === "file")
+    return [...(files || [])]
+      .filter((f) => f?.type === "file")
       .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0));
   }, [files]);
+
+  // ✅ X always closes reliably
+  const closeScreen = useCallback(() => {
+    try {
+      if (typeof router.canGoBack === "function" && router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/home");
+      }
+    } catch {
+      router.replace("/home");
+    }
+  }, [router]);
+
+  const openItem = useCallback((item) => {
+    if (!item) return;
+
+    if (item.type === "folder") {
+      Alert.alert("CopaDrive", "Folders view is coming soon.");
+      return;
+    }
+
+    setSelectedId(item.id);
+    setPreviewOpen(true);
+  }, []);
 
   const renderItem = ({ item }) => {
     const isImage = item.mimeType?.startsWith("image");
@@ -62,7 +95,7 @@ export default function StoragePage() {
     const iconColor = isImage ? "#d93025" : "#4285F4";
 
     return (
-      <View style={styles.fileRow}>
+      <Pressable onPress={() => openItem(item)} style={styles.fileRow}>
         <View style={styles.iconWrapper}>
           <Ionicons name={iconName} size={24} color={iconColor} />
         </View>
@@ -72,7 +105,7 @@ export default function StoragePage() {
           </Text>
           <Text style={styles.fileSize}>{formatBytes(item.sizeBytes)}</Text>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -82,11 +115,7 @@ export default function StoragePage() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.closeButton}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={closeScreen} style={styles.closeButton} activeOpacity={0.7}>
             <Ionicons name="close-outline" size={32} color="#6c757d" />
           </TouchableOpacity>
         </View>
@@ -113,10 +142,17 @@ export default function StoragePage() {
               }
               onRefresh={loadFiles}
               refreshing={loading}
+              showsVerticalScrollIndicator={false}
             />
           )}
         </View>
       </SafeAreaView>
+
+      <FilePreviewModal
+        open={previewOpen}
+        fileId={selectedId}
+        onClose={() => setPreviewOpen(false)}
+      />
     </View>
   );
 }
@@ -143,6 +179,7 @@ const styles = StyleSheet.create({
   textHeader: { paddingHorizontal: 20, marginBottom: 15 },
   subTitle: { fontSize: 13, color: "#6c757d", marginTop: -8, marginLeft: 0 },
   listContent: { paddingHorizontal: 20, paddingBottom: 20 },
+
   fileRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -154,6 +191,6 @@ const styles = StyleSheet.create({
   fileInfo: { flex: 1 },
   fileName: { fontSize: 16, color: "#212529", fontWeight: "500", marginBottom: 2 },
   fileSize: { fontSize: 13, color: "#6c757d", fontWeight: "600" },
+
   emptyContainer: { alignItems: "center", marginTop: 100 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

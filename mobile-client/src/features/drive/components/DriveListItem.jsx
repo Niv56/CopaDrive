@@ -11,7 +11,6 @@ import {
   TextInput,
   Alert,
   Dimensions,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { driveStyles } from "../styles/myDrive.styles";
@@ -21,7 +20,14 @@ import { BlurView } from "expo-blur";
 
 import { useAuth } from "../../../app/providers/AuthContext";
 import { emitDriveRefresh } from "../services/driveEvents";
-import { setStarred, setImportant, renameItem } from "../services/fileService";
+import {
+  setStarred,
+  setImportant,
+  renameItem,
+  getFileById,
+} from "../services/fileService";
+
+import { downloadAndShareBase64 } from "../utils/downloadFile";
 
 export default function DriveListItem({ item, onPress }) {
   const isFolder = item.type === "folder";
@@ -45,6 +51,29 @@ export default function DriveListItem({ item, onPress }) {
   const comingSoon = (label) => {
     closeMenu();
     Alert.alert("CopaDrive", `${label} (Coming soon)`);
+  };
+
+  const handleDownload = async () => {
+    closeMenu();
+
+    if (!token) return Alert.alert("Not logged in", "No token found.");
+    if (item.type === "folder") return Alert.alert("CopaDrive", "Folders cannot be downloaded.");
+
+    try {
+      const full = await getFileById(token, item.id);
+
+      if (!full?.content) {
+        return Alert.alert("CopaDrive", "No content available for this file.");
+      }
+
+      await downloadAndShareBase64({
+        base64: full.content,
+        mimeType: full.mimeType || "application/octet-stream",
+        fileName: full.name || item.name || "file",
+      });
+    } catch (e) {
+      Alert.alert("Download Failed", e?.message || "Could not download file");
+    }
   };
 
   const menuOptions = useMemo(() => {
@@ -83,7 +112,7 @@ export default function DriveListItem({ item, onPress }) {
         },
       },
 
-      { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: () => comingSoon("Download") },
+      { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: handleDownload },
 
       {
         key: "rename",
@@ -140,7 +169,12 @@ export default function DriveListItem({ item, onPress }) {
 
   return (
     <>
-      <Pressable style={driveStyles.fileCard} onPress={() => onPress(item)}>
+      <Pressable
+        style={driveStyles.fileCard}
+        onPress={() => {
+          if (typeof onPress === "function") onPress(item);
+        }}
+      >
         <View style={driveStyles.iconContainer}>
           <Ionicons name={icon} size={28} color={color} />
         </View>
@@ -156,7 +190,6 @@ export default function DriveListItem({ item, onPress }) {
           </Text>
         </View>
 
-        {/* hamburger */}
         <Pressable
           ref={dotsRef}
           onPress={() => (menuOpen ? closeMenu() : openMenu())}
@@ -167,30 +200,18 @@ export default function DriveListItem({ item, onPress }) {
         </Pressable>
       </Pressable>
 
-      {/* ✅ Floating menu with blurred backdrop */}
+      {/* Floating menu with blurred backdrop */}
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={styles.backdrop} onPress={closeMenu}>
-          {/* Blur overlay (tap outside closes) */}
-          <BlurView
-            intensity={22}
-            tint="light"
-            style={StyleSheet.absoluteFill}
-          />
-          {/* small extra dim so text pops */}
+          <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, styles.dim]} />
 
-          {/* Menu itself */}
           <Pressable
             style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
             onPress={() => {}}
           >
             {menuOptions.map((opt) => (
-              <StackOption
-                key={opt.key}
-                icon={opt.icon}
-                label={opt.label}
-                onPress={opt.onPress}
-              />
+              <StackOption key={opt.key} icon={opt.icon} label={opt.label} onPress={opt.onPress} />
             ))}
           </Pressable>
         </Pressable>
@@ -229,10 +250,7 @@ export default function DriveListItem({ item, onPress }) {
 function StackOption({ icon, label, onPress }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.stackBtn}>
-      {/* ✅ icon LEFT */}
       <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
-
-      {/* ✅ text LEFT (default font) */}
       <Text
         style={styles.stackLabel}
         numberOfLines={1}
@@ -260,7 +278,7 @@ const styles = StyleSheet.create({
     height: 54,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start", // ✅ left
+    justifyContent: "flex-start",
     backgroundColor: "rgba(255,255,255,0.98)",
     paddingVertical: 12,
     paddingHorizontal: 18,
@@ -281,10 +299,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
     letterSpacing: 1.2,
-    // ✅ no custom font -> default system font
   },
 
-  // rename modal
   renameBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",

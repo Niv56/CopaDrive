@@ -1,29 +1,28 @@
-const { users } = require('../utils/storage');
+const User = require('../models/user');
+const mongoose = require('mongoose');
 
-// Find a user by their unique ID
-const findById = (id) => users.find(u => u.id === id);
+async function create(data) {
+    const user = new User(data);
+    return await user.save();
+}
 
-// Find a user by email
-const findByEmail = (email) => users.find(u => u.email === email);
+async function findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await User.findById(id);
+}
 
-// Create a new user
-const create = (userData) => {
-  users.push(userData);
-  return userData;
-};
+async function findByEmail(email) {
+    return await User.findOne({ email });
+}
 
-// Update an existing user
-const update = (id, patch) => {
-  const idx = users.findIndex(u => u.id === id);
-  if (idx === -1) return null;
-
-  users[idx] = { ...users[idx], ...patch };
-  return users[idx];
-};
+async function update(id, patch) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    return await User.findByIdAndUpdate(id, patch, { new: true });
+}
 
 module.exports = {
-  findById,
-  findByEmail,
-  create,
-  update
+    create,
+    findById,
+    findByEmail,
+    update
 };
