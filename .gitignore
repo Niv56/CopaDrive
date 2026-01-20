@@ -8,8 +8,4 @@ UML/
 npm-debug.log*
 yarn-error.log*
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 248aea7cf7e0b779e010cefc14cb7e0f110be784
 web-server/config/*.env*
