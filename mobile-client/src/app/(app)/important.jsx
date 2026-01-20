@@ -7,7 +7,7 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
-  StatusBar
+  StatusBar,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,11 +19,18 @@ import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 // ✅ auto-refresh bus
 import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
 
+// ✅ Preview modal
+import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
+
 export default function ImportantPage() {
   const router = useRouter();
   const { token } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✅ preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const loadImportant = useCallback(async () => {
     if (!token) return;
@@ -42,7 +49,7 @@ export default function ImportantPage() {
     loadImportant();
   }, [loadImportant]);
 
-  // ✅ listen for global refresh events (upload/create/delete/etc.)
+  // ✅ listen for global refresh events
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => {
       loadImportant();
@@ -50,14 +57,42 @@ export default function ImportantPage() {
     return unsubscribe;
   }, [loadImportant]);
 
+  // ✅ X should always close reliably:
+  // - if there is a previous screen -> back
+  // - else -> go home
+  const closeScreen = useCallback(() => {
+    try {
+      if (typeof router.canGoBack === "function" && router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/home");
+      }
+    } catch {
+      router.replace("/home");
+    }
+  }, [router]);
+
+  const openItem = useCallback((i) => {
+    if (!i) return;
+
+    if (i.type === "folder") {
+      return; // folders later
+    }
+
+    setSelectedId(i.id);
+    setPreviewOpen(true);
+  }, []);
+
   return (
     <View style={styles.modalContainer}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
+
+          {/* ✅ fixed X */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={closeScreen}
             style={styles.closeButton}
             activeOpacity={0.7}
           >
@@ -77,9 +112,7 @@ export default function ImportantPage() {
             <FlatList
               data={items}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <DriveListItem item={item} onPress={(i) => console.log("Open:", i.name)} />
-              )}
+              renderItem={({ item }) => <DriveListItem item={item} onPress={openItem} />}
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
@@ -89,10 +122,17 @@ export default function ImportantPage() {
               }
               onRefresh={loadImportant}
               refreshing={loading}
+              showsVerticalScrollIndicator={false}
             />
           )}
         </View>
       </SafeAreaView>
+
+      <FilePreviewModal
+        open={previewOpen}
+        fileId={selectedId}
+        onClose={() => setPreviewOpen(false)}
+      />
     </View>
   );
 }
@@ -104,7 +144,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
-    height: 60
+    height: 60,
   },
   headerLeftSpace: { width: 40 },
   closeButton: {
@@ -113,18 +153,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    backgroundColor: "#f8f9fa"
+    backgroundColor: "#f8f9fa",
   },
   content: { flex: 1 },
   textHeader: {
     paddingHorizontal: 20,
-    marginBottom: 15
+    marginBottom: 15,
   },
   subTitle: {
     fontSize: 13,
     color: "#6c757d",
     marginTop: -8,
-    marginLeft: 0
+    marginLeft: 0,
   },
-  emptyContainer: { alignItems: "center", marginTop: 100 }
+  emptyContainer: { alignItems: "center", marginTop: 100 },
 });

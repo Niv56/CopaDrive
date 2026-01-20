@@ -9,6 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   Pressable,
+  Keyboard,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -18,40 +21,42 @@ import { BlurView } from "expo-blur";
 
 import { useAuth } from "../app/providers/AuthContext";
 import { createItem } from "../features/drive/services/fileService";
-
-// ✅ auto-refresh bus (updates all pages that subscribe)
 import { emitDriveRefresh } from "../features/drive/services/driveEvents";
 
+const NEWLINE = "_@NL@_";
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function Fab({ onRefresh }) {
+  const { token } = useAuth();
+
   const [isOpen, setIsOpen] = useState(false);
-  const [modalType, setModalType] = useState(null);
+  const [modalType, setModalType] = useState(null); // "createfolder" | "createfile"
   const [name, setName] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ prevents "Different document picking in progress"
   const pickerInProgressRef = useRef(false);
-
-  const { token } = useAuth();
 
   const lockPicker = () => {
     if (pickerInProgressRef.current) return false;
     pickerInProgressRef.current = true;
     return true;
   };
-
   const unlockPicker = () => {
     pickerInProgressRef.current = false;
   };
 
   const closeMenu = () => {
     setIsOpen(false);
-    // ✅ safety: if something got stuck, release it
-    unlockPicker();
   };
 
-  // --- helper upload ---
+  const closeCreate = () => {
+    setModalType(null);
+    setName("");
+    setContent("");
+    Keyboard.dismiss();
+  };
+
   const processAndUpload = async (uri, fileName, mimeType) => {
     if (!token) {
       Alert.alert("Not logged in", "No token found.");
@@ -72,19 +77,16 @@ export default function Fab({ onRefresh }) {
         mimeType: mimeType || "application/octet-stream",
       });
 
-      // ✅ trigger global refresh + optional local refresh callback
       emitDriveRefresh({ reason: "upload", name: fileName });
-      if (onRefresh) onRefresh();
+      onRefresh?.();
     } catch (err) {
       Alert.alert("Upload Failed", err?.message || "Unknown error");
     } finally {
       setLoading(false);
-      // ✅ FAILSAFE: never let picker stay locked
       unlockPicker();
     }
   };
 
-  // --- pick document ---
   const handlePickDocument = async () => {
     if (!lockPicker()) return;
 
@@ -98,14 +100,13 @@ export default function Fab({ onRefresh }) {
         multiple: false,
       });
 
-      if (!result.canceled && result.assets?.length) {
-        const file = result.assets[0];
-        await processAndUpload(
-          file.uri,
-          file.name || `file_${Date.now()}`,
-          file.mimeType
-        );
-      }
+      if (result?.canceled) return;
+
+      const asset = result?.assets?.[0];
+      if (!asset?.uri) return;
+
+      const fileName = asset.name || `file_${Date.now()}`;
+      await processAndUpload(asset.uri, fileName, asset.mimeType);
     } catch (err) {
       Alert.alert("Error", "Picker failed: " + (err?.message || "Unknown error"));
     } finally {
@@ -113,7 +114,6 @@ export default function Fab({ onRefresh }) {
     }
   };
 
-  // --- pick image (camera/gallery) ---
   const handlePickImage = async (useCamera = false) => {
     if (!lockPicker()) return;
 
@@ -132,7 +132,6 @@ export default function Fab({ onRefresh }) {
       await wait(200);
 
       const options = {
-        // (keeping your existing line)
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
         allowsEditing: false,
@@ -142,23 +141,19 @@ export default function Fab({ onRefresh }) {
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
 
-      if (!result.canceled && result.assets?.length) {
-        const asset = result.assets[0];
+      if (result?.canceled) return;
 
-        let fileName = asset.fileName;
-        if (!fileName) {
-          const uriParts = String(asset.uri).split("/");
-          fileName =
-            uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
-        }
-        if (fileName && !fileName.includes(".")) fileName += ".jpg";
+      const asset = result?.assets?.[0];
+      if (!asset?.uri) return;
 
-        await processAndUpload(
-          asset.uri,
-          fileName,
-          asset.mimeType || "image/jpeg"
-        );
+      let fileName = asset.fileName;
+      if (!fileName) {
+        const uriParts = String(asset.uri).split("/");
+        fileName = uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
       }
+      if (fileName && !fileName.includes(".")) fileName += ".jpg";
+
+      await processAndUpload(asset.uri, fileName, asset.mimeType || "image/jpeg");
     } catch (err) {
       Alert.alert("Error", "Action failed: " + (err?.message || "Unknown error"));
     } finally {
@@ -166,7 +161,6 @@ export default function Fab({ onRefresh }) {
     }
   };
 
-  // --- create folder/file ---
   const handleCreateSubmit = async () => {
     if (!name.trim()) return;
 
@@ -188,30 +182,22 @@ export default function Fab({ onRefresh }) {
       await createItem(token, {
         name: finalName,
         type: isFolder ? "folder" : "file",
-        content: "",
+        content: isFolder ? "" : String(content || "").replaceAll("\n", NEWLINE),
         mimeType: isFolder ? "" : "text/plain",
       });
 
-      setName("");
-      setModalType(null);
+      closeCreate();
 
-      // ✅ trigger global refresh + optional local refresh callback
-      emitDriveRefresh({
-        reason: "create",
-        name: finalName,
-        type: isFolder ? "folder" : "file",
-      });
-      if (onRefresh) onRefresh();
+      emitDriveRefresh({ reason: "create", name: finalName, type: isFolder ? "folder" : "file" });
+      onRefresh?.();
     } catch (err) {
       Alert.alert("Error", err?.message || "Unknown error");
     } finally {
       setLoading(false);
-      // ✅ safety: also release picker lock (in case user opened menu mid-flow)
       unlockPicker();
     }
   };
 
-  // ✅ only loading disables UI (fixes "stuck transparent +")
   const disableActions = loading;
 
   return (
@@ -219,20 +205,15 @@ export default function Fab({ onRefresh }) {
       {loading && (
         <View style={styles.loaderOverlay}>
           <ActivityIndicator size="large" color="#0d6efd" />
-          <Text style={styles.loaderText}>UPLOADING...</Text>
+          <Text style={styles.loaderText}>WORKING...</Text>
         </View>
       )}
 
       {/* OPEN MENU */}
       <Modal visible={isOpen} transparent animationType="none">
-        <Pressable style={styles.backdrop} onPress={closeMenu}>
-          {/* ✅ Blur like hamburger menu */}
-          <BlurView
-            intensity={22}
-            tint="light"
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={[StyleSheet.absoluteFill, styles.dim]} />
+        <View style={styles.backdrop}>
+          <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => { closeMenu(); unlockPicker(); }} />
 
           <View style={styles.menuContainer}>
             <MenuOption
@@ -253,26 +234,11 @@ export default function Fab({ onRefresh }) {
                 setModalType("createfile");
               }}
             />
-            <MenuOption
-              icon="image-outline"
-              label="Upload Pic"
-              disabled={disableActions}
-              onPress={() => handlePickImage(false)}
-            />
-            <MenuOption
-              icon="camera-outline"
-              label="Take Photo"
-              disabled={disableActions}
-              onPress={() => handlePickImage(true)}
-            />
-            <MenuOption
-              icon="cloud-upload-outline"
-              label="Import File"
-              disabled={disableActions}
-              onPress={handlePickDocument}
-            />
+            <MenuOption icon="image-outline" label="Upload Pic" disabled={disableActions} onPress={() => handlePickImage(false)} />
+            <MenuOption icon="camera-outline" label="Take Photo" disabled={disableActions} onPress={() => handlePickImage(true)} />
+            <MenuOption icon="cloud-upload-outline" label="Import File" disabled={disableActions} onPress={handlePickDocument} />
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       {/* MAIN BUTTON */}
@@ -282,7 +248,6 @@ export default function Fab({ onRefresh }) {
             style={[styles.fabMain, disableActions && { opacity: 0.7 }]}
             onPress={() => {
               if (loading) return;
-              // ✅ if picker is still in progress, don't reopen (but don't disable permanently)
               if (pickerInProgressRef.current) return;
               setIsOpen(true);
             }}
@@ -297,32 +262,39 @@ export default function Fab({ onRefresh }) {
       {/* CREATE MODAL */}
       <Modal visible={!!modalType} transparent animationType="slide">
         <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeCreate} />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              {modalType === "createfolder"
-                ? "CREATE NEW FOLDER"
-                : "CREATE NEW FILE"}
+              {modalType === "createfolder" ? "CREATE NEW FOLDER" : "CREATE NEW FILE"}
             </Text>
+
             <TextInput
               style={styles.input}
-              placeholder={
-                modalType === "createfolder" ? "Folder Name" : "File Name"
-              }
+              placeholder={modalType === "createfolder" ? "Folder Name" : "File Name"}
               value={name}
               onChangeText={setName}
               autoFocus
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
+
+            {modalType === "createfile" && (
+              <ScrollView style={{ width: "100%" }} keyboardShouldPersistTaps="handled">
+                <TextInput
+                  style={[styles.input, { height: 120, textAlignVertical: "top" }]}
+                  placeholder="Content..."
+                  value={content}
+                  onChangeText={setContent}
+                  multiline
+                />
+              </ScrollView>
+            )}
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                onPress={() => {
-                  setModalType(null);
-                  setName("");
-                  unlockPicker();
-                }}
-                disabled={loading}
-              >
+              <TouchableOpacity onPress={closeCreate} disabled={loading}>
                 <Text style={styles.cancelText}>CANCEL</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.createBtn, loading && { opacity: 0.7 }]}
                 onPress={handleCreateSubmit}
@@ -345,17 +317,8 @@ function MenuOption({ icon, label, onPress, disabled }) {
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.9}
     >
-      {/* ✅ icon LEFT */}
       <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
-
-      {/* ✅ text LEFT + default font */}
-      <Text
-        style={styles.labelText}
-        numberOfLines={1}
-        ellipsizeMode="clip"
-        adjustsFontSizeToFit
-        minimumFontScale={0.7}
-      >
+      <Text style={styles.labelText} numberOfLines={1} ellipsizeMode="clip">
         {label.toUpperCase()}
       </Text>
     </TouchableOpacity>
@@ -374,9 +337,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 
-  // ✅ blur backdrop
   backdrop: { flex: 1, backgroundColor: "transparent" },
-  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
 
   menuContainer: {
     position: "absolute",
@@ -389,26 +350,16 @@ const styles = StyleSheet.create({
   singleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start", // ✅ left
+    justifyContent: "flex-start",
     backgroundColor: "rgba(255,255,255,0.98)",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 30,
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     minWidth: 200,
   },
 
-  labelText: {
-    flex: 1,
-    fontSize: 13,
-    color: "#333",
-    letterSpacing: 1,
-    textAlign: "left",
-  },
+  labelText: { flex: 1, fontSize: 13, color: "#333", letterSpacing: 1, textAlign: "left" },
 
   modalOverlay: {
     flex: 1,
@@ -423,12 +374,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 5,
   },
-  modalTitle: {
-    fontSize: 18,
-    marginBottom: 20,
-    color: "#333",
-    textAlign: "center",
-  },
+  modalTitle: { fontSize: 18, marginBottom: 20, color: "#333", textAlign: "center" },
 
   input: {
     width: "100%",
@@ -438,13 +384,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    marginBottom: 25,
+    marginBottom: 15,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
     alignItems: "center",
+    marginTop: 4,
   },
   cancelText: { color: "#6c757d", fontSize: 14, padding: 10 },
   createBtn: {

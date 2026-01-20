@@ -12,18 +12,28 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../providers/AuthContext";
-import { getRecentFiles, formatLastAccessed } from "../../features/drive/services/fileService";
+import {
+  getRecentFiles,
+  formatLastAccessed,
+} from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
 // ✅ auto-refresh bus
 import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
 
+// ✅ Preview modal
+import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
+
 export default function RecentPage() {
   const router = useRouter();
   const { token } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ✅ preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const loadRecent = useCallback(async () => {
     if (!token) return;
@@ -42,7 +52,6 @@ export default function RecentPage() {
     loadRecent();
   }, [loadRecent]);
 
-  // ✅ listen for global refresh events
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => {
       loadRecent();
@@ -50,13 +59,34 @@ export default function RecentPage() {
     return unsubscribe;
   }, [loadRecent]);
 
+  // ✅ X always closes reliably
+  const closeScreen = useCallback(() => {
+    try {
+      if (typeof router.canGoBack === "function" && router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/home");
+      }
+    } catch {
+      router.replace("/home");
+    }
+  }, [router]);
+
+  const openItem = useCallback((i) => {
+    if (!i) return;
+    if (i.type === "folder") return;
+
+    setSelectedId(i.id);
+    setPreviewOpen(true);
+  }, []);
+
   return (
     <View style={styles.modalContainer}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
-          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+          <TouchableOpacity onPress={closeScreen} style={styles.closeButton}>
             <Ionicons name="close-outline" size={32} color="#6c757d" />
           </TouchableOpacity>
         </View>
@@ -77,11 +107,8 @@ export default function RecentPage() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <DriveListItem
-                  item={{
-                    ...item,
-                    displayDate: formatLastAccessed(item.lastAccessed),
-                  }}
-                  onPress={(i) => console.log("Open:", i.name)}
+                  item={{ ...item, displayDate: formatLastAccessed(item.lastAccessed) }}
+                  onPress={openItem}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
@@ -93,10 +120,17 @@ export default function RecentPage() {
               }
               onRefresh={loadRecent}
               refreshing={loading}
+              showsVerticalScrollIndicator={false}
             />
           )}
         </View>
       </SafeAreaView>
+
+      <FilePreviewModal
+        open={previewOpen}
+        fileId={selectedId}
+        onClose={() => setPreviewOpen(false)}
+      />
     </View>
   );
 }
