@@ -17,7 +17,6 @@ export default function SearchDropdown({ results, loading, query, onResultPress 
 
     return (
         <BlurView intensity={85} tint="light" style={styles.dropdown}>
-            {/* שכבת הגנה למניעת זליגת טקסט מהרקע */}
             <View style={styles.overlay} />
 
             <FlatList
@@ -36,7 +35,7 @@ export default function SearchDropdown({ results, loading, query, onResultPress 
 const styles = StyleSheet.create({
     dropdown: {
         position: "absolute",
-        top: 55, // מתחת לשורת החיפוש
+        top: 55,
         left: 0,
         right: 0,
         borderRadius: 20,
@@ -47,7 +46,7 @@ const styles = StyleSheet.create({
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(255, 255, 255, 0.4)", // הופך את הזכוכית ל"חלבית" יותר
+        backgroundColor: "rgba(255, 255, 255, 0.4)",
     },
     item: {
         flexDirection: "row",

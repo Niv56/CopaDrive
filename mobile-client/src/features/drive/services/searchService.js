@@ -1,10 +1,17 @@
 import { request } from "../../../shared_code/hooks/api/request";
 
-export async function getSearchResults(token, query, options = {}) {
-    const res = await fetch(`${BASE_URL}/api/search/${encodeURIComponent(query)}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-        signal: options.signal,
-    });
-    return res.json();
+export async function fetchSearchItems(token, query) {
+    if (!query || query.trim().length === 0) return [];
+
+    try {
+        const encoded = encodeURIComponent(query.trim());
+        const data = await request(`/api/search/${encoded}`, {
+            method: "GET",
+            token: token,
+        });
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Search failed:", error.message);
+        return [];
+    }
 }
