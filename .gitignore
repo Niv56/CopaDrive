@@ -1,11 +1,22 @@
 .vscode/
+
 node_modules/
+
 UML/
 
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 **/.env
 
 npm-debug.log*
+
 yarn-error.log*
 
 web-server/config/*.env*
+
+.expo/
+dist/
+web-build/

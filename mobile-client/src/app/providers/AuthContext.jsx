@@ -1,19 +1,55 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import * as SecureStore from "expo-secure-store";
+// שינינו ל-AsyncStorage כי זה מה שהתקנו בטלפון
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { useRouter } from "expo-router";
-import { authenticateUser } from "../../features/auth/services/authService";
-import { getUserProfile } from "../../features/user/services/userService";
+
+// ✅ שימוש ב-@ מונע בלבול בנתיבים
+// הנתיב הזה יעבוד רק אחרי שתעביר את הקובץ לתיקיית features/auth/services
+import { authenticateUser } from "@/src/features/auth/services/authService";
+
+// וודא שגם הקובץ הזה נמצא במקום הנכון (src/features/user/services)
+import { getUserProfile } from "@/src/features/user/services/userService";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "user_data";
 const AuthContext = createContext(null);
 
-/** פונקציית עזר לפענוח userId מתוך ה-JWT ללא ספריות חיצוניות */
+/** * ✅ פונקציית פענוח JWT בטוחה ל-React Native 
+ * (atob לא קיים באנדרואיד/אייפון וגורם לקריסה)
+ */
 function getUserIdFromToken(token) {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.userId;
-  } catch (e) { return null; }
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload).userId;
+  } catch (e) {
+    // Fallback למקרה שאין atob (כמו ב-Hermes engine)
+    try {
+        const payload = JSON.parse(String(Buffer.from(token.split('.')[1], 'base64')));
+        return payload.userId;
+    } catch (err) {
+        console.log("Token decode error", err);
+        return null; 
+    }
+  }
+}
+
+// פוליפיל פשוט למקרה ש-atob ממש לא קיים
+if (!global.atob) {
+    global.atob = (input) => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+        let str = input.replace(/=+$/, '');
+        let output = '';
+        if (str.length % 4 == 1) throw new Error("'atob' failed: The string to be decoded is not correctly encoded.");
+        for (let bc = 0, bs = 0, buffer, i = 0; buffer = str.charAt(i++); ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer, bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0) {
+            buffer = chars.indexOf(buffer);
+        }
+        return output;
+    }
 }
 
 export function AuthProvider({ children }) {
@@ -25,18 +61,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const savedToken = await SecureStore.getItemAsync(TOKEN_KEY);
-        const savedUser = await SecureStore.getItemAsync(USER_KEY);
+        const savedToken = await AsyncStorage.getItem(TOKEN_KEY);
+        const savedUser = await AsyncStorage.getItem(USER_KEY);
+        
         if (savedToken) setToken(savedToken);
         if (savedUser) setUser(JSON.parse(savedUser));
         
-        // אם יש טוקן אבל אין משתמש (למשל אחרי ריסטרט), ננסה למשוך אותו
         if (savedToken && !savedUser) {
           const uid = getUserIdFromToken(savedToken);
-          const userData = await getUserProfile(savedToken, uid);
+          // וודא ש-getUserProfile יודע לעבוד עם הנתיב החדש ב-API
+          const userData = await getUserProfile(savedToken, uid); 
           if (userData) {
             setUser(userData);
-            await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+            await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
           }
         }
       } catch (e) {
@@ -50,16 +87,28 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const res = await authenticateUser(email, password);
-      if (!res.ok) return { ok: false, error: res.error };
+
+      // ✅ התיקון הקריטי: בדיקה מול success במקום ok
+      if (!res.success) {
+          return { ok: false, error: res.error };
+      }
 
       const newToken = res.token;
-      const userId = getUserIdFromToken(newToken);
+      // ✅ שימוש בפונקציה הבטוחה
+      const userId = getUserIdFromToken(newToken); 
       
-      // שליפת נתוני המשתמש מיד לאחר קבלת הטוקן (בדיוק כמו ב-Web)
-      const userData = await getUserProfile(newToken, userId);
+      // נסיון לשלוף פרופיל, אבל לא נכשיל את הלוגין אם זה נכשל
+      let userData = null;
+      try {
+          if (userId) {
+            userData = await getUserProfile(newToken, userId);
+          }
+      } catch (err) {
+          console.log("Could not fetch user profile immediately", err);
+      }
 
-      await SecureStore.setItemAsync(TOKEN_KEY, newToken);
-      if (userData) await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+      await AsyncStorage.setItem(TOKEN_KEY, newToken);
+      if (userData) await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
 
       setToken(newToken);
       setUser(userData);
@@ -67,13 +116,14 @@ export function AuthProvider({ children }) {
       router.replace("/(app)/home");
       return { ok: true };
     } catch (e) {
-      return { ok: false, error: "Login failed" };
+      console.error(e);
+      return { ok: false, error: "Login failed unexpected" };
     }
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
     router.replace("/(auth)/login");
