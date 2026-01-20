@@ -23,12 +23,12 @@ export default function MyDrivePage() {
   const currentItems = useMemo(() => {
     return (items || []).filter((item) => {
       if (currentFolderId) {
-        // Inside a folder - show items with matching parentId
-        return item.parentId === currentFolderId;
+        // Inside a folder - compare as strings to handle ObjectId differences
+        return String(item.parentId) === String(currentFolderId);
       }
       // Root level - show items with no parent OR parent not in our list
-      const parentIsAccessible = items.some(other => other.id === item.parentId);
-      return item.parentId === null || !parentIsAccessible;
+      const parentIsAccessible = items.some(other => String(other.id) === String(item.parentId));
+      return !item.parentId || !parentIsAccessible;
     });
   }, [items, currentFolderId]);
 
@@ -36,15 +36,18 @@ export default function MyDrivePage() {
   const handlePressItem = useCallback((item) => {
     if (!item) return;
 
+    // Use item.id or item._id to handle both formats
+    const itemId = item.id || item._id;
+
     if (item.type === "folder") {
       // Navigate into folder
-      setCurrentFolderId(item.id);
-      setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
+      setCurrentFolderId(itemId);
+      setFolderPath((prev) => [...prev, { id: itemId, name: item.name }]);
       return;
     }
 
     // Open file preview
-    setSelectedId(item.id);
+    setSelectedId(itemId);
     setPreviewOpen(true);
   }, []);
 
@@ -106,7 +109,7 @@ export default function MyDrivePage() {
       <FlatList
         data={currentItems}
         contentContainerStyle={{ paddingBottom: 150 }}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || item._id}
         renderItem={({ item }) => (
           <DriveListItem item={item} onPress={handlePressItem} />
         )}
