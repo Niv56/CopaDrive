@@ -41,8 +41,6 @@ services:
       - server
     networks:
       - copadrive-network
-    # env_file remains commented to prioritize Docker environment variables
-    # - ./web-server/config/.env.local
 
   # Web Client (React)
   client:

@@ -1,7 +1,7 @@
 const net = require('net');
 
-const CPP_HOST = process.env.CPP_HOST || 'localhost';
-const CPP_PORT = parseInt(process.env.CPP_PORT || '5555', 10);
+const CPP_HOST = process.env.CPP_SERVER_HOST || 'localhost';
+const CPP_PORT = parseInt(process.env.CPP_SERVER_PORT || '5555', 10);
 
 /**
  * Sends a command to the C++ server and returns the response.

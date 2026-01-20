@@ -18,7 +18,7 @@ export async function updateUserProfile(token, userId, patch) {
 
 export async function changeUserPassword(token, userId, currentPassword, newPassword) {
   return request(`/api/users/${userId}/password`, {
-    method: "POST",
+    method: "PATCH",
     token: token,
     body: { currentPassword, newPassword },
   });

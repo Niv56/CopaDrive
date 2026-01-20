@@ -1,7 +1,5 @@
-// mobile-client/src/features/drive/services/fileService.js
 import { request } from "../../../shared_code/hooks/api/request";
 
-/** מושך את כל הקבצים בתיקיית השורש */
 export async function getFiles(token) {
   return request("/api/files", {
     method: "GET",
@@ -9,11 +7,6 @@ export async function getFiles(token) {
   });
 }
 
-/* ===========================================================
-    📍 פתיחה / עדכון פריט יחיד 📍
-   =========================================================== */
-
-/** מביא קובץ/תיקייה לפי ID (כולל content לקבצים) */
 export async function getFileById(token, fileId) {
   return request(`/api/files/${fileId}`, {
     method: "GET",
@@ -21,23 +14,14 @@ export async function getFileById(token, fileId) {
   });
 }
 
-/** עדכון כללי לפריט (rename / content / parentId / flags וכו') */
 export async function updateItem(token, fileId, patch) {
   return request(`/api/files/${fileId}`, {
     method: "PATCH",
     token,
-    body: JSON.stringify(patch),
+    body: patch, 
   });
 }
 
-/* ===========================================================
-    📍 יצירת פריטים (קבצים ותיקיות) - עבור ה-FAB 📍
-   =========================================================== */
-
-/**
- * פונקציה ראשית ליצירת פריט (תיקייה או קובץ).
- * ה-FAB משתמש בפונקציה הזו כדי לתמוך בכל הסוגים.
- */
 export async function createItem(
   token,
   { name, type, parentId = null, content = "", mimeType = "" }
@@ -45,41 +29,31 @@ export async function createItem(
   return request("/api/files", {
     method: "POST",
     token,
-    body: JSON.stringify({
+    body: {
       name,
       type,
       parentId,
       content: type === "file" ? content : "",
       mimeType: type === "file" ? mimeType : "",
-    }),
+    },
   });
 }
 
-/** מעטפת ליצירת קובץ (משתמשת ב-createItem) */
 export async function createFile(token, fileData) {
   // fileData: { name, content, mimeType, parentId? }
   return createItem(token, { ...fileData, type: "file" });
 }
 
-/** מעטפת ליצירת תיקייה (משתמשת ב-createItem) */
 export async function createFolder(token, name, parentId = null) {
   return createItem(token, { name, type: "folder", parentId });
 }
 
-/* ===========================================================
-    📍 נתונים וסטטיסטיקות 📍
-   =========================================================== */
-
 export async function getUsage(token) {
-    return request("/api/files/usage", {
-        method: "GET",
-        token: token
-    });
+  return request("/api/files/usage", {
+    method: "GET",
+    token: token
+  });
 }
-
-/* ===========================================================
-    📍 פונקציות נוספות (Recent, Trash, Important) 📍
-   =========================================================== */
 
 export async function getRecentFiles(token) {
   return request("/api/files/recent", { method: "GET", token });
@@ -94,12 +68,11 @@ export async function getTrashFiles(token) {
 }
 
 export async function restoreFromTrash(token, fileId) {
-    // ✅ תיקון: הסרת JSON.stringify
-    return request(`/api/files/${fileId}/trash`, {
-        method: "PATCH",
-        token: token,
-        body: { trashed: false },
-    });
+  return request(`/api/files/${fileId}/trash`, {
+    method: "PATCH",
+    token: token,
+    body: { trashed: false },
+  });
 }
 
 export async function deleteForever(token, fileId) {
@@ -110,27 +83,19 @@ export async function emptyTrash(token) {
   return request("/api/files/trash/empty", { method: "DELETE", token });
 }
 
-/* ===========================================================
-    📍 Flags & Rename (used by DriveListItem + Preview) 📍
-   =========================================================== */
-
-/**
- * חשוב: לפי השרת שלך (כמו בדוגמאות הקוד שלך),
- * עדכון flags נעשה דרך PATCH ל- /api/files/:id עם body מתאים.
- */
 export async function setStarred(token, fileId, starred) {
-  return request(`/api/files/${fileId}`, {
+  return request(`/api/files/${fileId}/star`, {
     method: "PATCH",
     token,
-    body: JSON.stringify({ starred: !!starred }),
+    body: { starred: !!starred },
   });
 }
 
 export async function setImportant(token, fileId, important) {
-  return request(`/api/files/${fileId}`, {
+  return request(`/api/files/${fileId}/important`, {
     method: "PATCH",
     token,
-    body: JSON.stringify({ important: !!important }),
+    body: { important: !!important },
   });
 }
 
@@ -138,13 +103,9 @@ export async function renameItem(token, fileId, name) {
   return request(`/api/files/${fileId}`, {
     method: "PATCH",
     token,
-    body: JSON.stringify({ name }),
+    body: { name },
   });
 }
-
-/* ===========================================================
-    📍 עזרי תאריכים (Helpers) 📍
-   =========================================================== */
 
 export function getDaysLeft(trashedAt) {
   if (!trashedAt) return "";
@@ -157,38 +118,13 @@ export function getDaysLeft(trashedAt) {
 }
 
 export function formatLastAccessed(dateString) {
-    if (!dateString) return "Never";
-    const date = new Date(dateString);
-    const diffMs = new Date() - date;
-    const diffMins = Math.floor(diffMs / 60000);
+  if (!dateString) return "Never";
+  const date = new Date(dateString);
+  const diffMs = new Date() - date;
+  const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} mins ago`;
-    if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
-    return date.toLocaleDateString();
-}
-
-export async function setStarred(token, fileId, starred) {
-    // ✅ תיקון: הסרת JSON.stringify (היא בוצעה בתוך request.js אם עקבת אחרי התיקון הקודם)
-    return request(`/api/files/${fileId}/star`, { // שים לב: הנתיב בשרת שלך הוא /star
-        method: "PATCH",
-        token,
-        body: { starred: !!starred },
-    });
-}
-
-export async function setImportant(token, fileId, important) {
-    return request(`/api/files/${fileId}/important`, { // שים לב: הנתיב בשרת שלך הוא /important
-        method: "PATCH",
-        token,
-        body: { important: !!important },
-    });
-}
-
-export async function renameItem(token, fileId, name) {
-    return request(`/api/files/${fileId}`, {
-        method: "PATCH",
-        token,
-        body: { name },
-    });
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} mins ago`;
+  if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)} hours ago`;
+  return date.toLocaleDateString();
 }
