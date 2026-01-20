@@ -5,10 +5,6 @@ const CPP_PORT = parseInt(process.env.CPP_PORT || '5555', 10);
 
 /**
  * Sends a command to the C++ server and returns the response.
- * The C++ server keeps connections open, so we must:
- * 1. Read the response as data arrives
- * 2. Detect when response is complete
- * 3. Close the connection from our side
  */
 function sendCommand(command) {
     return new Promise((resolve, reject) => {
