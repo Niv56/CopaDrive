@@ -3,16 +3,20 @@ const _makeRandomId = () => {
     return Math.random().toString(36).slice(2, 11);
 };
 
-// Generate an ID (optionally ensure uniqueness via a checker callback).
-const generateId = (checkExists) => {
+/**
+ * Generate a unique ID.
+ */
+const generateId = async (checkExists) => {
     let id;
     let attempts = 0;
 
     do {
         id = _makeRandomId();
         attempts++;
+        
         if (attempts > 100) throw new Error("Unable to generate unique ID");
-    } while (checkExists && checkExists(id));
+
+    } while (checkExists && (await checkExists(id)));
 
     return id;
 };

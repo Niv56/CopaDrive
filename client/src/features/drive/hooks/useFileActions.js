@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { setStarred, setImportant, moveToTrash, openItem, updateItem } from "../api/filesApi";
 import { getPermissions } from "../api/permissionsApi";
+import { useToast } from "app/providers/ToastContext";
 
 const NEWLINE_PLACEHOLDER = "_@NL@_";
 
-/** Custom hook for managing file-related states and server-side actions */
+// Custom hook for managing file-related states and server-side actions 
 export function useFileActions(myUserId, onRefresh) {
+  const { addToast } = useToast();
   const [sharingItem, setSharingItem] = useState(null);
   const [openedFile, setOpenedFile] = useState(null);
   const [editingFile, setEditingFile] = useState(null);
   const [openedRole, setOpenedRole] = useState("viewer");
   const [loadingFile, setLoadingFile] = useState(false);
 
-  /** Resolves user permissions and retrieves full item data for viewing */
+  // Resolves user permissions and retrieves full item data for viewing 
   const handleOpen = async (item, onFolderOpen) => {
     if (!item) return;
     setLoadingFile(true);
@@ -45,13 +47,13 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile({ ...fullFile, role });
       }
     } catch (e) {
-      console.error("Error opening item:", e);
+      addToast(e.message || "Failed to open item", "error");
     } finally {
       setLoadingFile(false);
     }
   };
 
-  /** Updates starred status via API and syncs local state */
+  // Updates starred status via API and syncs local state 
   const handleToggleStar = async (item, newValue) => {
     try {
       await setStarred(item.id, newValue);
@@ -61,11 +63,11 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile(prev => ({ ...prev, starred: newValue }));
       }
     } catch (e) {
-      console.error("Failed to update star status", e);
+      addToast(e.message || "Failed to update star status", "error");
     }
   };
 
-  /** Updates importance flag via API and syncs local state */
+  // Updates importance flag via API and syncs local state 
   const handleToggleImportant = async (item, newValue) => {
     try {
       await setImportant(item.id, newValue);
@@ -75,17 +77,17 @@ export function useFileActions(myUserId, onRefresh) {
         setOpenedFile(prev => ({ ...prev, important: newValue }));
       }
     } catch (e) {
-      console.error("Failed to update importance status", e);
+      addToast(e.message || "Failed to update importance status", "error");
     }
   };
 
-  /** Switches view from preview to edit mode */
+  // Switches view from preview to edit mode 
   const handleEdit = (file) => {
     setOpenedFile(null);
     setEditingFile(file);
   };
 
-  /** Detects changes, sanitizes text content, and persists updates */
+  // Detects changes, sanitizes text content, and persists updates 
   const handleSaveEdit = async (updatedData) => {
     try {
       if (!updatedData.name || updatedData.name.trim() === "") {
@@ -127,11 +129,10 @@ export function useFileActions(myUserId, onRefresh) {
       setEditingFile(null);
       if (onRefresh) onRefresh();
     } catch (e) {
-      console.error("Save error:", e);
+      addToast(e.message || "Failed to save changes", "error");
     }
   };
 
-  /** Triggers soft deletion and closes active preview */
   const handleDelete = async (item) => {
     if (!item?.id) return;
     try {
@@ -139,7 +140,7 @@ export function useFileActions(myUserId, onRefresh) {
       if (onRefresh) onRefresh();
       if (openedFile?.id === item.id) setOpenedFile(null);
     } catch (e) {
-      console.error("Move to trash failed", e);
+      addToast(e.message || "Failed to move to trash", "error");
     }
   };
 

@@ -1,13 +1,13 @@
 const userRepository = require('../repositories/userRepository');
 
 // Retrieves a user by their email address
-exports.getUserByEmail = (email) => {
-    return userRepository.findByEmail(email);
+exports.getUserByEmail =  async (email) => {
+    return await userRepository.findByEmail(email);
 };
 
 // Verifies user credentials by checking email and password
-exports.verifyCredentials = (email, password) => {
-    const user = userRepository.findByEmail(email);
+exports.verifyCredentials = async (email, password) => {
+    const user = await userRepository.findByEmail(email);
 
     if (!user) {
         return null;
