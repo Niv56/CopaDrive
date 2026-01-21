@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -11,7 +11,7 @@ import { useTheme } from "../../../app/providers/ThemeContext";
 
 import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService"; 
-import { emitDriveRefresh } from "../services/driveEvents";
+import { emitDriveRefresh, subscribeNavigateToFolder } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
@@ -29,6 +29,17 @@ export default function MyDrivePage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+
+  // ✅ האזנה לאירוע ניווט לתיקייה (מהחיפוש)
+  useEffect(() => {
+    const unsubscribe = subscribeNavigateToFolder(({ folderId, folderName }) => {
+      if (folderId) {
+        setCurrentFolderId(folderId);
+        setFolderPath([{ id: folderId, name: folderName }]);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // ✅ סינון הפריטים לפי התיקייה הנוכחית
   const currentItems = useMemo(() => {
@@ -74,7 +85,6 @@ export default function MyDrivePage() {
     ]);
   }, [token]);
 
-  // ✅ חזרה אחורה
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -82,7 +92,6 @@ export default function MyDrivePage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
-  // ✅ ניווט בפירורים
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
