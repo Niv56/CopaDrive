@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../app/providers/AuthContext'; 
 import { getUsage } from '../features/drive/services/fileService';
 import StorageTree from '../features/drive/components/StorageTree';
-
-// ✅ ייבוא Theme
 import { useTheme } from '../app/providers/ThemeContext';
+
+// ✅ נתיב מתוקן: מ-src/layout ל-src/shared_code
+import MusicToggle from '../shared_code/components/MusicToggle';
 
 const MENU_ITEMS = [
   { id: 'home', icon: 'home', label: 'Home', route: '/home' },
@@ -23,8 +24,6 @@ export default function SideBar(props) {
   const router = useRouter();
   const pathname = usePathname();
   const { token, logout } = useAuth();
-  
-  // ✅ שימוש בצבעים ובמצב לילה
   const { isDarkMode, toggleTheme, colors } = useTheme();
   
   const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
@@ -86,13 +85,9 @@ export default function SideBar(props) {
       
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
           <View style={styles.controlsRow}>
-             <TouchableOpacity 
-                style={[styles.songBtn, { backgroundColor: colors.primary }]}
-                onPress={() => Alert.alert("CopaDrive", "Music Player coming soon!")}
-             >
-                <Ionicons name="musical-notes" size={16} color="white" />
-                <Text style={styles.songBtnText}>PlaySong</Text>
-             </TouchableOpacity>
+             
+             {/* כפתור הנגן החדש */}
+             <MusicToggle />
 
              <TouchableOpacity 
                 style={[styles.themeBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -121,7 +116,5 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 15, fontWeight: '600', marginLeft: 16 },
   footer: { paddingBottom: 20, paddingTop: 10, borderTopWidth: 1 },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15, alignItems: 'center' },
-  songBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, gap: 6 },
-  songBtnText: { color: 'white', fontWeight: '600', fontSize: 12 },
   themeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 1 }
 });

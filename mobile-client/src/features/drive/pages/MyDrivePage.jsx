@@ -1,31 +1,24 @@
 import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
+import { FlatList, Text, ActivityIndicator, View, Pressable, Alert, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
+// ❌ ScreenLayout הוסר מכאן
 
-// ✅ Theme
-import { getDriveStyles } from "../styles/myDrive.styles";
 import { useTheme } from "../../../app/providers/ThemeContext";
-
 import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService"; 
 import { emitDriveRefresh, subscribeNavigateToFolder } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
-
 export default function MyDrivePage() {
-  // ✅ משתני State לניהול תיקיות
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
-
-  // ✅ Theme
-  const { colors } = useTheme();
-  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+  const { colors } = useTheme(); 
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -45,14 +38,6 @@ export default function MyDrivePage() {
   const currentItems = useMemo(() => {
     if (!items) return [];
     return items.filter(item => {
-        // בתיקייה הראשית (null) מציגים רק קבצים (type=file) שאין להם אבא
-        // או את כל הקבצים שאין להם אבא (אם אנחנו רוצים להציג גם תיקיות כאן, נוריד את הסינון לפי type)
-        // בקוד שלך המקורי סיננת רק קבצים (type === "file"). כאן אני משאיר את הלוגיקה הזו.
-        
-        // הערה: בדרך כלל ב-MyDrive רוצים לראות הכל (גם תיקיות). 
-        // אם אתה רוצה לראות רק קבצים, תשאיר את השורה הזו:
-        // if (item.type !== 'file') return false; 
-
         if (currentFolderId === null) return !item.parentId;
         return item.parentId === currentFolderId;
     });
@@ -60,14 +45,11 @@ export default function MyDrivePage() {
 
   const handlePressItem = useCallback((item) => {
     if (!item) return;
-
     if (item.type === "folder") {
-      // ✅ כניסה לתיקייה
       setCurrentFolderId(item.id);
       setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
     }
-    
     setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
@@ -104,33 +86,35 @@ export default function MyDrivePage() {
   }, [folderPath]);
 
   if (loading && (!currentItems || currentItems.length === 0)) {
-    return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
+    return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+    );
   }
 
   return (
-    <>
-      {/* Breadcrumb Navigation */}
+    <View style={{ flex: 1 }}> 
+      {/* Breadcrumbs */}
       {folderPath.length > 0 && (
-        <View style={driveStyles.breadcrumbContainer}>
-          <Pressable onPress={handleBack} style={driveStyles.backButton}>
-            <Ionicons name="arrow-back" size={20} color={colors.primary} />
+        <View style={styles.breadcrumbContainer}>
+          <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
           </Pressable>
-
           <Pressable onPress={() => navigateToBreadcrumb(-1)}>
-            <Text style={driveStyles.breadcrumbText}>My Drive</Text>
+            <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>My Drive</Text>
           </Pressable>
-
           {folderPath.map((folder, index) => (
-            <View key={folder.id} style={driveStyles.breadcrumbItem}>
-              <Text style={driveStyles.breadcrumbSeparator}>/</Text>
-              <Pressable onPress={() => navigateToBreadcrumb(index)}>
-                <Text style={[
-                  driveStyles.breadcrumbText,
-                  index === folderPath.length - 1 && driveStyles.breadcrumbActive
-                ]} numberOfLines={1}>
-                  {folder.name}
-                </Text>
-              </Pressable>
+            <View key={folder.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                    <Text style={[
+                        styles.breadcrumbText,
+                        { color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary, fontWeight: index === folderPath.length - 1 ? '700' : '400' }
+                    ]} numberOfLines={1}>
+                        {folder.name}
+                    </Text>
+                </Pressable>
             </View>
           ))}
         </View>
@@ -138,7 +122,7 @@ export default function MyDrivePage() {
 
       <FlatList
         data={currentItems}
-        contentContainerStyle={{ paddingBottom: 150 }}
+        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }}
         keyExtractor={(item) => item.id || item._id}
         renderItem={({ item }) => (
           <DriveListItem
@@ -150,9 +134,12 @@ export default function MyDrivePage() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         ListEmptyComponent={
-          <Text style={driveStyles.emptyText}>
-            {currentFolderId ? "This folder is empty." : "No files found in your drive."}
-          </Text>
+          <View style={{ alignItems: 'center', marginTop: 100, opacity: 0.6 }}>
+             <Ionicons name="folder-open-outline" size={60} color={colors.textTertiary} />
+             <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
+                {currentFolderId ? "This folder is empty." : "No files found in your drive."}
+             </Text>
+          </View>
         }
         showsVerticalScrollIndicator={false}
       />
@@ -162,6 +149,27 @@ export default function MyDrivePage() {
         fileId={selectedId}
         onClose={() => setPreviewOpen(false)}
       />
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+    breadcrumbContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        marginBottom: 15,
+        paddingHorizontal: 15,
+        marginTop: 10, // הוספתי קצת רווח מלמעלה
+        gap: 5
+    },
+    backButton: {
+        padding: 6,
+        borderRadius: 8,
+        marginRight: 5
+    },
+    breadcrumbText: {
+        fontSize: 15,
+        marginHorizontal: 2
+    }
+});

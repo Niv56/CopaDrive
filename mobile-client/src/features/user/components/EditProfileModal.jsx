@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "../../../app/providers/AuthContext";
 import { updateUserProfile, changeUserPassword } from "../services/userService";
+import { useTheme } from "../../../app/providers/ThemeContext"; // ✅ Theme
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -42,6 +43,8 @@ export default function EditProfileModal({
   initialImage = "",
 }) {
   const { token } = useAuth();
+  const { colors, isDarkMode } = useTheme(); // ✅
+
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [phoneNumber, setPhoneNumber] = useState(formatIsraeliPhone(initialPhoneNumber));
@@ -80,14 +83,51 @@ export default function EditProfileModal({
   };
 
   const handleSave = async () => {
+    // ✅ ולידציה לשם
     if (!firstName.trim()) {
       Alert.alert("Validation Error", "First name is a required field.");
       return;
     }
 
+    // ✅ ולידציה לטלפון (בדיוק כמו בהרשמה)
+    const rawPhone = phoneNumber.replace(/\D/g, "");
+    if (phoneNumber.length > 0 && rawPhone.length < 10) {
+        Alert.alert("Validation Error", "Phone number must be 10 digits.");
+        return;
+    }
+
+    // ✅ ולידציה לסיסמה
+    if (currentPassword || newPassword || confirmNewPassword) {
+        if (!currentPassword) {
+            Alert.alert("Validation Error", "Please enter your current password.");
+            return;
+        }
+        if (!newPassword) {
+            Alert.alert("Validation Error", "Please enter a new password.");
+            return;
+        }
+        if (newPassword.length < 6) {
+            Alert.alert("Validation Error", "New password must be at least 6 characters.");
+            return;
+        }
+        if (newPassword === currentPassword) {
+            Alert.alert("Validation Error", "New password cannot be the same as the old one.");
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            Alert.alert("Validation Error", "New passwords do not match.");
+            return;
+        }
+    }
+
     setSaving(true);
     try {
-      const patch = { firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phoneNumber.trim(), image };
+      const patch = { 
+          firstName: firstName.trim(), 
+          lastName: lastName.trim(), 
+          phoneNumber: phoneNumber.trim(), 
+          image 
+      };
       await updateUserProfile(token, userId, patch);
 
       if (currentPassword && newPassword) {
@@ -95,7 +135,7 @@ export default function EditProfileModal({
       }
       onClose?.();
     } catch (e) {
-      Alert.alert("Error", e.message);
+      Alert.alert("Error", e.message || "Update failed");
     } finally {
       setSaving(false);
     }
@@ -104,14 +144,21 @@ export default function EditProfileModal({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        {/* רקע מטושטש */}
+        <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint="dark" style={StyleSheet.absoluteFill} />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardWrapper}
         >
-          <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.title}>Edit profile</Text>
+          <Pressable 
+            style={[
+                styles.card, 
+                { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" } // ✅ רקע דינמי
+            ]} 
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Edit profile</Text>
 
             <ScrollView
               style={styles.scrollArea}
@@ -119,49 +166,98 @@ export default function EditProfileModal({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Profile Image Section */}
+              {/* תמונת פרופיל */}
               <View style={styles.imageSection}>
                 <Pressable onPress={handlePickImage} style={styles.avatarWrapper}>
                   {image ? (
-                    <Image source={{ uri: image }} style={styles.avatar} />
+                    <Image source={{ uri: image }} style={[styles.avatar, { borderColor: colors.border }]} />
                   ) : (
-                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                      <Ionicons name="person" size={50} color="#ccc" />
+                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <Ionicons name="person" size={50} color={colors.textTertiary} />
                     </View>
                   )}
-                  <View style={styles.cameraIconBadge}>
+                  <View style={[styles.cameraIconBadge, { borderColor: isDarkMode ? "#1e1e1e" : "#fff" }]}>
                     <Ionicons name="camera" size={20} color="#fff" />
                   </View>
                 </Pressable>
                 <Text style={styles.changePhotoText}>Tap to change photo</Text>
               </View>
 
-              {/* מעוגלים Pills Fields */}
-              <Field label="FIRST NAME" value={firstName} onChangeText={setFirstName} />
-              <Field label="LAST NAME" value={lastName} onChangeText={setLastName} />
+              {/* שדות טקסט */}
+              <Field 
+                label="FIRST NAME" 
+                value={firstName} 
+                onChangeText={setFirstName} 
+                colors={colors} 
+                isDarkMode={isDarkMode} 
+              />
+              <Field 
+                label="LAST NAME" 
+                value={lastName} 
+                onChangeText={setLastName} 
+                colors={colors} 
+                isDarkMode={isDarkMode} 
+              />
               <Field
                 label="PHONE NUMBER"
                 value={phoneNumber}
                 onChangeText={(t) => setPhoneNumber(formatIsraeliPhone(t))}
                 keyboardType="phone-pad"
+                colors={colors} 
+                isDarkMode={isDarkMode} 
               />
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-              <Text style={styles.sectionTitle}>Security Settings</Text>
-              <Field label="CURRENT PASSWORD" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
-              {/* שדה סיסמה ללא הודעה פנימית (Placeholder ריק) */}
-              <Field label="NEW PASSWORD" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="" />
-              <Field label="CONFIRM NEW PASSWORD" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Security Settings</Text>
+              
+              <Field 
+                label="CURRENT PASSWORD" 
+                value={currentPassword} 
+                onChangeText={setCurrentPassword} 
+                secureTextEntry 
+                colors={colors} 
+                isDarkMode={isDarkMode} 
+              />
+              <Field 
+                label="NEW PASSWORD" 
+                value={newPassword} 
+                onChangeText={setNewPassword} 
+                secureTextEntry 
+                placeholder="" 
+                colors={colors} 
+                isDarkMode={isDarkMode} 
+              />
+              <Field 
+                label="CONFIRM NEW PASSWORD" 
+                value={confirmNewPassword} 
+                onChangeText={setConfirmNewPassword} 
+                secureTextEntry 
+                colors={colors} 
+                isDarkMode={isDarkMode} 
+              />
 
             </ScrollView>
 
-            <View style={styles.actions}>
-              <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={onClose}>
-                <Text style={styles.btnTextSecondary}>Cancel</Text>
+            {/* כפתורים */}
+            <View style={[styles.actions, { borderTopColor: colors.border }]}>
+              <TouchableOpacity 
+                style={[styles.btn, { backgroundColor: isDarkMode ? "#333" : "#f1f3f4" }]} 
+                onPress={onClose}
+              >
+                <Text style={[styles.btnTextSecondary, { color: colors.textPrimary }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Save</Text>}
+              
+              <TouchableOpacity 
+                style={[styles.btn, styles.btnPrimary]} 
+                onPress={handleSave} 
+                disabled={saving}
+              >
+                {saving ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.btnText}>Save</Text>
+                )}
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -171,27 +267,36 @@ export default function EditProfileModal({
   );
 }
 
-function Field({ label, ...props }) {
+function Field({ label, colors, isDarkMode, ...props }) {
   return (
     <View style={styles.fieldContainer}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput style={styles.input} placeholderTextColor="#ccc" {...props} />
+      <TextInput
+        style={[
+            styles.input, 
+            { 
+                backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", // רקע כהה בלילה
+                color: colors.textPrimary // טקסט לבן בלילה
+            }
+        ]}
+        placeholderTextColor={colors.textTertiary}
+        {...props}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: "center", alignItems: "center" },
-  keyboardWrapper: { width: '90%', maxHeight: SCREEN_HEIGHT * 0.8 },
+  keyboardWrapper: { width: '90%', maxHeight: SCREEN_HEIGHT * 0.85 },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 35, // מעוגל יותר כפי שביקשת
+    borderRadius: 35,
     padding: 24,
     width: '100%',
     elevation: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
   },
   title: {
@@ -199,44 +304,34 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
     textAlign: "center",
-    color: '#1a1a1a'
   },
-
-  scrollArea: { maxHeight: SCREEN_HEIGHT * 0.5 },
-  scrollContent: { paddingHorizontal: 4 },
-
+  scrollArea: { maxHeight: SCREEN_HEIGHT * 0.55 },
+  scrollContent: { paddingHorizontal: 4, paddingBottom: 20 },
   imageSection: { alignItems: "center", marginBottom: 25 },
   avatarWrapper: { position: "relative" },
-  avatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#f8f9fa' },
-  avatarPlaceholder: { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: '#eee' },
+  avatar: { width: 110, height: 110, borderRadius: 55, borderWidth: 1 },
+  avatarPlaceholder: { justifyContent: "center", alignItems: "center" },
   cameraIconBadge: {
     position: "absolute", bottom: 5, right: 5,
     backgroundColor: "#007bff", width: 34, height: 34,
     borderRadius: 17, justifyContent: "center", alignItems: "center",
-    borderWidth: 3, borderColor: "#fff"
+    borderWidth: 3
   },
   changePhotoText: { marginTop: 10, fontSize: 13, color: "#007bff", fontWeight: "700" },
-
   fieldContainer: { marginBottom: 18 },
   label: { fontSize: 11, fontWeight: "800", color: "#999", marginBottom: 8, marginLeft: 15, letterSpacing: 0.5 },
   input: {
-    backgroundColor: "#f1f3f4",
-    borderRadius: 30, // שדות מעוגלים בצורת גלולה
+    borderRadius: 30,
     paddingHorizontal: 22,
-    height: 58,
+    height: 50,
     fontSize: 16,
-    color: '#202124',
-    borderWidth: 1,
-    borderColor: 'transparent'
+    borderWidth: 0
   },
-
-  divider: { height: 1, backgroundColor: "#f0f0f0", marginVertical: 25 },
-  sectionTitle: { fontSize: 16, fontWeight: "800", marginBottom: 15, color: '#1a1a1a' },
-
-  actions: { flexDirection: "row", gap: 12, marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f5f5f5' },
+  divider: { height: 1, marginVertical: 25 },
+  sectionTitle: { fontSize: 16, fontWeight: "800", marginBottom: 15 },
+  actions: { flexDirection: "row", gap: 12, marginTop: 15, paddingTop: 15, borderTopWidth: 1 },
   btn: { flex: 1, height: 55, borderRadius: 30, alignItems: "center", justifyContent: "center" },
   btnPrimary: { backgroundColor: "#007bff" },
-  btnGhost: { backgroundColor: "#f1f3f4" },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  btnTextSecondary: { color: "#666", fontWeight: "700", fontSize: 16 }
+  btnTextSecondary: { fontWeight: "700", fontSize: 16 }
 });

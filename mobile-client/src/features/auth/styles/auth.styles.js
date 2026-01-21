@@ -2,30 +2,40 @@ import { StyleSheet, Dimensions } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-export const authStyles = StyleSheet.create({
+export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
   backgroundImage: {
     flex: 1,
     width: "100%",
     height: "100%",
+    backgroundColor: colors.background,
+  },
+  dimOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // החשכה נעימה
+    zIndex: 0,
   },
   keyboardView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    zIndex: 1,
   },
   cardContainer: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    // כרטיס שחור כמעט מלא במצב לילה
+    backgroundColor: isDarkMode ? "rgba(18, 18, 18, 0.95)" : "rgba(255, 255, 255, 0.92)",
     borderRadius: 24,
     paddingVertical: 30,
     paddingHorizontal: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
+    shadowOpacity: isDarkMode ? 0.6 : 0.15,
     shadowRadius: 20,
     elevation: 10,
+    borderWidth: isDarkMode ? 1 : 0,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   header: {
     alignItems: "center",
@@ -34,22 +44,22 @@ export const authStyles = StyleSheet.create({
   brandText: {
     fontSize: 34,
     fontFamily: "BrunoAceSC_400Regular",
-    color: "#1a1a1a",
+    color: colors.textPrimary,
     marginBottom: 8,
     textAlign: "center",
   },
   subText: {
     fontSize: 16,
-    color: "#666",
+    color: colors.textSecondary,
     fontWeight: "500",
     textAlign: "center",
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#fff",
     borderWidth: 1,
-    borderColor: "#e1e1e1",
+    borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : colors.border,
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
@@ -61,18 +71,20 @@ export const authStyles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
+    color: colors.textPrimary,
     height: "100%",
   },
   label: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#333",
+    color: colors.textPrimary,
     marginBottom: 6,
     marginLeft: 4,
   },
+  
+  // ✅ הכפתור הפעיל - כחול בוהק
   btnPrimary: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#007bff", // כחול חזק תמיד
     borderRadius: 50,
     height: 56,
     alignItems: "center",
@@ -80,37 +92,45 @@ export const authStyles = StyleSheet.create({
     marginTop: 10,
     shadowColor: "#007bff",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 5,
   },
-  btnSecondary: {
-    backgroundColor: "#fff",
+  
+  // ✅ הכפתור הכבוי (כשאין פרטים) - שחור/אפור כהה במצב לילה
+  btnDisabled: {
+    backgroundColor: isDarkMode ? "#252525" : "#a0cfff", // שחור אפור במצב לילה
+    borderColor: isDarkMode ? "#333" : "#a0cfff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    elevation: 0,
+    shadowOpacity: 0,
+    opacity: 1, // משאירים אטום כדי שיראה כמו כפתור
+  },
+  
+  btnSecondary: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : colors.border,
     borderRadius: 50,
     height: 56,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
   },
-  btnDisabled: {
-    backgroundColor: "#a0cfff",
-    borderColor: "#a0cfff",
-    elevation: 0,
-  },
+
   btnTextPrimary: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
+    // טקסט אפור כהה כשהכפתור כבוי, ולבן כשהוא דולק
+    color: "#fff", 
   },
   btnTextSecondary: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#333",
+    color: colors.textPrimary,
   },
   errorText: {
-    color: "#ff4444",
+    color: colors.danger,
     fontSize: 12,
     marginLeft: 4,
     marginTop: -10,
@@ -122,88 +142,51 @@ export const authStyles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: "#555",
+    color: colors.textSecondary,
   },
   linkTextBold: {
     fontWeight: "700",
-    color: "#1a1a1a",
+    color: "#007bff",
     textDecorationLine: "underline",
   },
-
-  // --- Gender Styles ---
-  genderContainer: {
-    gap: 12,
-    marginBottom: 10,
-  },
-  genderRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+  
+  // --- Gender & Date Styles ---
+  genderContainer: { gap: 12, marginBottom: 10 },
+  genderRow: { flexDirection: "row", gap: 10 },
   genderBtn: {
     flex: 1,
-    height: 80,
+    height: 50,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e1e1e1",
+    borderColor: isDarkMode ? "rgba(255,255,255,0.15)" : "#e1e1e1",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 4,
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#fff",
   },
   genderBtnActive: {
     backgroundColor: "#007bff",
     borderColor: "#007bff",
   },
   genderText: {
-    color: "#333",
+    color: colors.textPrimary,
     fontWeight: "600",
     fontSize: 15,
-    textAlign: "center",
   },
   genderTextActive: {
     color: "#fff",
   },
-  genderBtnFull: {
-    width: "100%",
-    height: 60,
-  },
-
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff", 
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#fff",
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
     borderWidth: 1,
-    borderColor: "#e1e1e1",
+    borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "#e1e1e1",
     marginBottom: 16,
   },
-  dateButtonError: {
-    borderColor: "#ff4444",
-  },
-  dateText: {
-    fontSize: 16,
-    color: "#333",
-    flex: 1,
-  },
-  dateTextPlaceholder: {
-    color: "#999",
-  },
-  genderBtnFull: {
-  width: "100%",
-  height: 56,             
-  borderRadius: 16,
-  borderWidth: 1,
-  borderColor: "#e1e1e1",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#fff",
-  marginTop: 4,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.05,
-  shadowRadius: 4,
-  elevation: 2,           
-},
+  dateButtonError: { borderColor: colors.danger },
+  dateText: { fontSize: 16, color: colors.textPrimary, flex: 1 },
+  dateTextPlaceholder: { color: colors.textTertiary },
 });
