@@ -25,7 +25,9 @@ export default function UploadPreviewModal({
   uploading,       // boolean - show loading state during upload
 }) {
   const { colors = {}, isDarkMode } = useTheme();
-  const styles = useMemo(() => getUploadPreviewStyles(colors), [colors]);
+  
+  // ✅ מעבירים את isDarkMode לפונקציית הסטייל כדי לאפשר התאמה מלאה ל-EditProfile
+  const styles = useMemo(() => getUploadPreviewStyles(colors, isDarkMode), [colors, isDarkMode]);
   
   const [title, setTitle] = useState(fileData?.fileName || "");
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null = root
@@ -80,7 +82,8 @@ export default function UploadPreviewModal({
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Review Upload</Text>
                 <TouchableOpacity onPress={onDiscard} style={styles.closeBtn}>
-                  <Ionicons name="close" size={22} color={colors.textPrimary || "#333"} />
+                  {/* ✅ שימוש בצבע הטקסט מה-theme לאייקון הסגירה */}
+                  <Ionicons name="close" size={22} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
@@ -98,7 +101,7 @@ export default function UploadPreviewModal({
                     />
                   ) : (
                     <View style={styles.previewFallback}>
-                      <Ionicons name="document-outline" size={60} color={colors.textSecondary || "#666"} />
+                      <Ionicons name="document-outline" size={60} color={colors.textSecondary} />
                       <Text style={styles.previewFallbackText}>
                         {fileData.mimeType || "File"}
                       </Text>
@@ -107,27 +110,27 @@ export default function UploadPreviewModal({
                 </View>
 
                 {/* Title Input */}
-                <Text style={styles.label}>File Name</Text>
+                <Text style={styles.label}>FILE NAME</Text>
                 <TextInput
                   style={styles.input}
                   value={title}
                   onChangeText={setTitle}
                   placeholder="Enter file name..."
-                  placeholderTextColor={colors.textSecondary || "#999"}
+                  placeholderTextColor={colors.textTertiary}
                 />
 
                 {/* Destination Picker */}
-                <Text style={styles.label}>Save to</Text>
+                <Text style={styles.label}>SAVE TO</Text>
                 <TouchableOpacity 
                   style={styles.folderPicker} 
                   onPress={() => setShowFolderPicker(!showFolderPicker)}
                 >
-                  <Ionicons name="folder-outline" size={20} color={colors.textSecondary || "#666"} />
+                  <Ionicons name="folder-outline" size={20} color={colors.primary} />
                   <Text style={styles.folderPickerText}>{selectedFolderName}</Text>
                   <Ionicons 
                     name={showFolderPicker ? "chevron-up" : "chevron-down"} 
                     size={18} 
-                    color={colors.textSecondary || "#666"} 
+                    color={colors.textTertiary} 
                   />
                 </TouchableOpacity>
 
@@ -144,7 +147,7 @@ export default function UploadPreviewModal({
                         setShowFolderPicker(false); 
                       }}
                     >
-                      <Ionicons name="home-outline" size={18} color={colors.textSecondary || "#666"} />
+                      <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
                       <Text style={styles.folderItemText}>My Drive (Root)</Text>
                     </TouchableOpacity>
                     
@@ -171,7 +174,7 @@ export default function UploadPreviewModal({
               {/* Footer Actions */}
               <View style={styles.footer}>
                 <TouchableOpacity style={styles.secondaryBtn} onPress={onChangeFile}>
-                  <Ionicons name="refresh-outline" size={18} color={colors.textPrimary || "#333"} />
+                  <Ionicons name="refresh-outline" size={18} color={colors.textPrimary} />
                   <Text style={styles.secondaryBtnText}>Change</Text>
                 </TouchableOpacity>
 

@@ -117,6 +117,7 @@ export default function Fab({ onRefresh }) {
     <>
       {loading && (
         <View style={styles.loaderOverlay}>
+          {/* ✅ ה-Loader ישתמש בסגול הכהה החדש במצב לילה */}
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loaderText}>WORKING...</Text>
         </View>
@@ -168,7 +169,7 @@ export default function Fab({ onRefresh }) {
           <TouchableOpacity
             style={[
                 styles.fabMain, 
-                { backgroundColor: colors.primary }, // ✅ צבע כפתור דינמי
+                { backgroundColor: colors.primary }, // ✅ כפתור ה-+ יהיה סגול בלילה וכחול ביום
                 loading && { opacity: 0.7 }
             ]}
             onPress={() => !loading && switchTo("menu")}

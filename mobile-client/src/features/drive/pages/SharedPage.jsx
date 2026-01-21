@@ -21,7 +21,7 @@ import { getUserById } from "../../user/services/userService";
 export default function SharedPage() {
   const { items, loading } = useMyDrive();
   const { user, token } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
 
   const [ownersData, setOwnersData] = useState({});
   const [ownersLoading, setOwnersLoading] = useState(false);
@@ -129,18 +129,37 @@ export default function SharedPage() {
   if (selectedOwnerId) {
     return (
       <View style={{ flex: 1 }}>
-        <View style={styles.headerContainer}>
-          <Pressable onPress={() => setSelectedOwnerId(null)} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#fff" />
-            <Text style={styles.backText}>Back to Users</Text>
+        <View style={styles.breadcrumbContainer}>
+          <Pressable 
+            onPress={() => setSelectedOwnerId(null)} 
+            // ✅ עיצוב כפתור חזור זהה לכרטיסיית הכותרת
+            style={[
+              styles.backButton, 
+              { 
+                backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
+                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'
+              }
+            ]}
+          >
+            <Ionicons name="arrow-back" size={20} color={isDarkMode ? '#FFFFFF' : '#1A2A3A'} />
           </Pressable>
+          
+          <Pressable onPress={() => setSelectedOwnerId(null)}>
+            <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>Shared</Text>
+          </Pressable>
+
+          <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+          
+          <Text style={[styles.breadcrumbText, { color: colors.primary, fontWeight: '700' }]} numberOfLines={1}>
+            {ownersData[selectedOwnerId]?.firstName || "User"}
+          </Text>
         </View>
 
         <FlatList
           data={filesByOwner}
           keyExtractor={(item) => String(item.id || item._id)}
           renderItem={({ item }) => <DriveListItem item={item} onPress={openItem} />}
-          contentContainerStyle={{ paddingBottom: 150 }}
+          contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }}
         />
 
         <FilePreviewModal open={previewOpen} fileId={selectedId} onClose={() => setPreviewOpen(false)} />
@@ -149,7 +168,7 @@ export default function SharedPage() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {ownersLoading && <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 10 }} />}
 
       <FlatList
@@ -157,39 +176,61 @@ export default function SharedPage() {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.userCard}
+            // ✅ עיצוב הבלוק זהה בדיוק לעיצוב ה-titleCard מה-HomeManager
+            style={[
+              styles.userCard,
+              { 
+                backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
+                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)',
+              }
+            ]}
             onPress={() => setSelectedOwnerId(item.id)}
           >
             <View style={styles.avatarWrapper}>
               {item.image ? (
                 <Image source={{ uri: item.image }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Ionicons name="person" size={18} color="#fff" />
+                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                  <Ionicons name="person" size={18} color={isDarkMode ? '#FFFFFF' : '#1A2A3A'} />
                 </View>
               )}
             </View>
 
             <View style={styles.userInfo}>
-              <Text style={styles.userName} numberOfLines={1}>
+              <Text 
+                style={[
+                  styles.userName, 
+                  { 
+                    color: isDarkMode ? '#FFFFFF' : '#1A2A3A',
+                    textShadowColor: isDarkMode ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 4,
+                  }
+                ]} 
+                numberOfLines={1}
+              >
                 {item.title}
               </Text>
-              <Text style={styles.userEmail} numberOfLines={1}>
+              <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
                 {item.email}
               </Text>
             </View>
 
-            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.5)" />
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </Pressable>
         )}
         ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>No shared items yet</Text>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="people-outline" size={60} color={colors.textTertiary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No shared items yet</Text>
+          </View>
         }
-        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 16, paddingTop: 10 }}
+        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15, paddingTop: 10 }}
+        showsVerticalScrollIndicator={false}
       />
 
       <FilePreviewModal open={previewOpen} fileId={selectedId} onClose={() => setPreviewOpen(false)} />
-    </>
+    </View>
   );
 }
 
@@ -199,46 +240,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 20,
+    borderRadius: 12, // ✅ רדיוס זהה ל-titleCard
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    // ✅ צלליות זהות ל-titleCard
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  headerContainer: {
-    paddingHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    paddingVertical: 10,
+  breadcrumbContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 15,
     paddingHorizontal: 15,
-    borderRadius: 25,
-    alignSelf: 'flex-start',
+    marginTop: 10,
+    gap: 5
   },
-  backText: {
-    fontWeight: "600",
-    marginLeft: 8,
-    color: "#fff",
-    fontSize: 14
+  backButton: {
+    padding: 6,
+    borderRadius: 8,
+    marginRight: 5,
+    borderWidth: 1,
+  },
+  breadcrumbText: {
+    fontSize: 15,
+    marginHorizontal: 2
   },
   avatarWrapper: { marginRight: 15 },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.2)"
   },
   avatarPlaceholder: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.1)"
   },
   userInfo: { flex: 1, justifyContent: "center" },
-  userName: { fontWeight: "700", fontSize: 15, color: "#fff" },
-  userEmail: { fontSize: 12, marginTop: 2, color: "rgba(255, 255, 255, 0.6)" },
-  emptyText: { textAlign: "center", marginTop: 20 },
+  userName: { fontWeight: "700", fontSize: 15, letterSpacing: 0.5 },
+  userEmail: { fontSize: 12, marginTop: 2 },
+  emptyContainer: { alignItems: 'center', marginTop: 100, opacity: 0.6 },
+  emptyText: { textAlign: "center", marginTop: 10, fontSize: 16 },
 });
