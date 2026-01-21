@@ -72,20 +72,20 @@ export default function Step3({ formData, setFormData, errors }) {
 
       <View style={authStyles.genderContainer}>
         <View style={authStyles.genderRow}>
-          {["Male", "Female", "Other"].map((g) => (
+          {[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }].map((g) => (
             <Pressable
-              key={g}
+              key={g.value}
               style={[
                 authStyles.genderBtn,
-                formData.gender === g && authStyles.genderBtnActive
+                formData.gender === g.value && authStyles.genderBtnActive
               ]}
-              onPress={() => setFormData({ ...formData, gender: g })}
+              onPress={() => setFormData({ ...formData, gender: g.value })}
             >
               <Text style={[
                 authStyles.genderText,
-                formData.gender === g && authStyles.genderTextActive
+                formData.gender === g.value && authStyles.genderTextActive
               ]}>
-                {g}
+                {g.label}
               </Text>
             </Pressable>
           ))}
@@ -93,14 +93,14 @@ export default function Step3({ formData, setFormData, errors }) {
 
         <Pressable
           style={[
-            authStyles.genderBtnFull, // משתמשים רק בזה כדי למנוע התנגשות הגדרות
-            formData.gender === "Prefer not to say" && authStyles.genderBtnActive
+            authStyles.genderBtnFull, 
+            formData.gender === "prefer_not_to_say" && authStyles.genderBtnActive
           ]}
-          onPress={() => setFormData({ ...formData, gender: "Prefer not to say" })}
+          onPress={() => setFormData({ ...formData, gender: "prefer_not_to_say" })}
         >
           <Text style={[
             authStyles.genderText,
-            formData.gender === "Prefer not to say" && authStyles.genderTextActive
+            formData.gender === "prefer_not_to_say" && authStyles.genderTextActive
           ]}>
             Prefer not to say
           </Text>
