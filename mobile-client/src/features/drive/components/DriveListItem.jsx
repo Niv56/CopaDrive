@@ -31,6 +31,7 @@ import {
 } from "../services/fileService";
 
 import { downloadAndShareBase64 } from "../utils/downloadFile";
+import ShareModal from "../modals/ShareModal";
 
 export default function DriveListItem({ item, onPress, onDelete }) {
   const isFolder = item.type === "folder";
@@ -47,6 +48,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState(item.name || "");
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
@@ -230,6 +232,13 @@ export default function DriveListItem({ item, onPress, onDelete }) {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Share modal */}
+      <ShareModal
+        visible={shareOpen}
+        item={item}
+        onClose={() => setShareOpen(false)}
+      />
     </Swipeable>
   );
 }

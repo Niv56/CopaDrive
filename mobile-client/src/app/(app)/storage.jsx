@@ -56,6 +56,7 @@ export default function StoragePage() {
       .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0));
   }, [files]);
 
+  // X always closes reliably
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -66,11 +67,12 @@ export default function StoragePage() {
 
   const openItem = useCallback((item) => {
     if (!item) return;
+
     if (item.type === "folder") {
-      Alert.alert("CopaDrive", "Folders view is coming soon.");
       return;
     }
-    setSelectedId(item.id);
+
+    setSelectedId(item.id || item._id);
     setPreviewOpen(true);
   }, []);
 
@@ -116,10 +118,10 @@ export default function StoragePage() {
               data={sortedFiles}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <StorageListItem 
-                  item={item} 
-                  onPress={openItem} 
-                  onDelete={handleDeleteItem} 
+                <StorageListItem
+                  item={item}
+                  onPress={openItem}
+                  onDelete={handleDeleteItem}
                 />
               )}
               contentContainerStyle={styles.listContent}

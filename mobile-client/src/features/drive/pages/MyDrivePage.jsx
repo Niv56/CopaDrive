@@ -1,5 +1,7 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { FlatList, Text, ActivityIndicator, Alert } from "react-native";
+// הוספנו כאן את Alert לייבוא
+import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
@@ -68,13 +70,40 @@ export default function MyDrivePage() {
 
   return (
     <>
+      {/* Breadcrumb Navigation */}
+      {folderPath.length > 0 && (
+        <View style={driveStyles.breadcrumbContainer}>
+          <Pressable onPress={handleBack} style={driveStyles.backButton}>
+            <Ionicons name="arrow-back" size={20} color="#0d6efd" />
+          </Pressable>
+
+          <Pressable onPress={() => navigateToBreadcrumb(-1)}>
+            <Text style={driveStyles.breadcrumbText}>My Drive</Text>
+          </Pressable>
+
+          {folderPath.map((folder, index) => (
+            <View key={folder.id} style={driveStyles.breadcrumbItem}>
+              <Text style={driveStyles.breadcrumbSeparator}>/</Text>
+              <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                <Text style={[
+                  driveStyles.breadcrumbText,
+                  index === folderPath.length - 1 && driveStyles.breadcrumbActive
+                ]} numberOfLines={1}>
+                  {folder.name}
+                </Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+
       <FlatList
-        data={onlyFiles}
+        data={currentItems}
         contentContainerStyle={{ paddingBottom: 150 }}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || item._id}
         renderItem={({ item }) => (
-          <DriveListItem 
-            item={item} 
+          <DriveListItem
+            item={item}
             onPress={handlePressItem}
             onDelete={handleDeleteItem}
           />
@@ -82,7 +111,9 @@ export default function MyDrivePage() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         ListEmptyComponent={
-          <Text style={driveStyles.emptyText}>No files found in your drive.</Text>
+          <Text style={driveStyles.emptyText}>
+            {currentFolderId ? "This folder is empty." : "No files found in your drive."}
+          </Text>
         }
         showsVerticalScrollIndicator={false}
       />
