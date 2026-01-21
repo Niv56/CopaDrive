@@ -9,7 +9,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-// ✅ ייבוא Theme
 import { useTheme } from "../app/providers/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -21,7 +20,6 @@ const BUBBLE_WIDTH = TAB_WIDTH * 0.7;
 const BUBBLE_OFFSET = (TAB_WIDTH - BUBBLE_WIDTH) / 2;
 
 export default function BottomBar({ activeTab, setActiveTab }) {
-  // ✅ שימוש בצבעים מהנושא המעודכן
   const { isDarkMode, colors } = useTheme();
 
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -82,7 +80,6 @@ export default function BottomBar({ activeTab, setActiveTab }) {
           <Ionicons 
             name={icon} 
             size={24} 
-            // ✅ האייקון הפעיל תמיד לבן, הלא פעיל משתנה לפי מצב לילה/יום
             color={isActive ? "#fff" : (isDarkMode ? "#8E8E93" : "#5f6368")} 
           />
         </View>
@@ -92,7 +89,6 @@ export default function BottomBar({ activeTab, setActiveTab }) {
 
   return (
     <View style={styles.container}>
-      {/* ה-BlurView משתנה אוטומטית לפי הנושא */}
       <BlurView intensity={90} tint={isDarkMode ? "dark" : "light"} style={styles.blurContainer}>
         
         <View 
@@ -104,7 +100,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
         <Animated.View 
           style={[
             styles.slidingBubble,
-            { backgroundColor: colors.primary }, // ✅ הבועה תהיה סגולה בלילה וכחולה ביום
+            { backgroundColor: colors.primary }, 
             {
               transform: [
                 { translateX: slideAnim },

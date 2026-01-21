@@ -21,10 +21,8 @@ export default function EditUserModal({ visible, onClose }) {
     };
 
     const handleSave = async () => {
-        // כאן תשתמש ב-FormData כפי שלמדנו כדי לשלוח לשרת ה-NodeJS 
         const data = new FormData();
         data.append('firstName', formData.firstName);
-        // ... הוספת שאר השדות
         await updateUserData(data);
         onClose();
     };
@@ -35,7 +33,6 @@ export default function EditUserModal({ visible, onClose }) {
                 <View style={styles.container}>
                     <Text style={styles.title}>Edit user</Text>
 
-                    {/* אזור התמונה - בהשראת ה-Web */}
                     <View style={styles.imageSection}>
                         <Image source={{ uri: formData.image }} style={styles.avatar} />
                         <Pressable style={styles.changeBtn} onPress={handlePickImage}>
@@ -43,14 +40,12 @@ export default function EditUserModal({ visible, onClose }) {
                         </Pressable>
                     </View>
 
-                    {/* שדות קלט עם ולידציה כנדרש [cite: 43] */}
                     <TextInput
                         style={styles.input}
                         value={formData.firstName}
                         onChangeText={(t) => setFormData({ ...formData, firstName: t })}
                         placeholder="FIRST NAME"
                     />
-                    {/* הוסף כאן את שאר השדות: Last Name, Phone Number */}
 
                     <View style={styles.actions}>
                         <Pressable onPress={onClose}><Text>Cancel</Text></Pressable>

@@ -18,7 +18,6 @@ import { useAuth } from "../providers/AuthContext";
 import { getFiles, moveToTrash } from "../../features/drive/services/fileService";
 import { formatBytes } from "../../shared_code/utils/formatBytes";
 
-// ✅ Theme
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
 
@@ -26,7 +25,6 @@ import { Swipeable } from "react-native-gesture-handler";
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
-// ✅ תיקון הייבוא: משתמשים בשם הפונקציה המדויק מהקובץ ששלחת
 import { getFileIconMeta } from "../../features/drive/utils/fileIcon";
 
 export default function StoragePage() {
@@ -63,7 +61,6 @@ export default function StoragePage() {
     return unsubscribe;
   }, [loadFiles]);
 
-  // ✅ הלוגיקה נשארת זהה לחלוטין: רק קבצים, ממוינים לפי גודל
   const sortedFiles = useMemo(() => {
     return [...(files || [])]
       .filter((f) => f?.type === "file")
@@ -169,7 +166,6 @@ function StorageListItem({ item, onPress, onDelete }) {
   const swipeableRef = useRef(null);
   const { colors } = useTheme();
 
-  // ✅ תיקון הקריאה לפונקציית האייקון לפי הפרמטרים שהיא דורשת
   const iconMeta = useMemo(() => {
     const meta = getFileIconMeta(
       item.name, 
@@ -177,7 +173,6 @@ function StorageListItem({ item, onPress, onDelete }) {
       item.type === "folder"
     );
     
-    // בגלל ששאר האפליקציה משתמשת ב-outline, אנחנו מוסיפים את הסיומת אם היא לא קיימת בערך שחוזר
     let iconName = meta.icon;
     if (iconName !== "folder" && !iconName.endsWith("-outline")) {
       iconName = `${iconName}-outline`;

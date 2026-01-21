@@ -3,7 +3,6 @@ import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
-// ✅ הפונקציה מקבלת authStyles
 export default function Step3({ formData, setFormData, errors, authStyles, colors }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -42,7 +41,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
 
   return (
     <View>
-      {/* ✅ תוקן ל-authStyles */}
       <Text style={authStyles.label}>Date of Birth</Text>
       
       <Pressable
@@ -61,7 +59,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
         </Text>
       </Pressable>
       
-      {/* ✅ תוקן ל-authStyles */}
       {errors.dateOfBirth && <Text style={authStyles.errorText}>{errors.dateOfBirth}</Text>}
 
       {showDatePicker && (
@@ -76,7 +73,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
         />
       )}
 
-      {/* ✅ תוקן ל-authStyles */}
       <Text style={[authStyles.label, { marginTop: 10 }]}>Gender</Text>
 
       <View style={authStyles.genderContainer}>
@@ -116,7 +112,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
         </Pressable>
       </View>
 
-      {/* ✅ תוקן ל-authStyles */}
       {errors.gender && <Text style={authStyles.errorText}>{errors.gender}</Text>}
     </View>
   );

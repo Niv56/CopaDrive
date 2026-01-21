@@ -52,7 +52,6 @@ function extractRole(item, myId) {
   return "viewer";
 }
 
-// חשוב: בהרבה שרתים userId יכול להגיע בצורות שונות
 function pickUserIdFromPerm(p) {
   return (
     p?.userId ||
@@ -65,7 +64,7 @@ function pickUserIdFromPerm(p) {
   );
 }
 
-/* ---------------- Component ---------------- */
+/* Component */
 
 export default function DriveListItem({
   item,
@@ -89,13 +88,11 @@ export default function DriveListItem({
     return String(ownerId) === String(myId);
   }, [item, myId]);
 
-  // role בסיסי שמגיע מהשרת (לפעמים חסר)
   const effectiveRole = useMemo(() => {
     if (isOwner) return "owner";
     return extractRole(item, myId);
   }, [item, myId, isOwner]);
 
-  // role שנפתר על ידי GET /permissions (כשאין מידע ברשימה)
   const [resolvedRole, setResolvedRole] = useState(null);
 
   const effectiveRoleResolved = resolvedRole || effectiveRole;
@@ -134,11 +131,6 @@ export default function DriveListItem({
     }
   }, [token, item]);
 
-  /**
-   * מביא role אמיתי מהשרת רק אם:
-   * - אני לא owner
-   * - ואין לי role/permissions על האובייקט מהרשימה
-   */
   const ensureRole = useCallback(async () => {
     if (!token) return;
 
@@ -163,7 +155,6 @@ export default function DriveListItem({
 
       setResolvedRole(normalizeRole(myPerm?.role));
     } catch (e) {
-      // אם נכשל, עדיף לא לשבור UI
       setResolvedRole("viewer");
     }
   }, [token, item, myId, isOwner]);
@@ -295,7 +286,6 @@ export default function DriveListItem({
       },
     ];
 
-    // ✅ כאן השינוי הקריטי: להשתמש ב-canUserEditResolved
     if (canUserEditResolved) {
       options.push({
         key: "edit",
@@ -334,7 +324,6 @@ export default function DriveListItem({
     onRestore,
   ]);
 
-  // ✅ כאן השינוי הקריטי: openMenu הופך async וקורא ensureRole לפני פתיחה
   const openMenu = async () => {
     await ensureRole();
 

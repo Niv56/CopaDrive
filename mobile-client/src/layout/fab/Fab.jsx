@@ -15,7 +15,6 @@ import ActionMenu from "./ActionMenu";
 import CreateForm from "./CreateForm";
 import UploadPreviewContent from "../../features/drive/components/UploadPreviewContent";
 
-// ✅ ייבוא Theme
 import { useTheme } from "../../app/providers/ThemeContext";
 
 const NEWLINE = "_@NL@_";
@@ -23,7 +22,6 @@ const NEWLINE = "_@NL@_";
 export default function Fab({ onRefresh }) {
   const { token } = useAuth();
   
-  // ✅ שליפת Theme
   const { isDarkMode, colors } = useTheme();
 
   const [activeView, setActiveView] = useState("closed");
@@ -117,7 +115,6 @@ export default function Fab({ onRefresh }) {
     <>
       {loading && (
         <View style={styles.loaderOverlay}>
-          {/* ✅ ה-Loader ישתמש בסגול הכהה החדש במצב לילה */}
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loaderText}>WORKING...</Text>
         </View>
@@ -125,7 +122,6 @@ export default function Fab({ onRefresh }) {
 
       <Modal visible={isOpen} transparent animationType="fade">
         <View style={styles.container}>
-          {/* ✅ BlurView מותאם ללילה */}
           <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={StyleSheet.absoluteFill} onPress={isPreview ? discardPending : closeAll} />
 
@@ -169,7 +165,7 @@ export default function Fab({ onRefresh }) {
           <TouchableOpacity
             style={[
                 styles.fabMain, 
-                { backgroundColor: colors.primary }, // ✅ כפתור ה-+ יהיה סגול בלילה וכחול ביום
+                { backgroundColor: colors.primary }, 
                 loading && { opacity: 0.7 }
             ]}
             onPress={() => !loading && switchTo("menu")}

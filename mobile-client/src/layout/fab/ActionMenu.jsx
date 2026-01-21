@@ -58,7 +58,7 @@ function MenuOption({ icon, label, onPress, disabled, isDarkMode, colors }) {
       style={[
           styles.singleContainer, 
           disabled && { opacity: 0.6 },
-          { backgroundColor: isDarkMode ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)" } // ✅ צבע רקע דינמי
+          { backgroundColor: isDarkMode ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)" } 
       ]}
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.9}

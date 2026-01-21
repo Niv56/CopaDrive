@@ -7,7 +7,6 @@ export default function Step5({ styles }) {
     <View style={localStyles.container}>
       <Ionicons name="checkmark-circle" size={80} color="#28a745" />
       
-      {/* שימוש ב-styles שהועברו מהאבא */}
       <Text style={[styles.brandText, { marginTop: 20, fontSize: 30 }]}>Success!</Text>
       
       <Text style={styles.subText}>Your account is ready.</Text>

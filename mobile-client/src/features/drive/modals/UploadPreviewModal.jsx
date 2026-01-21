@@ -16,18 +16,19 @@ const isVideo = (mimeType = "") => mimeType.startsWith("video/");
 
 export default function UploadPreviewModal({
   visible,
-  fileData,
-  folders,
-  onConfirm,
-  onDiscard,
-  onChangeFile,
-  uploading,
+  fileData,        
+  folders,         
+  onConfirm,      
+  onDiscard,       
+  onChangeFile,    
+  uploading,       
 }) {
   const { colors = {}, isDarkMode } = useTheme();
+  
   const styles = useMemo(() => getUploadPreviewStyles(colors, isDarkMode), [colors, isDarkMode]);
 
   const [title, setTitle] = useState(fileData?.fileName || "");
-  const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [selectedFolderId, setSelectedFolderId] = useState(null); 
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   useEffect(() => {
@@ -79,17 +80,7 @@ export default function UploadPreviewModal({
                 </TouchableOpacity>
               </View>
 
-              <ScrollView
-                style={styles.body}
-                contentContainerStyle={{ paddingBottom: 6 }}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                // ✅ זה בדרך כלל ה"פסים הלבנים" באייפון
-                bounces={false}
-                alwaysBounceVertical={false}
-                // ✅ אנדרואיד
-                overScrollMode="never"
-              >
+              <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
                 <View style={styles.previewContainer}>
                   {isImage(fileData.mimeType) ? (
                     <Image source={{ uri: fileData.uri }} style={styles.previewImage} resizeMode="contain" />

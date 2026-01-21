@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-// שינינו ל-AsyncStorage כי זה מה שהתקנו בטלפון
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { useRouter, useSegments } from "expo-router";
 
-// ✅ וודא שהנתיבים האלו נכונים אצלך בפרויקט
 import { authenticateUser } from "../../features/auth/services/authService";
 import { getUserProfile } from "../../features/user/services/userService";
 
@@ -62,7 +60,6 @@ export function AuthProvider({ children }) {
             setToken(savedToken);
             if (savedUser) setUser(JSON.parse(savedUser));
             
-            // בדיקת פרופיל ברקע
             const uid = getUserIdFromToken(savedToken);
             if (uid) {
                 getUserProfile(savedToken, uid).then(userData => {
@@ -83,17 +80,14 @@ export function AuthProvider({ children }) {
     return () => { isMounted = false; };
   }, []);
 
-  // ✅ הגנה על הניווט: אם המשתמש לא מחובר והוא בתוך האפליקציה, זרוק אותו ללוגין
   useEffect(() => {
     if (isHydrating) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     
     if (!token && !inAuthGroup) {
-        // אם אין טוקן ולא נמצאים בקבוצת auth -> לך ללוגין
         router.replace('/(auth)/login');
     } else if (token && inAuthGroup) {
-        // אם יש טוקן ונמצאים בקבוצת auth -> לך לבית
         router.replace('/(app)/home');
     }
   }, [token, isHydrating, segments]);
@@ -117,7 +111,6 @@ export function AuthProvider({ children }) {
       setToken(newToken);
       setUser(userData);
       
-      // הניווט יתבצע אוטומטית ב-useEffect למעלה
       return { ok: true };
     } catch (e) {
       return { ok: false, error: "Login failed unexpected" };
@@ -170,10 +163,9 @@ export function AuthProvider({ children }) {
     updateUserData
   }), [token, user, isHydrating, refreshUser, updateUserData]);
 
-  // ✅ התיקון הקריטי: לא מציגים את האפליקציה עד שסיימנו לטעון את הטוקן
-  // זה מונע את הקפיצה למסך הלוגין כשיש משתמש מחובר
+  
   if (isHydrating) {
-      return null; // או שים כאן רכיב <SplashScreen />
+      return null; 
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

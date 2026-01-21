@@ -1,6 +1,5 @@
 import { StyleSheet, Platform } from "react-native";
 
-// ✅ מקבל את הצבעים מה-Theme ומחזיר עיצוב תואם
 export const getDriveStyles = (colors) => StyleSheet.create({
     backgroundImage: { flex: 1, width: "100%", height: "100%" },
     safeArea: { flex: 1 },
@@ -8,7 +7,7 @@ export const getDriveStyles = (colors) => StyleSheet.create({
     topBarSearchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.surface + 'E6', // שקיפות קלה
+        backgroundColor: colors.surface + 'E6', 
         marginHorizontal: 15,
         marginTop: Platform.OS === 'ios' ? 10 : 40,
         height: 52,
@@ -28,7 +27,7 @@ export const getDriveStyles = (colors) => StyleSheet.create({
     homeTitle: {
         fontSize: 32,
         fontFamily: "BrunoAceSC_400Regular",
-        color: colors.textPrimary, // ✅ צבע משתנה
+        color: colors.textPrimary, 
         marginHorizontal: 25,
         marginVertical: 15,
     },
@@ -36,7 +35,7 @@ export const getDriveStyles = (colors) => StyleSheet.create({
     fileCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: colors.card + 'BF', // שקיפות לרקע הכרטיס
+        backgroundColor: colors.card + 'BF', 
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 15,
@@ -106,13 +105,12 @@ export const getDriveStyles = (colors) => StyleSheet.create({
         fontFamily: 'BrunoAceSC_400Regular'
     },
 
-    // ✅ הסטיילים החסרים ל-Breadcrumbs (הוספתי אותם כאן כדי למנוע קריסה)
     breadcrumbContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 15,
         paddingVertical: 10,
-        backgroundColor: colors.surface + 'CC', // רקע חצי שקוף
+        backgroundColor: colors.surface + 'CC', 
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
         marginHorizontal: 15,
@@ -131,7 +129,7 @@ export const getDriveStyles = (colors) => StyleSheet.create({
         fontSize: 14,
         color: colors.textSecondary,
         fontWeight: '500',
-        maxWidth: 100, // הגבלה שלא ישבור שורה
+        maxWidth: 100, 
     },
     breadcrumbActive: {
         color: colors.primary,

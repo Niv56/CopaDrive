@@ -4,9 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-// ❌ ScreenLayout הוסר מכאן
 
-// ✅ Theme
 import { useTheme } from "../../../app/providers/ThemeContext";
 
 import FilePreviewModal from "../components/FilePreviewModal";
@@ -25,7 +23,6 @@ export default function StarredPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  // סינון כוכבים
   const displayItems = useMemo(() => {
     if (!currentFolderId) {
         return (items || []).filter((i) => !!i?.starred);
@@ -86,7 +83,6 @@ export default function StarredPage() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* פירורי לחם */}
       {folderPath.length > 0 && (
         <View style={styles.breadcrumbContainer}>
           <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
@@ -113,7 +109,7 @@ export default function StarredPage() {
 
       <FlatList
         data={displayItems}
-        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }} // מרווח מהצדדים ולמטה
+        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }} 
         keyExtractor={(item) => item.id || item._id}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -151,7 +147,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 15,
         paddingHorizontal: 15,
-        marginTop: 10, // רווח קטן מלמעלה
+        marginTop: 10, 
         gap: 5
     },
     backButton: {
