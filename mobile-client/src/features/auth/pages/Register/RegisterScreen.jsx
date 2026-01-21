@@ -22,7 +22,6 @@ const TOTAL_STEPS = 4;
 export default function RegisterScreen() {
   const router = useRouter();
   
-  // ✅ יצירת הסטיילים פעם אחת כאן
   const { colors, isDarkMode } = useTheme();
   const styles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
 
@@ -99,14 +98,24 @@ export default function RegisterScreen() {
     else Alert.alert("Registration Failed", res?.error || "Unknown error");
   };
 
-  // ✅ העברת styles ו-colors לכל ה-Steps
   return (
     <AuthLayout subtitle={getHeaderTitle()}>
       
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
-        {step === 3 && <Step3 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
+        
+        {/* ✅ התיקון כאן: מעבירים את הסטיילים תחת השם authStyles עבור Step3 */}
+        {step === 3 && (
+          <Step3 
+            formData={formData} 
+            setFormData={setFormData} 
+            errors={errors} 
+            authStyles={styles} 
+            colors={colors} 
+          />
+        )}
+        
         {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 5 && <Step5 styles={styles} />}
       </View>
@@ -142,7 +151,7 @@ export default function RegisterScreen() {
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
           {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[localStyles.dot, i === step && styles.btnPrimary.backgroundColor ? { backgroundColor: styles.btnPrimary.backgroundColor, width: 20 } : localStyles.dotActive]} />
+            <View key={i} style={[localStyles.dot, i === step && styles.btnPrimary?.backgroundColor ? { backgroundColor: styles.btnPrimary.backgroundColor, width: 20 } : localStyles.dotActive]} />
           ))}
         </View>
       )}
