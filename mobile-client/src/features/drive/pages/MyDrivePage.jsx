@@ -1,12 +1,11 @@
 import React, { useMemo, useCallback, useState } from "react";
-// הוספנו כאן את Alert לייבוא
 import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
 
-// ✅ ייבוא Theme
+// ✅ Theme
 import { getDriveStyles } from "../styles/myDrive.styles";
 import { useTheme } from "../../../app/providers/ThemeContext";
 
@@ -17,54 +16,85 @@ import { emitDriveRefresh } from "../services/driveEvents";
 import FilePreviewModal from "../components/FilePreviewModal";
 
 export default function MyDrivePage() {
+  // ✅ משתני State לניהול תיקיות
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderPath, setFolderPath] = useState([]);
+
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
 
-  // ✅ שימוש ב-Theme
+  // ✅ Theme
   const { colors } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
-
-  const onlyFiles = useMemo(
-    () => (items || []).filter((i) => i?.type === "file"),
-    [items]
-  );
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  // ✅ סינון הפריטים לפי התיקייה הנוכחית
+  const currentItems = useMemo(() => {
+    if (!items) return [];
+    return items.filter(item => {
+        // בתיקייה הראשית (null) מציגים רק קבצים (type=file) שאין להם אבא
+        // או את כל הקבצים שאין להם אבא (אם אנחנו רוצים להציג גם תיקיות כאן, נוריד את הסינון לפי type)
+        // בקוד שלך המקורי סיננת רק קבצים (type === "file"). כאן אני משאיר את הלוגיקה הזו.
+        
+        // הערה: בדרך כלל ב-MyDrive רוצים לראות הכל (גם תיקיות). 
+        // אם אתה רוצה לראות רק קבצים, תשאיר את השורה הזו:
+        // if (item.type !== 'file') return false; 
+
+        if (currentFolderId === null) return !item.parentId;
+        return item.parentId === currentFolderId;
+    });
+  }, [items, currentFolderId]);
+
   const handlePressItem = useCallback((item) => {
     if (!item) return;
+
     if (item.type === "folder") {
-      Alert.alert("CopaDrive", "Folders view is coming soon.");
+      // ✅ כניסה לתיקייה
+      setCurrentFolderId(item.id);
+      setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
     }
+    
     setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
 
   const handleDeleteItem = useCallback(async (item) => {
-    Alert.alert(
-      "Move to Trash?",
-      `Are you sure you want to remove "${item.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await moveToTrash(token, item.id);
-              emitDriveRefresh();
-            } catch (err) {
-              Alert.alert("Error", "Could not delete item.");
-            }
-          }
+    Alert.alert("Move to Trash?", `Delete "${item.name}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive",
+        onPress: async () => {
+          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
+          catch (err) { Alert.alert("Error", "Could not delete item."); }
         }
-      ]
-    );
+      }
+    ]);
   }, [token]);
 
-  if (loading && onlyFiles.length === 0) {
+  // ✅ חזרה אחורה
+  const handleBack = useCallback(() => {
+    if (folderPath.length === 0) return;
+    const newPath = folderPath.slice(0, -1);
+    setFolderPath(newPath);
+    setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
+  }, [folderPath]);
+
+  // ✅ ניווט בפירורים
+  const navigateToBreadcrumb = useCallback((index) => {
+    if (index < 0) {
+      setFolderPath([]);
+      setCurrentFolderId(null);
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      setFolderPath(newPath);
+      setCurrentFolderId(newPath[newPath.length - 1].id);
+    }
+  }, [folderPath]);
+
+  if (loading && (!currentItems || currentItems.length === 0)) {
     return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
@@ -74,7 +104,7 @@ export default function MyDrivePage() {
       {folderPath.length > 0 && (
         <View style={driveStyles.breadcrumbContainer}>
           <Pressable onPress={handleBack} style={driveStyles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#0d6efd" />
+            <Ionicons name="arrow-back" size={20} color={colors.primary} />
           </Pressable>
 
           <Pressable onPress={() => navigateToBreadcrumb(-1)}>

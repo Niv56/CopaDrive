@@ -112,6 +112,7 @@ export default function TrashPage() {
 
   const openOrActions = (item) => {
     if (!item) return;
+    // באשפה לא פותחים תיקיות, רק פעולות (שחזור/מחיקה) או תצוגה מקדימה לקבצים
     Alert.alert("Trash Item", item.name, [
       { text: "Preview", onPress: () => { setSelectedId(item.id); setPreviewOpen(true); } },
       { text: "Restore", onPress: async () => { await restoreFromTrash(token, item.id); emitDriveRefresh(); } },

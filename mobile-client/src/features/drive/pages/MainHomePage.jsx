@@ -15,23 +15,45 @@ import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
 export default function MainHomePage() {
+  // ✅ משתני State לניהול תיקיות (היו חסרים בקוד המקורי שלך)
+  const [currentFolderId, setCurrentFolderId] = useState(null); 
+  const [folderPath, setFolderPath] = useState([]);
+
   const { items, loading, refreshing, onRefresh } = useMyDrive();
   const { token } = useAuth();
   
-  // ✅ שימוש ב-Theme כדי למנוע קריסה
+  // ✅ שימוש ב-Theme
   const { colors } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
-  const folders = useMemo(() => (items || []).filter((i) => i?.type === "folder"), [items]);
-  const files = useMemo(() => (items || []).filter((i) => i?.type === "file"), [items]);
+  // ✅ סינון הפריטים לפי התיקייה הנוכחית (אחרת כל הקבצים מופיעים תמיד)
+  const currentItems = useMemo(() => {
+      if (!items) return [];
+      return items.filter(item => {
+          // אם אנחנו בתיקייה הראשית (null), נציג פריטים ללא parentId
+          if (currentFolderId === null) return !item.parentId; 
+          // אחרת, נציג פריטים שהאבא שלהם הוא התיקייה הנוכחית
+          return item.parentId === currentFolderId;
+      });
+  }, [items, currentFolderId]);
+
+  const folders = useMemo(() => currentItems.filter((i) => i?.type === "folder"), [currentItems]);
+  const files = useMemo(() => currentItems.filter((i) => i?.type === "file"), [currentItems]);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const openItem = useCallback((item) => {
     if (!item) return;
+
     if (item.type === "folder") {
-      setCurrentFolderId(itemId);
-      setFolderPath((prev) => [...prev, { id: itemId, name: item.name }]);
+      // ✅ כניסה לתיקייה (תיקון: item.id ולא itemId)
+      setCurrentFolderId(item.id);
+      setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
     }
+
+    // פתיחת קובץ
     setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
@@ -49,6 +71,7 @@ export default function MainHomePage() {
     ]);
   }, [token]);
 
+  // ✅ חזרה אחורה בתיקיות
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -56,6 +79,7 @@ export default function MainHomePage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
+  // ✅ ניווט בפירורי לחם
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -67,11 +91,10 @@ export default function MainHomePage() {
     }
   }, [folderPath]);
 
-  if (loading && (items || []).length === 0) {
+  if (loading && (!items || items.length === 0)) {
     return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
-  // ✅ SectionHeader שמשתמש בסטיילים החדשים
   const SectionHeader = ({ icon, title, style }) => (
     <View style={[driveStyles.sectionHeader, style]}>
         <Ionicons name={icon} size={18} color={colors.textPrimary} />
@@ -81,11 +104,11 @@ export default function MainHomePage() {
 
   return (
     <>
-      {/* Breadcrumb Navigation */}
+      {/* ✅ Breadcrumb Navigation */}
       {folderPath.length > 0 && (
         <View style={driveStyles.breadcrumbContainer}>
           <Pressable onPress={handleBack} style={driveStyles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#0d6efd" />
+            <Ionicons name="arrow-back" size={20} color={colors.primary} />
           </Pressable>
 
           <Pressable onPress={() => navigateToBreadcrumb(-1)}>
@@ -112,15 +135,28 @@ export default function MainHomePage() {
         data={[]}
         ListHeaderComponent={
           <View>
-            <SectionHeader icon="folder-outline" title="Suggested folders" />
-            {folders.map((item) => (
-              <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
-            ))}
+            {/* טיפול במצב של תיקייה ריקה */}
+            {folders.length === 0 && files.length === 0 && (
+                <Text style={driveStyles.emptyText}>Empty Folder</Text>
+            )}
 
-            <SectionHeader icon="document-text-outline" title="Suggested files" style={{ marginTop: 20 }} />
-            {files.map((item) => (
-              <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
-            ))}
+            {folders.length > 0 && (
+                <>
+                    <SectionHeader icon="folder-outline" title="Folders" />
+                    {folders.map((item) => (
+                    <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
+                    ))}
+                </>
+            )}
+
+            {files.length > 0 && (
+                <>
+                    <SectionHeader icon="document-text-outline" title="Files" style={{ marginTop: 20 }} />
+                    {files.map((item) => (
+                    <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
+                    ))}
+                </>
+            )}
           </View>
         }
         refreshing={refreshing}
@@ -131,7 +167,7 @@ export default function MainHomePage() {
 
       <FilePreviewModal
         open={previewOpen}
-        fileId={selectedId}
+        fileId={selectedId}ר
         onClose={() => setPreviewOpen(false)}
       />
     </>
