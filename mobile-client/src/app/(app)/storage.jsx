@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   StatusBar,
   Pressable,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,10 +17,10 @@ import { getFiles } from "../../features/drive/services/fileService";
 import { formatBytes } from "../../shared_code/utils/formatBytes";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// ✅ auto-refresh bus
+// auto-refresh bus
 import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
 
-// ✅ Preview modal
+// Preview modal
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function StoragePage() {
@@ -30,7 +29,7 @@ export default function StoragePage() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ preview modal state
+  // preview modal state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -64,7 +63,7 @@ export default function StoragePage() {
       .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0));
   }, [files]);
 
-  // ✅ X always closes reliably
+  // X always closes reliably
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -80,12 +79,12 @@ export default function StoragePage() {
   const openItem = useCallback((item) => {
     if (!item) return;
 
+    // Storage page only shows files, but handle folder case gracefully
     if (item.type === "folder") {
-      Alert.alert("CopaDrive", "Folders view is coming soon.");
       return;
     }
 
-    setSelectedId(item.id);
+    setSelectedId(item.id || item._id);
     setPreviewOpen(true);
   }, []);
 
