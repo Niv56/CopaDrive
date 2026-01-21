@@ -36,7 +36,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const isFolder = item.type === "folder";
   const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
 
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
   const styles = useMemo(() => getDriveListItemStyles(colors), [colors]);
@@ -47,9 +47,15 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const [editOpen, setEditOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
+  const dotsRef = useRef(null);
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
-  const dotsRef = useRef(null);
+
+  const isOwner = useMemo(() => {
+    const ownerId = item?.ownerId || item?.owner;
+    const myId = user?.id || user?._id;
+    return String(ownerId) === String(myId);
+  }, [item, user]);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -76,42 +82,26 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     );
   };
 
-  const comingSoon = (label) => { closeMenu(); Alert.alert("CopaDrive", `${label} (Coming soon)`); };
-
   const handleDownload = async () => {
     closeMenu();
-    if (!token) return Alert.alert("Not logged in", "No token found.");
-    if (item.type === "folder") return Alert.alert("CopaDrive", "Folders cannot be downloaded.");
-
+    if (!token) return;
     try {
       const full = await getFileById(token, item.id);
-
-      if (!full || (!full.content && !full.url)) {
-        return Alert.alert("CopaDrive", "No content available to download.");
-      }
-
-      const mime = full.mimeType || "";
-      const isTextFile = mime.startsWith('text/') ||
-        mime.includes('json') ||
-        mime.includes('xml') ||
-        mime.includes('javascript') ||
-        mime.includes('html');
+      if (!full || !full.content) return;
 
       await downloadFile({
         content: full.content,
-        mimeType: mime || "application/octet-stream",
+        mimeType: full.mimeType || "application/octet-stream",
         fileName: full.name || item.name || "file",
-        isBase64: !isTextFile
+        isBase64: !String(full.mimeType).startsWith('text/')
       });
-
     } catch (e) {
-      console.error("Download failed inside DriveListItem:", e);
-      Alert.alert("Download Failed", "Could not save the file.");
+      Alert.alert("Error", "Download failed.");
     }
   };
 
   const menuOptions = useMemo(() => {
-    return [
+    const options = [
       { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } },
       {
         key: "star", icon: isStarred ? "star" : "star-outline", label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
@@ -126,55 +116,40 @@ export default function DriveListItem({ item, onPress, onDelete }) {
         key: "edit", icon: "pencil-outline", label: "EDIT",
         onPress: () => { closeMenu(); setEditOpen(true); },
       },
-      {
-        key: "delete", icon: "trash-outline", label: "MOVE TO TRASH",
-        onPress: () => { closeMenu(); if (onDelete) onDelete(item); }
-      }
     ];
-  }, [token, item.id, item.name, isStarred, isImportant, onDelete]);
+
+    if (isOwner) {
+      options.push({
+        key: "delete",
+        icon: "trash-outline",
+        label: "MOVE TO TRASH",
+        onPress: () => { closeMenu(); if (onDelete) onDelete(item); }
+      });
+    }
+
+    return options;
+  }, [token, item.id, item.name, isStarred, isImportant, onDelete, isOwner]);
 
   const openMenu = () => {
     if (!dotsRef.current) return setMenuOpen(true);
     dotsRef.current.measureInWindow((x, y, w, h) => {
       const { width: screenW, height: screenH } = Dimensions.get("window");
       const MENU_W = 260;
-      const BTN_H = 54;
-      const GAP = 12;
-      const MENU_H = menuOptions.length * BTN_H + (menuOptions.length - 1) * GAP;
       const anchorX = x + w / 2;
       const anchorY = y + h / 2;
-      let left = anchorX - MENU_W - 12;
-      let top = anchorY - MENU_H / 2;
-      const PADDING = 10;
-      left = Math.max(PADDING, Math.min(left, screenW - MENU_W - PADDING));
-      top = Math.max(PADDING + 50, Math.min(top, screenH - MENU_H - PADDING));
-      setMenuPos({ top, left });
+      setMenuPos({ top: anchorY - 100, left: anchorX - MENU_W - 12 });
       setMenuOpen(true);
     });
   };
 
-  const StackOption = ({ icon, label, onPress }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.9}
-      style={styles.stackBtn}
-    >
-      <Ionicons name={icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
-      <Text style={styles.stackLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={onDelete ? renderLeftActions : undefined}
+      renderLeftActions={(onDelete && isOwner) ? renderLeftActions : undefined}
       overshootLeft={false}
       friction={2}
     >
-      <Pressable
-        style={driveStyles.fileCard}
-        onPress={() => onPress && onPress(item)}
-      >
+      <Pressable style={driveStyles.fileCard} onPress={() => onPress && onPress(item)}>
         <View style={driveStyles.iconContainer}>
           <Ionicons name={icon} size={28} color={color} />
         </View>
@@ -186,12 +161,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
             {isFolder ? "Folder" : "File"} • {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
           </Text>
         </View>
-        <Pressable
-          ref={dotsRef}
-          onPress={() => (menuOpen ? closeMenu() : openMenu())}
-          hitSlop={14}
-          style={{ padding: 6 }}
-        >
+        <Pressable ref={dotsRef} onPress={() => (menuOpen ? closeMenu() : openMenu())} hitSlop={14} style={{ padding: 6 }}>
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
         </Pressable>
       </Pressable>
@@ -199,27 +169,19 @@ export default function DriveListItem({ item, onPress, onDelete }) {
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={styles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-          <Pressable
-            style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+          <Pressable style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]} onPress={(e) => e.stopPropagation()}>
             {menuOptions.map((opt) => (
-              <StackOption key={opt.key} icon={opt.icon} label={opt.label} onPress={opt.onPress} />
+              <TouchableOpacity key={opt.key} onPress={opt.onPress} activeOpacity={0.9} style={styles.stackBtn}>
+                <Ionicons name={opt.icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
+                <Text style={styles.stackLabel}>{opt.label}</Text>
+              </TouchableOpacity>
             ))}
           </Pressable>
         </Pressable>
       </Modal>
-      <EditItemModal
-        visible={editOpen}
-        item={item}
-        onClose={() => setEditOpen(false)}
-      />
 
-      <ShareModal
-        visible={shareOpen}
-        item={item}
-        onClose={() => setShareOpen(false)}
-      />
+      <EditItemModal visible={editOpen} item={item} onClose={() => setEditOpen(false)} />
+      <ShareModal visible={shareOpen} item={item} onClose={() => setShareOpen(false)} />
     </Swipeable>
   );
 }
