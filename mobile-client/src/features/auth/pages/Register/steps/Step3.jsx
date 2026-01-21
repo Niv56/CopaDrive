@@ -21,6 +21,7 @@ export default function Step3({ formData, setFormData, errors }) {
     return defaultDate;
   };
 
+  
   const handleDateChange = (event, selectedDate) => {
     if (Platform.OS === "android") {
       setShowDatePicker(false);
