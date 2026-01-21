@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Keyboard,
   Platform,
   ScrollView,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -22,20 +23,36 @@ import { BlurView } from "expo-blur";
 import { useAuth } from "../app/providers/AuthContext";
 import { createItem } from "../features/drive/services/fileService";
 import { emitDriveRefresh } from "../features/drive/services/driveEvents";
+import { useMyDrive } from "../features/drive/hooks/useMyDrive";
 
 const NEWLINE = "_@NL@_";
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function Fab({ onRefresh }) {
   const { token } = useAuth();
+  const { items } = useMyDrive();
 
   const [isOpen, setIsOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "createfolder" | "createfile"
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [parentId, setParentId] = useState(null);
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   const pickerInProgressRef = useRef(false);
+
+  // Get all folders for the parent dropdown
+  const folders = useMemo(() => {
+    return (items || []).filter((item) => item.type === "folder");
+  }, [items]);
+
+  // Get selected folder name for display
+  const selectedFolderName = useMemo(() => {
+    if (!parentId) return "Root (My Drive)";
+    const folder = folders.find((f) => (f.id || f._id) === parentId);
+    return folder?.name || "Selected Folder";
+  }, [parentId, folders]);
 
   const lockPicker = () => {
     if (pickerInProgressRef.current) return false;
@@ -54,6 +71,8 @@ export default function Fab({ onRefresh }) {
     setModalType(null);
     setName("");
     setContent("");
+    setParentId(null);
+    setShowFolderPicker(false);
     Keyboard.dismiss();
   };
 
@@ -176,12 +195,13 @@ export default function Fab({ onRefresh }) {
       const finalName = isFolder
         ? trimmed
         : trimmed.endsWith(".txt")
-        ? trimmed
-        : `${trimmed}.txt`;
+          ? trimmed
+          : `${trimmed}.txt`;
 
       await createItem(token, {
         name: finalName,
         type: isFolder ? "folder" : "file",
+        parentId: parentId,
         content: isFolder ? "" : String(content || "").replaceAll("\n", NEWLINE),
         mimeType: isFolder ? "" : "text/plain",
       });
@@ -277,6 +297,64 @@ export default function Fab({ onRefresh }) {
               returnKeyType="done"
               onSubmitEditing={Keyboard.dismiss}
             />
+
+            {/* Parent Folder Selector */}
+            <TouchableOpacity
+              style={styles.folderSelector}
+              onPress={() => setShowFolderPicker(true)}
+            >
+              <Ionicons name="folder-outline" size={20} color="#666" />
+              <Text style={styles.folderSelectorText} numberOfLines={1}>
+                {selectedFolderName}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
+
+            {/* Folder Picker Dropdown */}
+            {showFolderPicker && (
+              <View style={styles.folderDropdown}>
+                <TouchableOpacity
+                  style={[
+                    styles.folderOption,
+                    parentId === null && styles.folderOptionSelected,
+                  ]}
+                  onPress={() => {
+                    setParentId(null);
+                    setShowFolderPicker(false);
+                  }}
+                >
+                  <Ionicons name="home-outline" size={18} color="#0d6efd" />
+                  <Text style={styles.folderOptionText}>Root (My Drive)</Text>
+                </TouchableOpacity>
+
+                <FlatList
+                  data={folders}
+                  keyExtractor={(item) => item.id || item._id}
+                  style={{ maxHeight: 150 }}
+                  renderItem={({ item: folder }) => (
+                    <TouchableOpacity
+                      style={[
+                        styles.folderOption,
+                        (parentId === folder.id || parentId === folder._id) &&
+                        styles.folderOptionSelected,
+                      ]}
+                      onPress={() => {
+                        setParentId(folder.id || folder._id);
+                        setShowFolderPicker(false);
+                      }}
+                    >
+                      <Ionicons name="folder" size={18} color="#f4b400" />
+                      <Text style={styles.folderOptionText} numberOfLines={1}>
+                        {folder.name}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    <Text style={styles.noFolders}>No folders available</Text>
+                  }
+                />
+              </View>
+            )}
 
             {modalType === "createfile" && (
               <ScrollView style={{ width: "100%" }} keyboardShouldPersistTaps="handled">
@@ -414,4 +492,54 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   loaderText: { marginTop: 15, color: "white", fontSize: 16, letterSpacing: 2 },
+
+  folderSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    gap: 10,
+  },
+  folderSelectorText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+  },
+  folderDropdown: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    marginBottom: 15,
+    maxHeight: 200,
+    overflow: "hidden",
+  },
+  folderOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  folderOptionSelected: {
+    backgroundColor: "#e7f1ff",
+  },
+  folderOptionText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
+  },
+  noFolders: {
+    padding: 12,
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
 });
