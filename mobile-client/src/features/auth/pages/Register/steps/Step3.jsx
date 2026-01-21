@@ -3,7 +3,8 @@ import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function Step3({ formData, setFormData, errors, styles, colors }) {
+// ✅ הפונקציה מקבלת authStyles
+export default function Step3({ formData, setFormData, errors, authStyles, colors }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const getDateValue = () => {
@@ -41,20 +42,27 @@ export default function Step3({ formData, setFormData, errors, styles, colors })
 
   return (
     <View>
-      <Text style={styles.label}>Date of Birth</Text>
+      {/* ✅ תוקן ל-authStyles */}
+      <Text style={authStyles.label}>Date of Birth</Text>
+      
       <Pressable
-        style={[styles.dateButton || styles.inputWrapper, errors.dateOfBirth && styles.dateButtonError]}
+        style={[
+          authStyles.dateButton || authStyles.inputWrapper, 
+          errors.dateOfBirth && authStyles.dateButtonError
+        ]}
         onPress={() => setShowDatePicker(true)}
       >
         <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
         <Text style={[
-          styles.dateText,
-          !formData.dateOfBirth && styles.dateTextPlaceholder
+          authStyles.dateText,
+          !formData.dateOfBirth && authStyles.dateTextPlaceholder
         ]}>
           {formatDisplayDate(formData.dateOfBirth)}
         </Text>
       </Pressable>
-      {errors.dateOfBirth && <Text style={styles.errorText}>{errors.dateOfBirth}</Text>}
+      
+      {/* ✅ תוקן ל-authStyles */}
+      {errors.dateOfBirth && <Text style={authStyles.errorText}>{errors.dateOfBirth}</Text>}
 
       {showDatePicker && (
         <DateTimePicker
@@ -64,12 +72,12 @@ export default function Step3({ formData, setFormData, errors, styles, colors })
           onChange={handleDateChange}
           maximumDate={new Date()}
           minimumDate={new Date(1900, 0, 1)}
-          // התאמת צבעים לדייט-פיקר באייפון
           themeVariant={colors.background === "#121212" ? "dark" : "light"}
         />
       )}
 
-      <Text style={[styles.label, { marginTop: 10 }]}>Gender</Text>
+      {/* ✅ תוקן ל-authStyles */}
+      <Text style={[authStyles.label, { marginTop: 10 }]}>Gender</Text>
 
       <View style={authStyles.genderContainer}>
         <View style={authStyles.genderRow}>
@@ -108,7 +116,8 @@ export default function Step3({ formData, setFormData, errors, styles, colors })
         </Pressable>
       </View>
 
-      {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
+      {/* ✅ תוקן ל-authStyles */}
+      {errors.gender && <Text style={authStyles.errorText}>{errors.gender}</Text>}
     </View>
   );
 }
