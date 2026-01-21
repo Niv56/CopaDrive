@@ -7,28 +7,42 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity,
+  StyleSheet
 } from "react-native";
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
 import { authStyles } from "../styles/auth.styles";
+import { Ionicons, Feather } from "@expo/vector-icons";
+import { useTheme } from "../../../app/providers/ThemeContext";
 
-const bgImage = require("../../../assets/images/back.png");
+// ✅ שימוש בתמונה login.png
+const loginBg = require("../../../assets/images/login.png");
 
 export default function AuthLayout({ children, title = "CopaDrive", subtitle }) {
-  let [fontsLoaded] = useFonts({
-    BrunoAceSC_400Regular,
-  });
+  const { isDarkMode, toggleTheme } = useTheme();
+  let [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007bff" />
-      </View>
-    );
-  }
+  if (!fontsLoaded) return <ActivityIndicator size="large" color="#007bff" />;
 
   return (
-    <ImageBackground source={bgImage} style={authStyles.backgroundImage} resizeMode="cover">
+    <ImageBackground source={loginBg} style={authStyles.backgroundImage} resizeMode="cover">
+      
+      {/* כפתורים עליונים */}
+      <View style={styles.topControls}>
+         <TouchableOpacity 
+            style={styles.songBtn} 
+            onPress={() => alert("Music coming soon!")}
+         >
+            <Ionicons name="musical-notes" size={16} color="white" />
+            <Text style={styles.songText}>PlaySong</Text>
+         </TouchableOpacity>
+
+         <TouchableOpacity style={styles.themeBtn} onPress={toggleTheme}>
+            <Feather name={isDarkMode ? "sun" : "moon"} size={20} color="#333" />
+         </TouchableOpacity>
+      </View>
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -39,7 +53,6 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
               <Text style={authStyles.brandText}>{title}</Text>
               {subtitle && <Text style={authStyles.subText}>{subtitle}</Text>}
             </View>
-
             {children}
           </View>
         </KeyboardAvoidingView>
@@ -47,3 +60,10 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
     </ImageBackground>
   );
 }
+
+const styles = StyleSheet.create({
+    topControls: { position: 'absolute', top: 50, right: 20, flexDirection: 'row', gap: 10, zIndex: 10 },
+    songBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0d6efd', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, gap: 6 },
+    songText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
+    themeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }
+});

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -21,21 +21,24 @@ import {
   getDaysLeft,
 } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
-import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-import {
-  subscribeDriveRefresh,
-  emitDriveRefresh,
-} from "../../features/drive/services/driveEvents";
+// ✅ Theme Imports
+import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
+import { useTheme } from "../providers/ThemeContext";
 
+import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function TrashPage() {
   const router = useRouter();
   const { token } = useAuth();
+  
+  // ✅ Theme Hooks
+  const { colors, isDarkMode } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -52,14 +55,10 @@ export default function TrashPage() {
     }
   }, [token]);
 
-  useEffect(() => {
-    loadTrash();
-  }, [loadTrash]);
+  useEffect(() => { loadTrash(); }, [loadTrash]);
 
   useEffect(() => {
-    const unsubscribe = subscribeDriveRefresh(() => {
-      loadTrash();
-    });
+    const unsubscribe = subscribeDriveRefresh(() => loadTrash());
     return unsubscribe;
   }, [loadTrash]);
 
@@ -67,12 +66,8 @@ export default function TrashPage() {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
         router.back();
-      } else {
-        router.replace("/home");
-      }
-    } catch {
-      router.replace("/home");
-    }
+      } else { router.replace("/home"); }
+    } catch { router.replace("/home"); }
   }, [router]);
 
   const handleEmptyTrash = () => {
@@ -93,7 +88,6 @@ export default function TrashPage() {
     );
   };
 
-  // ✅ מחיקה בודדת לצמיתות (עבור ה-Swipe)
   const handleDeleteForever = useCallback(async (item) => {
     Alert.alert(
       "Delete Forever?",
@@ -118,37 +112,18 @@ export default function TrashPage() {
 
   const openOrActions = (item) => {
     if (!item) return;
-
     Alert.alert("Trash Item", item.name, [
-      {
-        text: "Preview",
-        onPress: () => {
-          setSelectedId(item.id);
-          setPreviewOpen(true);
-        },
-      },
-      {
-        text: "Restore",
-        onPress: async () => {
-          await restoreFromTrash(token, item.id);
-          emitDriveRefresh();
-        },
-      },
-      {
-        text: "Delete Forever",
-        style: "destructive",
-        onPress: async () => {
-          await deleteForever(token, item.id);
-          emitDriveRefresh();
-        },
-      },
+      { text: "Preview", onPress: () => { setSelectedId(item.id); setPreviewOpen(true); } },
+      { text: "Restore", onPress: async () => { await restoreFromTrash(token, item.id); emitDriveRefresh(); } },
+      { text: "Delete Forever", style: "destructive", onPress: async () => { await deleteForever(token, item.id); emitDriveRefresh(); } },
       { text: "Cancel", style: "cancel" },
     ]);
   };
 
   return (
-    <View style={styles.modalContainer}>
-      <StatusBar barStyle="dark-content" />
+    // ✅ רקע דינמי
+    <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <TouchableOpacity
@@ -161,8 +136,12 @@ export default function TrashPage() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={closeScreen} style={styles.closeButton} activeOpacity={0.7}>
-            <Ionicons name="close-outline" size={32} color="#6c757d" />
+          <TouchableOpacity 
+            onPress={closeScreen} 
+            style={[styles.closeButton, { backgroundColor: colors.surface }]} 
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-outline" size={32} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -170,14 +149,15 @@ export default function TrashPage() {
           <View style={styles.textHeader}>
             <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>TRASH</Text>
 
-            <View style={styles.infoBanner}>
-              <Ionicons name="information-circle" size={16} color="#0d6efd" />
-              <Text style={styles.infoText}>Items are deleted forever after 30 days</Text>
+            {/* ✅ באנר מידע מותאם צבעים */}
+            <View style={[styles.infoBanner, { backgroundColor: colors.surface }]}>
+              <Ionicons name="information-circle" size={16} color={colors.primary} />
+              <Text style={[styles.infoText, { color: colors.primary }]}>Items are deleted forever after 30 days</Text>
             </View>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
           ) : (
             <FlatList
               data={items}
@@ -186,15 +166,14 @@ export default function TrashPage() {
                 <DriveListItem
                   item={{ ...item, displayDate: getDaysLeft(item.trashedAt) }}
                   onPress={openOrActions}
-                  // ✅ העברת פונקציית המחיקה לצמיתות
                   onDelete={handleDeleteForever}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="trash-outline" size={80} color="#f0f0f0" />
-                  <Text style={driveStyles.emptyText}>Trash is empty</Text>
+                  <Ionicons name="trash-outline" size={80} color={colors.textTertiary} />
+                  <Text style={[driveStyles.emptyText, { color: colors.textTertiary }]}>Trash is empty</Text>
                 </View>
               }
               onRefresh={loadTrash}
@@ -215,35 +194,21 @@ export default function TrashPage() {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalContainer: { flex: 1 },
   modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    height: 60,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 15, height: 60,
   },
   emptyAction: { color: "#dc3545", fontWeight: "600", fontSize: 16 },
   closeButton: {
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 22,
-    backgroundColor: "#f8f9fa",
+    width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 22,
   },
   content: { flex: 1 },
   textHeader: { paddingHorizontal: 20, marginBottom: 15 },
   infoBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e7f1ff",
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-    gap: 8,
-    alignSelf: "flex-start",
+    flexDirection: "row", alignItems: "center",
+    padding: 10, borderRadius: 10, marginTop: 10, gap: 8, alignSelf: "flex-start",
   },
-  infoText: { fontSize: 12, color: "#0d6efd", fontWeight: "500" },
+  infoText: { fontSize: 12, fontWeight: "500" },
   emptyContainer: { alignItems: "center", marginTop: 100 },
 });

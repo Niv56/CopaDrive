@@ -1,13 +1,14 @@
 import { StyleSheet, Platform } from "react-native";
 
-export const driveStyles = StyleSheet.create({
+// ✅ מקבל את הצבעים מה-Theme ומחזיר עיצוב תואם
+export const getDriveStyles = (colors) => StyleSheet.create({
     backgroundImage: { flex: 1, width: "100%", height: "100%" },
     safeArea: { flex: 1 },
 
     topBarSearchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: colors.surface + 'E6', // שקיפות קלה
         marginHorizontal: 15,
         marginTop: Platform.OS === 'ios' ? 10 : 40,
         height: 52,
@@ -18,16 +19,16 @@ export const driveStyles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
     },
-    searchText: { flex: 1, marginLeft: 15, color: '#5f6368', fontSize: 16 },
+    searchText: { flex: 1, marginLeft: 15, color: colors.textSecondary, fontSize: 16 },
     profileCircle: {
         width: 32, height: 32, borderRadius: 16,
-        backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center'
+        backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center'
     },
 
     homeTitle: {
         fontSize: 32,
         fontFamily: "BrunoAceSC_400Regular",
-        color: "#1a1a1a",
+        color: colors.textPrimary, // ✅ צבע משתנה
         marginHorizontal: 25,
         marginVertical: 15,
     },
@@ -35,21 +36,24 @@ export const driveStyles = StyleSheet.create({
     fileCard: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
+        backgroundColor: colors.card + 'BF', // שקיפות לרקע הכרטיס
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 15,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: "rgba(255, 255, 255, 0.3)",
+        borderColor: colors.border,
     },
+    iconContainer: { marginRight: 15 },
+    fileName: { fontSize: 16, fontWeight: "500", color: colors.textPrimary, marginBottom: 4 },
+    fileInfo: { fontSize: 12, color: colors.textSecondary },
 
     bottomNav: {
         flexDirection: 'row',
         height: 90,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: colors.background + 'F2',
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
+        borderTopColor: colors.border,
         justifyContent: 'space-around',
         alignItems: 'center',
         paddingBottom: 30,
@@ -59,28 +63,13 @@ export const driveStyles = StyleSheet.create({
         right: 0,
     },
     navItem: { alignItems: 'center' },
-    navLabel: { fontSize: 11, color: '#5f6368', marginTop: 4 },
-    navLabelActive: { color: '#1a73e8', fontWeight: 'bold' },
+    navLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 4 },
+    navLabelActive: { color: colors.primary, fontWeight: 'bold' },
 
-    fab: {
-        position: 'absolute',
-        right: 20,
-        bottom: 110,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-    },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        backgroundColor: colors.surface + '66',
         padding: 10,
         borderRadius: 12,
         alignSelf: 'flex-start',
@@ -88,17 +77,17 @@ export const driveStyles = StyleSheet.create({
         marginBottom: 10,
         gap: 8,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: colors.border,
     },
     sectionText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#333'
+        color: colors.textPrimary
     },
     emptyText: {
         textAlign: 'center',
         marginTop: 50,
-        color: '#666',
+        color: colors.textTertiary,
         fontFamily: 'BrunoAceSC_400Regular'
     },
 

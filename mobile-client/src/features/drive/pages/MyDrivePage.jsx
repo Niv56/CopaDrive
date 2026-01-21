@@ -1,5 +1,3 @@
-// mobile-client/src/features/drive/pages/MyDrivePage.jsx
-
 import React, { useMemo, useCallback, useState } from "react";
 // הוספנו כאן את Alert לייבוא
 import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
@@ -7,10 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-import { driveStyles } from "../styles/myDrive.styles";
-import { useAuth } from "../../../app/providers/AuthContext";
 
-import { moveToTrash } from "../services/fileService";
+// ✅ ייבוא Theme
+import { getDriveStyles } from "../styles/myDrive.styles";
+import { useTheme } from "../../../app/providers/ThemeContext";
+
+import { useAuth } from "../../../app/providers/AuthContext";
+import { moveToTrash } from "../services/fileService"; 
 import { emitDriveRefresh } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
@@ -19,14 +20,28 @@ export default function MyDrivePage() {
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
 
-  // Folder navigation state
-  const [currentFolderId, setCurrentFolderId] = useState(null);
-  const [folderPath, setFolderPath] = useState([]); // breadcrumb trail
+  // ✅ שימוש ב-Theme
+  const { colors } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
+  const onlyFiles = useMemo(
+    () => (items || []).filter((i) => i?.type === "file"),
+    [items]
+  );
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  // גולת הכותרת: הפונקציה עוברת לטופ-לבל כדי שגם ה-FlatList וגם React יכירו אותה תמיד
+  const handlePressItem = useCallback((item) => {
+    if (!item) return;
+    if (item.type === "folder") {
+      Alert.alert("CopaDrive", "Folders view is coming soon.");
+      return;
+    }
+    setSelectedId(item.id);
+    setPreviewOpen(true);
+  }, []);
+
   const handleDeleteItem = useCallback(async (item) => {
     Alert.alert(
       "Move to Trash?",
@@ -49,52 +64,8 @@ export default function MyDrivePage() {
     );
   }, [token]);
 
-  // סינון הפריטים לפי תיקייה נוכחית
-  const currentItems = useMemo(() => {
-    return (items || []).filter((item) => {
-      if (currentFolderId) {
-        return String(item.parentId) === String(currentFolderId);
-      }
-      const parentIsAccessible = items.some(other => String(other.id) === String(item.parentId));
-      return !item.parentId || !parentIsAccessible;
-    });
-  }, [items, currentFolderId]);
-
-  // לחיצה על פריט
-  const handlePressItem = useCallback((item) => {
-    if (!item) return;
-    const itemId = item.id || item._id;
-
-    if (item.type === "folder") {
-      setCurrentFolderId(itemId);
-      setFolderPath((prev) => [...prev, { id: itemId, name: item.name }]);
-      return;
-    }
-    setSelectedId(itemId);
-    setPreviewOpen(true);
-  }, []);
-
-  const handleBack = useCallback(() => {
-    if (folderPath.length === 0) return;
-    const newPath = folderPath.slice(0, -1);
-    setFolderPath(newPath);
-    setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
-  }, [folderPath]);
-
-  const navigateToBreadcrumb = useCallback((index) => {
-    if (index < 0) {
-      setFolderPath([]);
-      setCurrentFolderId(null);
-    } else {
-      const newPath = folderPath.slice(0, index + 1);
-      setFolderPath(newPath);
-      setCurrentFolderId(newPath[newPath.length - 1].id);
-    }
-  }, [folderPath]);
-
-  // מסך טעינה - מחזירים רק את האינדיקטור, בלי להגדיר פונקציות בפנים
-  if (loading && items.length === 0) {
-    return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+  if (loading && onlyFiles.length === 0) {
+    return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
   return (
