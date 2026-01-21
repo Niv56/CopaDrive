@@ -28,6 +28,7 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
 
     try {
       setLoading(true);
+      // קריאת הקובץ כ-Base64 (עובד לקבצים בגודל סביר)
       const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
 
       await createItem(token, {
@@ -44,19 +45,18 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
     } finally {
       setLoading(false);
       unlockPicker();
-      closeCallback?.(); // סגירת המודל בסיום
+      closeCallback?.(); 
     }
   };
 
   const pickDocument = async () => {
     if (!lockPicker()) return;
     try {
-      // השהייה קטנה למניעת התנגשויות UI
       await new Promise(r => setTimeout(r, 200));
       
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
-        type: "*/*",
+        type: "*/*", // מאפשר את כל סוגי הקבצים
         multiple: false,
       });
 
@@ -68,7 +68,7 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       const asset = result?.assets?.[0];
       if (asset?.uri) {
         const fileName = asset.name || `file_${Date.now()}`;
-        closeCallback?.(); // סוגרים את התפריט לפני ההעלאה
+        closeCallback?.();
         await processAndUpload(asset.uri, fileName, asset.mimeType);
       }
     } catch (err) {
@@ -91,9 +91,10 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       }
 
       const options = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        // ✅ שינוי קריטי: מאפשר גם תמונות וגם וידאו
+        mediaTypes: ImagePicker.MediaTypeOptions.All, 
         quality: 0.7,
-        allowsEditing: false,
+        allowsEditing: false, // עריכה בוידאו לפעמים בעייתית באנדרואיד, עדיף לכבות
       };
 
       const result = useCamera
@@ -108,14 +109,24 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       const asset = result?.assets?.[0];
       if (asset?.uri) {
         let fileName = asset.fileName;
+        
+        // יצירת שם קובץ אם חסר
         if (!fileName) {
           const uriParts = String(asset.uri).split("/");
-          fileName = uriParts[uriParts.length - 1] || `photo_${Date.now()}.jpg`;
+          const defaultExt = asset.type === 'video' ? '.mp4' : '.jpg';
+          fileName = uriParts[uriParts.length - 1] || `media_${Date.now()}${defaultExt}`;
         }
-        if (fileName && !fileName.includes(".")) fileName += ".jpg";
         
+        // וידוא סיומת
+        if (fileName && !fileName.includes(".")) {
+            fileName += asset.type === 'video' ? ".mp4" : ".jpg";
+        }
+        
+        // קביעת MimeType ברירת מחדל אם אין
+        const mime = asset.mimeType || (asset.type === 'video' ? "video/mp4" : "image/jpeg");
+
         closeCallback?.();
-        await processAndUpload(asset.uri, fileName, asset.mimeType || "image/jpeg");
+        await processAndUpload(asset.uri, fileName, mime);
       }
     } catch (err) {
       Alert.alert("Error", "Action failed");
