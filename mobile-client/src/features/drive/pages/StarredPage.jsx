@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { FlatList, Text, ActivityIndicator, View, Pressable } from "react-native";
+import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
@@ -8,7 +8,14 @@ import { driveStyles } from "../styles/myDrive.styles";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
+// ✅ ייבואים חדשים שנצרכים למחיקה
+import { useAuth } from "../../../app/providers/AuthContext";
+import { moveToTrash } from "../services/fileService";
+import { emitDriveRefresh } from "../services/driveEvents";
+
 export default function StarredPage() {
+  // ✅ שליפת הטוקן
+  const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
 
   // Folder navigation state
@@ -44,6 +51,28 @@ export default function StarredPage() {
     setSelectedId(itemId);
     setPreviewOpen(true);
   }, []);
+
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh();
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
 
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
@@ -103,7 +132,11 @@ export default function StarredPage() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         renderItem={({ item }) => (
-          <DriveListItem item={item} onPress={openItem} />
+          <DriveListItem
+            item={item}
+            onPress={openItem}
+            onDelete={handleDeleteItem}
+          />
         )}
         ListEmptyComponent={
           <Text style={driveStyles.emptyText}>

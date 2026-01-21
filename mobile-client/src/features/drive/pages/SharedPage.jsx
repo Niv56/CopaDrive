@@ -14,11 +14,16 @@ import { useAuth } from "../../../app/providers/AuthContext";
 import DriveListItem from "../components/DriveListItem";
 import { driveStyles } from "../styles/myDrive.styles";
 
+// ✅ ייבוא שירותי מחיקה ורענון
+import { moveToTrash } from "../services/fileService";
+import { emitDriveRefresh } from "../services/driveEvents";
+
 import FilePreviewModal from "../components/FilePreviewModal";
 
 export default function SharedPage() {
   const { items, loading, refreshing, onRefresh } = useMyDrive();
-  const { userId } = useAuth();
+  // ✅ הוספנו את token
+  const { userId, token } = useAuth();
 
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
 
@@ -59,6 +64,29 @@ export default function SharedPage() {
     setPreviewOpen(true);
   }, []);
 
+  // ✅ פונקציית המחיקה החדשה
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh(); // רענון הרשימה
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
+
   if (loading && (items || []).length === 0) {
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
@@ -88,7 +116,11 @@ export default function SharedPage() {
             onRefresh={onRefresh}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <DriveListItem item={item} onPress={openItem} />
+              <DriveListItem 
+                item={item} 
+                onPress={openItem} 
+                onDelete={handleDeleteItem} // ✅ חיבור למחיקה
+              />
             )}
             ListEmptyComponent={
               <Text style={driveStyles.emptyText}>
@@ -109,7 +141,7 @@ export default function SharedPage() {
     );
   }
 
-  // מצב: רשימת משתמשים (בעלים)
+  // מצב: רשימת משתמשים (בעלים) - כאן אין מחיקה כי אלו משתמשים
   return (
     <>
       <FlatList

@@ -8,6 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
+  Alert, // ✅ הוספנו Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,14 +16,14 @@ import { useAuth } from "../providers/AuthContext";
 import {
   getRecentFiles,
   formatLastAccessed,
+  moveToTrash // ✅ הוספנו moveToTrash
 } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// ✅ auto-refresh bus
-import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+// ✅ הוספנו emitDriveRefresh
+import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 
-// ✅ Preview modal
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function RecentPage() {
@@ -31,7 +32,6 @@ export default function RecentPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ preview modal state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -59,7 +59,6 @@ export default function RecentPage() {
     return unsubscribe;
   }, [loadRecent]);
 
-  // ✅ X always closes reliably
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -79,6 +78,29 @@ export default function RecentPage() {
     setSelectedId(i.id);
     setPreviewOpen(true);
   }, []);
+
+  // ✅ פונקציית המחיקה החדשה
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh();
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
 
   return (
     <View style={styles.modalContainer}>
@@ -109,6 +131,7 @@ export default function RecentPage() {
                 <DriveListItem
                   item={{ ...item, displayDate: formatLastAccessed(item.lastAccessed) }}
                   onPress={openItem}
+                  onDelete={handleDeleteItem} // ✅ העברת המחיקה
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}

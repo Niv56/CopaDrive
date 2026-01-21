@@ -8,18 +8,19 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
+  Alert, // ✅ הוספנו Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../providers/AuthContext";
-import { getImportantFiles } from "../../features/drive/services/fileService";
+// ✅ הוספנו moveToTrash
+import { getImportantFiles, moveToTrash } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// ✅ auto-refresh bus
-import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+// ✅ הוספנו emitDriveRefresh
+import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 
-// ✅ Preview modal
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function ImportantPage() {
@@ -28,7 +29,6 @@ export default function ImportantPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ preview modal state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -49,7 +49,6 @@ export default function ImportantPage() {
     loadImportant();
   }, [loadImportant]);
 
-  // ✅ listen for global refresh events
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => {
       loadImportant();
@@ -57,9 +56,6 @@ export default function ImportantPage() {
     return unsubscribe;
   }, [loadImportant]);
 
-  // ✅ X should always close reliably:
-  // - if there is a previous screen -> back
-  // - else -> go home
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -74,14 +70,34 @@ export default function ImportantPage() {
 
   const openItem = useCallback((i) => {
     if (!i) return;
-
-    if (i.type === "folder") {
-      return; // folders later
-    }
+    if (i.type === "folder") return;
 
     setSelectedId(i.id);
     setPreviewOpen(true);
   }, []);
+
+  // ✅ פונקציית המחיקה החדשה
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh();
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
 
   return (
     <View style={styles.modalContainer}>
@@ -89,8 +105,6 @@ export default function ImportantPage() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
-
-          {/* ✅ fixed X */}
           <TouchableOpacity
             onPress={closeScreen}
             style={styles.closeButton}
@@ -112,7 +126,13 @@ export default function ImportantPage() {
             <FlatList
               data={items}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <DriveListItem item={item} onPress={openItem} />}
+              renderItem={({ item }) => (
+                <DriveListItem 
+                    item={item} 
+                    onPress={openItem} 
+                    onDelete={handleDeleteItem} // ✅ העברת המחיקה
+                />
+              )}
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>

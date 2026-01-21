@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -9,16 +9,19 @@ import {
   ActivityIndicator,
   StatusBar,
   Pressable,
+  Alert,
+  Animated
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../providers/AuthContext";
-import { getFiles } from "../../features/drive/services/fileService";
+import { getFiles, moveToTrash } from "../../features/drive/services/fileService";
 import { formatBytes } from "../../shared_code/utils/formatBytes";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
+import { Swipeable } from "react-native-gesture-handler";
 // auto-refresh bus
-import { subscribeDriveRefresh } from "../../features/drive/services/driveEvents";
+import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 
 // Preview modal
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
@@ -79,7 +82,6 @@ export default function StoragePage() {
   const openItem = useCallback((item) => {
     if (!item) return;
 
-    // Storage page only shows files, but handle folder case gracefully
     if (item.type === "folder") {
       return;
     }
@@ -88,25 +90,27 @@ export default function StoragePage() {
     setPreviewOpen(true);
   }, []);
 
-  const renderItem = ({ item }) => {
-    const isImage = item.mimeType?.startsWith("image");
-    const iconName = isImage ? "image" : "document-text";
-    const iconColor = isImage ? "#d93025" : "#4285F4";
-
-    return (
-      <Pressable onPress={() => openItem(item)} style={styles.fileRow}>
-        <View style={styles.iconWrapper}>
-          <Ionicons name={iconName} size={24} color={iconColor} />
-        </View>
-        <View style={styles.fileInfo}>
-          <Text style={styles.fileName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={styles.fileSize}>{formatBytes(item.sizeBytes)}</Text>
-        </View>
-      </Pressable>
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh();
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
     );
-  };
+  }, [token]);
 
   return (
     <View style={styles.modalContainer}>
@@ -131,7 +135,13 @@ export default function StoragePage() {
             <FlatList
               data={sortedFiles}
               keyExtractor={(item) => item.id}
-              renderItem={renderItem}
+              renderItem={({ item }) => (
+                <StorageListItem
+                  item={item}
+                  onPress={openItem}
+                  onDelete={handleDeleteItem}
+                />
+              )}
               contentContainerStyle={styles.listContent}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
@@ -153,6 +163,69 @@ export default function StoragePage() {
         onClose={() => setPreviewOpen(false)}
       />
     </View>
+  );
+}
+
+function StorageListItem({ item, onPress, onDelete }) {
+  const swipeableRef = useRef(null);
+
+  const isImage = item.mimeType?.startsWith("image");
+  const iconName = isImage ? "image" : "document-text";
+  const iconColor = isImage ? "#d93025" : "#4285F4";
+
+  const renderLeftActions = (progress, dragX) => {
+    const scale = dragX.interpolate({
+      inputRange: [0, 80],
+      outputRange: [0.8, 1],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = dragX.interpolate({
+      inputRange: [0, 50],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <View style={styles.leftActionContainer}>
+        <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.deleteButtonInner}
+            onPress={() => {
+              swipeableRef.current?.close();
+              setTimeout(() => {
+                if (onDelete) onDelete(item);
+              }, 200);
+            }}
+          >
+            <Ionicons name="trash-outline" size={24} color="white" />
+            <Text style={styles.deleteText}>Delete</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  };
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={renderLeftActions}
+      overshootLeft={false}
+      friction={2}
+    >
+      <Pressable onPress={() => onPress(item)} style={styles.fileRow}>
+        <View style={styles.iconWrapper}>
+          <Ionicons name={iconName} size={24} color={iconColor} />
+        </View>
+        <View style={styles.fileInfo}>
+          <Text style={styles.fileName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.fileSize}>{formatBytes(item.sizeBytes)}</Text>
+        </View>
+      </Pressable>
+    </Swipeable>
   );
 }
 
@@ -185,6 +258,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#f8f9fa",
+    backgroundColor: 'white' // חובה בשביל ה-Swipeable
   },
   iconWrapper: { width: 45, alignItems: "flex-start" },
   fileInfo: { flex: 1 },
@@ -192,4 +266,33 @@ const styles = StyleSheet.create({
   fileSize: { fontSize: 13, color: "#6c757d", fontWeight: "600" },
 
   emptyContainer: { alignItems: "center", marginTop: 100 },
+
+  leftActionContainer: {
+    width: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteActionAnim: {
+    width: 70,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: "#ff3b30",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    marginRight: 10
+  },
+  deleteButtonInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  deleteText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 11,
+    marginTop: 2
+  }
 });

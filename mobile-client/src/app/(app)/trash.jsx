@@ -23,13 +23,11 @@ import {
 import DriveListItem from "../../features/drive/components/DriveListItem";
 import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// ✅ auto-refresh bus
 import {
   subscribeDriveRefresh,
   emitDriveRefresh,
 } from "../../features/drive/services/driveEvents";
 
-// ✅ Preview modal
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function TrashPage() {
@@ -38,7 +36,6 @@ export default function TrashPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ preview modal state
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -66,7 +63,6 @@ export default function TrashPage() {
     return unsubscribe;
   }, [loadTrash]);
 
-  // ✅ X always closes reliably
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -96,6 +92,29 @@ export default function TrashPage() {
       ]
     );
   };
+
+  // ✅ מחיקה בודדת לצמיתות (עבור ה-Swipe)
+  const handleDeleteForever = useCallback(async (item) => {
+    Alert.alert(
+      "Delete Forever?",
+      `"${item.name}" will be gone forever.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Forever",
+          style: "destructive",
+          onPress: async () => {
+             try {
+                 await deleteForever(token, item.id);
+                 emitDriveRefresh();
+             } catch (err) {
+                 Alert.alert("Error", "Could not delete item.");
+             }
+          }
+        }
+      ]
+    );
+  }, [token]);
 
   const openOrActions = (item) => {
     if (!item) return;
@@ -167,6 +186,8 @@ export default function TrashPage() {
                 <DriveListItem
                   item={{ ...item, displayDate: getDaysLeft(item.trashedAt) }}
                   onPress={openOrActions}
+                  // ✅ העברת פונקציית המחיקה לצמיתות
+                  onDelete={handleDeleteForever}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}

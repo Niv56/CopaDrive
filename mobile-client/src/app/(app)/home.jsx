@@ -7,7 +7,7 @@ import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc
 // Layout & Pages
 import TopBar from "../../layout/TopBar";
 import BottomBar from "../../layout/BottomBar";
-import Fab from "../../layout/Fab";
+import Fab from "../../layout/fab/Fab"; // ✅ הנתיב החדש שסידרנו קודם
 
 import MainHomePage from "../../features/drive/pages/MainHomePage";
 import StarredPage from "../../features/drive/pages/StarredPage";
@@ -23,7 +23,6 @@ export default function HomeManager() {
   const [activeTab, setActiveTab] = useState("home");
   const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
 
-  // ה-FAB כבר מנהל refresh bus פנימי, אבל נשאיר hook אופציונלי ללוג/דיבוג
   const handleRefresh = () => {
     console.log("File uploaded/created, refreshing...");
   };
@@ -53,7 +52,7 @@ export default function HomeManager() {
         </View>
       </SafeAreaView>
 
-      {/* FAB מנהל פתיחה בעצמו */}
+      {/* FAB */}
       <Fab onRefresh={handleRefresh} />
 
       <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />

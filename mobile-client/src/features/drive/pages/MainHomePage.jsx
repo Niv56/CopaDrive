@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { View, Text, FlatList, ActivityIndicator, Pressable } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
@@ -8,8 +8,14 @@ import { driveStyles } from "../styles/myDrive.styles";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
+import { useAuth } from "../../../app/providers/AuthContext";
+import { moveToTrash } from "../services/fileService";
+import { emitDriveRefresh } from "../services/driveEvents";
+
 export default function MainHomePage() {
   const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+  const { token } = useAuth();
 
   // Folder navigation state
   const [currentFolderId, setCurrentFolderId] = useState(null);
@@ -52,6 +58,28 @@ export default function MainHomePage() {
     setSelectedId(itemId);
     setPreviewOpen(true);
   }, []);
+
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await moveToTrash(token, item.id);
+              emitDriveRefresh(); // רענון
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
 
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
@@ -113,7 +141,12 @@ export default function MainHomePage() {
               <Text style={driveStyles.emptyText}>No folders here</Text>
             ) : (
               folders.map((item) => (
-                <DriveListItem key={item.id || item._id} item={item} onPress={openItem} />
+                <DriveListItem
+                  key={item.id || item._id}
+                  item={item}
+                  onPress={openItem}
+                  onDelete={handleDeleteItem}
+                />
               ))
             )}
 
@@ -126,7 +159,12 @@ export default function MainHomePage() {
               <Text style={driveStyles.emptyText}>No files here</Text>
             ) : (
               files.map((item) => (
-                <DriveListItem key={item.id || item._id} item={item} onPress={openItem} />
+                <DriveListItem
+                  key={item.id || item._id}
+                  item={item}
+                  onPress={openItem}
+                  onDelete={handleDeleteItem}
+                />
               ))
             )}
           </View>
