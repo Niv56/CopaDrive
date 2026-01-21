@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Platform, InputAccessoryView, Button, Keyboard
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const ACCESSORY_ID = "fab_create_content_done";
 
@@ -10,9 +11,18 @@ export default function CreateForm({
   mode, // 'create_folder' or 'create_file'
   name, setName, 
   content, setContent, 
+  folders = [],
+  selectedFolderId, setSelectedFolderId,
   onSubmit, onBack, loading 
 }) {
   const isFolder = mode === "create_folder";
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+
+  const selectedFolderName = useMemo(() => {
+    if (!selectedFolderId) return "My Drive (Root)";
+    const folder = folders?.find(f => f.id === selectedFolderId);
+    return folder?.name || "Unknown Folder";
+  }, [selectedFolderId, folders]);
 
   return (
     <View style={styles.centerContainer}>
@@ -28,10 +38,7 @@ export default function CreateForm({
           onChangeText={setName}
           autoFocus
           returnKeyType="done"
-          onSubmitEditing={() => {
-            if (isFolder) onSubmit();
-            else Keyboard.dismiss();
-          }}
+          onSubmitEditing={() => Keyboard.dismiss()}
         />
 
         {!isFolder && (
@@ -45,6 +52,58 @@ export default function CreateForm({
               inputAccessoryViewID={ACCESSORY_ID}
             />
           </ScrollView>
+        )}
+
+        {/* Folder Picker */}
+        <Text style={styles.label}>Save to</Text>
+        <TouchableOpacity 
+          style={styles.folderPicker} 
+          onPress={() => setShowFolderPicker(!showFolderPicker)}
+        >
+          <Ionicons name="folder-outline" size={20} color="#666" />
+          <Text style={styles.folderPickerText}>{selectedFolderName}</Text>
+          <Ionicons 
+            name={showFolderPicker ? "chevron-up" : "chevron-down"} 
+            size={18} 
+            color="#666" 
+          />
+        </TouchableOpacity>
+
+        {showFolderPicker && (
+          <View style={styles.folderList}>
+            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+              <TouchableOpacity
+                style={[
+                  styles.folderItem, 
+                  !selectedFolderId && styles.folderItemActive
+                ]}
+                onPress={() => { 
+                  setSelectedFolderId(null); 
+                  setShowFolderPicker(false); 
+                }}
+              >
+                <Ionicons name="home-outline" size={18} color="#666" />
+                <Text style={styles.folderItemText}>My Drive (Root)</Text>
+              </TouchableOpacity>
+              
+              {folders?.filter(f => f.type === "folder").map(folder => (
+                <TouchableOpacity
+                  key={folder.id}
+                  style={[
+                    styles.folderItem, 
+                    selectedFolderId === folder.id && styles.folderItemActive
+                  ]}
+                  onPress={() => { 
+                    setSelectedFolderId(folder.id); 
+                    setShowFolderPicker(false); 
+                  }}
+                >
+                  <Ionicons name="folder" size={18} color="#f59e0b" />
+                  <Text style={styles.folderItemText}>{folder.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
 
         {Platform.OS === "ios" && (
@@ -104,6 +163,55 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 15,
   },
+  label: {
+    alignSelf: "flex-start",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#333",
+  },
+  folderPicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 8,
+    backgroundColor: "#f8f9fa",
+  },
+  folderPickerText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+  },
+  folderList: {
+    width: "100%",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    marginBottom: 15,
+    maxHeight: 150,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  folderItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  folderItemActive: {
+    backgroundColor: "#e0f2fe",
+  },
+  folderItemText: {
+    fontSize: 14,
+    color: "#333",
+  },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -120,12 +228,11 @@ const styles = StyleSheet.create({
   },
   confirmText: { color: "white", fontSize: 14, fontWeight: '700' },
 
-  // ✅ התיקון כאן: הקטנתי את ה-padding
   accessory: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingVertical: 2,   // היה 10, הורדנו ל-2 כדי שיהיה דק
+    paddingVertical: 2,   
     paddingHorizontal: 10,
     backgroundColor: "#f0f0f0",
     borderTopWidth: 1,

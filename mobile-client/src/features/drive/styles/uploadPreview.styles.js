@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 // Dynamic styles that accept theme colors
-export const getUploadPreviewStyles = (colors) => StyleSheet.create({
+export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
   backdrop: { 
     flex: 1 
   },
@@ -52,8 +52,7 @@ export const getUploadPreviewStyles = (colors) => StyleSheet.create({
   },
   previewImage: { 
     width: "100%", 
-    height: "100%", 
-    resizeMode: "contain" 
+    height: "100%",
   },
   previewVideo: { 
     width: "100%", 

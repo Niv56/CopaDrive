@@ -67,10 +67,9 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
-        type: "*/*", 
+        type: "*/*", // מאפשר את כל סוגי הקבצים
         multiple: false,
       });
-
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -79,12 +78,13 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       const asset = result?.assets?.[0];
       if (asset?.uri) {
         const fileName = asset.name || `file_${Date.now()}`;
+        // Set pending file - same modal will show preview content
+        unlockPicker();
         setPendingFile({
           uri: asset.uri,
           fileName,
           mimeType: asset.mimeType,
         });
-        closeCallback?.();
       } else {
         unlockPicker();
       }
@@ -108,15 +108,15 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       }
 
       const options = {
+        // ✅ שינוי קריטי: מאפשר גם תמונות וגם וידאו
         mediaTypes: ImagePicker.MediaTypeOptions.All, 
         quality: 0.7,
-        allowsEditing: false,
+        allowsEditing: false, // עריכה בוידאו לפעמים בעייתית באנדרואיד, עדיף לכבות
       };
 
       const result = useCamera
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
-
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -132,19 +132,21 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
           fileName = uriParts[uriParts.length - 1] || `media_${Date.now()}${defaultExt}`;
         }
         
+        // וידוא סיומת
         if (fileName && !fileName.includes(".")) {
             fileName += asset.type === 'video' ? ".mp4" : ".jpg";
         }
         
+        // קביעת MimeType ברירת מחדל אם אין
         const mime = asset.mimeType || (asset.type === 'video' ? "video/mp4" : "image/jpeg");
 
-        // Set pending file for preview instead of immediate upload
+        // Set pending file - same modal will show preview content
+        unlockPicker();
         setPendingFile({
           uri: asset.uri,
           fileName,
           mimeType: mime,
         });
-        closeCallback?.();
       } else {
         unlockPicker();
       }
