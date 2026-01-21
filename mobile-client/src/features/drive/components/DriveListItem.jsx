@@ -51,7 +51,10 @@ export default function DriveListItem({ item, onPress, onDelete, onRestore, tras
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
 
+<<<<<<< HEAD
   // בדיקת בעלות
+=======
+>>>>>>> cbdeafabc97e26063bf6467e8eab51f7b1f90bda
   const isOwner = useMemo(() => {
     const ownerId = item?.ownerId || item?.owner;
     const myId = user?.id || user?._id;
