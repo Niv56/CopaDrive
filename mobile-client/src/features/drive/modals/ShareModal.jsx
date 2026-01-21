@@ -58,6 +58,42 @@ export default function ShareModal({ visible, item, onClose }) {
         }
     };
 
+    const handleToggleRole = async (perm) => {
+        const newRole = perm.role === "viewer" ? "editor" : "viewer";
+        try {
+            const permId = perm.id || perm._id;
+            await updatePermission(token, fileId, permId, newRole);
+            await loadPermissions();
+        } catch (e) {
+            console.error("Update role error:", e);
+            Alert.alert("Error", "Failed to update role");
+        }
+    };
+
+    const handleRemove = async (perm) => {
+        Alert.alert(
+            "Remove Access",
+            `Are you sure you want to remove access for ${perm.email}?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const permId = perm.id || perm._id;
+                            await deletePermission(token, fileId, permId);
+                            await loadPermissions(); // רענון הרשימה
+                        } catch (e) {
+                            console.error("Delete permission error:", e);
+                            Alert.alert("Error", "Failed to remove user");
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     if (!visible) return null;
 
     return (
@@ -111,13 +147,12 @@ export default function ShareModal({ visible, item, onClose }) {
                                     keyExtractor={(p) => p.id || p.userId || Math.random().toString()}
                                     renderItem={({ item: perm }) => (
                                         <View style={styles.permItem}>
-                                            {/* תמונת פרופיל או Placeholder */}
                                             <View style={styles.avatarWrapper}>
                                                 {perm.image ? (
                                                     <Image source={{ uri: perm.image }} style={styles.avatar} />
                                                 ) : (
                                                     <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                                        <Ionicons name="person" size={16} color="#0d6efd" />
+                                                        <Ionicons name="person" size={18} color="#0d6efd" />
                                                     </View>
                                                 )}
                                             </View>
@@ -131,8 +166,29 @@ export default function ShareModal({ visible, item, onClose }) {
                                                 </Text>
                                             </View>
 
-                                            <View style={styles.roleBadge}>
-                                                <Text style={styles.roleText}>{perm.role?.toUpperCase()}</Text>
+                                            <View style={styles.actionsContainer}>
+                                                {isOwner ? (
+                                                    <>
+                                                        <TouchableOpacity
+                                                            style={styles.roleBadgeActive}
+                                                            onPress={() => handleToggleRole(perm)}
+                                                        >
+                                                            <Text style={styles.roleTextActive}>{perm.role?.toUpperCase()}</Text>
+                                                            <Ionicons name="chevron-down" size={12} color="#0d6efd" style={{ marginLeft: 4 }} />
+                                                        </TouchableOpacity>
+
+                                                        <TouchableOpacity
+                                                            style={styles.deleteBtn}
+                                                            onPress={() => handleRemove(perm)}
+                                                        >
+                                                            <Ionicons name="trash-outline" size={18} color="#dc3545" />
+                                                        </TouchableOpacity>
+                                                    </>
+                                                ) : (
+                                                    <View style={styles.roleBadgeReadOnly}>
+                                                        <Text style={styles.roleTextReadOnly}>{perm.role?.toUpperCase()}</Text>
+                                                    </View>
+                                                )}
                                             </View>
                                         </View>
                                     )}
@@ -242,5 +298,45 @@ const styles = StyleSheet.create({
     },
 
     emptyText: { textAlign: "center", color: "#999", marginTop: 20 },
-    closeIcon: { padding: 5 }
+    closeIcon: { padding: 5 },
+
+    actionsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    roleBadgeActive: {
+        backgroundColor: "rgba(13, 110, 253, 0.15)",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "rgba(13, 110, 253, 0.2)",
+    },
+    roleTextActive: {
+        fontSize: 10,
+        fontWeight: "900",
+        color: "#0d6efd"
+    },
+    roleBadgeReadOnly: {
+        backgroundColor: "rgba(0, 0, 0, 0.05)",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+    },
+    roleTextReadOnly: {
+        fontSize: 10,
+        fontWeight: "700",
+        color: "#666"
+    },
+    deleteBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "rgba(220, 53, 69, 0.1)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
 });
