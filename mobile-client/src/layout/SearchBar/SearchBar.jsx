@@ -61,11 +61,10 @@ export default function SearchBar({ token }) {
           results={results}
           loading={loading}
           query={query}
-          onResultPress={handleFileClick} // ✅ שימוש בפונקציה החדשה
+          onResultPress={handleFileClick} 
         />
       )}
 
-      {/* ✅ רכיב המודל שיושב ברקע ונפתח רק כשצריך */}
       <FilePreviewModal
         open={modalOpen}
         fileId={selectedFileId}

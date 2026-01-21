@@ -14,7 +14,6 @@ export const authStyles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-
   cardContainer: {
     width: "100%",
     maxWidth: 400,
@@ -28,7 +27,6 @@ export const authStyles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-
   header: {
     alignItems: "center",
     marginBottom: 30,
@@ -46,7 +44,6 @@ export const authStyles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -74,7 +71,6 @@ export const authStyles = StyleSheet.create({
     marginBottom: 6,
     marginLeft: 4,
   },
-
   btnPrimary: {
     backgroundColor: "#007bff",
     borderRadius: 50,
@@ -113,7 +109,6 @@ export const authStyles = StyleSheet.create({
     fontWeight: "700",
     color: "#333",
   },
-
   errorText: {
     color: "#ff4444",
     fontSize: 12,
@@ -121,7 +116,6 @@ export const authStyles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 10,
   },
-
   linkBtn: {
     marginTop: 20,
     alignItems: "center",
@@ -135,4 +129,81 @@ export const authStyles = StyleSheet.create({
     color: "#1a1a1a",
     textDecorationLine: "underline",
   },
+
+  // --- Gender Styles ---
+  genderContainer: {
+    gap: 12,
+    marginBottom: 10,
+  },
+  genderRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  genderBtn: {
+    flex: 1,
+    height: 80,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e1e1e1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    padding: 4,
+  },
+  genderBtnActive: {
+    backgroundColor: "#007bff",
+    borderColor: "#007bff",
+  },
+  genderText: {
+    color: "#333",
+    fontWeight: "600",
+    fontSize: 15,
+    textAlign: "center",
+  },
+  genderTextActive: {
+    color: "#fff",
+  },
+  genderBtnFull: {
+    width: "100%",
+    height: 60,
+  },
+
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff", 
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    borderWidth: 1,
+    borderColor: "#e1e1e1",
+    marginBottom: 16,
+  },
+  dateButtonError: {
+    borderColor: "#ff4444",
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  dateTextPlaceholder: {
+    color: "#999",
+  },
+  genderBtnFull: {
+  width: "100%",
+  height: 56,             
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: "#e1e1e1",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#fff",
+  marginTop: 4,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.05,
+  shadowRadius: 4,
+  elevation: 2,           
+},
 });
