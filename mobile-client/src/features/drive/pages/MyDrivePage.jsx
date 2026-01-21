@@ -6,10 +6,16 @@ import { FlatList, Text, ActivityIndicator, Alert } from "react-native";
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
 import { driveStyles } from "../styles/myDrive.styles";
+import { useAuth } from "../../../app/providers/AuthContext";
+
+// ✅ ייבוא פונקציית המחיקה ורענון
+import { moveToTrash } from "../services/fileService"; 
+import { emitDriveRefresh } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
 export default function MyDrivePage() {
+  const { token } = useAuth(); // הוספנו את הטוקן
   const { items, loading, refreshing, onRefresh } = useMyDrive();
 
   const onlyFiles = useMemo(
@@ -32,6 +38,31 @@ export default function MyDrivePage() {
     setPreviewOpen(true);
   }, []);
 
+  // ✅ הפונקציה החדשה למחיקה
+  const handleDeleteItem = useCallback(async (item) => {
+    Alert.alert(
+      "Move to Trash?",
+      `Are you sure you want to remove "${item.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // נניח שיש פונקציה כזו ב-fileService. 
+              // אם קוראים לה בשם אחר (למשל updateItem עם trashed: true), עדכן כאן.
+              await moveToTrash(token, item.id);
+              emitDriveRefresh(); // רענון הרשימה
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
+          }
+        }
+      ]
+    );
+  }, [token]);
+
   if (loading && onlyFiles.length === 0) {
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
@@ -43,7 +74,11 @@ export default function MyDrivePage() {
         contentContainerStyle={{ paddingBottom: 150 }}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <DriveListItem item={item} onPress={handlePressItem} />
+          <DriveListItem 
+            item={item} 
+            onPress={handlePressItem}
+            onDelete={handleDeleteItem} // ✅ העברת פונקציית המחיקה
+          />
         )}
         refreshing={refreshing}
         onRefresh={onRefresh}

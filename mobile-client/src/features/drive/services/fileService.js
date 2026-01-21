@@ -67,6 +67,16 @@ export async function getTrashFiles(token) {
   return request("/api/files/trash", { method: "GET", token });
 }
 
+// ✅ הפונקציה החדשה שהייתה חסרה למחיקה
+export async function moveToTrash(token, fileId) {
+  // משתמשים באותו Endpoint כמו שחזור, אבל עם trashed: true
+  return request(`/api/files/${fileId}/trash`, {
+    method: "PATCH",
+    token,
+    body: { trashed: true },
+  });
+}
+
 export async function restoreFromTrash(token, fileId) {
   return request(`/api/files/${fileId}/trash`, {
     method: "PATCH",
