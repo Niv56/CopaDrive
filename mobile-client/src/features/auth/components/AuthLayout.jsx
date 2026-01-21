@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -12,34 +12,34 @@ import {
   StyleSheet
 } from "react-native";
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
-import { authStyles } from "../styles/auth.styles";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../../../app/providers/ThemeContext";
+import { getAuthStyles } from "../styles/auth.styles";
+import MusicToggle from "../../../shared_code/components/MusicToggle";
 
-// ✅ שימוש בתמונה login.png
 const loginBg = require("../../../assets/images/login.png");
 
 export default function AuthLayout({ children, title = "CopaDrive", subtitle }) {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, colors } = useTheme();
   let [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
 
-  if (!fontsLoaded) return <ActivityIndicator size="large" color="#007bff" />;
+  const authStyles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
+
+  if (!fontsLoaded) return <ActivityIndicator size="large" color={colors.primary} />;
 
   return (
-    <ImageBackground source={loginBg} style={authStyles.backgroundImage} resizeMode="cover">
+    <ImageBackground 
+        source={loginBg} 
+        style={authStyles.backgroundImage} 
+        resizeMode="cover"
+    >
+      {/* ✅ שכבת החשכה: מופיעה רק במצב לילה */}
+      {isDarkMode && <View style={authStyles.dimOverlay} />}
       
-      {/* כפתורים עליונים */}
       <View style={styles.topControls}>
-         <TouchableOpacity 
-            style={styles.songBtn} 
-            onPress={() => alert("Music coming soon!")}
-         >
-            <Ionicons name="musical-notes" size={16} color="white" />
-            <Text style={styles.songText}>PlaySong</Text>
-         </TouchableOpacity>
-
-         <TouchableOpacity style={styles.themeBtn} onPress={toggleTheme}>
-            <Feather name={isDarkMode ? "sun" : "moon"} size={20} color="#333" />
+         <MusicToggle />
+         <TouchableOpacity style={[styles.themeBtn, { backgroundColor: colors.surface }]} onPress={toggleTheme}>
+            <Feather name={isDarkMode ? "sun" : "moon"} size={20} color={colors.textPrimary} />
          </TouchableOpacity>
       </View>
 
@@ -62,8 +62,25 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
 }
 
 const styles = StyleSheet.create({
-    topControls: { position: 'absolute', top: 50, right: 20, flexDirection: 'row', gap: 10, zIndex: 10 },
-    songBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0d6efd', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, gap: 6 },
-    songText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
-    themeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center' }
+    topControls: { 
+        position: 'absolute', 
+        top: 60, 
+        right: 20, 
+        flexDirection: 'row', 
+        gap: 10, 
+        zIndex: 10,
+        alignItems: 'center'
+    },
+    themeBtn: { 
+        width: 36, 
+        height: 36, 
+        borderRadius: 18, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+    }
 });

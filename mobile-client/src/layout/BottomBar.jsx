@@ -21,7 +21,7 @@ const BUBBLE_WIDTH = TAB_WIDTH * 0.7;
 const BUBBLE_OFFSET = (TAB_WIDTH - BUBBLE_WIDTH) / 2;
 
 export default function BottomBar({ activeTab, setActiveTab }) {
-  // ✅ שימוש בצבעים
+  // ✅ שימוש בצבעים מהנושא המעודכן
   const { isDarkMode, colors } = useTheme();
 
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -82,7 +82,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
           <Ionicons 
             name={icon} 
             size={24} 
-            // ✅ האייקון הלא פעיל מקבל צבע מותאם ללילה/יום
+            // ✅ האייקון הפעיל תמיד לבן, הלא פעיל משתנה לפי מצב לילה/יום
             color={isActive ? "#fff" : (isDarkMode ? "#8E8E93" : "#5f6368")} 
           />
         </View>
@@ -92,7 +92,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
 
   return (
     <View style={styles.container}>
-      {/* ✅ ה-BlurView משתנה אוטומטית (dark/light) */}
+      {/* ה-BlurView משתנה אוטומטית לפי הנושא */}
       <BlurView intensity={90} tint={isDarkMode ? "dark" : "light"} style={styles.blurContainer}>
         
         <View 
@@ -104,7 +104,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
         <Animated.View 
           style={[
             styles.slidingBubble,
-            { backgroundColor: colors.primary }, // ✅ הבועה בצבע הראשי של הנושא
+            { backgroundColor: colors.primary }, // ✅ הבועה תהיה סגולה בלילה וכחולה ביום
             {
               transform: [
                 { translateX: slideAnim },
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: BUBBLE_WIDTH,
     height: 44,
-    // backgroundColor הוסר מכאן כי הוא דינמי
     borderRadius: 22,
     left: 0,
   },

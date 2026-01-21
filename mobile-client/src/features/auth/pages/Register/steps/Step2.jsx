@@ -1,33 +1,26 @@
 import React from "react";
 import { View, Text, TextInput, StyleSheet, Keyboard, Image, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from 'expo-image-picker'; // חובה להתקין: npx expo install expo-image-picker
-import { authStyles } from "../../../styles/auth.styles";
+import * as ImagePicker from 'expo-image-picker';
 
-export default function Step2({ formData, setFormData, errors }) {
+// ✅ מקבלים את styles ו-colors
+export default function Step2({ formData, setFormData, errors, styles, colors }) {
 
-  // פונקציה לבחירת תמונה מהגלריה
   const pickImage = async () => {
-    // 1. בקשת הרשאה לגישה לגלריה (דרישת ולידציה וחוויית משתמש) 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== 'granted') {
-      Alert.alert(
-        "Permission Denied",
-        "We need permission to access your photos to set a profile picture."
-      );
+      Alert.alert("Permission Denied", "We need permission to access your photos.");
       return;
     }
 
-    // 2. פתיחת הגלריה לבחירת תמונה 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, // מאפשר למשתמש לחתוך את התמונה
-      aspect: [1, 1],      // יחס תמונה של 1:1 (ריבוע) עבור פרופיל
-      quality: 0.7,        // הפחתת איכות לשמירה על ביצועים
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
     });
 
-    // 3. אם המשתמש בחר תמונה, נשמור את ה-URI שלה ב-State 
     if (!result.canceled) {
       setFormData({ ...formData, image: result.assets[0].uri });
     }
@@ -49,31 +42,27 @@ export default function Step2({ formData, setFormData, errors }) {
 
   return (
     <View>
-      {/* אזור בחירת והצגת תמונת הפרופיל  */}
       <View style={localStyles.imageContainer}>
-        <Pressable onPress={pickImage} style={localStyles.avatarPlaceholder}>
+        <Pressable onPress={pickImage} style={[localStyles.avatarPlaceholder, { borderColor: colors.border }]}>
           {formData.image ? (
-            // אם קיימת תמונה - הצג אותה
             <Image source={{ uri: formData.image }} style={localStyles.avatarImage} />
           ) : (
-            // אם אין תמונה - הצג אייקון ברירת מחדל
-            <Ionicons name="image-outline" size={40} color="#ccc" />
+            <Ionicons name="image-outline" size={40} color={colors.textTertiary} />
           )}
         </Pressable>
-        <Text style={localStyles.imageText}>
+        <Text style={[localStyles.imageText, { color: colors.textSecondary }]}>
           {formData.image ? "Tap to change photo" : "Tap to upload photo"}
         </Text>
-        {/* ולידציה ויזואלית לתמונה אם נדרש [cite: 43, 52] */}
-        {errors.image && <Text style={authStyles.errorText}>{errors.image}</Text>}
+        {errors.image && <Text style={styles.errorText}>{errors.image}</Text>}
       </View>
 
-      <Text style={authStyles.label}>Phone Number</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="call-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>Phone Number</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="call-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="05X-XXX-XXXX"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           keyboardType="phone-pad"
           value={formData.phoneNumber}
           onChangeText={handlePhoneChange}
@@ -81,12 +70,11 @@ export default function Step2({ formData, setFormData, errors }) {
           onSubmitEditing={Keyboard.dismiss}
         />
       </View>
-      <Text style={{ fontSize: 12, color: "#888", marginBottom: 5, marginLeft: 4 }}>
+      <Text style={{ fontSize: 12, color: colors.textTertiary, marginBottom: 5, marginLeft: 4 }}>
         Israeli mobile numbers only
       </Text>
 
-      {/* הצגת הודעת שגיאה ברורה למשתמש [cite: 43, 51] */}
-      {errors.phoneNumber && <Text style={authStyles.errorText}>{errors.phoneNumber}</Text>}
+      {errors.phoneNumber && <Text style={styles.errorText}>{errors.phoneNumber}</Text>}
     </View>
   );
 }
@@ -97,17 +85,16 @@ const localStyles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#f3f5f7",
+    backgroundColor: "rgba(0,0,0,0.05)", // שקוף עדין כדי להתאים לכהה/בהיר
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e1e1e1",
     marginBottom: 8,
-    overflow: "hidden" // מבטיח שהתמונה לא תחרוג מהעיגול
+    overflow: "hidden"
   },
   avatarImage: {
     width: "100%",
     height: "100%"
   },
-  imageText: { fontSize: 13, color: "#888", fontWeight: "500" },
+  imageText: { fontSize: 13, fontWeight: "500" },
 });

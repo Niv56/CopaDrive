@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, Pressable, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { registerUser } from "../../services/authService";
 import AuthLayout from "../../components/AuthLayout";
-import { authStyles } from "../../styles/auth.styles";
 
 import Step1 from "./steps/Step1";
 import Step2 from "./steps/Step2";
@@ -15,10 +14,17 @@ import {
   validateStep1, validateStep2, validateStep3, validateStep4
 } from "../../validators/registerValidators";
 
+import { useTheme } from "../../../../app/providers/ThemeContext";
+import { getAuthStyles } from "../../styles/auth.styles";
+
 const TOTAL_STEPS = 4;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  
+  const { colors, isDarkMode } = useTheme();
+  const styles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -74,27 +80,18 @@ export default function RegisterScreen() {
 
   const handleSubmit = async () => {
     setLoading(true);
-
-    // ✅ שולחים JSON שהשרת שלך יודע לפרסר
-    // required in server: firstName, email, phoneNumber, password, dateOfBirth, gender
     const payload = {
       firstName: String(formData.firstName || "").trim(),
       lastName: String(formData.lastName || "").trim(),
       phoneNumber: String(formData.phoneNumber || "").trim(),
-      dateOfBirth: String(formData.dateOfBirth || "").trim(), // YYYY-MM-DD
-      gender: String(formData.gender || "").trim(),           // male/female/other/prefer_not_to_say
+      dateOfBirth: String(formData.dateOfBirth || "").trim(),
+      gender: String(formData.gender || "").trim(),
       email: String(formData.email || "").trim().toLowerCase(),
       password: String(formData.password || ""),
     };
-
-    // אם יש תמונה (URI), שולחים אותה כמחרוזת לשרת (השרת מקבל profilePicture כ-string)
-    if (formData.image) {
-      payload.image = String(formData.image);
-      // אפשר גם payload.image = String(formData.image);
-    }
+    if (formData.image) payload.image = String(formData.image);
 
     const res = await registerUser(payload);
-
     setLoading(false);
 
     if (res?.success) setStep(5);
@@ -103,34 +100,46 @@ export default function RegisterScreen() {
 
   return (
     <AuthLayout subtitle={getHeaderTitle()}>
+      
       <View style={{ minHeight: 300 }}>
-        {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} />}
-        {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} />}
-        {step === 3 && <Step3 formData={formData} setFormData={setFormData} errors={errors} />}
-        {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} />}
-        {step === 5 && <Step5 />}
+        {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
+        {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
+        
+        {/* ✅ התיקון כאן: מעבירים את הסטיילים תחת השם authStyles עבור Step3 */}
+        {step === 3 && (
+          <Step3 
+            formData={formData} 
+            setFormData={setFormData} 
+            errors={errors} 
+            authStyles={styles} 
+            colors={colors} 
+          />
+        )}
+        
+        {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
+        {step === 5 && <Step5 styles={styles} />}
       </View>
 
       <View style={{ marginTop: 20 }}>
         {step === 5 ? (
-          <Pressable style={authStyles.btnPrimary} onPress={() => router.replace("/login")}>
-            <Text style={authStyles.btnTextPrimary}>Proceed to Login</Text>
+          <Pressable style={styles.btnPrimary} onPress={() => router.replace("/login")}>
+            <Text style={styles.btnTextPrimary}>Proceed to Login</Text>
           </Pressable>
         ) : (
           <View style={{ flexDirection: "row", gap: 15 }}>
-            <Pressable style={[authStyles.btnSecondary, { flex: 1 }]} onPress={handleBack}>
-              <Text style={authStyles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
+            <Pressable style={[styles.btnSecondary, { flex: 1 }]} onPress={handleBack}>
+              <Text style={styles.btnTextSecondary}>{step === 1 ? "Login" : "Back"}</Text>
             </Pressable>
 
             <Pressable
-              style={[authStyles.btnPrimary, { flex: 1, marginTop: 10 }]}
+              style={[styles.btnPrimary, { flex: 1, marginTop: 10 }]}
               onPress={handleNext}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={authStyles.btnTextPrimary}>
+                <Text style={styles.btnTextPrimary}>
                   {step === TOTAL_STEPS ? "Submit" : "Next"}
                 </Text>
               )}
@@ -142,7 +151,7 @@ export default function RegisterScreen() {
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
           {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[localStyles.dot, i === step && localStyles.dotActive]} />
+            <View key={i} style={[localStyles.dot, i === step && styles.btnPrimary?.backgroundColor ? { backgroundColor: styles.btnPrimary.backgroundColor, width: 20 } : localStyles.dotActive]} />
           ))}
         </View>
       )}

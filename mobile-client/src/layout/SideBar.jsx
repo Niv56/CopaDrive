@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../app/providers/AuthContext'; 
 import { getUsage } from '../features/drive/services/fileService';
 import StorageTree from '../features/drive/components/StorageTree';
-
-// ✅ ייבוא Theme
 import { useTheme } from '../app/providers/ThemeContext';
+
+// ✅ ייבוא הלוגו כקומפוננטה עבור SVG
+import Logo from '../assets/images/logo.svg'; 
+
+// ✅ נתיב מתוקן: מ-src/layout ל-src/shared_code
+import MusicToggle from '../shared_code/components/MusicToggle';
 
 const MENU_ITEMS = [
   { id: 'home', icon: 'home', label: 'Home', route: '/home' },
@@ -23,8 +27,6 @@ export default function SideBar(props) {
   const router = useRouter();
   const pathname = usePathname();
   const { token, logout } = useAuth();
-  
-  // ✅ שימוש בצבעים ובמצב לילה
   const { isDarkMode, toggleTheme, colors } = useTheme();
   
   const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
@@ -54,6 +56,8 @@ export default function SideBar(props) {
   return (
     <BlurView intensity={80} tint={isDarkMode ? "dark" : "light"} style={styles.container}>
       <View style={styles.header}>
+        {/* ✅ הצגת הלוגו כ-SVG עם גובה ורוחב מוגדרים */}
+        <Logo width={35} height={35} style={styles.logo} />
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>CopaDrive</Text>
       </View>
 
@@ -86,13 +90,9 @@ export default function SideBar(props) {
       
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
           <View style={styles.controlsRow}>
-             <TouchableOpacity 
-                style={[styles.songBtn, { backgroundColor: colors.primary }]}
-                onPress={() => Alert.alert("CopaDrive", "Music Player coming soon!")}
-             >
-                <Ionicons name="musical-notes" size={16} color="white" />
-                <Text style={styles.songBtnText}>PlaySong</Text>
-             </TouchableOpacity>
+              
+             {/* כפתור הנגן החדש */}
+             <MusicToggle />
 
              <TouchableOpacity 
                 style={[styles.themeBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -109,8 +109,24 @@ export default function SideBar(props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 20, marginBottom: 10 },
-  headerTitle: { fontSize: 24, fontFamily: 'BrunoAceSC_400Regular', letterSpacing: 1.5 },
+  header: { 
+    paddingTop: 60, 
+    paddingHorizontal: 24, 
+    paddingBottom: 20, 
+    marginBottom: 10,
+    flexDirection: 'row', // שורת לוגו וטקסט
+    alignItems: 'center' // מרכוז אנכי של הלוגו והטקסט
+  },
+  logo: {
+    marginRight: 12 // רווח בין הלוגו לטקסט
+  },
+  headerTitle: { 
+    fontSize: 24, 
+    fontFamily: 'BrunoAceSC_400Regular', 
+    letterSpacing: 1.5,
+    // ✅ תיקון: הוספת גובה שורה מפורש כדי למנוע חיתוך של הפונט המיוחד
+    lineHeight: 36 
+  },
   scrollContent: { paddingTop: 0 },
   list: { paddingHorizontal: 16, gap: 6 },
   item: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16, borderRadius: 24, marginBottom: 4 },
@@ -121,7 +137,5 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 15, fontWeight: '600', marginLeft: 16 },
   footer: { paddingBottom: 20, paddingTop: 10, borderTopWidth: 1 },
   controlsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15, alignItems: 'center' },
-  songBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, gap: 6 },
-  songBtnText: { color: 'white', fontWeight: '600', fontSize: 12 },
   themeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 1 }
 });

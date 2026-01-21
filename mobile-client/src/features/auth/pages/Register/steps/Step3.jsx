@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
-import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step3({ formData, setFormData, errors }) {
+// ✅ הפונקציה מקבלת authStyles
+export default function Step3({ formData, setFormData, errors, authStyles, colors }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const getDateValue = () => {
@@ -42,12 +42,17 @@ export default function Step3({ formData, setFormData, errors }) {
 
   return (
     <View>
+      {/* ✅ תוקן ל-authStyles */}
       <Text style={authStyles.label}>Date of Birth</Text>
+      
       <Pressable
-        style={[authStyles.dateButton, errors.dateOfBirth && authStyles.dateButtonError]}
+        style={[
+          authStyles.dateButton || authStyles.inputWrapper, 
+          errors.dateOfBirth && authStyles.dateButtonError
+        ]}
         onPress={() => setShowDatePicker(true)}
       >
-        <Ionicons name="calendar-outline" size={20} color="#666" style={{ marginRight: 10 }} />
+        <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
         <Text style={[
           authStyles.dateText,
           !formData.dateOfBirth && authStyles.dateTextPlaceholder
@@ -55,6 +60,8 @@ export default function Step3({ formData, setFormData, errors }) {
           {formatDisplayDate(formData.dateOfBirth)}
         </Text>
       </Pressable>
+      
+      {/* ✅ תוקן ל-authStyles */}
       {errors.dateOfBirth && <Text style={authStyles.errorText}>{errors.dateOfBirth}</Text>}
 
       {showDatePicker && (
@@ -65,9 +72,11 @@ export default function Step3({ formData, setFormData, errors }) {
           onChange={handleDateChange}
           maximumDate={new Date()}
           minimumDate={new Date(1900, 0, 1)}
+          themeVariant={colors.background === "#121212" ? "dark" : "light"}
         />
       )}
 
+      {/* ✅ תוקן ל-authStyles */}
       <Text style={[authStyles.label, { marginTop: 10 }]}>Gender</Text>
 
       <View style={authStyles.genderContainer}>
@@ -107,6 +116,7 @@ export default function Step3({ formData, setFormData, errors }) {
         </Pressable>
       </View>
 
+      {/* ✅ תוקן ל-authStyles */}
       {errors.gender && <Text style={authStyles.errorText}>{errors.gender}</Text>}
     </View>
   );

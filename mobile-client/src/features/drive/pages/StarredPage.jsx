@@ -1,12 +1,12 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { FlatList, Text, ActivityIndicator, View, Pressable, Alert } from "react-native";
+import { FlatList, Text, ActivityIndicator, View, Pressable, Alert, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
+// ❌ ScreenLayout הוסר מכאן
 
-// ✅ ייבוא Theme ופונקציית סטיילים
-import { getDriveStyles } from "../styles/myDrive.styles";
+// ✅ Theme
 import { useTheme } from "../../../app/providers/ThemeContext";
 
 import FilePreviewModal from "../components/FilePreviewModal";
@@ -15,34 +15,27 @@ import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
 export default function StarredPage() {
-  // ✅ משתני State לניהול תיקיות (חשוב!)
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
-
-  // ✅ Theme
-  const { colors } = useTheme();
-  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+  const { colors } = useTheme(); 
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  // ✅ סינון פריטים מסומנים בכוכב (או תיקיות בתוך התיקייה הנוכחית)
+  // סינון כוכבים
   const displayItems = useMemo(() => {
-    // אם לא נכנסנו לתיקייה, מציגים את כל המסומנים בכוכב
     if (!currentFolderId) {
         return (items || []).filter((i) => !!i?.starred);
     }
-    // אם נכנסנו לתיקייה, מציגים רק מה שבתוכה
     return (items || []).filter((item) => String(item.parentId) === String(currentFolderId));
   }, [items, currentFolderId]);
 
   const openItem = useCallback((item) => {
     if (!item) return;
     if (item.type === "folder") {
-      // ✅ כניסה לתיקייה
       setCurrentFolderId(item.id);
       setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
@@ -64,7 +57,6 @@ export default function StarredPage() {
     ]);
   }, [token]);
 
-  // ✅ חזרה אחורה
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -72,7 +64,6 @@ export default function StarredPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
-  // ✅ ניווט בפירורים
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -84,34 +75,37 @@ export default function StarredPage() {
     }
   }, [folderPath]);
 
+  // Loading View
   if (loading && (!displayItems || displayItems.length === 0)) {
-    return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
+    return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+    );
   }
 
   return (
-    <>
-      {/* Breadcrumb Navigation */}
+    <View style={{ flex: 1 }}>
+      {/* פירורי לחם */}
       {folderPath.length > 0 && (
-        <View style={driveStyles.breadcrumbContainer}>
-          <Pressable onPress={handleBack} style={driveStyles.backButton}>
-            <Ionicons name="arrow-back" size={20} color={colors.primary} />
+        <View style={styles.breadcrumbContainer}>
+          <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
           </Pressable>
-
           <Pressable onPress={() => navigateToBreadcrumb(-1)}>
-            <Text style={driveStyles.breadcrumbText}>Starred</Text>
+            <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>Starred</Text>
           </Pressable>
-
           {folderPath.map((folder, index) => (
-            <View key={folder.id} style={driveStyles.breadcrumbItem}>
-              <Text style={driveStyles.breadcrumbSeparator}>/</Text>
-              <Pressable onPress={() => navigateToBreadcrumb(index)}>
-                <Text style={[
-                  driveStyles.breadcrumbText,
-                  index === folderPath.length - 1 && driveStyles.breadcrumbActive
-                ]} numberOfLines={1}>
-                  {folder.name}
-                </Text>
-              </Pressable>
+            <View key={folder.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                    <Text style={[
+                        styles.breadcrumbText,
+                        { color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary, fontWeight: index === folderPath.length - 1 ? '700' : '400' }
+                    ]} numberOfLines={1}>
+                        {folder.name}
+                    </Text>
+                </Pressable>
             </View>
           ))}
         </View>
@@ -119,7 +113,7 @@ export default function StarredPage() {
 
       <FlatList
         data={displayItems}
-        contentContainerStyle={{ paddingBottom: 150 }}
+        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }} // מרווח מהצדדים ולמטה
         keyExtractor={(item) => item.id || item._id}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -131,9 +125,12 @@ export default function StarredPage() {
           />
         )}
         ListEmptyComponent={
-          <Text style={driveStyles.emptyText}>
-            {currentFolderId ? "This folder is empty" : "No starred items yet"}
-          </Text>
+          <View style={{ alignItems: 'center', marginTop: 100, opacity: 0.6 }}>
+             <Ionicons name="star-outline" size={60} color={colors.textTertiary} />
+             <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
+                {currentFolderId ? "This folder is empty" : "No starred items yet"}
+             </Text>
+          </View>
         }
         showsVerticalScrollIndicator={false}
       />
@@ -143,6 +140,27 @@ export default function StarredPage() {
         fileId={selectedId}
         onClose={() => setPreviewOpen(false)}
       />
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+    breadcrumbContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        marginBottom: 15,
+        paddingHorizontal: 15,
+        marginTop: 10, // רווח קטן מלמעלה
+        gap: 5
+    },
+    backButton: {
+        padding: 6,
+        borderRadius: 8,
+        marginRight: 5
+    },
+    breadcrumbText: {
+        fontSize: 15,
+        marginHorizontal: 2
+    }
+});

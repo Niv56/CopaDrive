@@ -8,23 +8,24 @@ export const theme = {
     textTertiary: "#9aa0a6",
     border: "#e9ecef",
     divider: "#f0f0f0",
-    primary: "#0d6efd",
+    primary: "#007bff", // כחול בוהק במצב יום
     danger: "#dc3545",
     iconColor: "#5f6368",
     activeItem: "rgba(13, 110, 253, 0.12)"
   },
   dark: {
-    background: "#121212",
-    surface: "#2c2c2c",
-    card: "#1e1e1e",
-    textPrimary: "#e8eaed",
-    textSecondary: "#9aa0a6",
-    textTertiary: "#5f6368",
-    border: "#3c4043",
-    divider: "#3c4043",
-    primary: "#8ab4f8",
-    danger: "#f28b82",
-    iconColor: "#e8eaed",
-    activeItem: "rgba(138, 180, 248, 0.2)"
+    background: "#000000", // שחור מוחלט
+    surface: "#1c1c1e",
+    card: "#121212",
+    textPrimary: "#ffffff", // לבן נקי
+    textSecondary: "#b0b3b8",
+    textTertiary: "#606770",
+    border: "#2c2c2e",
+    divider: "#2c2c2e",
+    // ✅ שונה לסגול כהה ויפה עבור ה-FAB והבועה
+    primary: "#7B61FF", 
+    danger: "#ff453a",
+    iconColor: "#e4e6eb",
+    activeItem: "rgba(123, 97, 255, 0.2)" // מותאם לסגול החדש
   }
 };

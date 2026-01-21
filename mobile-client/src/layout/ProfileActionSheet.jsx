@@ -1,69 +1,66 @@
-import React from "react";
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { BlurView } from "expo-blur";
+import React, { useState, useMemo } from "react";
+import { View, Pressable, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
+import { useAuth } from "../app/providers/AuthContext";
+import SearchBar from "./SearchBar/SearchBar";
+import EditProfileModal from "../features/user/components/EditProfileModal";
 
-export default function ProfileActionSheet({ visible, onClose, onEditProfile }) {
+// ✅ ייבוא ה-Theme
+import { getDriveStyles } from "../features/drive/styles/myDrive.styles";
+import { useTheme } from "../app/providers/ThemeContext";
+
+export default function TopBar() {
+  const navigation = useNavigation();
+  const { user, token } = useAuth();
+  
+  // ✅ שליפת הצבעים
+  const { colors } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
+  // ✅ ביטלנו את isProfileMenuOpen, נשארנו רק עם המודל של העריכה
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        {/* ✅ Blur background */}
-        <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, styles.dim]} />
-
-        {/* ✅ The small menu near top-right */}
-        <Pressable style={styles.menu} onPress={(e) => e.stopPropagation()}>
-          <MenuItem icon="moon-outline" label="Night mode" disabled />
-          <MenuItem icon="musical-notes-outline" label="Play song" disabled />
-          <MenuItem icon="create-outline" label="Edit profile" onPress={onEditProfile} />
+    <View style={styles.masterZIndex}>
+      <View style={driveStyles.topBarSearchWrapper}>
+        
+        {/* כפתור המבורגר - פותח את ה-Sidebar */}
+        <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={15}>
+          <Ionicons name="menu" size={28} color={colors.textSecondary} />
         </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
 
-function MenuItem({ icon, label, onPress, disabled }) {
-  return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={disabled ? undefined : onPress}
-      style={[styles.item, disabled && { opacity: 0.45 }]}
-    >
-      <Ionicons name={icon} size={18} color="#333" style={{ marginRight: 10 }} />
-      <Text style={styles.itemText} numberOfLines={1}>
-        {label}
-      </Text>
-    </TouchableOpacity>
+        {/* שורת חיפוש */}
+        <SearchBar token={token} />
+
+        {/* תמונת פרופיל - לחיצה פותחת ישר את העריכה */}
+        <Pressable onPress={() => setIsEditOpen(true)} style={driveStyles.profileCircle}>
+          {user?.image ? (
+            <Image source={{ uri: user.image }} style={styles.avatar} />
+          ) : (
+            <Ionicons name="person" size={18} color="#fff" />
+          )}
+        </Pressable>
+      </View>
+
+      {/* הוסר: ProfileActionSheet (התפריט הקטן) */}
+
+      {/* מודל עריכת פרופיל */}
+      <EditProfileModal
+        visible={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        userId={user?.id || user?._id}
+        initialFirstName={user?.firstName}
+        initialLastName={user?.lastName}
+        initialPhoneNumber={user?.phoneNumber}
+        initialImage={user?.image}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "transparent" },
-  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
-
-  menu: {
-    position: "absolute",
-    top: 70,
-    right: 14,
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderRadius: 16,
-    paddingVertical: 8,
-    width: 190,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
-  },
-
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  itemText: {
-    fontSize: 14,
-    color: "#222",
-  },
+  masterZIndex: { zIndex: 10000, position: 'relative' },
+  avatar: { width: 32, height: 32, borderRadius: 16 }
 });

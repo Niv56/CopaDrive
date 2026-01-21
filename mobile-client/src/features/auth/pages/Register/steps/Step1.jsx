@@ -1,31 +1,31 @@
 import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step1({ formData, setFormData, errors }) {
+// ✅ מקבלים את styles ו-colors מה-Props
+export default function Step1({ formData, setFormData, errors, styles, colors }) {
   return (
     <View>
-      <Text style={authStyles.label}>First Name</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="person-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>First Name</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="First name"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           value={formData.firstName}
           onChangeText={(text) => setFormData({ ...formData, firstName: text })}
         />
       </View>
-      {errors.firstName && <Text style={authStyles.errorText}>{errors.firstName}</Text>}
+      {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
 
-      <Text style={authStyles.label}>Last Name (Optional)</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="person-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>Last Name (Optional)</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="Last name"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           value={formData.lastName}
           onChangeText={(text) => setFormData({ ...formData, lastName: text })}
         />

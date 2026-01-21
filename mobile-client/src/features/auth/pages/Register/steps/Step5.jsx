@@ -1,19 +1,18 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step5() {
+export default function Step5({ styles }) {
   return (
     <View style={localStyles.container}>
       <Ionicons name="checkmark-circle" size={80} color="#28a745" />
       
-      {/* שימוש בפונט המיוחד גם כאן למראה אחיד */}
-      <Text style={[authStyles.brandText, { marginTop: 20, fontSize: 30 }]}>Success!</Text>
+      {/* שימוש ב-styles שהועברו מהאבא */}
+      <Text style={[styles.brandText, { marginTop: 20, fontSize: 30 }]}>Success!</Text>
       
-      <Text style={authStyles.subText}>Your account is ready.</Text>
+      <Text style={styles.subText}>Your account is ready.</Text>
       
-      <Text style={localStyles.desc}>
+      <Text style={[localStyles.desc, { color: styles.subText.color }]}>
         We're excited to have you join the CopaDrive family.
       </Text>
     </View>
@@ -22,5 +21,5 @@ export default function Step5() {
 
 const localStyles = StyleSheet.create({
   container: { alignItems: "center", paddingVertical: 20 },
-  desc: { textAlign: "center", marginTop: 15, color: "#666", lineHeight: 22, fontSize: 16 },
+  desc: { textAlign: "center", marginTop: 15, lineHeight: 22, fontSize: 16 },
 });
