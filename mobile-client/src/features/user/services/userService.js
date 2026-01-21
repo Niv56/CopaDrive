@@ -23,3 +23,10 @@ export async function changeUserPassword(token, userId, currentPassword, newPass
     body: { currentPassword, newPassword },
   });
 }
+
+export async function getUserById(token, userId) {
+  return request(`/api/users/${userId}`, {
+    method: "GET",
+    token,
+  });
+}
