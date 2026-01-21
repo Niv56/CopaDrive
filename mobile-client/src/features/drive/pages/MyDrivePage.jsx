@@ -9,14 +9,13 @@ import DriveListItem from "../components/DriveListItem";
 import { driveStyles } from "../styles/myDrive.styles";
 import { useAuth } from "../../../app/providers/AuthContext";
 
-// ייבוא פונקציית המחיקה ורענון
 import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
 export default function MyDrivePage() {
-  const { token } = useAuth(); // הוספנו את הטוקן
+  const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
 
   // Folder navigation state
@@ -144,7 +143,7 @@ export default function MyDrivePage() {
             <DriveListItem
               item={item}
               onPress={handlePressItem}
-              onDelete={handleDeleteItem} // ✅ העברת פונקציית המחיקה
+              onDelete={handleDeleteItem}
             />
           )}
           refreshing={refreshing}
