@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
   ActivityIndicator, Pressable, Keyboard, LayoutAnimation, Alert
@@ -7,12 +7,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
 import { useAuth } from "../../app/providers/AuthContext";
-import { createItem } from "../../features/drive/services/fileService";
+import { createItem, getFiles } from "../../features/drive/services/fileService";
 import { emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import { useDriveUploads } from "../../features/drive/hooks/useDriveUploads";
 
 import ActionMenu from "./ActionMenu";
 import CreateForm from "./CreateForm";
+import UploadPreviewContent from "../../features/drive/components/UploadPreviewContent";
 
 // ✅ ייבוא Theme
 import { useTheme } from "../../app/providers/ThemeContext";
@@ -29,14 +30,38 @@ export default function Fab({ onRefresh }) {
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
 
   const closeAll = () => {
     setActiveView("closed");
-    setTimeout(() => { setName(""); setContent(""); }, 300);
+    setTimeout(() => { setName(""); setContent(""); setSelectedFolderId(null); }, 300);
     Keyboard.dismiss();
   };
 
-  const { loading: uploadLoading, pickDocument, pickImage } = useDriveUploads(token, onRefresh, closeAll);
+  const { 
+    loading: uploadLoading, 
+    pickDocument, 
+    pickImage,
+    pendingFile,
+    confirmUpload,
+    discardPending,
+  } = useDriveUploads(token, onRefresh, closeAll);
+
+  // Fetch folders for destination selection
+  useEffect(() => {
+    const fetchFolders = async () => {
+      if (!token) return;
+      try {
+        const files = await getFiles(token);
+        const foldersList = (files || []).filter(f => f.type === "folder");
+        setFolders(foldersList);
+      } catch (err) {
+        // Silently fail - folders will just be empty
+      }
+    };
+    fetchFolders();
+  }, [token]);
 
   const switchTo = (view) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -67,6 +92,7 @@ export default function Fab({ onRefresh }) {
         type: isFolder ? "folder" : "file",
         content: isFolder ? "" : String(content || "").replaceAll("\n", NEWLINE),
         mimeType: isFolder ? "" : "text/plain",
+        parentId: selectedFolderId,
       });
 
       emitDriveRefresh({ reason: "create", name: finalName });
@@ -80,9 +106,12 @@ export default function Fab({ onRefresh }) {
   };
 
   const loading = uploadLoading || createLoading;
-  const isOpen = activeView !== "closed";
   const isMenu = activeView === "menu";
   const isCreate = activeView === "create_file" || activeView === "create_folder";
+  const isPreview = !!pendingFile;
+  
+  // Modal is open if menu/create view is active OR if there's a pending file to preview
+  const isOpen = activeView !== "closed" || isPreview;
 
   return (
     <>
@@ -97,20 +126,38 @@ export default function Fab({ onRefresh }) {
         <View style={styles.container}>
           {/* ✅ BlurView מותאם ללילה */}
           <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeAll} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={isPreview ? discardPending : closeAll} />
 
-          {isMenu && (
+          {isMenu && !isPreview && (
             <ActionMenu onAction={handleMenuAction} disabled={loading} />
           )}
 
-          {isCreate && (
+          {isCreate && !isPreview && (
             <CreateForm 
               mode={activeView}
               name={name} setName={setName}
               content={content} setContent={setContent}
+              folders={folders}
+              selectedFolderId={selectedFolderId}
+              setSelectedFolderId={setSelectedFolderId}
               loading={loading}
               onBack={() => switchTo("menu")}
               onSubmit={handleSubmitCreate}
+            />
+          )}
+
+          {isPreview && (
+            <UploadPreviewContent
+              fileData={pendingFile}
+              folders={folders}
+              uploading={uploadLoading}
+              onConfirm={(fileName, folderId) => confirmUpload(fileName, folderId)}
+              onDiscard={discardPending}
+              onChangeFile={() => {
+                discardPending();
+                // Reopen the menu so user can pick another file
+                switchTo("menu");
+              }}
             />
           )}
         </View>

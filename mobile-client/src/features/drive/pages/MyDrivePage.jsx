@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { FlatList, Text, ActivityIndicator, View, Pressable, Alert, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -9,9 +9,9 @@ import DriveListItem from "../components/DriveListItem";
 import { useTheme } from "../../../app/providers/ThemeContext";
 import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService"; 
-import { emitDriveRefresh } from "../services/driveEvents";
-import FilePreviewModal from "../components/FilePreviewModal";
+import { emitDriveRefresh, subscribeNavigateToFolder } from "../services/driveEvents";
 
+import FilePreviewModal from "../components/FilePreviewModal";
 export default function MyDrivePage() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
@@ -23,6 +23,18 @@ export default function MyDrivePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  // ✅ האזנה לאירוע ניווט לתיקייה (מהחיפוש)
+  useEffect(() => {
+    const unsubscribe = subscribeNavigateToFolder(({ folderId, folderName }) => {
+      if (folderId) {
+        setCurrentFolderId(folderId);
+        setFolderPath([{ id: folderId, name: folderName }]);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // ✅ סינון הפריטים לפי התיקייה הנוכחית
   const currentItems = useMemo(() => {
     if (!items) return [];
     return items.filter(item => {

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../shared_code/hooks/useAuth';
 
 export default function EditUserModal({ visible, onClose }) {
-    const { user, updateUserData } = useAuth(); // שימוש ב-AuthContext למידע הקיים
+    const { user, updateUserData } = useAuth(); 
     const [formData, setFormData] = useState({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',

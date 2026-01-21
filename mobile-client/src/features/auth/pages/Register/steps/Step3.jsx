@@ -71,22 +71,22 @@ export default function Step3({ formData, setFormData, errors, styles, colors })
 
       <Text style={[styles.label, { marginTop: 10 }]}>Gender</Text>
 
-      <View style={styles.genderContainer}>
-        <View style={styles.genderRow}>
-          {["Male", "Female", "Other"].map((g) => (
+      <View style={authStyles.genderContainer}>
+        <View style={authStyles.genderRow}>
+          {[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }].map((g) => (
             <Pressable
-              key={g}
+              key={g.value}
               style={[
-                styles.genderBtn,
-                formData.gender === g && styles.genderBtnActive
+                authStyles.genderBtn,
+                formData.gender === g.value && authStyles.genderBtnActive
               ]}
-              onPress={() => setFormData({ ...formData, gender: g })}
+              onPress={() => setFormData({ ...formData, gender: g.value })}
             >
               <Text style={[
-                styles.genderText,
-                formData.gender === g && styles.genderTextActive
+                authStyles.genderText,
+                formData.gender === g.value && authStyles.genderTextActive
               ]}>
-                {g}
+                {g.label}
               </Text>
             </Pressable>
           ))}
@@ -94,15 +94,14 @@ export default function Step3({ formData, setFormData, errors, styles, colors })
 
         <Pressable
           style={[
-            styles.genderBtn,
-            { width: "100%", height: 50 }, // גודל מלא לכפתור האחרון
-            formData.gender === "Prefer not to say" && styles.genderBtnActive
+            authStyles.genderBtnFull, 
+            formData.gender === "prefer_not_to_say" && authStyles.genderBtnActive
           ]}
-          onPress={() => setFormData({ ...formData, gender: "Prefer not to say" })}
+          onPress={() => setFormData({ ...formData, gender: "prefer_not_to_say" })}
         >
           <Text style={[
-            styles.genderText,
-            formData.gender === "Prefer not to say" && styles.genderTextActive
+            authStyles.genderText,
+            formData.gender === "prefer_not_to_say" && authStyles.genderTextActive
           ]}>
             Prefer not to say
           </Text>

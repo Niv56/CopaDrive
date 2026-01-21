@@ -8,6 +8,7 @@ import { emitDriveRefresh } from "../services/driveEvents";
 
 export function useDriveUploads(token, onRefresh, closeCallback) {
   const [loading, setLoading] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null); // { uri, fileName, mimeType }
   const pickerInProgressRef = useRef(false);
 
   const lockPicker = () => {
@@ -20,33 +21,43 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
     pickerInProgressRef.current = false;
   };
 
-  const processAndUpload = async (uri, fileName, mimeType) => {
-    if (!token) {
-      Alert.alert("Error", "No token found.");
+  // Called after user confirms from preview screen
+  const confirmUpload = async (fileName, parentId = null) => {
+    if (!pendingFile || !token) {
+      Alert.alert("Error", "No file selected or not logged in.");
       return;
     }
 
     try {
       setLoading(true);
       // קריאת הקובץ כ-Base64 (עובד לקבצים בגודל סביר)
-      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: "base64" });
+      const base64 = await FileSystem.readAsStringAsync(pendingFile.uri, { encoding: "base64" });
 
       await createItem(token, {
         name: fileName,
         type: "file",
         content: base64,
-        mimeType: mimeType || "application/octet-stream",
+        mimeType: pendingFile.mimeType || "application/octet-stream",
+        parentId, // destination folder
       });
 
       emitDriveRefresh({ reason: "upload", name: fileName });
       onRefresh?.();
+      setPendingFile(null);
     } catch (err) {
       Alert.alert("Upload Failed", err?.message || "Unknown error");
     } finally {
       setLoading(false);
       unlockPicker();
-      closeCallback?.(); 
+      closeCallback?.();
     }
+  };
+
+  // Discard the pending file without uploading
+  const discardPending = () => {
+    setPendingFile(null);
+    unlockPicker();
+    closeCallback?.();
   };
 
   const pickDocument = async () => {
@@ -59,7 +70,6 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
         type: "*/*", // מאפשר את כל סוגי הקבצים
         multiple: false,
       });
-
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -68,8 +78,15 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       const asset = result?.assets?.[0];
       if (asset?.uri) {
         const fileName = asset.name || `file_${Date.now()}`;
-        closeCallback?.();
-        await processAndUpload(asset.uri, fileName, asset.mimeType);
+        // Set pending file - same modal will show preview content
+        unlockPicker();
+        setPendingFile({
+          uri: asset.uri,
+          fileName,
+          mimeType: asset.mimeType,
+        });
+      } else {
+        unlockPicker();
       }
     } catch (err) {
       Alert.alert("Error", "Picker failed");
@@ -100,7 +117,6 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       const result = useCamera
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
-
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -110,7 +126,6 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
       if (asset?.uri) {
         let fileName = asset.fileName;
         
-        // יצירת שם קובץ אם חסר
         if (!fileName) {
           const uriParts = String(asset.uri).split("/");
           const defaultExt = asset.type === 'video' ? '.mp4' : '.jpg';
@@ -125,8 +140,15 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
         // קביעת MimeType ברירת מחדל אם אין
         const mime = asset.mimeType || (asset.type === 'video' ? "video/mp4" : "image/jpeg");
 
-        closeCallback?.();
-        await processAndUpload(asset.uri, fileName, mime);
+        // Set pending file - same modal will show preview content
+        unlockPicker();
+        setPendingFile({
+          uri: asset.uri,
+          fileName,
+          mimeType: mime,
+        });
+      } else {
+        unlockPicker();
       }
     } catch (err) {
       Alert.alert("Error", "Action failed");
@@ -134,5 +156,12 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
     }
   };
 
-  return { loading, pickDocument, pickImage };
+  return { 
+    loading, 
+    pickDocument, 
+    pickImage,
+    pendingFile,      // The file awaiting review
+    confirmUpload,    // Call to confirm and upload
+    discardPending,   // Call to discard without uploading
+  };
 }

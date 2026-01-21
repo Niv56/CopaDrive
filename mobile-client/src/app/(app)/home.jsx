@@ -1,22 +1,21 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, Text, ImageBackground, SafeAreaView, StyleSheet, Platform, StatusBar } from "react-native";
 import { useFonts, BrunoAceSC_400Regular } from "@expo-google-fonts/bruno-ace-sc";
 import { Stack } from "expo-router";
 
-// Layout & Components
 import TopBar from "../../layout/TopBar";
 import BottomBar from "../../layout/BottomBar";
-import Fab from "../../layout/fab/Fab"; 
+import Fab from "../../layout/fab/Fab";
 
-// Pages
 import MainHomePage from "../../features/drive/pages/MainHomePage";
 import StarredPage from "../../features/drive/pages/StarredPage";
 import SharedPage from "../../features/drive/pages/SharedPage";
 import MyDrivePage from "../../features/drive/pages/MyDrivePage";
 
-// Theme
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
+
+import { subscribeNavigateToFolder } from "../../features/drive/services/driveEvents";
 
 // Images
 const lightBg = require("../../assets/images/light.png");
@@ -28,6 +27,14 @@ export default function HomeManager() {
 
   const { isDarkMode, colors } = useTheme();
   const styles = useMemo(() => getDriveStyles(colors), [colors]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeNavigateToFolder(() => {
+      setActiveTab("mydrive");
+    });
+    return unsubscribe;
+  }, []);
+
 
   const handleRefresh = () => {
     console.log("Global refresh triggered via FAB");
