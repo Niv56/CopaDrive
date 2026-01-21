@@ -5,15 +5,15 @@ import {
   Pressable,
   Modal,
   TouchableOpacity,
-  StyleSheet,
-  TextInput,
   Alert,
   Dimensions,
-  Animated
+  Animated,
+  StyleSheet
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { getDriveStyles } from "../styles/myDrive.styles";
+import { getDriveListItemStyles } from "../styles/driveListItem.styles";
 import { useTheme } from "../../../app/providers/ThemeContext";
 
 import { getFileIconMeta } from "../utils/fileIcon";
@@ -25,12 +25,12 @@ import { emitDriveRefresh } from "../services/driveEvents";
 import {
   setStarred,
   setImportant,
-  renameItem,
   getFileById,
 } from "../services/fileService";
 
 import { downloadFile } from "../utils/downloadFile";
 import ShareModal from "../modals/ShareModal";
+import EditItemModal from "../modals/EditItemModal";
 
 export default function DriveListItem({ item, onPress, onDelete }) {
   const isFolder = item.type === "folder";
@@ -39,12 +39,12 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const { token } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+  const styles = useMemo(() => getDriveListItemStyles(colors), [colors]);
 
   const swipeableRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState(item.name || "");
+  const [editOpen, setEditOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   const isStarred = !!item.starred;
@@ -58,18 +58,18 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     const opacity = dragX.interpolate({ inputRange: [0, 50], outputRange: [0, 1], extrapolate: 'clamp' });
 
     return (
-      <View style={localStyles.leftActionContainer}>
-        <Animated.View style={[localStyles.deleteActionAnim, { backgroundColor: colors.danger, opacity, transform: [{ scale }] }]}>
+      <View style={styles.leftActionContainer}>
+        <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
           <TouchableOpacity
             activeOpacity={0.7}
-            style={localStyles.deleteButtonInner}
+            style={styles.deleteButtonInner}
             onPress={() => {
               swipeableRef.current?.close();
               setTimeout(() => { if (onDelete) onDelete(item); }, 200);
             }}
           >
             <Ionicons name="trash-outline" size={24} color="white" />
-            <Text style={localStyles.deleteText}>Delete</Text>
+            <Text style={styles.deleteText}>Delete</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -123,8 +123,8 @@ export default function DriveListItem({ item, onPress, onDelete }) {
       },
       { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: handleDownload },
       {
-        key: "rename", icon: "pencil-outline", label: "RENAME",
-        onPress: () => { closeMenu(); setRenameValue(item.name || ""); setRenameOpen(true); },
+        key: "edit", icon: "pencil-outline", label: "EDIT",
+        onPress: () => { closeMenu(); setEditOpen(true); },
       },
       {
         key: "delete", icon: "trash-outline", label: "MOVE TO TRASH",
@@ -153,21 +153,14 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     });
   };
 
-  const doRenameSubmit = async () => {
-    const next = renameValue.trim();
-    if (!next) return;
-    try { await renameItem(token, item.id, next); setRenameOpen(false); emitDriveRefresh(); }
-    catch (e) { Alert.alert("Rename Failed", e?.message); }
-  };
-
   const StackOption = ({ icon, label, onPress }) => (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.9}
-      style={[localStyles.stackBtn, { backgroundColor: colors.card }]}
+      style={styles.stackBtn}
     >
-      <Ionicons name={icon} size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
-      <Text style={[localStyles.stackLabel, { color: colors.textPrimary }]}>{label}</Text>
+      <Ionicons name={icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
+      <Text style={styles.stackLabel}>{label}</Text>
     </TouchableOpacity>
   );
 
@@ -204,10 +197,10 @@ export default function DriveListItem({ item, onPress, onDelete }) {
       </Pressable>
 
       <Modal visible={menuOpen} transparent animationType="none">
-        <Pressable style={localStyles.backdrop} onPress={closeMenu}>
+        <Pressable style={styles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable
-            style={[localStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
+            style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
             onPress={(e) => e.stopPropagation()}
           >
             {menuOptions.map((opt) => (
@@ -216,39 +209,11 @@ export default function DriveListItem({ item, onPress, onDelete }) {
           </Pressable>
         </Pressable>
       </Modal>
-      <Modal visible={renameOpen} transparent animationType="fade">
-        <Pressable style={localStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
-          <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[localStyles.renameTitle, { color: colors.textPrimary }]}>RENAME</Text>
-
-            <TextInput
-              value={renameValue}
-              onChangeText={setRenameValue}
-              style={[localStyles.renameInput, {
-                backgroundColor: colors.surface,
-                color: colors.textPrimary,
-                borderColor: colors.border
-              }]}
-              placeholderTextColor={colors.textTertiary}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={doRenameSubmit}
-            />
-
-            <View style={localStyles.renameActions}>
-              <TouchableOpacity onPress={() => setRenameOpen(false)} style={localStyles.renameBtnGhost}>
-                <Text style={localStyles.renameGhostText}>CANCEL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={doRenameSubmit}
-                style={[localStyles.renameBtnPrimary, { backgroundColor: colors.primary }]}
-              >
-                <Text style={localStyles.renamePrimaryText}>SAVE</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <EditItemModal
+        visible={editOpen}
+        item={item}
+        onClose={() => setEditOpen(false)}
+      />
 
       <ShareModal
         visible={shareOpen}
@@ -258,23 +223,3 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     </Swipeable>
   );
 }
-
-const localStyles = StyleSheet.create({
-  backdrop: { flex: 1 },
-  stackMenu: { position: "absolute", width: 260, gap: 12 },
-  stackBtn: { height: 54, flexDirection: "row", alignItems: "center", justifyContent: "flex-start", paddingVertical: 12, paddingHorizontal: 18, borderRadius: 30, elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 5, minWidth: 260 },
-  stackLabel: { flex: 1, textAlign: "left", fontSize: 12, letterSpacing: 1.2 },
-  renameBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
-  renameCard: { borderRadius: 18, padding: 18 },
-  renameTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12, letterSpacing: 1.5 },
-  renameInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 16 },
-  renameActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 14 },
-  renameBtnGhost: { paddingVertical: 10, paddingHorizontal: 14 },
-  renameGhostText: { color: "#6c757d", fontWeight: "700", letterSpacing: 1.5 },
-  renameBtnPrimary: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
-  renamePrimaryText: { color: "white", fontWeight: "700", letterSpacing: 1.5 },
-  leftActionContainer: { width: 100, justifyContent: 'center', alignItems: 'center' },
-  deleteActionAnim: { width: 70, height: 60, borderRadius: 18, elevation: 2, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, marginRight: 10 },
-  deleteButtonInner: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  deleteText: { color: "white", fontWeight: "700", fontSize: 11, marginTop: 2 }
-});
