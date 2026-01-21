@@ -7,6 +7,7 @@ export async function getFiles(token) {
   });
 }
 
+// הפונקציה הזו קריטית להורדה - היא מביאה את המידע המלא כולל ה-Content (Base64)
 export async function getFileById(token, fileId) {
   return request(`/api/files/${fileId}`, {
     method: "GET",
@@ -67,9 +68,7 @@ export async function getTrashFiles(token) {
   return request("/api/files/trash", { method: "GET", token });
 }
 
-// ✅ הפונקציה החדשה שהייתה חסרה למחיקה
 export async function moveToTrash(token, fileId) {
-  // משתמשים באותו Endpoint כמו שחזור, אבל עם trashed: true
   return request(`/api/files/${fileId}/trash`, {
     method: "PATCH",
     token,
