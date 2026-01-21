@@ -32,7 +32,7 @@ import { downloadFile } from "../utils/downloadFile";
 import ShareModal from "../modals/ShareModal";
 import EditItemModal from "../modals/EditItemModal";
 
-export default function DriveListItem({ item, onPress, onDelete }) {
+export default function DriveListItem({ item, onPress, onDelete, onRestore, trashMode = false }) {
   const isFolder = item.type === "folder";
   const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
 
@@ -57,6 +57,28 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     const scale = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.8, 1], extrapolate: 'clamp' });
     const opacity = dragX.interpolate({ inputRange: [0, 50], outputRange: [0, 1], extrapolate: 'clamp' });
 
+    // Trash mode: swipe to restore
+    if (trashMode) {
+      return (
+        <View style={[styles.leftActionContainer, { backgroundColor: '#22c55e' }]}>
+          <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[styles.deleteButtonInner, { backgroundColor: '#22c55e' }]}
+              onPress={() => {
+                swipeableRef.current?.close();
+                setTimeout(() => { if (onRestore) onRestore(item); }, 200);
+              }}
+            >
+              <Ionicons name="refresh-outline" size={24} color="white" />
+              <Text style={styles.deleteText}>Restore</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      );
+    }
+
+    // Normal mode: swipe to delete
     return (
       <View style={styles.leftActionContainer}>
         <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
@@ -111,6 +133,21 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   };
 
   const menuOptions = useMemo(() => {
+    // Trash mode: only restore and delete forever
+    if (trashMode) {
+      return [
+        {
+          key: "restore", icon: "refresh-outline", label: "RESTORE",
+          onPress: () => { closeMenu(); if (onRestore) onRestore(item); }
+        },
+        {
+          key: "deleteForever", icon: "trash-outline", label: "DELETE FOREVER",
+          onPress: () => { closeMenu(); if (onDelete) onDelete(item); }
+        }
+      ];
+    }
+
+    // Normal mode: full options
     return [
       { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } },
       {
@@ -131,7 +168,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
         onPress: () => { closeMenu(); if (onDelete) onDelete(item); }
       }
     ];
-  }, [token, item.id, item.name, isStarred, isImportant, onDelete]);
+  }, [token, item.id, item.name, isStarred, isImportant, onDelete, onRestore, trashMode]);
 
   const openMenu = () => {
     if (!dotsRef.current) return setMenuOpen(true);
@@ -167,7 +204,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={onDelete ? renderLeftActions : undefined}
+      renderLeftActions={(trashMode ? onRestore : onDelete) ? renderLeftActions : undefined}
       overshootLeft={false}
       friction={2}
     >
