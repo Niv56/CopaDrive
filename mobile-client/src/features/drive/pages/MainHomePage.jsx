@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { View, Text, FlatList, ActivityIndicator, Pressable, Alert, StyleSheet } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, Pressable, Alert, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
@@ -19,8 +19,8 @@ export default function MainHomePage() {
   const { items, loading, refreshing, onRefresh } = useMyDrive();
   const { token } = useAuth();
   
-  // ✅ שימוש בצבעים מה-Theme
-  const { colors } = useTheme();
+  // ✅ שימוש ב-isDarkMode לצורך העיצוב הדינמי של הבלוקים
+  const { colors, isDarkMode } = useTheme();
 
   const currentItems = useMemo(() => {
       if (!items) return [];
@@ -51,7 +51,8 @@ export default function MainHomePage() {
     Alert.alert("Move to Trash?", `Delete "${item.name}"?`, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Delete", style: "destructive",
+        text: "Delete",
+        style: "destructive",
         onPress: async () => {
           try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
           catch (err) { Alert.alert("Error", "Could not delete item."); }
@@ -78,7 +79,6 @@ export default function MainHomePage() {
     }
   }, [folderPath]);
 
-  // Loader state
   if (loading && (!items || items.length === 0)) {
     return (
        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -87,26 +87,35 @@ export default function MainHomePage() {
     );
   }
 
-  // כותרת פנימית קטנה (Suggested folders / files)
+  // ✅ כותרת פנימית מעוצבת כבלוק "זכוכית" חטוב
   const SectionHeader = ({ icon, title }) => (
-    <View style={styles.sectionTitleRow}>
-        <Ionicons name={icon} size={18} color={colors.textPrimary} />
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
+    <View style={[
+      styles.sectionTitleCard, 
+      { 
+        backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
+        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'
+      }
+    ]}>
+        <Ionicons name={icon} size={14} color={isDarkMode ? '#FFFFFF' : '#1A2A3A'} />
+        <Text style={[
+          styles.sectionTitle, 
+          { 
+            color: isDarkMode ? '#FFFFFF' : '#1A2A3A',
+            textShadowColor: isDarkMode ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+          }
+        ]}>
+          {title.toUpperCase()}
+        </Text>
     </View>
   );
 
   return (
     <View style={{ flex: 1 }}> 
-      {/* הסרנו את ה-ScreenLayout ואת הכותרת "HOME" מכאן 
-         כי היא כבר מופיעה ב-HomeManager הראשי 
-      */}
-
       <FlatList
         data={[]}
         ListHeaderComponent={
           <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
             
-            {/* ✅ פירורי לחם (Breadcrumbs) - מופיעים רק כשנכנסים לתיקייה */}
             {folderPath.length > 0 && (
                 <View style={styles.breadcrumbContainer}>
                     <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
@@ -134,7 +143,7 @@ export default function MainHomePage() {
                 </View>
             )}
 
-            {/* רשימת התיקיות */}
+            {/* רשימת התיקיות בתוך בלוק מעוצב */}
             {folders.length > 0 && (
                 <View style={styles.sectionWrapper}>
                     <SectionHeader icon="folder-open-outline" title="Suggested folders" />
@@ -144,7 +153,7 @@ export default function MainHomePage() {
                 </View>
             )}
 
-            {/* רשימת הקבצים */}
+            {/* רשימת הקבצים בתוך בלוק מעוצב */}
             {files.length > 0 && (
                 <View style={styles.sectionWrapper}>
                     <SectionHeader icon="document-text-outline" title="Suggested files" />
@@ -154,7 +163,6 @@ export default function MainHomePage() {
                 </View>
             )}
 
-            {/* מצב ריק */}
             {folders.length === 0 && files.length === 0 && (
                 <View style={{ alignItems: 'center', marginTop: 80, opacity: 0.7 }}>
                     <Ionicons name="cloud-offline-outline" size={60} color={colors.textTertiary} />
@@ -167,7 +175,7 @@ export default function MainHomePage() {
         }
         refreshing={refreshing}
         onRefresh={onRefresh}
-        contentContainerStyle={{ paddingBottom: 100 }} // מרווח למטה בשביל ה-Fab וה-BottomBar
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       />
 
@@ -198,18 +206,32 @@ const styles = StyleSheet.create({
         marginHorizontal: 2
     },
     sectionWrapper: {
-        marginBottom: 20
+        marginBottom: 25
     },
-    sectionTitleRow: {
+    // ✅ עיצוב הבלוק (העתקה מה-titleCard)
+    sectionTitleCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
-        marginLeft: 5,
-        gap: 8
+        alignSelf: 'flex-start',
+        paddingVertical: 3,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        marginBottom: 12,
+        marginLeft: 2,
+        gap: 6,
+        // צלליות
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        letterSpacing: 0.5
+        fontSize: 12,
+        fontWeight: '700',
+        letterSpacing: 1.2,
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     }
 });
