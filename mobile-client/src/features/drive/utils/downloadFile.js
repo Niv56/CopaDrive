@@ -1,8 +1,6 @@
-// ✅ שינוי קריטי: מייבאים את הכל מ-legacy כדי לקבל גם את הפונקציות וגם את ה-cacheDirectory
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
-// פונקציית עזר למציאת סיומת לפי סוג הקובץ
 function getExtensionFromMimeType(mimeType) {
   if (!mimeType) return "";
   const mappings = {
@@ -15,38 +13,55 @@ function getExtensionFromMimeType(mimeType) {
     "audio/wav": ".wav",
     "text/plain": ".txt",
     "application/json": ".json",
-    // ניתן להוסיף עוד לפי הצורך
+    "text/javascript": ".js",
+    "text/html": ".html",
+    "text/css": ".css"
   };
   return mappings[mimeType] || "";
 }
 
-export async function downloadAndShareBase64({ base64, mimeType, fileName }) {
-  if (!base64) throw new Error("No content to download");
+// פונקציית עזר לניקוי Base64 מקידומות כמו data:image/png;base64,
+function cleanBase64(content) {
+  if (typeof content === 'string' && content.includes(';base64,')) {
+    return content.split(';base64,')[1];
+  }
+  return content;
+}
 
-  // 1. ניקוי שם הקובץ מתווים בעייתיים
+// ✅ שיניתי את השם ל-downloadFile (כללי יותר)
+// ✅ הוספתי פרמטר isBase64
+export async function downloadFile({ content, mimeType, fileName, isBase64 = true }) {
+  if (!content) throw new Error("No content to download");
+
   let cleanName = (fileName || "downloaded_file").replace(/[\/\\?%*:|"<>]/g, "_");
 
-  // 2. וידוא שיש לקובץ סיומת
+  // הוספת סיומת אם חסרה
   if (!cleanName.includes(".")) {
     const ext = getExtensionFromMimeType(mimeType);
     cleanName += ext;
   }
 
-  // ✅ תיקון באג ה-undefined: שימוש ב-FileSystem (Legacy) כדי לקבל את הנתיב
+  // וידוא שה-Cache קיים
   if (!FileSystem.cacheDirectory) {
-      throw new Error("FileSystem.cacheDirectory is undefined. Check Expo version.");
+      throw new Error("FileSystem.cacheDirectory is undefined.");
   }
   
   const uri = FileSystem.cacheDirectory + cleanName;
 
   try {
-    // 3. כתיבת ה-Base64 לקובץ
-    // משתמשים במחרוזת 'base64' כדי להיות בטוחים (במקום Enum שאולי השתנה)
-    await FileSystem.writeAsStringAsync(uri, base64, {
-      encoding: 'base64', 
-    });
+    if (isBase64) {
+        // ✅ מצב תמונה/PDF: מנקים וכותבים כ-Base64
+        const rawData = cleanBase64(content);
+        await FileSystem.writeAsStringAsync(uri, rawData, {
+            encoding: 'base64', 
+        });
+    } else {
+        // ✅ מצב טקסט: כותבים כטקסט רגיל (UTF-8)
+        // אם התוכן הוא אובייקט (למשל JSON), נהפוך למחרוזת
+        const textData = typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);
+        await FileSystem.writeAsStringAsync(uri, textData);
+    }
 
-    // 4. שיתוף הקובץ
     const canShare = await Sharing.isAvailableAsync();
     if (canShare) {
       await Sharing.shareAsync(uri, {
@@ -61,7 +76,7 @@ export async function downloadAndShareBase64({ base64, mimeType, fileName }) {
     return uri;
 
   } catch (error) {
-    console.error("Download error:", error);
+    console.error("DownloadFile Error:", error);
     throw error;
   }
 }

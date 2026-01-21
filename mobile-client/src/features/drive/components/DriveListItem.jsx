@@ -30,7 +30,8 @@ import {
   getFileById,
 } from "../services/fileService";
 
-import { downloadAndShareBase64 } from "../utils/downloadFile";
+// ✅ עדכון הייבוא לפונקציה החדשה
+import { downloadFile } from "../utils/downloadFile";
 import ShareModal from "../modals/ShareModal";
 
 export default function DriveListItem({ item, onPress, onDelete }) {
@@ -38,8 +39,6 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
 
   const { token } = useAuth();
-  
-  // ✅ Theme Hooks
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
@@ -81,6 +80,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
   const comingSoon = (label) => { closeMenu(); Alert.alert("CopaDrive", `${label} (Coming soon)`); };
 
+  // ✅ פונקציית ההורדה המתוקנת להמבורגר
   const handleDownload = async () => {
     closeMenu();
     if (!token) return Alert.alert("Not logged in", "No token found.");
@@ -88,19 +88,35 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
     try {
       const full = await getFileById(token, item.id);
-      if (!full?.content) return Alert.alert("CopaDrive", "No content available.");
+      
+      if (!full || (!full.content && !full.url)) {
+          return Alert.alert("CopaDrive", "No content available to download.");
+      }
 
-      await downloadAndShareBase64({
-        base64: full.content,
-        mimeType: full.mimeType || "application/octet-stream",
+      // ✅ בדיקה חכמה: האם זה קובץ טקסט?
+      const mime = full.mimeType || "";
+      const isTextFile = mime.startsWith('text/') || 
+                         mime.includes('json') || 
+                         mime.includes('xml') ||
+                         mime.includes('javascript') ||
+                         mime.includes('html');
+
+      // שליחה לפונקציה הגנרית עם הדגל המתאים
+      await downloadFile({
+        content: full.content,
+        mimeType: mime || "application/octet-stream",
         fileName: full.name || item.name || "file",
+        isBase64: !isTextFile // אם זה טקסט -> אל תשתמש ב-Base64
       });
-    } catch (e) { Alert.alert("Download Failed", e?.message || "Could not download file"); }
+
+    } catch (e) { 
+        console.error("Download failed inside DriveListItem:", e);
+        Alert.alert("Download Failed", "Could not save the file."); 
+    }
   };
 
   const menuOptions = useMemo(() => {
     return [
-      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } }, // תוקן לפתיחת ShareModal
       { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
       {
         key: "star", icon: isStarred ? "star" : "star-outline", label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
@@ -116,7 +132,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
         onPress: () => { closeMenu(); setRenameValue(item.name || ""); setRenameOpen(true); },
       },
       {
-        key: "delete", icon: "trash-outline", label: "DELETE",
+        key: "delete", icon: "trash-outline", label: "MOVE TO TRASH",
         onPress: () => { closeMenu(); if (onDelete) onDelete(item); }
       }
     ];
@@ -149,102 +165,55 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     catch (e) { Alert.alert("Rename Failed", e?.message); }
   };
 
-  // רכיב פנימי לתפריט (כדי להשתמש בצבעים)
   const StackOption = ({ icon, label, onPress }) => (
-    <TouchableOpacity 
-        onPress={onPress} 
-        activeOpacity={0.9} 
-        style={[localStyles.stackBtn, { backgroundColor: colors.card }]} // ✅ רקע דינמי
-    >
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[localStyles.stackBtn, { backgroundColor: colors.card }]}>
       <Ionicons name={icon} size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
       <Text style={[localStyles.stackLabel, { color: colors.textPrimary }]}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <Swipeable
-        ref={swipeableRef}
-        renderLeftActions={onDelete ? renderLeftActions : undefined}
-        overshootLeft={false}
-        friction={2}
-    >
-      <Pressable
-        style={driveStyles.fileCard} // ✅ שימוש בסטיילים הדינמיים
-        onPress={() => onPress && onPress(item)}
-      >
+    <Swipeable ref={swipeableRef} renderLeftActions={onDelete ? renderLeftActions : undefined} overshootLeft={false} friction={2}>
+      <Pressable style={driveStyles.fileCard} onPress={() => onPress && onPress(item)}>
         <View style={driveStyles.iconContainer}>
           <Ionicons name={icon} size={28} color={color} />
         </View>
-
         <View style={{ flex: 1 }}>
           <Text style={driveStyles.fileName} numberOfLines={1}>{item.name}</Text>
           <Text style={driveStyles.fileInfo}>
             {isFolder ? "Folder" : "File"} • {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
           </Text>
         </View>
-
-        <Pressable
-          ref={dotsRef}
-          onPress={() => (menuOpen ? closeMenu() : openMenu())}
-          hitSlop={14}
-          style={{ padding: 6 }}
-        >
+        <Pressable ref={dotsRef} onPress={() => (menuOpen ? closeMenu() : openMenu())} hitSlop={14} style={{ padding: 6 }}>
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
         </Pressable>
       </Pressable>
 
-      {/* תפריט פעולות */}
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={localStyles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={[localStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}>
-            {/* ✅ התיקון: העברה מפורשת של props במקום spread */}
             {menuOptions.map((opt) => (
-              <StackOption 
-                key={opt.key} 
-                icon={opt.icon} 
-                label={opt.label} 
-                onPress={opt.onPress} 
-              />
+              <StackOption key={opt.key} icon={opt.icon} label={opt.label} onPress={opt.onPress} />
             ))}
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* מודל שינוי שם */}
       <Modal visible={renameOpen} transparent animationType="fade">
         <Pressable style={localStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
           <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]}> 
             <Text style={[localStyles.renameTitle, { color: colors.textPrimary }]}>RENAME</Text>
-            <TextInput
-              value={renameValue}
-              onChangeText={setRenameValue}
-              style={[localStyles.renameInput, { 
-                  backgroundColor: colors.surface, 
-                  color: colors.textPrimary,
-                  borderColor: colors.border
-              }]}
-              placeholderTextColor={colors.textTertiary}
-              autoFocus
-            />
+            <TextInput value={renameValue} onChangeText={setRenameValue} style={[localStyles.renameInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]} placeholderTextColor={colors.textTertiary} autoFocus />
             <View style={localStyles.renameActions}>
-              <TouchableOpacity onPress={() => setRenameOpen(false)} style={localStyles.renameBtnGhost}>
-                <Text style={localStyles.renameGhostText}>CANCEL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={doRenameSubmit} style={[localStyles.renameBtnPrimary, { backgroundColor: colors.primary }]}>
-                <Text style={localStyles.renamePrimaryText}>SAVE</Text>
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setRenameOpen(false)} style={localStyles.renameBtnGhost}><Text style={localStyles.renameGhostText}>CANCEL</Text></TouchableOpacity>
+              <TouchableOpacity onPress={doRenameSubmit} style={[localStyles.renameBtnPrimary, { backgroundColor: colors.primary }]}><Text style={localStyles.renamePrimaryText}>SAVE</Text></TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* Share modal */}
-      <ShareModal
-        visible={shareOpen}
-        item={item}
-        onClose={() => setShareOpen(false)}
-      />
+      <ShareModal visible={shareOpen} item={item} onClose={() => setShareOpen(false)} />
     </Swipeable>
   );
 }
@@ -252,14 +221,8 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 const localStyles = StyleSheet.create({
   backdrop: { flex: 1 },
   stackMenu: { position: "absolute", width: 260, gap: 12 },
-  stackBtn: {
-    height: 54, flexDirection: "row", alignItems: "center", justifyContent: "flex-start",
-    paddingVertical: 12, paddingHorizontal: 18, borderRadius: 30, 
-    elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18, shadowRadius: 5, minWidth: 260,
-  },
+  stackBtn: { height: 54, flexDirection: "row", alignItems: "center", justifyContent: "flex-start", paddingVertical: 12, paddingHorizontal: 18, borderRadius: 30, elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 5, minWidth: 260 },
   stackLabel: { flex: 1, textAlign: "left", fontSize: 12, letterSpacing: 1.2 },
-  
   renameBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
   renameCard: { borderRadius: 18, padding: 18 },
   renameTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12, letterSpacing: 1.5 },
@@ -269,12 +232,8 @@ const localStyles = StyleSheet.create({
   renameGhostText: { color: "#6c757d", fontWeight: "700", letterSpacing: 1.5 },
   renameBtnPrimary: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
   renamePrimaryText: { color: "white", fontWeight: "700", letterSpacing: 1.5 },
-
   leftActionContainer: { width: 100, justifyContent: 'center', alignItems: 'center' },
-  deleteActionAnim: {
-    width: 70, height: 60, borderRadius: 18, elevation: 2, 
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, marginRight: 10 
-  },
+  deleteActionAnim: { width: 70, height: 60, borderRadius: 18, elevation: 2, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, marginRight: 10 },
   deleteButtonInner: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   deleteText: { color: "white", fontWeight: "700", fontSize: 11, marginTop: 2 }
 });
