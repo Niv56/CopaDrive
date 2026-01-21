@@ -6,48 +6,43 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
-// ✅ תיקון נתיבים: הוספנו ../ כי נכנסנו לתוך תיקיית fab
 import { useAuth } from "../../app/providers/AuthContext";
 import { createItem } from "../../features/drive/services/fileService";
 import { emitDriveRefresh } from "../../features/drive/services/driveEvents";
-
-// ✅ תיקון נתיב ל-Hook
 import { useDriveUploads } from "../../features/drive/hooks/useDriveUploads";
 
-// ✅ תיקון קריטי: הקבצים האלו נמצאים עכשיו ממש ליד Fab.jsx
 import ActionMenu from "./ActionMenu";
 import CreateForm from "./CreateForm";
+
+// ✅ ייבוא Theme
+import { useTheme } from "../../app/providers/ThemeContext";
 
 const NEWLINE = "_@NL@_";
 
 export default function Fab({ onRefresh }) {
   const { token } = useAuth();
   
-  // ניהול המצבים: 'closed' | 'menu' | 'create_file' | 'create_folder'
+  // ✅ שליפת Theme
+  const { isDarkMode, colors } = useTheme();
+
   const [activeView, setActiveView] = useState("closed");
-  
-  // State לטופס יצירה
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
 
-  // סגירת הכל
   const closeAll = () => {
     setActiveView("closed");
     setTimeout(() => { setName(""); setContent(""); }, 300);
     Keyboard.dismiss();
   };
 
-  // שימוש ב-Hook להעלאות
   const { loading: uploadLoading, pickDocument, pickImage } = useDriveUploads(token, onRefresh, closeAll);
 
-  // מעבר חלק בין מסכים
   const switchTo = (view) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveView(view);
   };
 
-  // ניתוב פעולות מהתפריט
   const handleMenuAction = (action) => {
     switch(action) {
       case "create_folder": switchTo("create_folder"); break;
@@ -58,7 +53,6 @@ export default function Fab({ onRefresh }) {
     }
   };
 
-  // לוגיקה ליצירת קובץ/תיקייה
   const handleSubmitCreate = async () => {
     if (!name.trim()) return;
     if (!token) return Alert.alert("Error", "Not logged in");
@@ -94,23 +88,21 @@ export default function Fab({ onRefresh }) {
     <>
       {loading && (
         <View style={styles.loaderOverlay}>
-          <ActivityIndicator size="large" color="#0d6efd" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loaderText}>WORKING...</Text>
         </View>
       )}
 
-      {/* מודל ראשי אחד */}
       <Modal visible={isOpen} transparent animationType="fade">
         <View style={styles.container}>
-          <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+          {/* ✅ BlurView מותאם ללילה */}
+          <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={StyleSheet.absoluteFill} onPress={closeAll} />
 
-          {/* תפריט */}
           {isMenu && (
             <ActionMenu onAction={handleMenuAction} disabled={loading} />
           )}
 
-          {/* טופס יצירה */}
           {isCreate && (
             <CreateForm 
               mode={activeView}
@@ -124,11 +116,14 @@ export default function Fab({ onRefresh }) {
         </View>
       </Modal>
 
-      {/* כפתור הפלוס הראשי */}
       {!isOpen && (
         <View style={styles.fabPosition}>
           <TouchableOpacity
-            style={[styles.fabMain, loading && { opacity: 0.7 }]}
+            style={[
+                styles.fabMain, 
+                { backgroundColor: colors.primary }, // ✅ צבע כפתור דינמי
+                loading && { opacity: 0.7 }
+            ]}
             onPress={() => !loading && switchTo("menu")}
             activeOpacity={0.9}
             disabled={loading}
@@ -144,7 +139,7 @@ export default function Fab({ onRefresh }) {
 const styles = StyleSheet.create({
   fabPosition: { position: "absolute", bottom: 90, right: 25, zIndex: 9999 },
   fabMain: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: "#0d6efd",
+    width: 60, height: 60, borderRadius: 30,
     justifyContent: "center", alignItems: "center", elevation: 5,
   },
   container: { flex: 1 },

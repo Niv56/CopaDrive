@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -8,27 +8,31 @@ import {
   FlatList,
   ActivityIndicator,
   StatusBar,
-  Alert, // ✅ הוספנו Alert
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../providers/AuthContext";
-// ✅ הוספנו moveToTrash
 import { getImportantFiles, moveToTrash } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
-import { driveStyles } from "../../features/drive/styles/myDrive.styles";
 
-// ✅ הוספנו emitDriveRefresh
+// ✅ ייבוא Theme וסטיילים דינמיים
+import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
+import { useTheme } from "../providers/ThemeContext";
+
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
-
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function ImportantPage() {
   const router = useRouter();
   const { token } = useAuth();
+  
+  // ✅ שימוש ב-Theme
+  const { colors, isDarkMode } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -71,12 +75,10 @@ export default function ImportantPage() {
   const openItem = useCallback((i) => {
     if (!i) return;
     if (i.type === "folder") return;
-
     setSelectedId(i.id);
     setPreviewOpen(true);
   }, []);
 
-  // ✅ פונקציית המחיקה החדשה
   const handleDeleteItem = useCallback(async (item) => {
     Alert.alert(
       "Move to Trash?",
@@ -100,28 +102,30 @@ export default function ImportantPage() {
   }, [token]);
 
   return (
-    <View style={styles.modalContainer}>
-      <StatusBar barStyle="dark-content" />
+    // ✅ רקע דינמי
+    <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
           <TouchableOpacity
             onPress={closeScreen}
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: colors.surface }]}
             activeOpacity={0.7}
           >
-            <Ionicons name="close-outline" size={32} color="#6c757d" />
+            <Ionicons name="close-outline" size={32} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.content}>
           <View style={styles.textHeader}>
+            {/* שימוש ב-driveStyles הדינמי לכותרת */}
             <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>IMPORTANT</Text>
-            <Text style={styles.subTitle}>Items marked with high priority</Text>
+            <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Items marked with high priority</Text>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#0d6efd" style={{ marginTop: 50 }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
           ) : (
             <FlatList
               data={items}
@@ -130,13 +134,13 @@ export default function ImportantPage() {
                 <DriveListItem 
                     item={item} 
                     onPress={openItem} 
-                    onDelete={handleDeleteItem} // ✅ העברת המחיקה
+                    onDelete={handleDeleteItem}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="alert-circle-outline" size={80} color="#f0f0f0" />
+                  <Ionicons name="alert-circle-outline" size={80} color={colors.textTertiary} />
                   <Text style={driveStyles.emptyText}>No important items yet</Text>
                 </View>
               }
@@ -157,8 +161,9 @@ export default function ImportantPage() {
   );
 }
 
+// סטיילים מקומיים (Layout בלבד)
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, backgroundColor: "#ffffff" },
+  modalContainer: { flex: 1 },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -173,7 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 22,
-    backgroundColor: "#f8f9fa",
   },
   content: { flex: 1 },
   textHeader: {
@@ -182,7 +186,6 @@ const styles = StyleSheet.create({
   },
   subTitle: {
     fontSize: 13,
-    color: "#6c757d",
     marginTop: -8,
     marginLeft: 0,
   },

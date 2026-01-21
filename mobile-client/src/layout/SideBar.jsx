@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { useRouter, usePathname } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../app/providers/AuthContext'; 
 import { getUsage } from '../features/drive/services/fileService';
 import StorageTree from '../features/drive/components/StorageTree';
+
+// ✅ ייבוא Theme
+import { useTheme } from '../app/providers/ThemeContext';
 
 const MENU_ITEMS = [
   { id: 'home', icon: 'home', label: 'Home', route: '/home' },
@@ -19,12 +22,12 @@ const MENU_ITEMS = [
 export default function SideBar(props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, logout } = useAuth(); // שימוש ב-logout מה-Context
+  const { token, logout } = useAuth();
   
-  const [usage, setUsage] = useState({
-    usedBytes: 0,
-    quotaBytes: 15 * 1024 * 1024 * 1024,
-  });
+  // ✅ שימוש בצבעים ובמצב לילה
+  const { isDarkMode, toggleTheme, colors } = useTheme();
+  
+  const [usage, setUsage] = useState({ usedBytes: 0, quotaBytes: 15 * 1024 * 1024 * 1024 });
 
   useEffect(() => {
     let alive = true;
@@ -41,28 +44,17 @@ export default function SideBar(props) {
     return () => { alive = false; clearInterval(interval); };
   }, [token]);
 
-  // פונקציית הניתוק עם אישור מהמשתמש
   const handleLogoutAction = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to disconnect?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Logout", 
-          style: "destructive", 
-          onPress: async () => {
-            await logout(); // קריאה לפונקציית הניתוק האמיתית
-          } 
-        }
-      ]
-    );
+    Alert.alert("Logout", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", style: "destructive", onPress: async () => await logout() }
+    ]);
   };
 
   return (
-    <BlurView intensity={80} tint="light" style={styles.container}>
+    <BlurView intensity={80} tint={isDarkMode ? "dark" : "light"} style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>CopaDrive</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>CopaDrive</Text>
       </View>
 
       <DrawerContentScrollView {...props} contentContainerStyle={styles.scrollContent}>
@@ -73,24 +65,42 @@ export default function SideBar(props) {
               <TouchableOpacity
                 key={item.id}
                 onPress={() => router.push(item.route)}
-                style={[styles.item, isActive && styles.itemActive]}
+                style={[styles.item, isActive && { backgroundColor: colors.activeItem }]}
               >
-                <Feather name={item.icon} size={20} color={isActive ? '#0d6efd' : '#444'} />
-                <Text style={[styles.text, isActive && styles.textActive]}>{item.label}</Text>
+                <Feather name={item.icon} size={20} color={isActive ? colors.primary : colors.iconColor} />
+                <Text style={[styles.text, { color: isActive ? colors.primary : colors.textPrimary }, isActive && styles.textActive]}>
+                    {item.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity onPress={handleLogoutAction} style={styles.logoutItem}>
-            <Feather name="log-out" size={20} color="#d93025" />
-            <Text style={styles.logoutText}>Logout</Text>
+            <Feather name="log-out" size={20} color={colors.danger} />
+            <Text style={[styles.logoutText, { color: colors.danger }]}>Logout</Text>
           </TouchableOpacity>
         </View>
       </DrawerContentScrollView>
       
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          <View style={styles.controlsRow}>
+             <TouchableOpacity 
+                style={[styles.songBtn, { backgroundColor: colors.primary }]}
+                onPress={() => Alert.alert("CopaDrive", "Music Player coming soon!")}
+             >
+                <Ionicons name="musical-notes" size={16} color="white" />
+                <Text style={styles.songBtnText}>PlaySong</Text>
+             </TouchableOpacity>
+
+             <TouchableOpacity 
+                style={[styles.themeBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={toggleTheme}
+             >
+                <Feather name={isDarkMode ? "sun" : "moon"} size={20} color={colors.textPrimary} />
+             </TouchableOpacity>
+          </View>
           <StorageTree usedBytes={usage.usedBytes} quotaBytes={usage.quotaBytes} />
       </View>
     </BlurView>
@@ -98,17 +108,20 @@ export default function SideBar(props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'rgba(255, 255, 255, 0.75)' },
+  container: { flex: 1 },
   header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 20, marginBottom: 10 },
-  headerTitle: { fontSize: 24, fontFamily: 'BrunoAceSC_400Regular', color: '#333', letterSpacing: 1.5 },
+  headerTitle: { fontSize: 24, fontFamily: 'BrunoAceSC_400Regular', letterSpacing: 1.5 },
   scrollContent: { paddingTop: 0 },
   list: { paddingHorizontal: 16, gap: 6 },
   item: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16, borderRadius: 24, marginBottom: 4 },
-  itemActive: { backgroundColor: 'rgba(13, 110, 253, 0.12)' },
-  text: { fontSize: 15, fontWeight: '500', color: '#444', marginLeft: 16 },
-  textActive: { color: '#0d6efd', fontWeight: '700' },
-  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 15, marginHorizontal: 10 },
+  text: { fontSize: 15, fontWeight: '500', marginLeft: 16 },
+  textActive: { fontWeight: '700' },
+  divider: { height: 1, marginVertical: 15, marginHorizontal: 10 },
   logoutItem: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16 },
-  logoutText: { fontSize: 15, fontWeight: '600', color: '#d93025', marginLeft: 16 },
-  footer: { paddingBottom: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
+  logoutText: { fontSize: 15, fontWeight: '600', marginLeft: 16 },
+  footer: { paddingBottom: 20, paddingTop: 10, borderTopWidth: 1 },
+  controlsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 15, alignItems: 'center' },
+  songBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, gap: 6 },
+  songBtnText: { color: 'white', fontWeight: '600', fontSize: 12 },
+  themeBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 1 }
 });

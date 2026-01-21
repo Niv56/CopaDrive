@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Pressable, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
@@ -7,11 +7,19 @@ import { useAuth } from "../app/providers/AuthContext";
 import SearchBar from "./SearchBar/SearchBar";
 import ProfileActionSheet from "./ProfileActionSheet";
 import EditProfileModal from "../features/user/components/EditProfileModal";
-import { driveStyles } from "../features/drive/styles/myDrive.styles";
+
+// ✅ ייבוא ה-Theme ופונקציית הסטיילים החדשה
+import { getDriveStyles } from "../features/drive/styles/myDrive.styles";
+import { useTheme } from "../app/providers/ThemeContext";
 
 export default function TopBar() {
   const navigation = useNavigation();
   const { user, token } = useAuth();
+  
+  // ✅ שליפת הצבעים ויצירת הסטיילים
+  const { colors, isDarkMode } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -19,7 +27,8 @@ export default function TopBar() {
     <View style={styles.masterZIndex}>
       <View style={driveStyles.topBarSearchWrapper}>
         <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={15}>
-          <Ionicons name="menu" size={24} color="#5f6368" />
+          {/* שינוי צבע האייקון לפי הנושא */}
+          <Ionicons name="menu" size={24} color={colors.textSecondary} />
         </Pressable>
 
         <SearchBar token={token} />

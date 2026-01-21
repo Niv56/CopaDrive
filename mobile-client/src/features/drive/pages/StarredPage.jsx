@@ -3,19 +3,23 @@ import { FlatList, Alert, Text, ActivityIndicator } from "react-native";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-import { driveStyles } from "../styles/myDrive.styles";
+
+// ✅ ייבוא Theme ופונקציית סטיילים
+import { getDriveStyles } from "../styles/myDrive.styles";
+import { useTheme } from "../../../app/providers/ThemeContext";
 
 import FilePreviewModal from "../components/FilePreviewModal";
-
-// ✅ ייבואים חדשים שנצרכים למחיקה
 import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
 export default function StarredPage() {
-  // ✅ שליפת הטוקן
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+  // ✅ שימוש ב-Theme
+  const { colors } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const starredItems = useMemo(
     () => (items || []).filter((i) => !!i?.starred),
@@ -27,17 +31,14 @@ export default function StarredPage() {
 
   const openItem = useCallback((item) => {
     if (!item) return;
-
     if (item.type === "folder") {
       Alert.alert("CopaDrive", "Folders view is coming soon.");
       return;
     }
-
     setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
 
-  // ✅ פונקציית המחיקה החדשה
   const handleDeleteItem = useCallback(async (item) => {
     Alert.alert(
       "Move to Trash?",
@@ -50,7 +51,7 @@ export default function StarredPage() {
           onPress: async () => {
             try {
               await moveToTrash(token, item.id);
-              emitDriveRefresh(); // רענון הרשימה
+              emitDriveRefresh(); 
             } catch (err) {
               Alert.alert("Error", "Could not delete item.");
             }
@@ -61,7 +62,7 @@ export default function StarredPage() {
   }, [token]);
 
   if (loading && starredItems.length === 0) {
-    return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+    return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
   return (
@@ -76,7 +77,7 @@ export default function StarredPage() {
           <DriveListItem 
             item={item} 
             onPress={openItem} 
-            onDelete={handleDeleteItem} // ✅ חיבור למחיקה
+            onDelete={handleDeleteItem}
           />
         )}
         ListEmptyComponent={

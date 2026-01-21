@@ -1,22 +1,26 @@
-// mobile-client/src/features/drive/pages/MyDrivePage.jsx
-
 import React, { useMemo, useCallback, useState } from "react";
 import { FlatList, Text, ActivityIndicator, Alert } from "react-native";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-import { driveStyles } from "../styles/myDrive.styles";
-import { useAuth } from "../../../app/providers/AuthContext";
 
-// ✅ ייבוא פונקציית המחיקה ורענון
+// ✅ ייבוא Theme
+import { getDriveStyles } from "../styles/myDrive.styles";
+import { useTheme } from "../../../app/providers/ThemeContext";
+
+import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService"; 
 import { emitDriveRefresh } from "../services/driveEvents";
 
 import FilePreviewModal from "../components/FilePreviewModal";
 
 export default function MyDrivePage() {
-  const { token } = useAuth(); // הוספנו את הטוקן
+  const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
+
+  // ✅ שימוש ב-Theme
+  const { colors } = useTheme();
+  const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const onlyFiles = useMemo(
     () => (items || []).filter((i) => i?.type === "file"),
@@ -28,17 +32,14 @@ export default function MyDrivePage() {
 
   const handlePressItem = useCallback((item) => {
     if (!item) return;
-
     if (item.type === "folder") {
       Alert.alert("CopaDrive", "Folders view is coming soon.");
       return;
     }
-
     setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
 
-  // ✅ הפונקציה החדשה למחיקה
   const handleDeleteItem = useCallback(async (item) => {
     Alert.alert(
       "Move to Trash?",
@@ -50,10 +51,8 @@ export default function MyDrivePage() {
           style: "destructive",
           onPress: async () => {
             try {
-              // נניח שיש פונקציה כזו ב-fileService. 
-              // אם קוראים לה בשם אחר (למשל updateItem עם trashed: true), עדכן כאן.
               await moveToTrash(token, item.id);
-              emitDriveRefresh(); // רענון הרשימה
+              emitDriveRefresh();
             } catch (err) {
               Alert.alert("Error", "Could not delete item.");
             }
@@ -64,7 +63,7 @@ export default function MyDrivePage() {
   }, [token]);
 
   if (loading && onlyFiles.length === 0) {
-    return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+    return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
   return (
@@ -77,7 +76,7 @@ export default function MyDrivePage() {
           <DriveListItem 
             item={item} 
             onPress={handlePressItem}
-            onDelete={handleDeleteItem} // ✅ העברת פונקציית המחיקה
+            onDelete={handleDeleteItem}
           />
         )}
         refreshing={refreshing}

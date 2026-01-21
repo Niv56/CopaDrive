@@ -9,22 +9,26 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
+// ✅ ייבוא Theme
+import { useTheme } from "../app/providers/ThemeContext";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const MARGIN_H = 20;
 const BAR_WIDTH = SCREEN_WIDTH - (MARGIN_H * 2);
 const TAB_COUNT = 4;
 const TAB_WIDTH = BAR_WIDTH / TAB_COUNT;
-const BUBBLE_WIDTH = TAB_WIDTH * 0.7; // רוחב הבועה הכחולה
-const BUBBLE_OFFSET = (TAB_WIDTH - BUBBLE_WIDTH) / 2; // כדי למרכז את הבועה במשבצת
+const BUBBLE_WIDTH = TAB_WIDTH * 0.7;
+const BUBBLE_OFFSET = (TAB_WIDTH - BUBBLE_WIDTH) / 2;
 
 export default function BottomBar({ activeTab, setActiveTab }) {
-  // הערך מייצג פיקסלים (לא אינדקס) לתנועה חלקה לחלוטין
+  // ✅ שימוש בצבעים
+  const { isDarkMode, colors } = useTheme();
+
   const slideAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const tabs = ["home", "starred", "shared", "mydrive"];
 
-  // פונקציית עזר להזזת הבועה לטאב מסוים
   const animateToTab = (index) => {
     const targetX = (index * TAB_WIDTH) + BUBBLE_OFFSET;
     Animated.spring(slideAnim, {
@@ -35,7 +39,6 @@ export default function BottomBar({ activeTab, setActiveTab }) {
     }).start();
   };
 
-  // מעקב אחרי שינויים חיצוניים (למשל אם משנים טאב דרך הקוד)
   useEffect(() => {
     const index = tabs.indexOf(activeTab);
     if (index !== -1) {
@@ -47,48 +50,25 @@ export default function BottomBar({ activeTab, setActiveTab }) {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-
       onPanResponderGrant: () => {
-        // כיווץ קטן לתחושת מגע
         Animated.spring(scaleAnim, { toValue: 0.9, useNativeDriver: true }).start();
-        
-        // עוצרים אנימציות קודמות כדי שהבועה לא "תילחם" באצבע
         slideAnim.stopAnimation((value) => {
-            // הבועה נשארת איפה שהיא ברגע הנגיעה
-            slideAnim.setOffset(value); 
-            slideAnim.setValue(0);
+           slideAnim.setOffset(value); 
+           slideAnim.setValue(0);
         });
       },
-
       onPanResponderMove: (evt, gestureState) => {
-         // תזוזה חלקה עם האצבע (1:1)
          slideAnim.setValue(gestureState.dx);
       },
-
       onPanResponderRelease: (evt, gestureState) => {
-        // החזרת הגודל
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
-
-        // איחוד ה-Offset והערך הנוכחי כדי להבין איפה אנחנו באמת
         slideAnim.flattenOffset();
-
-        // חישוב המיקום הסופי של האצבע בתוך הבר
-        // locationX נותן את המיקום היחסי בתוך הקומפוננטה
         const touchX = evt.nativeEvent.locationX;
-        
-        // חישוב איזה טאב הכי קרוב לאצבע
         let targetIndex = Math.floor(touchX / TAB_WIDTH);
-        
-        // הגנה מפני חריגות
         if (targetIndex < 0) targetIndex = 0;
         if (targetIndex >= TAB_COUNT) targetIndex = TAB_COUNT - 1;
-
         const newTab = tabs[targetIndex];
-
-        // עדכון הסטייט של האפליקציה
         setActiveTab(newTab);
-        
-        // "מגנוט" הבועה למרכז הטאב הנבחר
         animateToTab(targetIndex);
       },
     })
@@ -102,7 +82,8 @@ export default function BottomBar({ activeTab, setActiveTab }) {
           <Ionicons 
             name={icon} 
             size={24} 
-            color={isActive ? "#fff" : "#8E8E93"} 
+            // ✅ האייקון הלא פעיל מקבל צבע מותאם ללילה/יום
+            color={isActive ? "#fff" : (isDarkMode ? "#8E8E93" : "#5f6368")} 
           />
         </View>
       </View>
@@ -111,19 +92,19 @@ export default function BottomBar({ activeTab, setActiveTab }) {
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+      {/* ✅ ה-BlurView משתנה אוטומטית (dark/light) */}
+      <BlurView intensity={90} tint={isDarkMode ? "dark" : "light"} style={styles.blurContainer}>
         
-        {/* שכבת המגע - תופסת את כל הבר ומאפשרת לחיצה והחלקה */}
         <View 
           style={StyleSheet.absoluteFill} 
           {...panResponder.panHandlers} 
           zIndex={10} 
         />
 
-        {/* הבועה הכחולה */}
         <Animated.View 
           style={[
             styles.slidingBubble,
+            { backgroundColor: colors.primary }, // ✅ הבועה בצבע הראשי של הנושא
             {
               transform: [
                 { translateX: slideAnim },
@@ -133,7 +114,6 @@ export default function BottomBar({ activeTab, setActiveTab }) {
           ]} 
         />
 
-        {/* האייקונים */}
         <View style={styles.innerContent} pointerEvents="none"> 
           <NavItem icon="home" id="home" />
           <NavItem icon="star" id="starred" />
@@ -169,9 +149,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: BUBBLE_WIDTH,
     height: 44,
-    backgroundColor: "#007AFF",
+    // backgroundColor הוסר מכאן כי הוא דינמי
     borderRadius: 22,
-    left: 0, // המיקום ההתחלתי הוא 0, ה-translateX מזיז אותה
+    left: 0,
   },
   innerContent: {
     flexDirection: "row",
