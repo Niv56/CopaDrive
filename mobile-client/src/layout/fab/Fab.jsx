@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
   ActivityIndicator, Pressable, Keyboard, LayoutAnimation, Alert
@@ -7,12 +7,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
 import { useAuth } from "../../app/providers/AuthContext";
-import { createItem } from "../../features/drive/services/fileService";
+import { createItem, getFiles } from "../../features/drive/services/fileService";
 import { emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import { useDriveUploads } from "../../features/drive/hooks/useDriveUploads";
 
 import ActionMenu from "./ActionMenu";
 import CreateForm from "./CreateForm";
+import UploadPreviewModal from "../../features/drive/modals/UploadPreviewModal";
 
 // ✅ ייבוא Theme
 import { useTheme } from "../../app/providers/ThemeContext";
@@ -29,6 +30,7 @@ export default function Fab({ onRefresh }) {
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [folders, setFolders] = useState([]);
 
   const closeAll = () => {
     setActiveView("closed");
@@ -36,7 +38,29 @@ export default function Fab({ onRefresh }) {
     Keyboard.dismiss();
   };
 
-  const { loading: uploadLoading, pickDocument, pickImage } = useDriveUploads(token, onRefresh, closeAll);
+  const { 
+    loading: uploadLoading, 
+    pickDocument, 
+    pickImage,
+    pendingFile,
+    confirmUpload,
+    discardPending,
+  } = useDriveUploads(token, onRefresh, closeAll);
+
+  // Fetch folders for destination selection
+  useEffect(() => {
+    const fetchFolders = async () => {
+      if (!token) return;
+      try {
+        const files = await getFiles(token);
+        const foldersList = (files || []).filter(f => f.type === "folder");
+        setFolders(foldersList);
+      } catch (err) {
+        // Silently fail - folders will just be empty
+      }
+    };
+    fetchFolders();
+  }, [token]);
 
   const switchTo = (view) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -116,7 +140,22 @@ export default function Fab({ onRefresh }) {
         </View>
       </Modal>
 
-      {!isOpen && (
+      {/* Upload Preview Modal */}
+      <UploadPreviewModal
+        visible={!!pendingFile}
+        fileData={pendingFile}
+        folders={folders}
+        uploading={uploadLoading}
+        onConfirm={(fileName, folderId) => confirmUpload(fileName, folderId)}
+        onDiscard={discardPending}
+        onChangeFile={() => {
+          discardPending();
+          // Reopen the menu so user can pick another file
+          setTimeout(() => switchTo("menu"), 100);
+        }}
+      />
+
+      {!isOpen && !pendingFile && (
         <View style={styles.fabPosition}>
           <TouchableOpacity
             style={[
