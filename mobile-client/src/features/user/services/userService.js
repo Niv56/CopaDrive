@@ -1,6 +1,5 @@
 import { request } from "../../../shared_code/hooks/api/request";
 
-/** שליפת פרופיל משתמש לפי ID */
 export async function getUserProfile(token, userId) {
   return request(`/api/users/${userId}`, {
     method: "GET",

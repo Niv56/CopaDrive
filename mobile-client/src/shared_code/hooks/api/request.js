@@ -1,22 +1,17 @@
 import Constants from "expo-constants";
 
-// פונקציה חכמה שמחלצת את ה-IP של המחשב שמריץ את ה-Expo
 const getBaseUrl = () => {
-  // אם הוגדר משתנה סביבה ידני (למשל בפרודקשן) - נשתמש בו
   if (process.env.EXPO_PUBLIC_API_BASE_URL) {
     return process.env.EXPO_PUBLIC_API_BASE_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
   }
 
-  // אחרת, נשתמש בכתובת של ה-Debugger של Expo (זה בעצם ה-IP של המחשב שלך ברשת ה-Wifi)
   const debuggerHost = Constants.expoConfig?.hostUri;
   const localhost = debuggerHost?.split(":")[0];
 
   if (!localhost) {
-    // Fallback למקרה קיצון (כמו סימולטור מקומי)
     return "http://localhost:3000";
   }
 
-  // מחזיר את הכתובת הדינמית עם הפורט של השרת (3000)
   return `http://${localhost}:3000`;
 };
 
@@ -58,6 +53,8 @@ export async function request(path, options = {}) {
     } catch {
       data = text;
     }
+
+    console.log("📥 Response data:", data);
 
     if (!res.ok) {
       const msg =

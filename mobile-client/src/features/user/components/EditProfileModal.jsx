@@ -41,14 +41,13 @@ export default function EditProfileModal({
   initialPhoneNumber = "",
   initialImage = "",
 }) {
-  const { token } = useAuth();
+  const { token, updateUserData } = useAuth();
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [phoneNumber, setPhoneNumber] = useState(formatIsraeliPhone(initialPhoneNumber));
   const [image, setImage] = useState(initialImage);
   const [saving, setSaving] = useState(false);
 
-  // Password fields
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -85,16 +84,36 @@ export default function EditProfileModal({
       return;
     }
 
+    // Check if updateUserData exists
+    if (!updateUserData) {
+      console.error("[EditProfileModal] updateUserData is undefined! Check AuthContext.");
+      Alert.alert("Error", "Unable to save profile. Please restart the app.");
+      return;
+    }
+
     setSaving(true);
     try {
-      const patch = { firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phoneNumber.trim(), image };
-      await updateUserProfile(token, userId, patch);
+      const patch = { 
+        firstName: firstName.trim(), 
+        lastName: lastName.trim(), 
+        phoneNumber: phoneNumber.trim(), 
+        image 
+      };
+      
+      console.log("[EditProfileModal] saving profile", { userId, patch });
+      const updatedUser = await updateUserProfile(token, userId, patch);
+      console.log("[EditProfileModal] update response", updatedUser);
 
       if (currentPassword && newPassword) {
         await changeUserPassword(token, userId, currentPassword, newPassword);
       }
+      
+      // Update user data in context
+      await updateUserData(updatedUser);
+      
       onClose?.();
     } catch (e) {
+      console.error("[EditProfileModal] save error", e);
       Alert.alert("Error", e.message);
     } finally {
       setSaving(false);
@@ -119,7 +138,6 @@ export default function EditProfileModal({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Profile Image Section */}
               <View style={styles.imageSection}>
                 <Pressable onPress={handlePickImage} style={styles.avatarWrapper}>
                   {image ? (
@@ -136,7 +154,6 @@ export default function EditProfileModal({
                 <Text style={styles.changePhotoText}>Tap to change photo</Text>
               </View>
 
-              {/* מעוגלים Pills Fields */}
               <Field label="FIRST NAME" value={firstName} onChangeText={setFirstName} />
               <Field label="LAST NAME" value={lastName} onChangeText={setLastName} />
               <Field
@@ -150,7 +167,6 @@ export default function EditProfileModal({
 
               <Text style={styles.sectionTitle}>Security Settings</Text>
               <Field label="CURRENT PASSWORD" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
-              {/* שדה סיסמה ללא הודעה פנימית (Placeholder ריק) */}
               <Field label="NEW PASSWORD" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="" />
               <Field label="CONFIRM NEW PASSWORD" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
 
@@ -185,7 +201,7 @@ const styles = StyleSheet.create({
   keyboardWrapper: { width: '90%', maxHeight: SCREEN_HEIGHT * 0.8 },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 35, // מעוגל יותר כפי שביקשת
+    borderRadius: 35,
     padding: 24,
     width: '100%',
     elevation: 20,
@@ -201,10 +217,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: '#1a1a1a'
   },
-
   scrollArea: { maxHeight: SCREEN_HEIGHT * 0.5 },
   scrollContent: { paddingHorizontal: 4 },
-
   imageSection: { alignItems: "center", marginBottom: 25 },
   avatarWrapper: { position: "relative" },
   avatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#f8f9fa' },
@@ -216,12 +230,11 @@ const styles = StyleSheet.create({
     borderWidth: 3, borderColor: "#fff"
   },
   changePhotoText: { marginTop: 10, fontSize: 13, color: "#007bff", fontWeight: "700" },
-
   fieldContainer: { marginBottom: 18 },
   label: { fontSize: 11, fontWeight: "800", color: "#999", marginBottom: 8, marginLeft: 15, letterSpacing: 0.5 },
   input: {
     backgroundColor: "#f1f3f4",
-    borderRadius: 30, // שדות מעוגלים בצורת גלולה
+    borderRadius: 30,
     paddingHorizontal: 22,
     height: 58,
     fontSize: 16,
@@ -229,10 +242,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent'
   },
-
   divider: { height: 1, backgroundColor: "#f0f0f0", marginVertical: 25 },
   sectionTitle: { fontSize: 16, fontWeight: "800", marginBottom: 15, color: '#1a1a1a' },
-
   actions: { flexDirection: "row", gap: 12, marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f5f5f5' },
   btn: { flex: 1, height: 55, borderRadius: 30, alignItems: "center", justifyContent: "center" },
   btnPrimary: { backgroundColor: "#007bff" },
