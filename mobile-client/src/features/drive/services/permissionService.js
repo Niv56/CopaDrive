@@ -1,5 +1,3 @@
-// mobile-client/src/features/drive/services/permissionService.js
-
 import { request } from "../../../shared_code/hooks/api/request";
 
 /** Get all permissions for a file */

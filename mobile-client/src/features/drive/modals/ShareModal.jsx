@@ -22,10 +22,12 @@ export default function ShareModal({ visible, item, onClose }) {
     const [adding, setAdding] = useState(false);
     const { colors, isDarkMode } = useTheme();
 
+    // Determine file ID and check if the current user is the owner
     const fileId = item?.id || item?._id;
     const isOwner = String(item?.ownerId || item?.owner) === String(user?.id || user?._id);
     const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
+    // Fetch existing permissions for the specific file
     const loadPermissions = useCallback(async () => {
         if (!fileId || !token) return;
         setLoading(true);
@@ -35,14 +37,17 @@ export default function ShareModal({ visible, item, onClose }) {
         } catch (e) {
             Alert.alert("Error", "Failed to load permissions");
         } finally {
+            setLoading(true);
             setLoading(false);
         }
     }, [fileId, token]);
 
+    // Load data whenever the modal becomes visible
     useEffect(() => {
         if (visible && fileId) loadPermissions();
     }, [visible, fileId, loadPermissions]);
 
+    // Find a user by email and grant them "viewer" access
     const handleShare = async () => {
         if (!email.trim()) return;
         setAdding(true);
@@ -62,6 +67,7 @@ export default function ShareModal({ visible, item, onClose }) {
         }
     };
 
+    // Toggle between "viewer" and "editor" roles
     const handleToggleRole = async (perm) => {
         const newRole = perm.role === "viewer" ? "editor" : "viewer";
         try {
@@ -74,6 +80,7 @@ export default function ShareModal({ visible, item, onClose }) {
         }
     };
 
+    // Revoke a user's access with a confirmation alert
     const handleRemove = async (perm) => {
         Alert.alert(
             "Remove Access",
@@ -87,7 +94,7 @@ export default function ShareModal({ visible, item, onClose }) {
                         try {
                             const permId = perm.id || perm._id;
                             await deletePermission(token, fileId, permId);
-                            await loadPermissions(); 
+                            await loadPermissions();
                         } catch (e) {
                             console.error("Delete permission error:", e);
                             Alert.alert("Error", "Failed to remove user");
@@ -103,6 +110,7 @@ export default function ShareModal({ visible, item, onClose }) {
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={styles.overlay}>
+                {/* Background Blur */}
                 <BlurView intensity={20} tint={isDarkMode ? "dark" : "dark"} style={StyleSheet.absoluteFill} />
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
@@ -111,6 +119,7 @@ export default function ShareModal({ visible, item, onClose }) {
                     style={styles.container}
                 >
                     <BlurView intensity={95} tint={isDarkMode ? "dark" : "light"} style={[styles.glassCard, { backgroundColor: colors.card + 'F2' }]}>
+                        {/* Header Section */}
                         <View style={styles.header}>
                             <Text style={[styles.title, { color: colors.textPrimary, fontFamily: 'BrunoAceSC_400Regular' }]}>
                                 SHARE FILE
@@ -120,6 +129,7 @@ export default function ShareModal({ visible, item, onClose }) {
                             </TouchableOpacity>
                         </View>
 
+                        {/* Search and Add User Input (Owners only) */}
                         {isOwner && (
                             <View style={styles.addSection}>
                                 <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -147,6 +157,7 @@ export default function ShareModal({ visible, item, onClose }) {
                             </View>
                         )}
 
+                        {/* List of Users with current access */}
                         <View style={styles.listContainer}>
                             <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>PEOPLE WITH ACCESS</Text>
                             {loading ? (
@@ -179,6 +190,7 @@ export default function ShareModal({ visible, item, onClose }) {
                                             <View style={styles.actionsContainer}>
                                                 {isOwner ? (
                                                     <>
+                                                        {/* Role switcher for Owners */}
                                                         <TouchableOpacity
                                                             style={[styles.roleBadgeActive, { backgroundColor: colors.primary + '26', borderColor: colors.primary + '33' }]}
                                                             onPress={() => handleToggleRole(perm)}
@@ -187,6 +199,7 @@ export default function ShareModal({ visible, item, onClose }) {
                                                             <Ionicons name="chevron-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
                                                         </TouchableOpacity>
 
+                                                        {/* Delete permission for Owners */}
                                                         <TouchableOpacity
                                                             style={[styles.deleteBtn, { backgroundColor: colors.danger + '1A' }]}
                                                             onPress={() => handleRemove(perm)}
@@ -195,6 +208,7 @@ export default function ShareModal({ visible, item, onClose }) {
                                                         </TouchableOpacity>
                                                     </>
                                                 ) : (
+                                                    /* Read-only badge for Viewers/Editors */
                                                     <View style={[styles.roleBadgeReadOnly, { backgroundColor: colors.surface }]}>
                                                         <Text style={[styles.roleTextReadOnly, { color: colors.textSecondary }]}>{perm.role?.toUpperCase()}</Text>
                                                     </View>

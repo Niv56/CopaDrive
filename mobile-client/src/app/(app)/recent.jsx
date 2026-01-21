@@ -21,29 +21,34 @@ import {
 } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 
-// ✅ Theme Imports
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
 
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
+/**
+ * Displays recently accessed files and folders.
+ * Supports nested navigation if a folder is opened from the recent list.
+ */
 export default function RecentPage() {
   const router = useRouter();
   const { token } = useAuth();
-  
+
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
+  // State for tracking nested folder navigation within the Recent view
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  /** Fetches recently accessed items from the server */
   const loadRecent = useCallback(async () => {
     if (!token) return;
     try {
@@ -59,14 +64,16 @@ export default function RecentPage() {
 
   useEffect(() => { loadRecent(); }, [loadRecent]);
 
+  /** Refreshes data when global drive events (like upload/delete) occur */
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => loadRecent());
     return unsubscribe;
   }, [loadRecent]);
 
+  /** Filters items to show folder contents if nested, otherwise shows all recent files */
   const displayItems = useMemo(() => {
     if (currentFolderId) {
-        return items.filter(item => item.parentId === currentFolderId);
+      return items.filter(item => item.parentId === currentFolderId);
     }
     return items;
   }, [items, currentFolderId]);
@@ -94,15 +101,21 @@ export default function RecentPage() {
     Alert.alert("Move to Trash?", `Remove "${item.name}"?`, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Delete", style: "destructive",
+        text: "Delete",
+        style: "destructive",
         onPress: async () => {
-          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
-          catch (err) { Alert.alert("Error", "Could not delete item."); }
+          try {
+            await moveToTrash(token, item.id);
+            emitDriveRefresh();
+          } catch (err) {
+            Alert.alert("Error", "Could not delete item.");
+          }
         }
       }
     ]);
   }, [token]);
 
+  /** Navigation: Go back one level in the folder hierarchy */
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -110,6 +123,7 @@ export default function RecentPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
+  /** Navigation: Jump to a specific point in the breadcrumb path */
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -127,8 +141,8 @@ export default function RecentPage() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
           <View style={styles.headerLeftSpace} />
-          <TouchableOpacity 
-            onPress={closeScreen} 
+          <TouchableOpacity
+            onPress={closeScreen}
             style={[styles.closeButton, { backgroundColor: colors.surface }]}
           >
             <Ionicons name="close-outline" size={32} color={colors.textSecondary} />
@@ -143,29 +157,30 @@ export default function RecentPage() {
             <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Last accessed items</Text>
           </View>
 
+          {/* Breadcrumb Navigation trail */}
           {folderPath.length > 0 && (
             <View style={driveStyles.breadcrumbContainer}>
-            <Pressable onPress={handleBack} style={driveStyles.backButton}>
+              <Pressable onPress={handleBack} style={driveStyles.backButton}>
                 <Ionicons name="arrow-back" size={20} color={colors.primary} />
-            </Pressable>
+              </Pressable>
 
-            <Pressable onPress={() => navigateToBreadcrumb(-1)}>
+              <Pressable onPress={() => navigateToBreadcrumb(-1)}>
                 <Text style={driveStyles.breadcrumbText}>Recent</Text>
-            </Pressable>
+              </Pressable>
 
-            {folderPath.map((folder, index) => (
+              {folderPath.map((folder, index) => (
                 <View key={folder.id} style={driveStyles.breadcrumbItem}>
-                <Text style={driveStyles.breadcrumbSeparator}>/</Text>
-                <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                  <Text style={driveStyles.breadcrumbSeparator}>/</Text>
+                  <Pressable onPress={() => navigateToBreadcrumb(index)}>
                     <Text style={[
-                    driveStyles.breadcrumbText,
-                    index === folderPath.length - 1 && driveStyles.breadcrumbActive
+                      driveStyles.breadcrumbText,
+                      index === folderPath.length - 1 && driveStyles.breadcrumbActive
                     ]} numberOfLines={1}>
-                    {folder.name}
+                      {folder.name}
                     </Text>
-                </Pressable>
+                  </Pressable>
                 </View>
-            ))}
+              ))}
             </View>
           )}
 
@@ -187,7 +202,7 @@ export default function RecentPage() {
                 <View style={styles.emptyContainer}>
                   <Ionicons name="time-outline" size={80} color={colors.textTertiary} />
                   <Text style={[driveStyles.emptyText, { color: colors.textTertiary }]}>
-                      {currentFolderId ? "This folder is empty" : "No recent files"}
+                    {currentFolderId ? "This folder is empty" : "No recent files"}
                   </Text>
                 </View>
               }

@@ -14,13 +14,15 @@ import MyDrivePage from "../../features/drive/pages/MyDrivePage";
 
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
-
 import { subscribeNavigateToFolder } from "../../features/drive/services/driveEvents";
 
-// Images
 const lightBg = require("../../assets/images/light.png");
 const nightBg = require("../../assets/images/night.png");
 
+/**
+ * Manages the main landing navigation, tab switching, 
+ * and global layout (Background, TopBar, FAB, BottomBar).
+ */
 export default function HomeManager() {
   const [activeTab, setActiveTab] = useState("home");
   const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
@@ -29,12 +31,12 @@ export default function HomeManager() {
   const styles = useMemo(() => getDriveStyles(colors), [colors]);
 
   useEffect(() => {
+    // Listen for external navigation events (e.g., from search results)
     const unsubscribe = subscribeNavigateToFolder(() => {
       setActiveTab("mydrive");
     });
     return unsubscribe;
   }, []);
-
 
   const handleRefresh = () => {
     console.log("Global refresh triggered via FAB");
@@ -43,7 +45,7 @@ export default function HomeManager() {
   if (!fontsLoaded) return null;
 
   const getTitle = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'home': return 'HOME';
       case 'starred': return 'STARRED';
       case 'shared': return 'SHARED';
@@ -55,7 +57,7 @@ export default function HomeManager() {
   return (
     <View style={localStyles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <ImageBackground
         source={isDarkMode ? nightBg : lightBg}
         style={StyleSheet.absoluteFill}
@@ -63,31 +65,33 @@ export default function HomeManager() {
       />
 
       <SafeAreaView style={localStyles.safeArea}>
-        
-        {/* TopBar */}
-        <View style={{ zIndex: 100 }}> 
+
+        {/* Header Section */}
+        <View style={{ zIndex: 100 }}>
           <TopBar />
         </View>
 
+        {/* Dynamic Title Card */}
         <View style={[
-            localStyles.titleCard, 
-            { 
-              backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
-              borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'
-            }
+          localStyles.titleCard,
+          {
+            backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
+            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'
+          }
         ]}>
           <Text style={[
-              styles.homeTitle, 
-              localStyles.customTitleText,
-              {
-                color: isDarkMode ? '#FFFFFF' : '#1A2A3A',
-                textShadowColor: isDarkMode ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
-              }
+            styles.homeTitle,
+            localStyles.customTitleText,
+            {
+              color: isDarkMode ? '#FFFFFF' : '#1A2A3A',
+              textShadowColor: isDarkMode ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+            }
           ]}>
             {getTitle()}
           </Text>
         </View>
 
+        {/* Main Content Area */}
         <View style={{ flex: 1 }}>
           {activeTab === "home" && <MainHomePage />}
           {activeTab === "starred" && <StarredPage />}
@@ -97,12 +101,12 @@ export default function HomeManager() {
 
       </SafeAreaView>
 
-      {/* FAB */}
+      {/* Global Actions */}
       <View style={localStyles.fabWrapper} pointerEvents="box-none">
-         <Fab onRefresh={handleRefresh} />
+        <Fab onRefresh={handleRefresh} />
       </View>
 
-      {/* BottomBar */}
+      {/* Navigation Bar */}
       <View style={localStyles.bottomBarWrapper}>
         <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />
       </View>
@@ -114,40 +118,37 @@ export default function HomeManager() {
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black', 
+    backgroundColor: 'black',
   },
   safeArea: {
     flex: 1,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    paddingBottom: 80, 
+    paddingBottom: 80,
   },
   titleCard: {
-    marginTop: 5,        
-    marginBottom: 5,      
+    marginTop: 5,
+    marginBottom: 5,
     marginHorizontal: 20,
-    
-    paddingVertical: 3,    
+    paddingVertical: 3,
     paddingHorizontal: 15,
     borderRadius: 10,
     borderWidth: 1,
     alignSelf: 'flex-start',
     justifyContent: 'center',
     alignItems: 'center',
-
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3.84,
-    elevation: 5,
   },
   customTitleText: {
-    marginLeft: 0, 
+    marginLeft: 0,
     marginTop: 0,
     marginBottom: 0,
     paddingVertical: 0,
-
-    fontSize: 18, 
-    lineHeight: 22, 
+    fontSize: 18,
+    lineHeight: 22,
     letterSpacing: 1.5,
     textAlign: 'center',
     textShadowOffset: { width: 0, height: 2 },
@@ -159,12 +160,12 @@ const localStyles = StyleSheet.create({
     right: 0,
     left: 0,
     top: 0,
-    zIndex: 90, 
+    zIndex: 90,
   },
   bottomBarWrapper: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    zIndex: 100, 
+    zIndex: 100,
   }
 });

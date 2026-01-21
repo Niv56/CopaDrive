@@ -1,5 +1,3 @@
-// mobile-client/src/features/drive/utils/fileIcon.js
-
 /**
  * Returns icon meta (Ionicons name + color) by file name/mime + folder flag
  */

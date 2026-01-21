@@ -4,23 +4,28 @@ import {
   StyleSheet, ScrollView, Platform, InputAccessoryView, Button, Keyboard, Dimensions
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../app/providers/ThemeContext"; 
+import { useTheme } from "../../app/providers/ThemeContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const ACCESSORY_ID = "fab_create_content_done";
 
-export default function CreateForm({ 
+/**
+ * Universal Form for creating Files or Folders.
+ * Supports dynamic theme switching and nested folder selection.
+ */
+export default function CreateForm({
   mode, // 'create_folder' or 'create_file'
-  name, setName, 
-  content, setContent, 
+  name, setName,
+  content, setContent,
   folders = [],
   selectedFolderId, setSelectedFolderId,
-  onSubmit, onBack, loading 
+  onSubmit, onBack, loading
 }) {
-  const { colors, isDarkMode } = useTheme(); 
+  const { colors, isDarkMode } = useTheme();
   const isFolder = mode === "create_folder";
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
+  /** Resolves the name of the parent folder selected as the destination */
   const selectedFolderName = useMemo(() => {
     if (!selectedFolderId) return "My Drive (Root)";
     const folder = folders?.find(f => f.id === selectedFolderId);
@@ -30,18 +35,19 @@ export default function CreateForm({
   return (
     <View style={styles.centerContainer}>
       <View style={[
-        styles.modalCard, 
-        { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" } 
+        styles.modalCard,
+        { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" }
       ]}>
         <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
           {isFolder ? "CREATE NEW FOLDER" : "CREATE NEW FILE"}
         </Text>
 
+        {/* Name Input Field */}
         <TextInput
           style={[
             styles.input,
-            { 
-              backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", 
+            {
+              backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4",
               color: colors.textPrimary,
               borderColor: isDarkMode ? "transparent" : "#e9ecef",
               borderWidth: isDarkMode ? 0 : 1
@@ -56,13 +62,14 @@ export default function CreateForm({
           onSubmitEditing={() => Keyboard.dismiss()}
         />
 
+        {/* Content Area (Files only) */}
         {!isFolder && (
           <ScrollView style={{ width: "100%", maxHeight: 150 }} keyboardShouldPersistTaps="handled">
             <TextInput
               style={[
-                styles.input, 
-                { 
-                  height: 120, 
+                styles.input,
+                {
+                  height: 120,
                   textAlignVertical: "top",
                   backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4",
                   color: colors.textPrimary,
@@ -81,55 +88,56 @@ export default function CreateForm({
         )}
 
         <Text style={[styles.label, { color: isDarkMode ? "#999" : "#666" }]}>SAVE TO</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.folderPicker, 
-            { 
-              backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#f8f9fa", 
-              borderColor: colors.border 
+            styles.folderPicker,
+            {
+              backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#f8f9fa",
+              borderColor: colors.border
             }
-          ]} 
+          ]}
           onPress={() => setShowFolderPicker(!showFolderPicker)}
         >
           <Ionicons name="folder-outline" size={20} color={colors.primary} />
           <Text style={[styles.folderPickerText, { color: colors.textPrimary }]}>{selectedFolderName}</Text>
-          <Ionicons 
-            name={showFolderPicker ? "chevron-up" : "chevron-down"} 
-            size={18} 
-            color={colors.textTertiary} 
+          <Ionicons
+            name={showFolderPicker ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={colors.textTertiary}
           />
         </TouchableOpacity>
 
+        {/* Destination Folder Selector */}
         {showFolderPicker && (
           <View style={[
-            styles.folderList, 
+            styles.folderList,
             { backgroundColor: isDarkMode ? "#252525" : "#f8f9fa", borderColor: colors.border }
           ]}>
             <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
               <TouchableOpacity
                 style={[
-                  styles.folderItem, 
+                  styles.folderItem,
                   !selectedFolderId && { backgroundColor: isDarkMode ? "rgba(0,123,255,0.2)" : "#e0f2fe" }
                 ]}
-                onPress={() => { 
-                  setSelectedFolderId(null); 
-                  setShowFolderPicker(false); 
+                onPress={() => {
+                  setSelectedFolderId(null);
+                  setShowFolderPicker(false);
                 }}
               >
                 <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
                 <Text style={[styles.folderItemText, { color: colors.textPrimary }]}>My Drive (Root)</Text>
               </TouchableOpacity>
-              
+
               {folders?.filter(f => f.type === "folder").map(folder => (
                 <TouchableOpacity
                   key={folder.id}
                   style={[
-                    styles.folderItem, 
+                    styles.folderItem,
                     selectedFolderId === folder.id && { backgroundColor: isDarkMode ? "rgba(0,123,255,0.2)" : "#e0f2fe" }
                   ]}
-                  onPress={() => { 
-                    setSelectedFolderId(folder.id); 
-                    setShowFolderPicker(false); 
+                  onPress={() => {
+                    setSelectedFolderId(folder.id);
+                    setShowFolderPicker(false);
                   }}
                 >
                   <Ionicons name="folder" size={18} color="#f59e0b" />
@@ -140,6 +148,7 @@ export default function CreateForm({
           </View>
         )}
 
+        {/* iOS Keyboard Toolbar */}
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={ACCESSORY_ID}>
             <View style={[styles.accessory, { backgroundColor: isDarkMode ? "#2c2c2e" : "#f0f0f0" }]}>
@@ -149,9 +158,9 @@ export default function CreateForm({
         )}
 
         <View style={styles.modalButtons}>
-          <TouchableOpacity 
-            style={[styles.btnAction, { backgroundColor: isDarkMode ? "#333" : "#f1f3f4" }]} 
-            onPress={onBack} 
+          <TouchableOpacity
+            style={[styles.btnAction, { backgroundColor: isDarkMode ? "#333" : "#f1f3f4" }]}
+            onPress={onBack}
             disabled={loading}
           >
             <Text style={[styles.cancelText, { color: colors.textPrimary }]}>BACK</Text>
@@ -267,7 +276,7 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "flex-end",
-    paddingVertical: 2,   
+    paddingVertical: 2,
     paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: "#dcdcdc"

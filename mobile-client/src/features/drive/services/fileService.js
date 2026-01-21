@@ -1,27 +1,24 @@
 import { request } from "../../../shared_code/hooks/api/request";
 
+/**
+ * File Service
+ * Handles all API interactions for file and folder management.
+ */
+
+// Basic CRUD operations
 export async function getFiles(token) {
-  return request("/api/files", {
-    method: "GET",
-    token,
-  });
+  return request("/api/files", { method: "GET", token });
 }
 
 export async function getFileById(token, fileId) {
-  return request(`/api/files/${fileId}`, {
-    method: "GET",
-    token,
-  });
+  return request(`/api/files/${fileId}`, { method: "GET", token });
 }
 
 export async function updateItem(token, fileId, patch) {
-  return request(`/api/files/${fileId}`, {
-    method: "PATCH",
-    token,
-    body: patch, 
-  });
+  return request(`/api/files/${fileId}`, { method: "PATCH", token, body: patch });
 }
 
+// Unified creation logic for folders and files
 export async function createItem(
   token,
   { name, type, parentId = null, content = "", mimeType = "" }
@@ -47,11 +44,9 @@ export async function createFolder(token, name, parentId = null) {
   return createItem(token, { name, type: "folder", parentId });
 }
 
+// Specialized list views and stats
 export async function getUsage(token) {
-  return request("/api/files/usage", {
-    method: "GET",
-    token: token
-  });
+  return request("/api/files/usage", { method: "GET", token });
 }
 
 export async function getRecentFiles(token) {
@@ -62,6 +57,7 @@ export async function getImportantFiles(token) {
   return request("/api/files/important", { method: "GET", token });
 }
 
+// Trash management logic
 export async function getTrashFiles(token) {
   return request("/api/files/trash", { method: "GET", token });
 }
@@ -77,7 +73,7 @@ export async function moveToTrash(token, fileId) {
 export async function restoreFromTrash(token, fileId) {
   return request(`/api/files/${fileId}/trash`, {
     method: "PATCH",
-    token: token,
+    token,
     body: { trashed: false },
   });
 }
@@ -90,6 +86,7 @@ export async function emptyTrash(token) {
   return request("/api/files/trash/empty", { method: "DELETE", token });
 }
 
+// Item flag toggles
 export async function setStarred(token, fileId, starred) {
   return request(`/api/files/${fileId}/star`, {
     method: "PATCH",
@@ -114,6 +111,7 @@ export async function renameItem(token, fileId, name) {
   });
 }
 
+/** Utility: Calculates remaining days before permanent deletion (30-day policy) */
 export function getDaysLeft(trashedAt) {
   if (!trashedAt) return "";
   const trashDate = new Date(trashedAt);
@@ -124,6 +122,7 @@ export function getDaysLeft(trashedAt) {
   return diffDays > 0 ? `${diffDays} days left` : "Deleting soon";
 }
 
+/** Utility: Formats date string into a relative human-readable format */
 export function formatLastAccessed(dateString) {
   if (!dateString) return "Never";
   const date = new Date(dateString);

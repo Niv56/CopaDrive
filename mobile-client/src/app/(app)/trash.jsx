@@ -22,23 +22,26 @@ import {
 } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 
-// ✅ Theme Imports
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
 
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 
+/**
+ * Page component for managing deleted items.
+ * Allows users to restore files or permanently delete them.
+ */
 export default function TrashPage() {
   const router = useRouter();
   const { token } = useAuth();
-  
-  // ✅ Theme Hooks
+
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /** Fetches all items currently in the trash */
   const loadTrash = useCallback(async () => {
     if (!token) return;
     try {
@@ -54,6 +57,7 @@ export default function TrashPage() {
 
   useEffect(() => { loadTrash(); }, [loadTrash]);
 
+  /** Global listener to refresh trash when items are deleted from other pages */
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => loadTrash());
     return unsubscribe;
@@ -67,6 +71,7 @@ export default function TrashPage() {
     } catch { router.replace("/home"); }
   }, [router]);
 
+  /** Wipes all items from the trash permanently */
   const handleEmptyTrash = () => {
     Alert.alert(
       "Empty Trash?",
@@ -78,13 +83,14 @@ export default function TrashPage() {
           style: "destructive",
           onPress: async () => {
             await emptyTrash(token);
-            emitDriveRefresh();
+            emitDriveRefresh(); // Notify system that drive contents changed
           },
         },
       ]
     );
   };
 
+  /** Removes a single item forever (skips the trash 30-day grace period) */
   const handleDeleteForever = useCallback(async (item) => {
     Alert.alert(
       "Delete Forever?",
@@ -95,18 +101,19 @@ export default function TrashPage() {
           text: "Delete Forever",
           style: "destructive",
           onPress: async () => {
-             try {
-                 await deleteForever(token, item.id);
-                 emitDriveRefresh();
-             } catch (err) {
-                 Alert.alert("Error", "Could not delete item.");
-             }
+            try {
+              await deleteForever(token, item.id);
+              emitDriveRefresh();
+            } catch (err) {
+              Alert.alert("Error", "Could not delete item.");
+            }
           }
         }
       ]
     );
   }, [token]);
 
+  /** Moves a trashed item back to its original location */
   const handleRestore = useCallback(async (item) => {
     if (!item) return;
     try {
@@ -122,6 +129,7 @@ export default function TrashPage() {
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
+          {/* Action button to clear the entire trash bin */}
           <TouchableOpacity
             onPress={handleEmptyTrash}
             disabled={items.length === 0}
@@ -132,12 +140,11 @@ export default function TrashPage() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={closeScreen} 
-            style={[styles.closeButton, { backgroundColor: colors.surface }]} 
+          <TouchableOpacity
+            onPress={closeScreen}
+            style={[styles.closeButton, { backgroundColor: colors.surface }]}
             activeOpacity={0.7}
           >
-            
             <Ionicons name="close-outline" size={32} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -146,6 +153,7 @@ export default function TrashPage() {
           <View style={styles.textHeader}>
             <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>TRASH</Text>
 
+            {/* Information banner regarding the 30-day auto-delete policy */}
             <View style={[styles.infoBanner, { backgroundColor: colors.surface }]}>
               <Ionicons name="information-circle" size={16} color={colors.primary} />
               <Text style={[styles.infoText, { color: colors.primary }]}>Items are deleted forever after 30 days</Text>
@@ -163,7 +171,7 @@ export default function TrashPage() {
                   item={{ ...item, displayDate: getDaysLeft(item.trashedAt) }}
                   onDelete={handleDeleteForever}
                   onRestore={handleRestore}
-                  trashMode={true}
+                  trashMode={true} // Enables restore/delete forever UI in the list item
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}

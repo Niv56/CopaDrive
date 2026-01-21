@@ -3,14 +3,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const isWeb = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 
-// Login User
+/**
+ * Authenticates a user and retrieves a JWT access token.
+ */
 export const authenticateUser = async (email, password) => {
   try {
     const data = await request("/api/tokens", {
       method: "POST",
       body: { email, password },
     });
-    
+
     return { success: true, token: data.token, error: null };
   } catch (error) {
     console.error("Login error:", error);
@@ -18,7 +20,9 @@ export const authenticateUser = async (email, password) => {
   }
 };
 
-// Register User
+/**
+ * Creates a new user record in the database.
+ */
 export const registerUser = async (userData) => {
   try {
     const data = await request("/api/users", {
@@ -33,17 +37,26 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Storage Helpers
+/**
+ * Persists the auth token. 
+ * Supports both web (localStorage) and native (AsyncStorage) environments.
+ */
 export const saveToken = async (token) => {
   if (isWeb) localStorage.setItem('token', token);
   else await AsyncStorage.setItem('token', token);
 };
 
+/**
+ * Removes the auth token from storage during logout.
+ */
 export const removeToken = async () => {
   if (isWeb) localStorage.removeItem('token');
   else await AsyncStorage.removeItem('token');
 };
 
+/**
+ * Retrieves the stored auth token for session hydration.
+ */
 export const getToken = async () => {
   if (isWeb) return localStorage.getItem('token');
   return await AsyncStorage.getItem('token');

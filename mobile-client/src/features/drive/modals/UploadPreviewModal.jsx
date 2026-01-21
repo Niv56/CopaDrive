@@ -11,36 +11,43 @@ import { Video, ResizeMode } from "expo-av";
 import { useTheme } from "../../../app/providers/ThemeContext";
 import { getUploadPreviewStyles } from "../styles/uploadPreview.styles";
 
+// Media type detection helpers
 const isImage = (mimeType = "") => mimeType.startsWith("image/");
 const isVideo = (mimeType = "") => mimeType.startsWith("video/");
 
+/**
+ * Upload Preview Modal
+ * Provides a final review screen for files before they are sent to the server.
+ */
 export default function UploadPreviewModal({
   visible,
-  fileData,        
-  folders,         
-  onConfirm,      
-  onDiscard,       
-  onChangeFile,    
-  uploading,       
+  fileData,        // { uri, fileName, mimeType }
+  folders,         // Available destination folders
+  onConfirm,       // Finalize upload callback
+  onDiscard,       // Close/Cancel callback
+  onChangeFile,    // Re-trigger file picker
+  uploading,       // Loading state for the submit button
 }) {
   const { colors = {}, isDarkMode } = useTheme();
-  
   const styles = useMemo(() => getUploadPreviewStyles(colors, isDarkMode), [colors, isDarkMode]);
 
   const [title, setTitle] = useState(fileData?.fileName || "");
-  const [selectedFolderId, setSelectedFolderId] = useState(null); 
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
+  // Sync internal title state whenever a new file is picked
   useEffect(() => {
     if (fileData?.fileName) setTitle(fileData.fileName);
   }, [fileData?.fileName]);
 
+  /** Resolves the display name of the selected destination folder */
   const selectedFolderName = useMemo(() => {
     if (!selectedFolderId) return "My Drive (Root)";
     const folder = folders?.find(f => f.id === selectedFolderId);
     return folder?.name || "Unknown Folder";
   }, [selectedFolderId, folders]);
 
+  /** Validates and triggers the upload process */
   const handleConfirm = () => {
     if (!title.trim()) {
       Alert.alert("Error", "Please enter a file name");
@@ -61,6 +68,7 @@ export default function UploadPreviewModal({
     >
       {fileData && (
         <View style={styles.backdrop}>
+          {/* Glassmorphism background effect */}
           <BlurView
             intensity={20}
             tint={isDarkMode ? "dark" : "light"}
@@ -72,7 +80,8 @@ export default function UploadPreviewModal({
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.centerWrap}
           >
-            <Pressable style={styles.card} onPress={() => {}}>
+            <Pressable style={styles.card} onPress={() => { }}>
+              {/* Modal Header */}
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Review Upload</Text>
                 <TouchableOpacity onPress={onDiscard} style={styles.closeBtn}>
@@ -81,6 +90,7 @@ export default function UploadPreviewModal({
               </View>
 
               <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+                {/* File Preview: Image, Video, or Fallback Icon */}
                 <View style={styles.previewContainer}>
                   {isImage(fileData.mimeType) ? (
                     <Image source={{ uri: fileData.uri }} style={styles.previewImage} resizeMode="contain" />
@@ -101,6 +111,7 @@ export default function UploadPreviewModal({
                   )}
                 </View>
 
+                {/* File Metadata Fields */}
                 <Text style={styles.label}>FILE NAME</Text>
                 <TextInput
                   style={styles.input}
@@ -124,6 +135,7 @@ export default function UploadPreviewModal({
                   />
                 </TouchableOpacity>
 
+                {/* Collapsible Folder Selection List */}
                 {showFolderPicker && (
                   <View style={styles.folderList}>
                     <TouchableOpacity
@@ -160,6 +172,7 @@ export default function UploadPreviewModal({
                 )}
               </ScrollView>
 
+              {/* Action Buttons */}
               <View style={styles.footer}>
                 <TouchableOpacity style={styles.secondaryBtn} onPress={onChangeFile}>
                   <Ionicons name="refresh-outline" size={18} color={colors.textPrimary} />

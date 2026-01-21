@@ -1,6 +1,6 @@
 import React from "react";
 import { ImageBackground, View, StyleSheet, Alert, StatusBar, Text, Platform } from "react-native";
-import { BlurView } from "expo-blur"; 
+import { BlurView } from "expo-blur";
 import TopBar from "../../../layout/TopBar";
 import Fab from "../../../layout/fab/Fab";
 import { useTheme } from "../../../app/providers/ThemeContext";
@@ -8,47 +8,51 @@ import { useTheme } from "../../../app/providers/ThemeContext";
 const lightBg = require("../../../assets/images/light.png");
 const nightBg = require("../../../assets/images/night.png");
 
+/**
+ * Global wrapper for application screens.
+ * Handles dynamic backgrounds, consistent spacing, and the floating action button.
+ */
 export default function ScreenLayout({ title, children }) {
     const { isDarkMode, colors } = useTheme();
 
     const handleFeatureAlert = () => {
-        Alert.alert("Development Note", "You need to implement MongoDB logic for this action.");
+        Alert.alert("Development Note", "Backend logic (MongoDB) for this action is required.");
     };
 
     return (
-        <ImageBackground 
-            source={isDarkMode ? nightBg : lightBg} 
-            style={styles.backgroundImage} 
+        <ImageBackground
+            // Switches asset based on the current theme state
+            source={isDarkMode ? nightBg : lightBg}
+            style={styles.backgroundImage}
             resizeMode="cover"
         >
             <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
             <View style={{ flex: 1 }}>
                 <TopBar />
-                
-               
+
                 <View style={{ flex: 1, paddingTop: 110, paddingBottom: 20 }}>
-                    
+
+                    {/* Glassmorphism title header using BlurView */}
                     <View style={styles.titleWrapper}>
-                        <BlurView 
-                            intensity={Platform.OS === 'ios' ? 30 : 50} 
+                        <BlurView
+                            intensity={Platform.OS === 'ios' ? 30 : 50}
                             tint={isDarkMode ? "dark" : "light"}
                             style={[
                                 styles.titleBlurContainer,
-                                { 
+                                {
                                     backgroundColor: isDarkMode ? "rgba(30,30,30,0.5)" : "rgba(255,255,255,0.6)",
                                     borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.4)"
                                 }
                             ]}
                         >
-                            <Text style={[
-                                styles.homeTitle, 
-                                { color: colors.textPrimary }
-                            ]}>
+                            <Text style={[styles.homeTitle, { color: colors.textPrimary }]}>
                                 {title ? title.toUpperCase() : ""}
                             </Text>
                         </BlurView>
                     </View>
+
+                    {/* Main content injection point */}
                     <View style={{ flex: 1 }}>
                         {children}
                     </View>

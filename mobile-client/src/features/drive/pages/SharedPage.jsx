@@ -18,6 +18,10 @@ import DriveListItem from "../components/DriveListItem";
 import FilePreviewModal from "../components/FilePreviewModal";
 import { getUserById } from "../../user/services/userService";
 
+/**
+ * Shared Page Component
+ * Organizes files shared by others, grouped by their respective owners.
+ */
 export default function SharedPage() {
   const { items, loading } = useMyDrive();
   const { user, token } = useAuth();
@@ -30,20 +34,27 @@ export default function SharedPage() {
   const [selectedId, setSelectedId] = useState(null);
 
   const myUserId = user?.id || user?._id;
+
+  // Cache and tracking for owner data to prevent redundant API calls
   const ownersCacheRef = useRef({});
   const ownersLoadingRef = useRef(new Set());
 
+  /** Filters items to only include those shared with the user by others */
   const sharedItems = useMemo(() => {
     return (items || []).filter(
       (f) => f?.ownerId && String(f.ownerId) !== String(myUserId)
     );
   }, [items, myUserId]);
 
+  /** Identifies unique owner IDs present in the shared items list */
   const uniqueOwnerIds = useMemo(() => {
     const ids = sharedItems.map((f) => String(f.ownerId)).filter(Boolean);
     return Array.from(new Set(ids));
   }, [sharedItems]);
 
+  /** * Fetches metadata for file owners from the user service.
+   * Implements a local cache and a "loading set" to ensure each user is only fetched once.
+   */
   const loadOwners = useCallback(async () => {
     if (!token || uniqueOwnerIds.length === 0) return;
 
@@ -92,6 +103,7 @@ export default function SharedPage() {
     loadOwners();
   }, [loadOwners]);
 
+  /** Maps owner IDs to UI-friendly display objects */
   const ownersList = useMemo(() => {
     return uniqueOwnerIds.map((id) => {
       const o = ownersData[id] || {};
@@ -107,6 +119,7 @@ export default function SharedPage() {
     });
   }, [uniqueOwnerIds, ownersData]);
 
+  /** Sub-view filtering: shows files belonging only to the selected owner */
   const filesByOwner = useMemo(() => {
     if (!selectedOwnerId) return [];
     return sharedItems.filter((f) => String(f.ownerId) === String(selectedOwnerId));
@@ -126,15 +139,16 @@ export default function SharedPage() {
     return <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />;
   }
 
+  // Render logic for the "Owner Detail" view (List of shared files from a specific user)
   if (selectedOwnerId) {
     return (
       <View style={{ flex: 1 }}>
         <View style={styles.breadcrumbContainer}>
-          <Pressable 
-            onPress={() => setSelectedOwnerId(null)} 
+          <Pressable
+            onPress={() => setSelectedOwnerId(null)}
             style={[
-              styles.backButton, 
-              { 
+              styles.backButton,
+              {
                 backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
                 borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)'
               }
@@ -142,13 +156,13 @@ export default function SharedPage() {
           >
             <Ionicons name="arrow-back" size={20} color={isDarkMode ? '#FFFFFF' : '#1A2A3A'} />
           </Pressable>
-          
+
           <Pressable onPress={() => setSelectedOwnerId(null)}>
             <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>Shared</Text>
           </Pressable>
 
           <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-          
+
           <Text style={[styles.breadcrumbText, { color: colors.primary, fontWeight: '700' }]} numberOfLines={1}>
             {ownersData[selectedOwnerId]?.firstName || "User"}
           </Text>
@@ -166,6 +180,7 @@ export default function SharedPage() {
     );
   }
 
+  // Render logic for the "All Owners" list view
   return (
     <View style={{ flex: 1 }}>
       {ownersLoading && <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 10 }} />}
@@ -177,7 +192,7 @@ export default function SharedPage() {
           <Pressable
             style={[
               styles.userCard,
-              { 
+              {
                 backgroundColor: isDarkMode ? 'rgba(20, 20, 30, 0.6)' : 'rgba(255, 255, 255, 0.65)',
                 borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)',
               }
@@ -195,16 +210,16 @@ export default function SharedPage() {
             </View>
 
             <View style={styles.userInfo}>
-              <Text 
+              <Text
                 style={[
-                  styles.userName, 
-                  { 
+                  styles.userName,
+                  {
                     color: isDarkMode ? '#FFFFFF' : '#1A2A3A',
                     textShadowColor: isDarkMode ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
                     textShadowOffset: { width: 0, height: 2 },
                     textShadowRadius: 4,
                   }
-                ]} 
+                ]}
                 numberOfLines={1}
               >
                 {item.title}
@@ -238,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12, 
+    borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
     shadowColor: "#000",
