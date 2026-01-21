@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Modal, View, Text, TextInput, Image, TouchableOpacity,
-  StyleSheet, Pressable, ScrollView, ActivityIndicator, 
+  StyleSheet, Pressable, ScrollView, ActivityIndicator,
   Alert, KeyboardAvoidingView, Platform
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,7 +11,6 @@ import { Video, ResizeMode } from "expo-av";
 import { useTheme } from "../../../app/providers/ThemeContext";
 import { getUploadPreviewStyles } from "../styles/uploadPreview.styles";
 
-// Helper functions for file type detection
 const isImage = (mimeType = "") => mimeType.startsWith("image/");
 const isVideo = (mimeType = "") => mimeType.startsWith("video/");
 
@@ -27,16 +26,13 @@ export default function UploadPreviewModal({
   const { colors = {}, isDarkMode } = useTheme();
   
   const styles = useMemo(() => getUploadPreviewStyles(colors, isDarkMode), [colors, isDarkMode]);
-  
+
   const [title, setTitle] = useState(fileData?.fileName || "");
   const [selectedFolderId, setSelectedFolderId] = useState(null); 
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
-  // Reset title when fileData changes
   useEffect(() => {
-    if (fileData?.fileName) {
-      setTitle(fileData.fileName);
-    }
+    if (fileData?.fileName) setTitle(fileData.fileName);
   }, [fileData?.fileName]);
 
   const selectedFolderName = useMemo(() => {
@@ -65,19 +61,18 @@ export default function UploadPreviewModal({
     >
       {fileData && (
         <View style={styles.backdrop}>
-          <BlurView 
-            intensity={20} 
-            tint={isDarkMode ? "dark" : "light"} 
-            style={StyleSheet.absoluteFill} 
+          <BlurView
+            intensity={20}
+            tint={isDarkMode ? "dark" : "light"}
+            style={StyleSheet.absoluteFill}
           />
           <Pressable style={StyleSheet.absoluteFill} onPress={onDiscard} />
-          
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === "ios" ? "padding" : "height"} 
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.centerWrap}
           >
             <Pressable style={styles.card} onPress={() => {}}>
-              {/* Header */}
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Review Upload</Text>
                 <TouchableOpacity onPress={onDiscard} style={styles.closeBtn}>
@@ -105,7 +100,7 @@ export default function UploadPreviewModal({
                     </View>
                   )}
                 </View>
-                {/* Title Input */}
+
                 <Text style={styles.label}>FILE NAME</Text>
                 <TextInput
                   style={styles.input}
@@ -115,48 +110,46 @@ export default function UploadPreviewModal({
                   placeholderTextColor={colors.textTertiary}
                 />
 
-                {/* Destination Picker */}
                 <Text style={styles.label}>SAVE TO</Text>
-                <TouchableOpacity 
-                  style={styles.folderPicker} 
+                <TouchableOpacity
+                  style={styles.folderPicker}
                   onPress={() => setShowFolderPicker(!showFolderPicker)}
                 >
                   <Ionicons name="folder-outline" size={20} color={colors.primary} />
                   <Text style={styles.folderPickerText}>{selectedFolderName}</Text>
-                  <Ionicons 
-                    name={showFolderPicker ? "chevron-up" : "chevron-down"} 
-                    size={18} 
-                    color={colors.textTertiary} 
+                  <Ionicons
+                    name={showFolderPicker ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={colors.textTertiary}
                   />
                 </TouchableOpacity>
 
-                {/* Folder Selection List (expandable) */}
                 {showFolderPicker && (
                   <View style={styles.folderList}>
                     <TouchableOpacity
                       style={[
-                        styles.folderItem, 
+                        styles.folderItem,
                         !selectedFolderId && styles.folderItemActive
                       ]}
-                      onPress={() => { 
-                        setSelectedFolderId(null); 
-                        setShowFolderPicker(false); 
+                      onPress={() => {
+                        setSelectedFolderId(null);
+                        setShowFolderPicker(false);
                       }}
                     >
                       <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
                       <Text style={styles.folderItemText}>My Drive (Root)</Text>
                     </TouchableOpacity>
-                    
+
                     {folders?.filter(f => f.type === "folder").map(folder => (
                       <TouchableOpacity
                         key={folder.id}
                         style={[
-                          styles.folderItem, 
+                          styles.folderItem,
                           selectedFolderId === folder.id && styles.folderItemActive
                         ]}
-                        onPress={() => { 
-                          setSelectedFolderId(folder.id); 
-                          setShowFolderPicker(false); 
+                        onPress={() => {
+                          setSelectedFolderId(folder.id);
+                          setShowFolderPicker(false);
                         }}
                       >
                         <Ionicons name="folder" size={18} color="#f59e0b" />
@@ -167,7 +160,6 @@ export default function UploadPreviewModal({
                 )}
               </ScrollView>
 
-              {/* Footer Actions */}
               <View style={styles.footer}>
                 <TouchableOpacity style={styles.secondaryBtn} onPress={onChangeFile}>
                   <Ionicons name="refresh-outline" size={18} color={colors.textPrimary} />
@@ -179,11 +171,11 @@ export default function UploadPreviewModal({
                   <Text style={styles.discardBtnText}>Discard</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
-                    styles.confirmBtn, 
+                    styles.confirmBtn,
                     uploading && styles.confirmBtnDisabled
-                  ]} 
+                  ]}
                   onPress={handleConfirm}
                   disabled={uploading}
                 >

@@ -21,56 +21,44 @@ export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.cr
     shadowRadius: 20,
   },
 
-  // Header
-  header: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    alignItems: "center",
-    padding: 20, 
-    borderBottomWidth: 1, 
-    borderBottomColor: colors.border || "#eee",
-  },
-  headerTitle: { 
-    fontSize: 18, 
-    fontWeight: "700",
-    color: colors.textPrimary || "#333",
-    letterSpacing: 0.5,
-  },
-  closeBtn: { 
-    padding: 4 
-  },
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+    },
+    centerWrap: {
+      flex: 1,
+      justifyContent: "center",
+      padding: 16,
+    },
 
-  // Body
-  body: { 
-    padding: 20 
-  },
+    card: {
+      backgroundColor: cardBg,
+      borderRadius: 35,
+      maxHeight: "85%",
+      overflow: "hidden",
+      elevation: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+    },
 
-  // Preview
-  previewContainer: { 
-    height: 180, 
-    backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : (colors.surface || "#f5f5f5"), 
-    borderRadius: 20, 
-    marginBottom: 20, 
-    overflow: "hidden", 
-    justifyContent: "center", 
-    alignItems: "center",
-  },
-  previewImage: { 
-    width: "100%", 
-    height: "100%",
-  },
-  previewVideo: { 
-    width: "100%", 
-    height: "100%" 
-  },
-  previewFallback: { 
-    alignItems: "center", 
-    gap: 8 
-  },
-  previewFallbackText: { 
-    color: colors.textSecondary || "#666", 
-    fontSize: 12 
-  },
+    header: {
+      backgroundColor: cardBg, // ✅ כדי שלא יהיה “קו לבן” מה-ScrollView
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: divider,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.textPrimary || "#fff",
+      letterSpacing: 0.5,
+    },
+    closeBtn: { padding: 4 },
 
   // Form Elements
   label: { 

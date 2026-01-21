@@ -83,5 +83,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, zIndex: 5000 },
   inputBar: { flex: 1, flexDirection: "row", alignItems: "center", paddingLeft: 5 },
   treeIcon: { fontSize: 20, marginRight: 8 },
-  input: { flex: 1, fontSize: 16, color: "#202124", height: "100%" },
+  input: { 
+    flex: 1, 
+    fontSize: 16, 
+    color: "#202124", 
+    height: "100%",
+    // ✅ התיקון: כפיית יישור לשמאל למניעת קפיצה לימין במכשירי RTL (עברית)
+    textAlign: "left" 
+  },
 });
