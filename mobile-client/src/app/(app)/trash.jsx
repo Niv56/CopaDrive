@@ -27,7 +27,6 @@ import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
 
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
-import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function TrashPage() {
   const router = useRouter();
@@ -39,8 +38,6 @@ export default function TrashPage() {
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
 
   const loadTrash = useCallback(async () => {
     if (!token) return;
@@ -110,16 +107,15 @@ export default function TrashPage() {
     );
   }, [token]);
 
-  const openOrActions = (item) => {
+  const handleRestore = useCallback(async (item) => {
     if (!item) return;
-    // באשפה לא פותחים תיקיות, רק פעולות (שחזור/מחיקה) או תצוגה מקדימה לקבצים
-    Alert.alert("Trash Item", item.name, [
-      { text: "Preview", onPress: () => { setSelectedId(item.id); setPreviewOpen(true); } },
-      { text: "Restore", onPress: async () => { await restoreFromTrash(token, item.id); emitDriveRefresh(); } },
-      { text: "Delete Forever", style: "destructive", onPress: async () => { await deleteForever(token, item.id); emitDriveRefresh(); } },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
+    try {
+      await restoreFromTrash(token, item.id);
+      emitDriveRefresh();
+    } catch (err) {
+      Alert.alert("Error", "Could not restore item.");
+    }
+  }, [token]);
 
   return (
     // ✅ רקע דינמי
@@ -142,6 +138,7 @@ export default function TrashPage() {
             style={[styles.closeButton, { backgroundColor: colors.surface }]} 
             activeOpacity={0.7}
           >
+            
             <Ionicons name="close-outline" size={32} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -166,8 +163,9 @@ export default function TrashPage() {
               renderItem={({ item }) => (
                 <DriveListItem
                   item={{ ...item, displayDate: getDaysLeft(item.trashedAt) }}
-                  onPress={openOrActions}
                   onDelete={handleDeleteForever}
+                  onRestore={handleRestore}
+                  trashMode={true}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
@@ -184,12 +182,6 @@ export default function TrashPage() {
           )}
         </View>
       </SafeAreaView>
-
-      <FilePreviewModal
-        open={previewOpen}
-        fileId={selectedId}
-        onClose={() => setPreviewOpen(false)}
-      />
     </View>
   );
 }
