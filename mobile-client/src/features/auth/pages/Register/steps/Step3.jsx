@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
-import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step3({ formData, setFormData, errors }) {
+export default function Step3({ formData, setFormData, errors, styles, colors }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const getDateValue = () => {
@@ -42,20 +41,20 @@ export default function Step3({ formData, setFormData, errors }) {
 
   return (
     <View>
-      <Text style={authStyles.label}>Date of Birth</Text>
+      <Text style={styles.label}>Date of Birth</Text>
       <Pressable
-        style={[authStyles.dateButton, errors.dateOfBirth && authStyles.dateButtonError]}
+        style={[styles.dateButton || styles.inputWrapper, errors.dateOfBirth && styles.dateButtonError]}
         onPress={() => setShowDatePicker(true)}
       >
-        <Ionicons name="calendar-outline" size={20} color="#666" style={{ marginRight: 10 }} />
+        <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
         <Text style={[
-          authStyles.dateText,
-          !formData.dateOfBirth && authStyles.dateTextPlaceholder
+          styles.dateText,
+          !formData.dateOfBirth && styles.dateTextPlaceholder
         ]}>
           {formatDisplayDate(formData.dateOfBirth)}
         </Text>
       </Pressable>
-      {errors.dateOfBirth && <Text style={authStyles.errorText}>{errors.dateOfBirth}</Text>}
+      {errors.dateOfBirth && <Text style={styles.errorText}>{errors.dateOfBirth}</Text>}
 
       {showDatePicker && (
         <DateTimePicker
@@ -65,25 +64,27 @@ export default function Step3({ formData, setFormData, errors }) {
           onChange={handleDateChange}
           maximumDate={new Date()}
           minimumDate={new Date(1900, 0, 1)}
+          // התאמת צבעים לדייט-פיקר באייפון
+          themeVariant={colors.background === "#121212" ? "dark" : "light"}
         />
       )}
 
-      <Text style={[authStyles.label, { marginTop: 10 }]}>Gender</Text>
+      <Text style={[styles.label, { marginTop: 10 }]}>Gender</Text>
 
-      <View style={authStyles.genderContainer}>
-        <View style={authStyles.genderRow}>
+      <View style={styles.genderContainer}>
+        <View style={styles.genderRow}>
           {["Male", "Female", "Other"].map((g) => (
             <Pressable
               key={g}
               style={[
-                authStyles.genderBtn,
-                formData.gender === g && authStyles.genderBtnActive
+                styles.genderBtn,
+                formData.gender === g && styles.genderBtnActive
               ]}
               onPress={() => setFormData({ ...formData, gender: g })}
             >
               <Text style={[
-                authStyles.genderText,
-                formData.gender === g && authStyles.genderTextActive
+                styles.genderText,
+                formData.gender === g && styles.genderTextActive
               ]}>
                 {g}
               </Text>
@@ -93,21 +94,22 @@ export default function Step3({ formData, setFormData, errors }) {
 
         <Pressable
           style={[
-            authStyles.genderBtnFull, // משתמשים רק בזה כדי למנוע התנגשות הגדרות
-            formData.gender === "Prefer not to say" && authStyles.genderBtnActive
+            styles.genderBtn,
+            { width: "100%", height: 50 }, // גודל מלא לכפתור האחרון
+            formData.gender === "Prefer not to say" && styles.genderBtnActive
           ]}
           onPress={() => setFormData({ ...formData, gender: "Prefer not to say" })}
         >
           <Text style={[
-            authStyles.genderText,
-            formData.gender === "Prefer not to say" && authStyles.genderTextActive
+            styles.genderText,
+            formData.gender === "Prefer not to say" && styles.genderTextActive
           ]}>
             Prefer not to say
           </Text>
         </Pressable>
       </View>
 
-      {errors.gender && <Text style={authStyles.errorText}>{errors.gender}</Text>}
+      {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
     </View>
   );
 }

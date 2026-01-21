@@ -1,9 +1,8 @@
 import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { authStyles } from "../../../styles/auth.styles";
 
-export default function Step4({ formData, setFormData, errors }) {
+export default function Step4({ formData, setFormData, errors, styles, colors }) {
   
   const handleEmailChange = (text) => {
     let val = text;
@@ -17,48 +16,48 @@ export default function Step4({ formData, setFormData, errors }) {
 
   return (
     <View>
-      <Text style={authStyles.label}>Email</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="mail-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>Email</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="username@copa.com"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           keyboardType="email-address"
           autoCapitalize="none"
           value={formData.email}
           onChangeText={handleEmailChange}
         />
       </View>
-      {errors.email && <Text style={authStyles.errorText}>{errors.email}</Text>}
+      {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-      <Text style={authStyles.label}>Password</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="lock-closed-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>Password</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="••••••••"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           secureTextEntry
           value={formData.password}
           onChangeText={(text) => setFormData({ ...formData, password: text })}
         />
       </View>
-      {errors.password && <Text style={authStyles.errorText}>{errors.password}</Text>}
+      {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-      <Text style={authStyles.label}>Confirm Password</Text>
-      <View style={authStyles.inputWrapper}>
-        <Ionicons name="lock-closed-outline" size={20} color="#666" style={authStyles.inputIcon} />
+      <Text style={styles.label}>Confirm Password</Text>
+      <View style={styles.inputWrapper}>
+        <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
         <TextInput
-          style={authStyles.input}
+          style={styles.input}
           placeholder="••••••••"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textTertiary}
           secureTextEntry
           value={formData.verifyPassword}
           onChangeText={(text) => setFormData({ ...formData, verifyPassword: text })}
         />
       </View>
-      {errors.verifyPassword && <Text style={authStyles.errorText}>{errors.verifyPassword}</Text>}
+      {errors.verifyPassword && <Text style={styles.errorText}>{errors.verifyPassword}</Text>}
     </View>
   );
 }

@@ -5,10 +5,9 @@ import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { useAuth } from "../app/providers/AuthContext";
 import SearchBar from "./SearchBar/SearchBar";
-import ProfileActionSheet from "./ProfileActionSheet";
 import EditProfileModal from "../features/user/components/EditProfileModal";
 
-// ✅ ייבוא ה-Theme ופונקציית הסטיילים החדשה
+// ✅ ייבוא ה-Theme
 import { getDriveStyles } from "../features/drive/styles/myDrive.styles";
 import { useTheme } from "../app/providers/ThemeContext";
 
@@ -16,24 +15,27 @@ export default function TopBar() {
   const navigation = useNavigation();
   const { user, token } = useAuth();
   
-  // ✅ שליפת הצבעים ויצירת הסטיילים
-  const { colors, isDarkMode } = useTheme();
+  // ✅ שליפת הצבעים
+  const { colors } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  // ✅ ביטלנו את isProfileMenuOpen, נשארנו רק עם המודל של העריכה
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
     <View style={styles.masterZIndex}>
       <View style={driveStyles.topBarSearchWrapper}>
+        
+        {/* כפתור המבורגר - פותח את ה-Sidebar */}
         <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())} hitSlop={15}>
-          {/* שינוי צבע האייקון לפי הנושא */}
-          <Ionicons name="menu" size={24} color={colors.textSecondary} />
+          <Ionicons name="menu" size={28} color={colors.textSecondary} />
         </Pressable>
 
+        {/* שורת חיפוש */}
         <SearchBar token={token} />
 
-        <Pressable onPress={() => setIsProfileMenuOpen(true)} style={driveStyles.profileCircle}>
+        {/* תמונת פרופיל - לחיצה פותחת ישר את העריכה */}
+        <Pressable onPress={() => setIsEditOpen(true)} style={driveStyles.profileCircle}>
           {user?.image ? (
             <Image source={{ uri: user.image }} style={styles.avatar} />
           ) : (
@@ -42,12 +44,7 @@ export default function TopBar() {
         </Pressable>
       </View>
 
-      <ProfileActionSheet
-        visible={isProfileMenuOpen}
-        onClose={() => setIsProfileMenuOpen(false)}
-        onEditProfile={() => { setIsProfileMenuOpen(false); setIsEditOpen(true); }}
-      />
-
+      {/* מודל עריכת פרופיל */}
       <EditProfileModal
         visible={isEditOpen}
         onClose={() => setIsEditOpen(false)}

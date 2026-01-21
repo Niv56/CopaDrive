@@ -1,20 +1,53 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, { createContext, useContext, useState, useMemo, useEffect } from "react";
 import { useColorScheme } from "react-native"; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from "../../shared_code/styles/theme";
 
 const ThemeContext = createContext();
+const THEME_KEY = "app_theme_mode";
 
 export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme(); 
+  // מתחילים ב-false כדי למנוע הבהוב עד שהטעינה מסתיימת, או לפי המערכת
   const [isDarkMode, setIsDarkMode] = useState(systemScheme === "dark");
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // טעינת ההגדרה השמורה בעת עליית האפליקציה
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(THEME_KEY);
+        if (savedTheme !== null) {
+          setIsDarkMode(savedTheme === "dark");
+        } else {
+            // אם אין הגדרה שמורה, הולכים לפי הגדרות הטלפון
+            setIsDarkMode(systemScheme === "dark");
+        }
+      } catch (e) {
+        console.log("Failed to load theme", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadTheme();
+  }, []);
 
   const colors = useMemo(() => {
     return isDarkMode ? theme.dark : theme.light;
   }, [isDarkMode]);
 
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
+  const toggleTheme = async () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    try {
+      await AsyncStorage.setItem(THEME_KEY, newMode ? "dark" : "light");
+    } catch (e) {
+      console.error("Failed to save theme", e);
+    }
   };
+
+  // מונע ריצוד ראשוני של צבעים לא נכונים
+  if (!isLoaded) return null;
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleTheme, colors }}>
@@ -30,3 +63,4 @@ export const useTheme = () => {
   }
   return context;
 };
+export default ThemeProvider;
