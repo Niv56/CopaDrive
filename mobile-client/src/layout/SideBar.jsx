@@ -9,6 +9,9 @@ import { getUsage } from '../features/drive/services/fileService';
 import StorageTree from '../features/drive/components/StorageTree';
 import { useTheme } from '../app/providers/ThemeContext';
 
+// ✅ ייבוא הלוגו כקומפוננטה עבור SVG
+import Logo from '../assets/images/logo.svg'; 
+
 // ✅ נתיב מתוקן: מ-src/layout ל-src/shared_code
 import MusicToggle from '../shared_code/components/MusicToggle';
 
@@ -53,6 +56,8 @@ export default function SideBar(props) {
   return (
     <BlurView intensity={80} tint={isDarkMode ? "dark" : "light"} style={styles.container}>
       <View style={styles.header}>
+        {/* ✅ הצגת הלוגו כ-SVG עם גובה ורוחב מוגדרים */}
+        <Logo width={35} height={35} style={styles.logo} />
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>CopaDrive</Text>
       </View>
 
@@ -85,7 +90,7 @@ export default function SideBar(props) {
       
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
           <View style={styles.controlsRow}>
-             
+              
              {/* כפתור הנגן החדש */}
              <MusicToggle />
 
@@ -104,8 +109,24 @@ export default function SideBar(props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 20, marginBottom: 10 },
-  headerTitle: { fontSize: 24, fontFamily: 'BrunoAceSC_400Regular', letterSpacing: 1.5 },
+  header: { 
+    paddingTop: 60, 
+    paddingHorizontal: 24, 
+    paddingBottom: 20, 
+    marginBottom: 10,
+    flexDirection: 'row', // שורת לוגו וטקסט
+    alignItems: 'center' // מרכוז אנכי של הלוגו והטקסט
+  },
+  logo: {
+    marginRight: 12 // רווח בין הלוגו לטקסט
+  },
+  headerTitle: { 
+    fontSize: 24, 
+    fontFamily: 'BrunoAceSC_400Regular', 
+    letterSpacing: 1.5,
+    // ✅ תיקון: הוספת גובה שורה מפורש כדי למנוע חיתוך של הפונט המיוחד
+    lineHeight: 36 
+  },
   scrollContent: { paddingTop: 0 },
   list: { paddingHorizontal: 16, gap: 6 },
   item: { flexDirection: 'row', alignItems: 'center', height: 48, paddingLeft: 16, borderRadius: 24, marginBottom: 4 },
