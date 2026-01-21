@@ -2,15 +2,20 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+/**
+ * Registration Step 5: Success & Completion
+ * Final confirmation screen shown after successful account setup.
+ */
 export default function Step5({ styles }) {
   return (
     <View style={localStyles.container}>
+      {/* Visual indicator signaling a successful registration process */}
       <Ionicons name="checkmark-circle" size={80} color="#28a745" />
-      
+
       <Text style={[styles.brandText, { marginTop: 20, fontSize: 30 }]}>Success!</Text>
-      
+
       <Text style={styles.subText}>Your account is ready.</Text>
-      
+
       <Text style={[localStyles.desc, { color: styles.subText.color }]}>
         We're excited to have you join the CopaDrive family.
       </Text>

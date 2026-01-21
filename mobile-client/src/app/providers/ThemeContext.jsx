@@ -1,16 +1,21 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from "react";
-import { useColorScheme } from "react-native"; 
+import { useColorScheme } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from "../../shared_code/styles/theme";
 
 const ThemeContext = createContext();
 const THEME_KEY = "app_theme_mode";
 
+/**
+ * Manages the application's visual theme (Light/Dark mode).
+ * Persists user selection and falls back to system preferences if no choice is saved.
+ */
 export const ThemeProvider = ({ children }) => {
-  const systemScheme = useColorScheme(); 
+  const systemScheme = useColorScheme();
   const [isDarkMode, setIsDarkMode] = useState(systemScheme === "dark");
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Load saved theme preference from local storage on startup
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -18,7 +23,8 @@ export const ThemeProvider = ({ children }) => {
         if (savedTheme !== null) {
           setIsDarkMode(savedTheme === "dark");
         } else {
-            setIsDarkMode(systemScheme === "dark");
+          // If no preference is saved, sync with system dark/light mode
+          setIsDarkMode(systemScheme === "dark");
         }
       } catch (e) {
         console.log("Failed to load theme", e);
@@ -27,12 +33,14 @@ export const ThemeProvider = ({ children }) => {
       }
     };
     loadTheme();
-  }, []);
+  }, [systemScheme]);
 
+  // Memoize colors to prevent unnecessary object re-creation
   const colors = useMemo(() => {
     return isDarkMode ? theme.dark : theme.light;
   }, [isDarkMode]);
 
+  /** Toggles between themes and persists the new state */
   const toggleTheme = async () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -43,6 +51,7 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
+  // Prevent UI flickering by not rendering until the saved theme is loaded
   if (!isLoaded) return null;
 
   return (
@@ -59,4 +68,5 @@ export const useTheme = () => {
   }
   return context;
 };
+
 export default ThemeProvider;

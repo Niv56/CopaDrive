@@ -3,8 +3,13 @@ import { View, Text, TextInput, StyleSheet, Keyboard, Image, Pressable, Alert } 
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 
+/**
+ * Registration Step 2: Contact Information
+ * Handles profile picture selection and Israeli phone number formatting.
+ */
 export default function Step2({ formData, setFormData, errors, styles, colors }) {
 
+  /** Requests permissions and opens the system image library */
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -25,6 +30,7 @@ export default function Step2({ formData, setFormData, errors, styles, colors })
     }
   };
 
+  /** Automatically formats the phone input string to 05X-XXX-XXXX */
   const handlePhoneChange = (text) => {
     let cleaned = text.replace(/\D/g, "");
     if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
@@ -41,6 +47,7 @@ export default function Step2({ formData, setFormData, errors, styles, colors })
 
   return (
     <View>
+      {/* Profile Photo Upload Section */}
       <View style={localStyles.imageContainer}>
         <Pressable onPress={pickImage} style={[localStyles.avatarPlaceholder, { borderColor: colors.border }]}>
           {formData.image ? (
@@ -55,6 +62,7 @@ export default function Step2({ formData, setFormData, errors, styles, colors })
         {errors.image && <Text style={styles.errorText}>{errors.image}</Text>}
       </View>
 
+      {/* Phone Number Input Section */}
       <Text style={styles.label}>Phone Number</Text>
       <View style={styles.inputWrapper}>
         <Ionicons name="call-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
@@ -84,7 +92,7 @@ const localStyles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(0,0,0,0.05)", 
+    backgroundColor: "rgba(0,0,0,0.05)",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,

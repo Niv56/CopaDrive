@@ -27,6 +27,10 @@ import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 import { getFileIconMeta } from "../../features/drive/utils/fileIcon";
 
+/**
+ * Displays a list of all files, sorted by size in descending order.
+ * This view helps users manage their storage by identifying large files.
+ */
 export default function StoragePage() {
   const router = useRouter();
   const { token } = useAuth();
@@ -39,6 +43,7 @@ export default function StoragePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  /** Fetches all user files to calculate storage usage */
   const loadFiles = useCallback(async () => {
     if (!token) return;
     try {
@@ -61,6 +66,8 @@ export default function StoragePage() {
     return unsubscribe;
   }, [loadFiles]);
 
+  /** * Filters out folders and sorts files by sizeBytes (largest first).
+   */
   const sortedFiles = useMemo(() => {
     return [...(files || [])]
       .filter((f) => f?.type === "file")
@@ -81,7 +88,7 @@ export default function StoragePage() {
 
   const openItem = useCallback((item) => {
     if (!item) return;
-    if (item.type === "folder") return;
+    if (item.type === "folder") return; // Folders don't occupy storage directly in this list
 
     setSelectedId(item.id || item._id);
     setPreviewOpen(true);
@@ -97,7 +104,7 @@ export default function StoragePage() {
           onPress: async () => {
             try {
               await moveToTrash(token, item.id);
-              emitDriveRefresh();
+              emitDriveRefresh(); // Notify other components of the deletion
             } catch (err) {
               Alert.alert("Error", "Could not delete item.");
             }
@@ -162,25 +169,30 @@ export default function StoragePage() {
   );
 }
 
+/**
+ * Individual list item with Swipeable "Delete" action.
+ */
 function StorageListItem({ item, onPress, onDelete }) {
   const swipeableRef = useRef(null);
   const { colors } = useTheme();
 
   const iconMeta = useMemo(() => {
     const meta = getFileIconMeta(
-      item.name, 
-      item.mimeType, 
+      item.name,
+      item.mimeType,
       item.type === "folder"
     );
-    
+
+    // Ensure outline icons are used for consistency in this view
     let iconName = meta.icon;
     if (iconName !== "folder" && !iconName.endsWith("-outline")) {
       iconName = `${iconName}-outline`;
     }
-    
+
     return { ...meta, icon: iconName };
   }, [item]);
 
+  /** Renders the red "Delete" background button when swiping left */
   const renderLeftActions = (progress, dragX) => {
     const scale = dragX.interpolate({
       inputRange: [0, 80],

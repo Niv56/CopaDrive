@@ -1,8 +1,12 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../app/providers/ThemeContext"; // ✅ Theme
+import { useTheme } from "../../app/providers/ThemeContext";
 
+/**
+ * Floating Action Menu
+ * Provides quick access to file creation and upload actions.
+ */
 export default function ActionMenu({ onAction, disabled }) {
   const { isDarkMode, colors } = useTheme();
 
@@ -24,27 +28,27 @@ export default function ActionMenu({ onAction, disabled }) {
         isDarkMode={isDarkMode}
         colors={colors}
       />
-      <MenuOption 
-        icon="image-outline" 
-        label="Upload Pic" 
-        disabled={disabled} 
-        onPress={() => onAction("upload_image")} 
+      <MenuOption
+        icon="image-outline"
+        label="Upload Pic"
+        disabled={disabled}
+        onPress={() => onAction("upload_image")}
         isDarkMode={isDarkMode}
         colors={colors}
       />
-      <MenuOption 
-        icon="camera-outline" 
-        label="Take Photo" 
-        disabled={disabled} 
-        onPress={() => onAction("take_photo")} 
+      <MenuOption
+        icon="camera-outline"
+        label="Take Photo"
+        disabled={disabled}
+        onPress={() => onAction("take_photo")}
         isDarkMode={isDarkMode}
         colors={colors}
       />
-      <MenuOption 
-        icon="cloud-upload-outline" 
-        label="Import File" 
-        disabled={disabled} 
-        onPress={() => onAction("upload_file")} 
+      <MenuOption
+        icon="cloud-upload-outline"
+        label="Import File"
+        disabled={disabled}
+        onPress={() => onAction("upload_file")}
         isDarkMode={isDarkMode}
         colors={colors}
       />
@@ -52,21 +56,26 @@ export default function ActionMenu({ onAction, disabled }) {
   );
 }
 
+/**
+ * Individual Menu Item
+ * Implements theme-aware background colors and disabled states.
+ */
 function MenuOption({ icon, label, onPress, disabled, isDarkMode, colors }) {
   return (
     <TouchableOpacity
       style={[
-          styles.singleContainer, 
-          disabled && { opacity: 0.6 },
-          { backgroundColor: isDarkMode ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)" } 
+        styles.singleContainer,
+        disabled && { opacity: 0.6 },
+        // Dynamic background based on current theme mode
+        { backgroundColor: isDarkMode ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)" }
       ]}
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.9}
     >
       <Ionicons name={icon} size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
-      <Text 
-        style={[styles.labelText, { color: colors.textPrimary }]} 
-        numberOfLines={1} 
+      <Text
+        style={[styles.labelText, { color: colors.textPrimary }]}
+        numberOfLines={1}
         ellipsizeMode="clip"
       >
         {label.toUpperCase()}

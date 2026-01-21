@@ -19,9 +19,12 @@ import { getAuthStyles } from "../../styles/auth.styles";
 
 const TOTAL_STEPS = 4;
 
+/**
+ * Main registration controller.
+ * Orchestrates the multi-step form flow, validation, and final API submission.
+ */
 export default function RegisterScreen() {
   const router = useRouter();
-  
   const { colors, isDarkMode } = useTheme();
   const styles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
 
@@ -41,6 +44,7 @@ export default function RegisterScreen() {
     verifyPassword: "",
   });
 
+  /** Returns the appropriate subtitle for each step of the journey */
   const getHeaderTitle = () => {
     switch (step) {
       case 1: return "Who are you?";
@@ -52,6 +56,7 @@ export default function RegisterScreen() {
     }
   };
 
+  /** Runs specific validators based on the current step before allowing progress */
   const validateCurrentStep = () => {
     let stepErrors = {};
     if (step === 1) stepErrors = validateStep1(formData);
@@ -78,6 +83,7 @@ export default function RegisterScreen() {
     }
   };
 
+  /** Sanitizes form data and submits the registration request to the server */
   const handleSubmit = async () => {
     setLoading(true);
     const payload = {
@@ -94,29 +100,34 @@ export default function RegisterScreen() {
     const res = await registerUser(payload);
     setLoading(false);
 
-    if (res?.success) setStep(5);
-    else Alert.alert("Registration Failed", res?.error || "Unknown error");
+    if (res?.success) {
+      setStep(5); // Move to the success screen
+    } else {
+      Alert.alert("Registration Failed", res?.error || "Unknown error");
+    }
   };
 
   return (
     <AuthLayout subtitle={getHeaderTitle()}>
-      
+
+      {/* Dynamic Step Rendering */}
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 3 && (
-          <Step3 
-            formData={formData} 
-            setFormData={setFormData} 
-            errors={errors} 
-            authStyles={styles} 
-            colors={colors} 
+          <Step3
+            formData={formData}
+            setFormData={setFormData}
+            errors={errors}
+            authStyles={styles}
+            colors={colors}
           />
         )}
         {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 5 && <Step5 styles={styles} />}
       </View>
 
+      {/* Navigation Controls */}
       <View style={{ marginTop: 20 }}>
         {step === 5 ? (
           <Pressable style={styles.btnPrimary} onPress={() => router.replace("/login")}>
@@ -145,10 +156,17 @@ export default function RegisterScreen() {
         )}
       </View>
 
+      {/* Progress Indicators (Pagination Dots) */}
       {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
           {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[localStyles.dot, i === step && styles.btnPrimary?.backgroundColor ? { backgroundColor: styles.btnPrimary.backgroundColor, width: 20 } : localStyles.dotActive]} />
+            <View
+              key={i}
+              style={[
+                localStyles.dot,
+                i === step ? { backgroundColor: colors.primary, width: 20 } : { backgroundColor: colors.textTertiary }
+              ]}
+            />
           ))}
         </View>
       )}
@@ -158,6 +176,5 @@ export default function RegisterScreen() {
 
 const localStyles = StyleSheet.create({
   dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 25 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ddd" },
-  dotActive: { backgroundColor: "#007bff", width: 20 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });

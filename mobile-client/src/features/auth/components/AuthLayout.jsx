@@ -19,6 +19,10 @@ import MusicToggle from "../../../shared_code/components/MusicToggle";
 
 const loginBg = require("../../../assets/images/login.png");
 
+/**
+ * Shared layout for authentication screens.
+ * Handles background images, keyboard interactions, and global auth controls.
+ */
 export default function AuthLayout({ children, title = "CopaDrive", subtitle }) {
   const { isDarkMode, toggleTheme, colors } = useTheme();
   let [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
@@ -28,20 +32,22 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
   if (!fontsLoaded) return <ActivityIndicator size="large" color={colors.primary} />;
 
   return (
-    <ImageBackground 
-        source={loginBg} 
-        style={authStyles.backgroundImage} 
-        resizeMode="cover"
+    <ImageBackground
+      source={loginBg}
+      style={authStyles.backgroundImage}
+      resizeMode="cover"
     >
+      {/* Visual overlay to improve text contrast in Dark Mode */}
       {isDarkMode && <View style={authStyles.dimOverlay} />}
-      
+
       <View style={styles.topControls}>
-         <MusicToggle />
-         <TouchableOpacity style={[styles.themeBtn, { backgroundColor: colors.surface }]} onPress={toggleTheme}>
-            <Feather name={isDarkMode ? "sun" : "moon"} size={20} color={colors.textPrimary} />
-         </TouchableOpacity>
+        <MusicToggle />
+        <TouchableOpacity style={[styles.themeBtn, { backgroundColor: colors.surface }]} onPress={toggleTheme}>
+          <Feather name={isDarkMode ? "sun" : "moon"} size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
+      {/* Dismisses the keyboard when tapping on the background */}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -61,25 +67,25 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
 }
 
 const styles = StyleSheet.create({
-    topControls: { 
-        position: 'absolute', 
-        top: 60, 
-        right: 20, 
-        flexDirection: 'row', 
-        gap: 10, 
-        zIndex: 10,
-        alignItems: 'center'
-    },
-    themeBtn: { 
-        width: 36, 
-        height: 36, 
-        borderRadius: 18, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        elevation: 3,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    }
+  topControls: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    flexDirection: 'row',
+    gap: 10,
+    zIndex: 10,
+    alignItems: 'center'
+  },
+  themeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  }
 });

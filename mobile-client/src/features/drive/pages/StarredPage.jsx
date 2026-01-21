@@ -4,32 +4,40 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-
 import { useTheme } from "../../../app/providers/ThemeContext";
-
 import FilePreviewModal from "../components/FilePreviewModal";
 import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
+/**
+ * Starred Page Component
+ * Displays items marked as 'starred' by the user, maintaining folder navigation within that context.
+ */
 export default function StarredPage() {
+  // Navigation state for sub-folders within the Starred view
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
   const { token } = useAuth();
   const { items, loading, refreshing, onRefresh } = useMyDrive();
-  const { colors } = useTheme(); 
+  const { colors } = useTheme();
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  /** * Filter logic: 
+   * If at the 'root' of Starred, show all items where starred is true.
+   * If inside a folder, show all children of that folder regardless of their individual star status.
+   */
   const displayItems = useMemo(() => {
     if (!currentFolderId) {
-        return (items || []).filter((i) => !!i?.starred);
+      return (items || []).filter((i) => !!i?.starred);
     }
     return (items || []).filter((item) => String(item.parentId) === String(currentFolderId));
   }, [items, currentFolderId]);
 
+  // Handle entry into a folder or opening a file preview
   const openItem = useCallback((item) => {
     if (!item) return;
     if (item.type === "folder") {
@@ -41,19 +49,24 @@ export default function StarredPage() {
     setPreviewOpen(true);
   }, []);
 
+  // Soft delete: move item to trash and trigger global refresh
   const handleDeleteItem = useCallback(async (item) => {
     Alert.alert("Move to Trash?", `Delete "${item.name}"?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete", style: "destructive",
         onPress: async () => {
-          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
+          try {
+            await moveToTrash(token, item.id);
+            emitDriveRefresh();
+          }
           catch (err) { Alert.alert("Error", "Could not delete item."); }
         }
       }
     ]);
   }, [token]);
 
+  // Navigate up one level in the folder hierarchy
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -61,6 +74,7 @@ export default function StarredPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
+  // Direct navigation to a specific folder in the breadcrumb trail
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -72,17 +86,17 @@ export default function StarredPage() {
     }
   }, [folderPath]);
 
-  // Loading View
   if (loading && (!displayItems || displayItems.length === 0)) {
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
     );
   }
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Breadcrumb Navigation Bar */}
       {folderPath.length > 0 && (
         <View style={styles.breadcrumbContainer}>
           <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
@@ -93,39 +107,40 @@ export default function StarredPage() {
           </Pressable>
           {folderPath.map((folder, index) => (
             <View key={folder.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                <Pressable onPress={() => navigateToBreadcrumb(index)}>
-                    <Text style={[
-                        styles.breadcrumbText,
-                        { color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary, fontWeight: index === folderPath.length - 1 ? '700' : '400' }
-                    ]} numberOfLines={1}>
-                        {folder.name}
-                    </Text>
-                </Pressable>
+              <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+              <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                <Text style={[
+                  styles.breadcrumbText,
+                  { color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary, fontWeight: index === folderPath.length - 1 ? '700' : '400' }
+                ]} numberOfLines={1}>
+                  {folder.name}
+                </Text>
+              </Pressable>
             </View>
           ))}
         </View>
       )}
 
+      {/* Main Starred Items List */}
       <FlatList
         data={displayItems}
-        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }} 
+        contentContainerStyle={{ paddingBottom: 150, paddingHorizontal: 15 }}
         keyExtractor={(item) => item.id || item._id}
         refreshing={refreshing}
         onRefresh={onRefresh}
         renderItem={({ item }) => (
-          <DriveListItem 
-            item={item} 
-            onPress={openItem} 
+          <DriveListItem
+            item={item}
+            onPress={openItem}
             onDelete={handleDeleteItem}
           />
         )}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 100, opacity: 0.6 }}>
-             <Ionicons name="star-outline" size={60} color={colors.textTertiary} />
-             <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
-                {currentFolderId ? "This folder is empty" : "No starred items yet"}
-             </Text>
+            <Ionicons name="star-outline" size={60} color={colors.textTertiary} />
+            <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
+              {currentFolderId ? "This folder is empty" : "No starred items yet"}
+            </Text>
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -141,22 +156,22 @@ export default function StarredPage() {
 }
 
 const styles = StyleSheet.create({
-    breadcrumbContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        marginBottom: 15,
-        paddingHorizontal: 15,
-        marginTop: 10, 
-        gap: 5
-    },
-    backButton: {
-        padding: 6,
-        borderRadius: 8,
-        marginRight: 5
-    },
-    breadcrumbText: {
-        fontSize: 15,
-        marginHorizontal: 2
-    }
+  breadcrumbContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    marginTop: 10,
+    gap: 5
+  },
+  backButton: {
+    padding: 6,
+    borderRadius: 8,
+    marginRight: 5
+  },
+  breadcrumbText: {
+    fontSize: 15,
+    marginHorizontal: 2
+  }
 });

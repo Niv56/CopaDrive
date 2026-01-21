@@ -4,7 +4,13 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { getFileIconMeta } from "../../features/drive/utils/fileIcon";
 
+/**
+ * Search Dropdown Overlay
+ * Displays live search results with glassmorphism styling.
+ */
 export default function SearchDropdown({ results, loading, query, onResultPress }) {
+
+    // Renders individual search result with dynamic icons
     const renderItem = ({ item }) => {
         const { icon, color } = getFileIconMeta(item.name, item.mimeType, item.type === "folder");
         return (
@@ -17,11 +23,13 @@ export default function SearchDropdown({ results, loading, query, onResultPress 
 
     return (
         <BlurView intensity={85} tint="light" style={styles.dropdown}>
+            {/* Subtle light overlay to enhance readability on varied backgrounds */}
             <View style={styles.overlay} />
 
             <FlatList
                 data={results}
                 keyExtractor={(item) => item.id}
+                // Ensures selection works even while the keyboard is active
                 keyboardShouldPersistTaps="always"
                 renderItem={renderItem}
                 ListEmptyComponent={!loading && query.length > 0 && (

@@ -14,6 +14,10 @@ import { updateItem, getFiles } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 import { getEditItemModalStyles } from "../styles/editItemModal.styles";
 
+/**
+ * Modal for editing file/folder names and moving them to different locations.
+ * Includes folder picker logic with built-in recursion protection.
+ */
 export default function EditItemModal({ visible, item, onClose }) {
   const { colors = {}, isDarkMode } = useTheme();
   const { token } = useAuth();
@@ -28,7 +32,7 @@ export default function EditItemModal({ visible, item, onClose }) {
   const isFolder = item?.type === "folder";
   const { icon, color } = getFileIconMeta(item?.name, item?.mimeType, isFolder);
 
-  // Reset form when item changes or modal opens
+  // Sync internal state with the selected item whenever the modal is opened
   useEffect(() => {
     if (visible && item) {
       setName(item.name || "");
@@ -38,16 +42,16 @@ export default function EditItemModal({ visible, item, onClose }) {
     }
   }, [visible, item?.id]);
 
+  /** Fetches all folders while excluding the current one to prevent moving a folder into itself */
   const fetchFolders = async () => {
     if (!token) return;
     try {
       const files = await getFiles(token);
-      // Filter out the current item if it's a folder (can't move folder into itself)
       const foldersList = (files || [])
         .filter(f => f.type === "folder" && f.id !== item?.id);
       setFolders(foldersList);
     } catch (err) {
-      // Silently fail
+      // Silently fail to avoid UI disruption
     }
   };
 
@@ -60,7 +64,7 @@ export default function EditItemModal({ visible, item, onClose }) {
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert("Error", "Please enter a name");
+      Alert.alert("Error", "Please enter a valid name");
       return;
     }
     if (!token || !item?.id) return;
@@ -71,6 +75,8 @@ export default function EditItemModal({ visible, item, onClose }) {
         name: trimmedName,
         parentId: selectedFolderId,
       });
+
+      // Notify the system that metadata has changed
       emitDriveRefresh({ reason: "edit", name: trimmedName });
       onClose?.();
     } catch (e) {
@@ -86,16 +92,16 @@ export default function EditItemModal({ visible, item, onClose }) {
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={styles.backdrop} onPress={onClose}>
         <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-        
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"} 
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.centerWrap}
         >
-          <Pressable 
+          <Pressable
             style={styles.card}
             onPress={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            {/* Modal Header */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>
                 Edit {isFolder ? "Folder" : "File"}
@@ -105,15 +111,17 @@ export default function EditItemModal({ visible, item, onClose }) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              {/* File/Folder Icon Preview */}
+            <ScrollView
+              style={styles.body}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               <View style={styles.previewContainer}>
                 <View style={styles.iconPreview}>
                   <Ionicons name={icon} size={60} color={color} />
                 </View>
               </View>
 
-              {/* Name Input */}
               <Text style={styles.label}>Name</Text>
               <TextInput
                 style={styles.input}
@@ -124,59 +132,46 @@ export default function EditItemModal({ visible, item, onClose }) {
                 autoFocus
               />
 
-              {/* Folder Picker */}
               <Text style={styles.label}>Location</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.folderPicker}
                 onPress={() => setShowFolderPicker(!showFolderPicker)}
               >
                 <Ionicons name="folder-outline" size={20} color={colors.textSecondary || "#666"} />
-                <Text style={styles.folderPickerText}>
-                  {selectedFolderName}
-                </Text>
-                <Ionicons 
-                  name={showFolderPicker ? "chevron-up" : "chevron-down"} 
-                  size={18} 
-                  color={colors.textSecondary || "#666"} 
+                <Text style={styles.folderPickerText}>{selectedFolderName}</Text>
+                <Ionicons
+                  name={showFolderPicker ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={colors.textSecondary || "#666"}
                 />
               </TouchableOpacity>
 
-              {/* Folder Selection List */}
+              {/* Collapsible Folder List */}
               {showFolderPicker && (
                 <View style={styles.folderList}>
                   <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
                     <TouchableOpacity
-                      style={[
-                        styles.folderItem, 
-                        !selectedFolderId && styles.folderItemActive
-                      ]}
-                      onPress={() => { 
-                        setSelectedFolderId(null); 
-                        setShowFolderPicker(false); 
+                      style={[styles.folderItem, !selectedFolderId && styles.folderItemActive]}
+                      onPress={() => {
+                        setSelectedFolderId(null);
+                        setShowFolderPicker(false);
                       }}
                     >
                       <Ionicons name="home-outline" size={18} color={colors.textSecondary || "#666"} />
-                      <Text style={styles.folderItemText}>
-                        My Drive (Root)
-                      </Text>
+                      <Text style={styles.folderItemText}>My Drive (Root)</Text>
                     </TouchableOpacity>
-                    
+
                     {folders?.map(folder => (
                       <TouchableOpacity
                         key={folder.id}
-                        style={[
-                          styles.folderItem, 
-                          selectedFolderId === folder.id && styles.folderItemActive
-                        ]}
-                        onPress={() => { 
-                          setSelectedFolderId(folder.id); 
-                          setShowFolderPicker(false); 
+                        style={[styles.folderItem, selectedFolderId === folder.id && styles.folderItemActive]}
+                        onPress={() => {
+                          setSelectedFolderId(folder.id);
+                          setShowFolderPicker(false);
                         }}
                       >
                         <Ionicons name="folder" size={18} color="#f59e0b" />
-                        <Text style={styles.folderItemText}>
-                          {folder.name}
-                        </Text>
+                        <Text style={styles.folderItemText}>{folder.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -184,14 +179,13 @@ export default function EditItemModal({ visible, item, onClose }) {
               )}
             </ScrollView>
 
-            {/* Footer Actions */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
                 <Text style={styles.cancelBtnText}>CANCEL</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.saveBtn, saving && styles.saveBtnDisabled]} 
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
                 onPress={handleSave}
                 disabled={saving}
               >

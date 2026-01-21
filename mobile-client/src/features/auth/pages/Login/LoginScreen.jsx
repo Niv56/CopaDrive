@@ -8,26 +8,40 @@ import AuthLayout from "../../components/AuthLayout";
 import { useTheme } from "../../../../app/providers/ThemeContext";
 import { getAuthStyles } from "../../styles/auth.styles";
 
+/**
+ * Handles user authentication by providing email and password inputs.
+ * Manages local UI states like validation and loading during the login request.
+ */
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
 
   const { colors, isDarkMode } = useTheme();
-  
+
+  // Memoize styles to react to theme changes efficiently
   const styles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Logic guard to ensure inputs are provided and an 
+   * existing request isn't already in progress.
+   */
   const canSubmit = useMemo(
     () => email.trim().length > 0 && password.length > 0 && !loading,
     [email, password, loading]
   );
 
+  /**
+   * Executes the login process and handles navigation on success 
+   * or alerts on failure.
+   */
   const onLogin = async () => {
     if (!canSubmit) return;
     setLoading(true);
+
     const res = await login(email.trim(), password);
     setLoading(false);
 
@@ -35,6 +49,8 @@ export default function LoginScreen() {
       Alert.alert("Login Failed", res.error);
       return;
     }
+
+    // Navigate to the main application group
     router.replace("/(app)/home");
   };
 
@@ -50,7 +66,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             placeholder="username@copa.com"
-            placeholderTextColor={colors.textTertiary} 
+            placeholderTextColor={colors.textTertiary}
             style={styles.input}
           />
         </View>
@@ -68,6 +84,7 @@ export default function LoginScreen() {
           />
         </View>
 
+        {/* Submit button with dynamic styling for disabled state */}
         <Pressable
           disabled={!canSubmit}
           onPress={onLogin}
@@ -80,6 +97,7 @@ export default function LoginScreen() {
           )}
         </Pressable>
 
+        {/* Navigation link to Registration */}
         <Pressable onPress={() => router.push("/(auth)/register")} style={styles.linkBtn}>
           <Text style={styles.linkText}>
             Don't have an account? <Text style={styles.linkTextBold}>Create account</Text>

@@ -10,26 +10,24 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { Swipeable } from "react-native-gesture-handler";
 
 import { getDriveStyles } from "../styles/myDrive.styles";
 import { getDriveListItemStyles } from "../styles/driveListItem.styles";
 import { useTheme } from "../../../app/providers/ThemeContext";
-
 import { getFileIconMeta } from "../utils/fileIcon";
-import { BlurView } from "expo-blur";
-import { Swipeable } from "react-native-gesture-handler";
-
 import { useAuth } from "../../../app/providers/AuthContext";
 import { getFileById, setStarred, setImportant } from "../services/fileService";
 import { downloadFile } from "../utils/downloadFile";
+import { getPermissions } from "../services/permissionService";
 
 import ShareModal from "../modals/ShareModal";
 import EditItemModal from "../modals/EditItemModal";
 
-import { getPermissions } from "../services/permissionService";
-
 /* ---------------- Helpers ---------------- */
 
+/** Standardizes permission strings to a known set of roles */
 function normalizeRole(r) {
   const x = String(r || "").toLowerCase();
   if (x === "owner") return "owner";
@@ -37,6 +35,7 @@ function normalizeRole(r) {
   return "viewer";
 }
 
+/** Determines the user's role on the item from various metadata fields */
 function extractRole(item, myId) {
   if (item?.role) return normalizeRole(item.role);
   if (item?.myRole) return normalizeRole(item.myRole);
@@ -52,19 +51,12 @@ function extractRole(item, myId) {
   return "viewer";
 }
 
+/** Safely extracts a user ID from a permission object */
 function pickUserIdFromPerm(p) {
-  return (
-    p?.userId ||
-    p?.user?._id ||
-    p?.user?.id ||
-    p?.sharedWithId ||
-    p?.sharedWith?._id ||
-    p?.sharedWith?.id ||
-    p?._id
-  );
+  return p?.userId || p?.user?._id || p?.user?.id || p?.sharedWithId || p?._id;
 }
 
-/* Component */
+/* ---------------- Component ---------------- */
 
 export default function DriveListItem({
   item,
@@ -73,14 +65,13 @@ export default function DriveListItem({
   onRestore,
   trashMode = false,
 }) {
-  const isFolder = item.type === "folder";
-  const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
-
   const { token, user } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
   const styles = useMemo(() => getDriveListItemStyles(colors), [colors]);
 
+  const isFolder = item.type === "folder";
+  const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
   const myId = user?.id || user?._id;
 
   const isOwner = useMemo(() => {
@@ -94,10 +85,8 @@ export default function DriveListItem({
   }, [item, myId, isOwner]);
 
   const [resolvedRole, setResolvedRole] = useState(null);
-
   const effectiveRoleResolved = resolvedRole || effectiveRole;
-  const canUserEditResolved =
-    effectiveRoleResolved === "owner" || effectiveRoleResolved === "editor";
+  const canUserEditResolved = effectiveRoleResolved === "owner" || effectiveRoleResolved === "editor";
 
   const swipeableRef = useRef(null);
   const dotsRef = useRef(null);
@@ -112,10 +101,10 @@ export default function DriveListItem({
 
   const closeMenu = () => setMenuOpen(false);
 
+  /** Downloads the full file content and saves it locally */
   const handleDownload = useCallback(async () => {
     closeMenu();
     if (!token) return;
-
     try {
       const full = await getFileById(token, item.id || item._id);
       if (!full || !full.content) return;
@@ -131,20 +120,11 @@ export default function DriveListItem({
     }
   }, [token, item]);
 
+  /** Fetches specific permissions if they aren't provided in the initial item load */
   const ensureRole = useCallback(async () => {
-    if (!token) return;
+    if (!token || isOwner || resolvedRole) return;
 
-    if (isOwner) {
-      setResolvedRole("owner");
-      return;
-    }
-
-    const alreadyHasRole =
-      item?.role ||
-      item?.myRole ||
-      item?.permissionRole ||
-      Array.isArray(item?.permissions);
-
+    const alreadyHasRole = item?.role || item?.myRole || item?.permissionRole || Array.isArray(item?.permissions);
     if (alreadyHasRole) return;
 
     try {
@@ -152,191 +132,81 @@ export default function DriveListItem({
       const myPerm = Array.isArray(perms)
         ? perms.find((p) => String(pickUserIdFromPerm(p)) === String(myId))
         : null;
-
       setResolvedRole(normalizeRole(myPerm?.role));
     } catch (e) {
       setResolvedRole("viewer");
     }
-  }, [token, item, myId, isOwner]);
+  }, [token, item, myId, isOwner, resolvedRole]);
 
+  /** Renders the background buttons during a swipe gesture */
   const renderLeftActions = (progress, dragX) => {
-    const scale = dragX.interpolate({
-      inputRange: [0, 80],
-      outputRange: [0.8, 1],
-      extrapolate: "clamp",
-    });
-    const opacity = dragX.interpolate({
-      inputRange: [0, 50],
-      outputRange: [0, 1],
-      extrapolate: "clamp",
-    });
-
-    if (trashMode) {
-      return (
-        <View
-          style={[styles.leftActionContainer, { backgroundColor: "#22c55e" }]}
-        >
-          <Animated.View
-            style={[
-              styles.deleteActionAnim,
-              { opacity, transform: [{ scale }] },
-            ]}
-          >
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={[
-                styles.deleteButtonInner,
-                { backgroundColor: "#22c55e" },
-              ]}
-              onPress={() => {
-                swipeableRef.current?.close();
-                setTimeout(() => onRestore?.(item), 200);
-              }}
-            >
-              <Ionicons name="refresh-outline" size={24} color="white" />
-              <Text style={styles.deleteText}>Restore</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      );
-    }
+    const scale = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.8, 1], extrapolate: "clamp" });
+    const opacity = dragX.interpolate({ inputRange: [0, 50], outputRange: [0, 1], extrapolate: "clamp" });
 
     return (
-      <View style={styles.leftActionContainer}>
-        <Animated.View
-          style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}
-        >
+      <View style={[styles.leftActionContainer, trashMode && { backgroundColor: "#22c55e" }]}>
+        <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
           <TouchableOpacity
             activeOpacity={0.7}
-            style={styles.deleteButtonInner}
+            style={[styles.deleteButtonInner, trashMode && { backgroundColor: "#22c55e" }]}
             onPress={() => {
               swipeableRef.current?.close();
-              setTimeout(() => onDelete?.(item), 200);
+              setTimeout(() => (trashMode ? onRestore?.(item) : onDelete?.(item)), 200);
             }}
           >
-            <Ionicons name="trash-outline" size={24} color="white" />
-            <Text style={styles.deleteText}>Delete</Text>
+            <Ionicons name={trashMode ? "refresh-outline" : "trash-outline"} size={24} color="white" />
+            <Text style={styles.deleteText}>{trashMode ? "Restore" : "Delete"}</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
     );
   };
 
+  /** Dynamically generates context menu options based on user role and trash state */
   const menuOptions = useMemo(() => {
     if (trashMode) {
       return [
-        {
-          key: "restore",
-          icon: "refresh-outline",
-          label: "RESTORE",
-          onPress: () => {
-            closeMenu();
-            onRestore?.(item);
-          },
-        },
-        {
-          key: "deleteForever",
-          icon: "trash-outline",
-          label: "DELETE FOREVER",
-          onPress: () => {
-            closeMenu();
-            onDelete?.(item);
-          },
-        },
+        { key: "restore", icon: "refresh-outline", label: "RESTORE", onPress: () => { closeMenu(); onRestore?.(item); } },
+        { key: "deleteForever", icon: "trash-outline", label: "DELETE FOREVER", onPress: () => { closeMenu(); onDelete?.(item); } },
       ];
     }
 
     const options = [
-      {
-        key: "share",
-        icon: "share-social-outline",
-        label: "SHARE",
-        onPress: () => {
-          closeMenu();
-          setShareOpen(true);
-        },
-      },
+      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } },
       {
         key: "star",
         icon: isStarred ? "star" : "star-outline",
         label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
-        onPress: async () => {
-          closeMenu();
-          try {
-            await setStarred(token, item.id || item._id, !isStarred);
-          } catch { }
-        },
+        onPress: async () => { closeMenu(); try { await setStarred(token, item.id || item._id, !isStarred); } catch { } },
       },
       {
         key: "important",
         icon: isImportant ? "alert-circle" : "alert-circle-outline",
         label: isImportant ? "REMOVE IMPORTANT" : "ADD TO IMPORTANT",
-        onPress: async () => {
-          closeMenu();
-          try {
-            await setImportant(token, item.id || item._id, !isImportant);
-          } catch { }
-        },
+        onPress: async () => { closeMenu(); try { await setImportant(token, item.id || item._id, !isImportant); } catch { } },
       },
-      {
-        key: "download",
-        icon: "download-outline",
-        label: "DOWNLOAD",
-        onPress: handleDownload,
-      },
+      { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: handleDownload },
     ];
 
     if (canUserEditResolved) {
-      options.push({
-        key: "edit",
-        icon: "pencil-outline",
-        label: "EDIT",
-        onPress: () => {
-          closeMenu();
-          setEditOpen(true);
-        },
-      });
+      options.push({ key: "edit", icon: "pencil-outline", label: "EDIT", onPress: () => { closeMenu(); setEditOpen(true); } });
     }
 
     if (isOwner) {
-      options.push({
-        key: "delete",
-        icon: "trash-outline",
-        label: "MOVE TO TRASH",
-        onPress: () => {
-          closeMenu();
-          onDelete?.(item);
-        },
-      });
+      options.push({ key: "delete", icon: "trash-outline", label: "MOVE TO TRASH", onPress: () => { closeMenu(); onDelete?.(item); } });
     }
 
     return options;
-  }, [
-    trashMode,
-    isStarred,
-    isImportant,
-    token,
-    item,
-    handleDownload,
-    canUserEditResolved,
-    isOwner,
-    onDelete,
-    onRestore,
-  ]);
+  }, [trashMode, isStarred, isImportant, token, item, handleDownload, canUserEditResolved, isOwner, onDelete, onRestore]);
 
+  /** Calculates the anchor position for the context menu relative to the button pressed */
   const openMenu = async () => {
     await ensureRole();
-
-    if (!dotsRef.current) {
-      setMenuOpen(true);
-      return;
-    }
+    if (!dotsRef.current) return setMenuOpen(true);
 
     dotsRef.current.measureInWindow((x, y, w, h) => {
       const MENU_W = 260;
-      const anchorX = x + w / 2;
-      const anchorY = y + h / 2;
-      setMenuPos({ top: anchorY - 100, left: anchorX - MENU_W - 12 });
+      setMenuPos({ top: (y + h / 2) - 100, left: (x + w / 2) - MENU_W - 12 });
       setMenuOpen(true);
     });
   };
@@ -344,11 +214,7 @@ export default function DriveListItem({
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={
-        ((onDelete && isOwner) || (trashMode && onRestore))
-          ? renderLeftActions
-          : undefined
-      }
+      renderLeftActions={((onDelete && isOwner) || (trashMode && onRestore)) ? renderLeftActions : undefined}
       overshootLeft={false}
       friction={2}
     >
@@ -358,56 +224,27 @@ export default function DriveListItem({
         </View>
 
         <View style={{ flex: 1 }}>
-          <Text
-            style={[driveStyles.fileName, { color: colors.textPrimary }]}
-            numberOfLines={1}
-          >
+          <Text style={[driveStyles.fileName, { color: colors.textPrimary }]} numberOfLines={1}>
             {item.name}
           </Text>
           <Text style={[driveStyles.fileInfo, { color: colors.textSecondary }]}>
-            {isFolder ? "Folder" : "File"} •{" "}
-            {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
+            {isFolder ? "Folder" : "File"} • {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
           </Text>
         </View>
 
-        <Pressable
-          ref={dotsRef}
-          onPress={() => (menuOpen ? closeMenu() : openMenu())}
-          hitSlop={14}
-          style={{ padding: 6 }}
-        >
-          <Ionicons
-            name="ellipsis-vertical"
-            size={18}
-            color={colors.textSecondary}
-          />
+        <Pressable ref={dotsRef} onPress={openMenu} hitSlop={14} style={{ padding: 6 }}>
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
         </Pressable>
       </Pressable>
 
+      {/* Context Menu Modal */}
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={styles.backdrop} onPress={closeMenu}>
-          <BlurView
-            intensity={22}
-            tint={isDarkMode ? "dark" : "light"}
-            style={StyleSheet.absoluteFill}
-          />
-          <Pressable
-            style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+          <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+          <Pressable style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]} onPress={(e) => e.stopPropagation()}>
             {menuOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt.key}
-                onPress={opt.onPress}
-                activeOpacity={0.9}
-                style={styles.stackBtn}
-              >
-                <Ionicons
-                  name={opt.icon}
-                  size={22}
-                  color={colors.textPrimary}
-                  style={styles.iconMargin}
-                />
+              <TouchableOpacity key={opt.key} onPress={opt.onPress} activeOpacity={0.9} style={styles.stackBtn}>
+                <Ionicons name={opt.icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
                 <Text style={styles.stackLabel}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
@@ -415,16 +252,8 @@ export default function DriveListItem({
         </Pressable>
       </Modal>
 
-      <EditItemModal
-        visible={editOpen}
-        item={item}
-        onClose={() => setEditOpen(false)}
-      />
-      <ShareModal
-        visible={shareOpen}
-        item={item}
-        onClose={() => setShareOpen(false)}
-      />
+      <EditItemModal visible={editOpen} item={item} onClose={() => setEditOpen(false)} />
+      <ShareModal visible={shareOpen} item={item} onClose={() => setShareOpen(false)} />
     </Swipeable>
   );
 }

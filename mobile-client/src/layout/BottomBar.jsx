@@ -1,16 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { 
-  View, 
-  StyleSheet, 
-  Dimensions, 
-  Animated, 
-  PanResponder 
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  PanResponder
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 
 import { useTheme } from "../app/providers/ThemeContext";
 
+// Layout constants for consistent tab distribution
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const MARGIN_H = 20;
 const BAR_WIDTH = SCREEN_WIDTH - (MARGIN_H * 2);
@@ -19,6 +20,10 @@ const TAB_WIDTH = BAR_WIDTH / TAB_COUNT;
 const BUBBLE_WIDTH = TAB_WIDTH * 0.7;
 const BUBBLE_OFFSET = (TAB_WIDTH - BUBBLE_WIDTH) / 2;
 
+/**
+ * Animated Bottom Navigation Bar
+ * Features a sliding "bubble" indicator and gesture support via PanResponder.
+ */
 export default function BottomBar({ activeTab, setActiveTab }) {
   const { isDarkMode, colors } = useTheme();
 
@@ -27,6 +32,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
 
   const tabs = ["home", "starred", "shared", "mydrive"];
 
+  /** Helper to spring-animate the bubble to the correct tab position */
   const animateToTab = (index) => {
     const targetX = (index * TAB_WIDTH) + BUBBLE_OFFSET;
     Animated.spring(slideAnim, {
@@ -37,6 +43,7 @@ export default function BottomBar({ activeTab, setActiveTab }) {
     }).start();
   };
 
+  // Synchronize bubble position with activeTab state changes
   useEffect(() => {
     const index = tabs.indexOf(activeTab);
     if (index !== -1) {
@@ -44,27 +51,36 @@ export default function BottomBar({ activeTab, setActiveTab }) {
     }
   }, [activeTab]);
 
+  /** * Gesture Controller:
+   * Handles touch-based navigation and manual bubble dragging.
+   */
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
+        // Shrink on touch for tactile feedback
         Animated.spring(scaleAnim, { toValue: 0.9, useNativeDriver: true }).start();
         slideAnim.stopAnimation((value) => {
-           slideAnim.setOffset(value); 
-           slideAnim.setValue(0);
+          slideAnim.setOffset(value);
+          slideAnim.setValue(0);
         });
       },
       onPanResponderMove: (evt, gestureState) => {
-         slideAnim.setValue(gestureState.dx);
+        slideAnim.setValue(gestureState.dx);
       },
       onPanResponderRelease: (evt, gestureState) => {
+        // Return to normal scale and snap to the nearest tab
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
         slideAnim.flattenOffset();
+
         const touchX = evt.nativeEvent.locationX;
         let targetIndex = Math.floor(touchX / TAB_WIDTH);
+
+        // Clamp index between 0 and TAB_COUNT - 1
         if (targetIndex < 0) targetIndex = 0;
         if (targetIndex >= TAB_COUNT) targetIndex = TAB_COUNT - 1;
+
         const newTab = tabs[targetIndex];
         setActiveTab(newTab);
         animateToTab(targetIndex);
@@ -77,10 +93,10 @@ export default function BottomBar({ activeTab, setActiveTab }) {
     return (
       <View style={styles.navItem}>
         <View style={styles.iconContainer}>
-          <Ionicons 
-            name={icon} 
-            size={24} 
-            color={isActive ? "#fff" : (isDarkMode ? "#8E8E93" : "#5f6368")} 
+          <Ionicons
+            name={icon}
+            size={24}
+            color={isActive ? "#fff" : (isDarkMode ? "#8E8E93" : "#5f6368")}
           />
         </View>
       </View>
@@ -90,27 +106,30 @@ export default function BottomBar({ activeTab, setActiveTab }) {
   return (
     <View style={styles.container}>
       <BlurView intensity={90} tint={isDarkMode ? "dark" : "light"} style={styles.blurContainer}>
-        
-        <View 
-          style={StyleSheet.absoluteFill} 
-          {...panResponder.panHandlers} 
-          zIndex={10} 
+
+        {/* Transparent overlay to capture gestures across the entire bar */}
+        <View
+          style={StyleSheet.absoluteFill}
+          {...panResponder.panHandlers}
+          zIndex={10}
         />
 
-        <Animated.View 
+        {/* The Animated Active Indicator */}
+        <Animated.View
           style={[
             styles.slidingBubble,
-            { backgroundColor: colors.primary }, 
+            { backgroundColor: colors.primary },
             {
               transform: [
                 { translateX: slideAnim },
                 { scale: scaleAnim }
-              ] 
+              ]
             }
-          ]} 
+          ]}
         />
 
-        <View style={styles.innerContent} pointerEvents="none"> 
+        {/* Static Icons Layer */}
+        <View style={styles.innerContent} pointerEvents="none">
           <NavItem icon="home" id="home" />
           <NavItem icon="star" id="starred" />
           <NavItem icon="people" id="shared" />

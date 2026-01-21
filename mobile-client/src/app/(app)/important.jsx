@@ -23,22 +23,28 @@ import { useTheme } from "../providers/ThemeContext";
 import { subscribeDriveRefresh, emitDriveRefresh } from "../../features/drive/services/driveEvents";
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
+/**
+ * Page component that displays files and folders marked as 'Important'.
+ * Supports folder navigation within the 'Important' scope.
+ */
 export default function ImportantPage() {
   const router = useRouter();
   const { token } = useAuth();
-  
+
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
+  // Navigation state for sub-folder viewing
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
+  /** Fetches all high-priority items from the server */
   const loadImportant = useCallback(async () => {
     if (!token) return;
     try {
@@ -54,15 +60,16 @@ export default function ImportantPage() {
 
   useEffect(() => { loadImportant(); }, [loadImportant]);
 
+  /** Global listener to refresh the list when items are modified elsewhere */
   useEffect(() => {
     const unsubscribe = subscribeDriveRefresh(() => loadImportant());
     return unsubscribe;
   }, [loadImportant]);
 
+  /** Filters items to show either the root 'Important' list or sub-folder content */
   const displayItems = useMemo(() => {
     if (currentFolderId) {
-      
-       return items.filter(item => item.parentId === currentFolderId);
+      return items.filter(item => item.parentId === currentFolderId);
     }
     return items;
   }, [items, currentFolderId]);
@@ -90,15 +97,21 @@ export default function ImportantPage() {
     Alert.alert("Move to Trash?", `Remove "${item.name}"?`, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Delete", style: "destructive",
+        text: "Delete",
+        style: "destructive",
         onPress: async () => {
-          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
-          catch (err) { Alert.alert("Error", "Could not delete item."); }
+          try {
+            await moveToTrash(token, item.id);
+            emitDriveRefresh();
+          } catch (err) {
+            Alert.alert("Error", "Could not delete item.");
+          }
         }
       }
     ]);
   }, [token]);
 
+  /** Navigation: Back one level */
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -106,6 +119,7 @@ export default function ImportantPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
+  /** Navigation: Jump to a specific point in the breadcrumb trail */
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -138,29 +152,30 @@ export default function ImportantPage() {
             <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Items marked with high priority</Text>
           </View>
 
+          {/* Breadcrumb Navigation Bar */}
           {folderPath.length > 0 && (
             <View style={driveStyles.breadcrumbContainer}>
-            <Pressable onPress={handleBack} style={driveStyles.backButton}>
+              <Pressable onPress={handleBack} style={driveStyles.backButton}>
                 <Ionicons name="arrow-back" size={20} color={colors.primary} />
-            </Pressable>
+              </Pressable>
 
-            <Pressable onPress={() => navigateToBreadcrumb(-1)}>
+              <Pressable onPress={() => navigateToBreadcrumb(-1)}>
                 <Text style={driveStyles.breadcrumbText}>Important</Text>
-            </Pressable>
+              </Pressable>
 
-            {folderPath.map((folder, index) => (
+              {folderPath.map((folder, index) => (
                 <View key={folder.id} style={driveStyles.breadcrumbItem}>
-                <Text style={driveStyles.breadcrumbSeparator}>/</Text>
-                <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                  <Text style={driveStyles.breadcrumbSeparator}>/</Text>
+                  <Pressable onPress={() => navigateToBreadcrumb(index)}>
                     <Text style={[
-                    driveStyles.breadcrumbText,
-                    index === folderPath.length - 1 && driveStyles.breadcrumbActive
+                      driveStyles.breadcrumbText,
+                      index === folderPath.length - 1 && driveStyles.breadcrumbActive
                     ]} numberOfLines={1}>
-                    {folder.name}
+                      {folder.name}
                     </Text>
-                </Pressable>
+                  </Pressable>
                 </View>
-            ))}
+              ))}
             </View>
           )}
 
@@ -171,10 +186,10 @@ export default function ImportantPage() {
               data={displayItems}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <DriveListItem 
-                    item={item} 
-                    onPress={openItem} 
-                    onDelete={handleDeleteItem}
+                <DriveListItem
+                  item={item}
+                  onPress={openItem}
+                  onDelete={handleDeleteItem}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 20 }}
@@ -182,7 +197,7 @@ export default function ImportantPage() {
                 <View style={styles.emptyContainer}>
                   <Ionicons name="alert-circle-outline" size={80} color={colors.textTertiary} />
                   <Text style={[driveStyles.emptyText, { color: colors.textTertiary }]}>
-                      {currentFolderId ? "No important items in this folder" : "No important items yet"}
+                    {currentFolderId ? "No important items in this folder" : "No important items yet"}
                   </Text>
                 </View>
               }

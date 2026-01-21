@@ -6,11 +6,17 @@ import * as FileSystem from "expo-file-system/legacy";
 import { createItem } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
+/**
+ * Custom hook to manage the file upload lifecycle.
+ * Handles picking (Camera, Gallery, Documents), file preview staging, 
+ * and Base64 conversion for server submission.
+ */
 export function useDriveUploads(token, onRefresh, closeCallback) {
   const [loading, setLoading] = useState(false);
-  const [pendingFile, setPendingFile] = useState(null); // { uri, fileName, mimeType }
+  const [pendingFile, setPendingFile] = useState(null);
   const pickerInProgressRef = useRef(false);
 
+  /** Prevents multiple pickers from opening simultaneously */
   const lockPicker = () => {
     if (pickerInProgressRef.current) return false;
     pickerInProgressRef.current = true;
@@ -21,25 +27,32 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
     pickerInProgressRef.current = false;
   };
 
-  // Called after user confirms from preview screen
+  /** * Reads the selected file from the local URI as Base64 
+   * and sends it to the CopaDrive backend.
+   */
   const confirmUpload = async (fileName, parentId = null) => {
     if (!pendingFile || !token) {
-      Alert.alert("Error", "No file selected or not logged in.");
+      Alert.alert("Error", "No file selected or user session expired.");
       return;
     }
 
     try {
       setLoading(true);
-      const base64 = await FileSystem.readAsStringAsync(pendingFile.uri, { encoding: "base64" });
+
+      // Convert local file to Base64 for database storage
+      const base64 = await FileSystem.readAsStringAsync(pendingFile.uri, {
+        encoding: "base64"
+      });
 
       await createItem(token, {
         name: fileName,
         type: "file",
         content: base64,
         mimeType: pendingFile.mimeType || "application/octet-stream",
-        parentId, // destination folder
+        parentId,
       });
 
+      // Notify global listeners to refresh the file list
       emitDriveRefresh({ reason: "upload", name: fileName });
       onRefresh?.();
       setPendingFile(null);
@@ -52,23 +65,25 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
     }
   };
 
-  // Discard the pending file without uploading
   const discardPending = () => {
     setPendingFile(null);
     unlockPicker();
     closeCallback?.();
   };
 
+  /** Opens the native OS document picker */
   const pickDocument = async () => {
     if (!lockPicker()) return;
     try {
+      // Small delay prevents UI flicker on some Android versions
       await new Promise(r => setTimeout(r, 200));
-      
+
       const result = await DocumentPicker.getDocumentAsync({
         copyToCacheDirectory: true,
-        type: "*/*", 
+        type: "*/*",
         multiple: false,
       });
+
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -76,23 +91,22 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
 
       const asset = result?.assets?.[0];
       if (asset?.uri) {
-        const fileName = asset.name || `file_${Date.now()}`;
-        // Set pending file - same modal will show preview content
         unlockPicker();
         setPendingFile({
           uri: asset.uri,
-          fileName,
+          fileName: asset.name || `file_${Date.now()}`,
           mimeType: asset.mimeType,
         });
       } else {
         unlockPicker();
       }
     } catch (err) {
-      Alert.alert("Error", "Picker failed");
+      Alert.alert("Error", "Document picker failed");
       unlockPicker();
     }
   };
 
+  /** Opens the native camera or photo library */
   const pickImage = async (useCamera) => {
     if (!lockPicker()) return;
     try {
@@ -101,20 +115,21 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert("Permission Denied", "Settings required.");
+        Alert.alert("Permission Denied", "Camera/Library access is required.");
         unlockPicker();
         return;
       }
 
       const options = {
-        mediaTypes: ImagePicker.MediaTypeOptions.All, 
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         quality: 0.7,
-        allowsEditing: false, 
+        allowsEditing: false,
       };
 
       const result = useCamera
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
+
       if (result?.canceled) {
         unlockPicker();
         return;
@@ -122,21 +137,16 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
 
       const asset = result?.assets?.[0];
       if (asset?.uri) {
+        // Fallback filename logic if asset name is missing
         let fileName = asset.fileName;
-        
         if (!fileName) {
           const uriParts = String(asset.uri).split("/");
           const defaultExt = asset.type === 'video' ? '.mp4' : '.jpg';
           fileName = uriParts[uriParts.length - 1] || `media_${Date.now()}${defaultExt}`;
         }
-        
-        if (fileName && !fileName.includes(".")) {
-            fileName += asset.type === 'video' ? ".mp4" : ".jpg";
-        }
-        
+
         const mime = asset.mimeType || (asset.type === 'video' ? "video/mp4" : "image/jpeg");
 
-        // Set pending file - same modal will show preview content
         unlockPicker();
         setPendingFile({
           uri: asset.uri,
@@ -147,17 +157,17 @@ export function useDriveUploads(token, onRefresh, closeCallback) {
         unlockPicker();
       }
     } catch (err) {
-      Alert.alert("Error", "Action failed");
+      Alert.alert("Error", "Media action failed");
       unlockPicker();
     }
   };
 
-  return { 
-    loading, 
-    pickDocument, 
+  return {
+    loading,
+    pickDocument,
     pickImage,
-    pendingFile,      
-    confirmUpload,   
-    discardPending,   
+    pendingFile,
+    confirmUpload,
+    discardPending,
   };
 }

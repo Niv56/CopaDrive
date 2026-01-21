@@ -1,3 +1,8 @@
+/**
+ * File Type Detectors
+ * Utilities to identify file categories based on MIME types and extensions.
+ */
+
 export const isTextFile = (mime = "", name = "") => {
   const n = (name || "").toLowerCase();
   return (
@@ -28,6 +33,9 @@ export const isVideoFile = (mime = "", name = "") => {
   return (mime || "").startsWith("video/") || /\.(mp4|mov|mkv|webm)$/i.test(n);
 };
 
+/**
+ * Business Rule: Only text-based files can be edited within the app's code/text editor.
+ */
 export const canEditContent = (item) => {
   if (!item || item.type !== "file") return false;
   return isTextFile(item.mimeType, item.name);

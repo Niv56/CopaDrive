@@ -10,7 +10,12 @@ import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 import { useTheme } from "../../../app/providers/ThemeContext";
 
+/**
+ * Dashboard / Main Home Page
+ * Displays a summarized view of the drive, separating suggested folders and files.
+ */
 export default function MainHomePage() {
+    // Navigation State: Manage current location within the folder tree
     const [currentFolderId, setCurrentFolderId] = useState(null);
     const [folderPath, setFolderPath] = useState([]);
 
@@ -18,7 +23,7 @@ export default function MainHomePage() {
     const { token } = useAuth();
     const { colors, isDarkMode } = useTheme();
 
-    // סינון פריטים לפי התיקייה הנוכחית
+    /** Filters global items to show only those belonging to the current directory level */
     const currentItems = useMemo(() => {
         if (!items) return [];
         return items.filter(item => {
@@ -27,12 +32,14 @@ export default function MainHomePage() {
         });
     }, [items, currentFolderId]);
 
+    // Derived lists for UI categorization
     const folders = useMemo(() => currentItems.filter((i) => i?.type === "folder"), [currentItems]);
     const files = useMemo(() => currentItems.filter((i) => i?.type === "file"), [currentItems]);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
 
+    /** Logic for entering a folder or opening the file previewer */
     const openItem = useCallback((item) => {
         if (!item) return;
         if (item.type === "folder") {
@@ -44,6 +51,7 @@ export default function MainHomePage() {
         setPreviewOpen(true);
     }, []);
 
+    /** Breadcrumb Logic: Pops the last folder from the path to navigate up */
     const handleBack = useCallback(() => {
         if (folderPath.length === 0) return;
 
@@ -55,6 +63,7 @@ export default function MainHomePage() {
         setCurrentFolderId(parentFolder ? parentFolder.id : null);
     }, [folderPath]);
 
+    /** Breadcrumb Logic: Jump directly to a specific point in the current path history */
     const navigateToBreadcrumb = useCallback((index) => {
         if (index === -1) {
             setCurrentFolderId(null);
@@ -75,7 +84,7 @@ export default function MainHomePage() {
                 onPress: async () => {
                     try {
                         await moveToTrash(token, item.id);
-                        emitDriveRefresh();
+                        emitDriveRefresh(); // Refresh UI across the app
                     } catch (err) {
                         Alert.alert("Error", "Could not delete item.");
                     }
@@ -84,7 +93,6 @@ export default function MainHomePage() {
         ]);
     }, [token]);
 
-    // מסך טעינה - גם הוא הופך לשקוף כדי לא להסתיר את הרקע
     if (loading && (!items || items.length === 0)) {
         return (
             <View style={[styles.center, { backgroundColor: "transparent" }]}>
@@ -93,7 +101,7 @@ export default function MainHomePage() {
         );
     }
 
-    // רכיב כותרת פנימי - הבלוקים ה"חטובים" עם אפקט הזכוכית
+    /** Small UI helper for stylized category headers */
     const SectionHeader = ({ icon, title }) => (
         <View style={[
             styles.sectionTitleCard,
@@ -116,14 +124,13 @@ export default function MainHomePage() {
     );
 
     return (
-        // ✅ שינוי מ-colors.background ל-transparent כדי לחשוף את תמונת החוף
         <View style={{ flex: 1, backgroundColor: "transparent" }}>
             <FlatList
-                data={[]}
+                data={[]} // Using ListHeaderComponent to wrap static sections with global scrolling
                 ListHeaderComponent={
                     <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
 
-                        {/* Breadcrumbs */}
+                        {/* Breadcrumb Navigation Bar */}
                         {(folderPath.length > 0 || currentFolderId !== null) && (
                             <View style={styles.breadcrumbContainer}>
                                 <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
@@ -154,7 +161,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* רשימת התיקיות */}
+                        {/* Folder Category Section */}
                         {folders.length > 0 && (
                             <View style={styles.sectionWrapper}>
                                 <SectionHeader icon="folder-open-outline" title="Suggested folders" />
@@ -164,7 +171,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* רשימת הקבצים */}
+                        {/* File Category Section */}
                         {files.length > 0 && (
                             <View style={styles.sectionWrapper}>
                                 <SectionHeader icon="document-text-outline" title="Suggested files" />
@@ -174,7 +181,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* מצב ריק */}
+                        {/* Empty Folder State */}
                         {folders.length === 0 && files.length === 0 && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="cloud-offline-outline" size={60} color={colors.textTertiary} />
@@ -191,6 +198,7 @@ export default function MainHomePage() {
                 showsVerticalScrollIndicator={false}
             />
 
+            {/* Global File Preview and Interaction Modal */}
             <FilePreviewModal
                 open={previewOpen}
                 fileId={selectedId}
@@ -204,7 +212,12 @@ const styles = StyleSheet.create({
     center: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+    },
+    emptyContainer: {
+        alignItems: 'center',
+        marginTop: 80,
+        opacity: 0.7,
     },
     breadcrumbContainer: {
         flexDirection: 'row',
@@ -237,21 +250,10 @@ const styles = StyleSheet.create({
         marginLeft: 2,
         gap: 6,
         elevation: 3,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
     },
     sectionTitle: {
         fontSize: 12,
         fontWeight: '700',
         letterSpacing: 1.2,
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        marginTop: 80,
-        opacity: 0.7
     }
 });
