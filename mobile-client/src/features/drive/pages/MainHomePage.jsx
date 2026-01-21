@@ -9,175 +9,163 @@ import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
-// ✅ ייבוא Theme
 import { useTheme } from "../../../app/providers/ThemeContext";
 
 export default function MainHomePage() {
-  const [currentFolderId, setCurrentFolderId] = useState(null); 
-  const [folderPath, setFolderPath] = useState([]);
+    const [currentFolderId, setCurrentFolderId] = useState(null);
+    const [folderPath, setFolderPath] = useState([]);
 
-  const { items, loading, refreshing, onRefresh } = useMyDrive();
-  const { token } = useAuth();
-  
-  // ✅ שימוש בצבעים מה-Theme
-  const { colors } = useTheme();
+    const { items, loading, refreshing, onRefresh } = useMyDrive();
+    const { token } = useAuth();
 
-  const currentItems = useMemo(() => {
-      if (!items) return [];
-      return items.filter(item => {
-          if (currentFolderId === null) return !item.parentId; 
-          return item.parentId === currentFolderId;
-      });
-  }, [items, currentFolderId]);
+    const { colors } = useTheme();
 
-  const folders = useMemo(() => currentItems.filter((i) => i?.type === "folder"), [currentItems]);
-  const files = useMemo(() => currentItems.filter((i) => i?.type === "file"), [currentItems]);
+    const currentItems = useMemo(() => {
+        if (!items) return [];
+        return items.filter(item => {
+            if (currentFolderId === null) return !item.parentId;
+            return item.parentId === currentFolderId;
+        });
+    }, [items, currentFolderId]);
 
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+    const folders = useMemo(() => currentItems.filter((i) => i?.type === "folder"), [currentItems]);
+    const files = useMemo(() => currentItems.filter((i) => i?.type === "file"), [currentItems]);
 
-  const openItem = useCallback((item) => {
-    if (!item) return;
-    if (item.type === "folder") {
-      setCurrentFolderId(item.id);
-      setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
-      return;
-    }
-    setSelectedId(item.id);
-    setPreviewOpen(true);
-  }, []);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
 
-  const handleDeleteItem = useCallback(async (item) => {
-    Alert.alert("Move to Trash?", `Delete "${item.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete", style: "destructive",
-        onPress: async () => {
-          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
-          catch (err) { Alert.alert("Error", "Could not delete item."); }
+    const openItem = useCallback((item) => {
+        if (!item) return;
+        if (item.type === "folder") {
+            setCurrentFolderId(item.id);
+            setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
+            return;
         }
-      }
-    ]);
-  }, [token]);
+        setSelectedId(item.id);
+        setPreviewOpen(true);
+    }, []);
 
-  const handleBack = useCallback(() => {
-    if (folderPath.length === 0) return;
-    const newPath = folderPath.slice(0, -1);
-    setFolderPath(newPath);
-    setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
-  }, [folderPath]);
+    const handleDeleteItem = useCallback(async (item) => {
+        Alert.alert("Move to Trash?", `Delete "${item.name}"?`, [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Delete", style: "destructive",
+                onPress: async () => {
+                    try { await moveToTrash(token, item.id); emitDriveRefresh(); }
+                    catch (err) { Alert.alert("Error", "Could not delete item."); }
+                }
+            }
+        ]);
+    }, [token]);
 
-  const navigateToBreadcrumb = useCallback((index) => {
-    if (index < 0) {
-      setFolderPath([]);
-      setCurrentFolderId(null);
-    } else {
-      const newPath = folderPath.slice(0, index + 1);
-      setFolderPath(newPath);
-      setCurrentFolderId(newPath[newPath.length - 1].id);
+    const handleBack = useCallback(() => {
+        if (folderPath.length === 0) return;
+        const newPath = folderPath.slice(0, -1);
+        setFolderPath(newPath);
+        setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
+    }, [folderPath]);
+
+    const navigateToBreadcrumb = useCallback((index) => {
+        if (index < 0) {
+            setFolderPath([]);
+            setCurrentFolderId(null);
+        } else {
+            const newPath = folderPath.slice(0, index + 1);
+            setFolderPath(newPath);
+            setCurrentFolderId(newPath[newPath.length - 1].id);
+        }
+    }, [folderPath]);
+
+    if (loading && (!items || items.length === 0)) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
     }
-  }, [folderPath]);
 
-  // Loader state
-  if (loading && (!items || items.length === 0)) {
-    return (
-       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-           <ActivityIndicator size="large" color={colors.primary} />
-       </View>
+    const SectionHeader = ({ icon, title }) => (
+        <View style={styles.sectionTitleRow}>
+            <Ionicons name={icon} size={18} color={colors.textPrimary} />
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
+        </View>
     );
-  }
 
-  // כותרת פנימית קטנה (Suggested folders / files)
-  const SectionHeader = ({ icon, title }) => (
-    <View style={styles.sectionTitleRow}>
-        <Ionicons name={icon} size={18} color={colors.textPrimary} />
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
-    </View>
-  );
+    return (
+        <View style={{ flex: 1 }}>
+            <FlatList
+                data={[]}
+                ListHeaderComponent={
+                    <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
 
-  return (
-    <View style={{ flex: 1 }}> 
-      {/* הסרנו את ה-ScreenLayout ואת הכותרת "HOME" מכאן 
-         כי היא כבר מופיעה ב-HomeManager הראשי 
-      */}
+                        {folderPath.length > 0 && (
+                            <View style={styles.breadcrumbContainer}>
+                                <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+                                    <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
+                                </Pressable>
+                                <Pressable onPress={() => navigateToBreadcrumb(-1)}>
+                                    <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>Home</Text>
+                                </Pressable>
+                                {folderPath.map((folder, index) => (
+                                    <View key={folder.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
+                                        <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                                            <Text style={[
+                                                styles.breadcrumbText,
+                                                {
+                                                    color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary,
+                                                    fontWeight: index === folderPath.length - 1 ? '700' : '400'
+                                                }
+                                            ]} numberOfLines={1}>
+                                                {folder.name}
+                                            </Text>
+                                        </Pressable>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
 
-      <FlatList
-        data={[]}
-        ListHeaderComponent={
-          <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
-            
-            {/* ✅ פירורי לחם (Breadcrumbs) - מופיעים רק כשנכנסים לתיקייה */}
-            {folderPath.length > 0 && (
-                <View style={styles.breadcrumbContainer}>
-                    <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
-                        <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
-                    </Pressable>
-                    <Pressable onPress={() => navigateToBreadcrumb(-1)}>
-                        <Text style={[styles.breadcrumbText, { color: colors.textSecondary }]}>Home</Text>
-                    </Pressable>
-                    {folderPath.map((folder, index) => (
-                        <View key={folder.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
-                            <Pressable onPress={() => navigateToBreadcrumb(index)}>
-                                <Text style={[
-                                    styles.breadcrumbText,
-                                    { 
-                                        color: index === folderPath.length - 1 ? colors.primary : colors.textSecondary, 
-                                        fontWeight: index === folderPath.length - 1 ? '700' : '400' 
-                                    }
-                                ]} numberOfLines={1}>
-                                    {folder.name}
+                        {folders.length > 0 && (
+                            <View style={styles.sectionWrapper}>
+                                <SectionHeader icon="folder-open-outline" title="Suggested folders" />
+                                {folders.map((item) => (
+                                    <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
+                                ))}
+                            </View>
+                        )}
+
+                        {files.length > 0 && (
+                            <View style={styles.sectionWrapper}>
+                                <SectionHeader icon="document-text-outline" title="Suggested files" />
+                                {files.map((item) => (
+                                    <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
+                                ))}
+                            </View>
+                        )}
+
+                        {folders.length === 0 && files.length === 0 && (
+                            <View style={{ alignItems: 'center', marginTop: 80, opacity: 0.7 }}>
+                                <Ionicons name="cloud-offline-outline" size={60} color={colors.textTertiary} />
+                                <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
+                                    Empty Folder
                                 </Text>
-                            </Pressable>
-                        </View>
-                    ))}
-                </View>
-            )}
+                            </View>
+                        )}
+                    </View>
+                }
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                contentContainerStyle={{ paddingBottom: 100 }} // מרווח למטה בשביל ה-Fab וה-BottomBar
+                showsVerticalScrollIndicator={false}
+            />
 
-            {/* רשימת התיקיות */}
-            {folders.length > 0 && (
-                <View style={styles.sectionWrapper}>
-                    <SectionHeader icon="folder-open-outline" title="Suggested folders" />
-                    {folders.map((item) => (
-                        <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
-                    ))}
-                </View>
-            )}
-
-            {/* רשימת הקבצים */}
-            {files.length > 0 && (
-                <View style={styles.sectionWrapper}>
-                    <SectionHeader icon="document-text-outline" title="Suggested files" />
-                    {files.map((item) => (
-                        <DriveListItem key={item.id} item={item} onPress={openItem} onDelete={handleDeleteItem} />
-                    ))}
-                </View>
-            )}
-
-            {/* מצב ריק */}
-            {folders.length === 0 && files.length === 0 && (
-                <View style={{ alignItems: 'center', marginTop: 80, opacity: 0.7 }}>
-                    <Ionicons name="cloud-offline-outline" size={60} color={colors.textTertiary} />
-                    <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 16 }}>
-                        Empty Folder
-                    </Text>
-                </View>
-            )}
-          </View>
-        }
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        contentContainerStyle={{ paddingBottom: 100 }} // מרווח למטה בשביל ה-Fab וה-BottomBar
-        showsVerticalScrollIndicator={false}
-      />
-
-      <FilePreviewModal
-        open={previewOpen}
-        fileId={selectedId}
-        onClose={() => setPreviewOpen(false)}
-      />
-    </View>
-  );
+            <FilePreviewModal
+                open={previewOpen}
+                fileId={selectedId}
+                onClose={() => setPreviewOpen(false)}
+            />
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
