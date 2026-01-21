@@ -33,8 +33,6 @@ export default function MainHomePage() {
     const [previewOpen, setPreviewOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
 
-    // --- לוגיקת ניווט (הפונקציות שהיו חסרות) ---
-
     const openItem = useCallback((item) => {
         if (!item) return;
         if (item.type === "folder") {
@@ -50,21 +48,18 @@ export default function MainHomePage() {
         if (folderPath.length === 0) return;
 
         const newPath = [...folderPath];
-        newPath.pop(); // הסרת התיקייה האחרונה
+        newPath.pop(); 
         setFolderPath(newPath);
 
-        // אם חזרנו לשורש, ה-ID הוא null, אחרת הוא ה-ID של התיקייה האחרונה שנשארה בנתיב
         const parentFolder = newPath[newPath.length - 1];
         setCurrentFolderId(parentFolder ? parentFolder.id : null);
     }, [folderPath]);
 
     const navigateToBreadcrumb = useCallback((index) => {
         if (index === -1) {
-            // חזרה ל-Home
             setCurrentFolderId(null);
             setFolderPath([]);
         } else {
-            // חזרה לתיקייה ספציפית בנתיב
             const newPath = folderPath.slice(0, index + 1);
             setFolderPath(newPath);
             setCurrentFolderId(newPath[index].id);
@@ -89,16 +84,16 @@ export default function MainHomePage() {
         ]);
     }, [token]);
 
-    // מסך טעינה
+    // מסך טעינה - גם הוא הופך לשקוף כדי לא להסתיר את הרקע
     if (loading && (!items || items.length === 0)) {
         return (
-            <View style={[styles.center, { backgroundColor: colors.background }]}>
+            <View style={[styles.center, { backgroundColor: "transparent" }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
-    // רכיב כותרת פנימי
+    // רכיב כותרת פנימי - הבלוקים ה"חטובים" עם אפקט הזכוכית
     const SectionHeader = ({ icon, title }) => (
         <View style={[
             styles.sectionTitleCard,
@@ -121,9 +116,10 @@ export default function MainHomePage() {
     );
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        // ✅ שינוי מ-colors.background ל-transparent כדי לחשוף את תמונת החוף
+        <View style={{ flex: 1, backgroundColor: "transparent" }}>
             <FlatList
-                data={[]} // השארתי ריק כי כל התוכן ב-Header, אך שים לב שברשימות גדולות עדיף להעביר את הקבצים ל-data
+                data={[]} 
                 ListHeaderComponent={
                     <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
 
@@ -158,7 +154,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* Folders Section */}
+                        {/* רשימת התיקיות */}
                         {folders.length > 0 && (
                             <View style={styles.sectionWrapper}>
                                 <SectionHeader icon="folder-open-outline" title="Suggested folders" />
@@ -168,7 +164,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* Files Section */}
+                        {/* רשימת הקבצים */}
                         {files.length > 0 && (
                             <View style={styles.sectionWrapper}>
                                 <SectionHeader icon="document-text-outline" title="Suggested files" />
@@ -178,7 +174,7 @@ export default function MainHomePage() {
                             </View>
                         )}
 
-                        {/* Empty State */}
+                        {/* מצב ריק */}
                         {folders.length === 0 && files.length === 0 && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="cloud-offline-outline" size={60} color={colors.textTertiary} />
