@@ -14,6 +14,8 @@ import {
   Platform,
   StyleSheet,
   Keyboard,
+  InputAccessoryView,
+  Button
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -24,6 +26,7 @@ import { emitDriveRefresh } from "../services/driveEvents";
 import { downloadAndShareBase64 } from "../utils/downloadFile";
 
 const NEWLINE = "_@NL@_";
+const ACCESSORY_ID = "unique_keyboard_accessory_id"; // מזהה לכפתור ה-Done
 
 const isText = (m = "", n = "") =>
   m.startsWith("text/") ||
@@ -54,13 +57,10 @@ function decodeJwtSafe(token) {
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64 + "===".slice((base64.length + 3) % 4);
 
-    // atob exists in many Expo envs. Fallback uses Buffer if available.
     let jsonStr = "";
     if (typeof globalThis.atob === "function") {
       jsonStr = globalThis.atob(padded);
     } else {
-      // Buffer fallback (works in many RN setups)
-      // eslint-disable-next-line no-undef
       const { Buffer } = require("buffer");
       jsonStr = Buffer.from(padded, "base64").toString("utf8");
     }
@@ -71,7 +71,6 @@ function decodeJwtSafe(token) {
 }
 
 function extractOwnerId(item) {
-  // cover many shapes
   return (
     item?.ownerId ||
     item?.owner?.id ||
@@ -101,9 +100,8 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
 
   const ownerId = useMemo(() => extractOwnerId(item), [item]);
 
-  // ✅ IMPORTANT FIX: role fallback by ownerId match
   const effectiveRole = useMemo(() => {
-    if (item?.role) return item.role; // backend already decided
+    if (item?.role) return item.role;
     if (myUserId && ownerId && String(myUserId) === String(ownerId)) return "owner";
     return "viewer";
   }, [item, myUserId, ownerId]);
@@ -130,6 +128,7 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
       setTextDraft(isText(data?.mimeType || "", data?.name || "") ? String(data?.content || "").replaceAll(NEWLINE, "\n") : "");
     } catch (e) {
       Alert.alert("Error", e?.message || "Failed to open file");
+      onClose?.(); // Close if failed to load
     } finally {
       setLoading(false);
     }
@@ -166,24 +165,21 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
         patch.mimeType = item.mimeType || "text/plain";
       }
 
-      const updated = await updateItem(token, item.id, patch);
+      await updateItem(token, item.id, patch);
 
-      if (updated && typeof updated === "object") {
-        setItem(updated);
-        setNameDraft(updated?.name || "");
-        if (isText(updated?.mimeType || "", updated?.name || "")) {
-          setTextDraft(String(updated?.content || "").replaceAll(NEWLINE, "\n"));
-        }
-      } else {
-        await reload();
-      }
-
+      // ✅ REFRESH DRIVE & CLOSE IMMEDIATELY
+      // This prevents the "white screen" glitch and closes the modal
       emitDriveRefresh({ reason: "save", id: item.id });
       Keyboard.dismiss();
+      
+      // Short timeout to ensure UI updates before closing
+      setTimeout(() => {
+          onClose?.();
+      }, 100);
+
     } catch (e) {
       Alert.alert("Save Failed", e?.message || "Could not save changes");
-    } finally {
-      setSaving(false);
+      setSaving(false); // Only stop saving spinner if failed
     }
   };
 
@@ -209,7 +205,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
       emitDriveRefresh({ reason: "star", id: item.id, value: next });
     } catch (e) {
       setItem((p) => ({ ...p, starred: !next }));
-      Alert.alert("Error", e?.message || "Failed to update star");
     }
   };
 
@@ -222,7 +217,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
       emitDriveRefresh({ reason: "important", id: item.id, value: next });
     } catch (e) {
       setItem((p) => ({ ...p, important: !next }));
-      Alert.alert("Error", e?.message || "Failed to update important");
     }
   };
 
@@ -232,10 +226,10 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
         <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, s.dim]} />
 
-        {/* backdrop only */}
+        {/* backdrop tap to close */}
         <Pressable style={StyleSheet.absoluteFill} onPress={() => { Keyboard.dismiss(); onClose?.(); }} />
 
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={s.centerWrap}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={s.centerWrap}>
           <Pressable style={s.card} onPress={() => {}}>
 
             {/* Header */}
@@ -275,7 +269,7 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
               </TouchableOpacity>
             </View>
 
-            {/* Actions (3 icons only) */}
+            {/* Actions */}
             <View style={s.actionsRow}>
               <IconBtn icon={item?.starred ? "star" : "star-outline"} onPress={toggleStar} />
               <IconBtn icon={item?.important ? "alert" : "alert-circle-outline"} onPress={toggleImportant} />
@@ -295,23 +289,28 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
                 />
               ) : isTxt ? (
                 <View style={s.textBox}>
-                  {canEdit && hasTextChange && (
-                    <View style={s.contentCheck}>
-                      <Ionicons name="checkmark" size={16} color="#111" />
-                      <Text style={s.contentCheckText}>Content changed</Text>
-                    </View>
-                  )}
-
                   {canEdit ? (
-                    <TextInput
-                      value={textDraft}
-                      onChangeText={setTextDraft}
-                      multiline
-                      textAlignVertical="top"
-                      style={s.textInput}
-                      placeholder="Type here..."
-                      scrollEnabled
-                    />
+                    <>
+                      <TextInput
+                        value={textDraft}
+                        onChangeText={setTextDraft}
+                        multiline
+                        textAlignVertical="top"
+                        style={s.textInput}
+                        placeholder="Type here..."
+                        scrollEnabled
+                        inputAccessoryViewID={ACCESSORY_ID} // ✅ חיבור למקלדת עם כפתור סיום
+                      />
+                      
+                      {/* ✅ רכיב מיוחד ל-iOS שמוסיף כפתור מעל המקלדת */}
+                      {Platform.OS === "ios" && (
+                        <InputAccessoryView nativeID={ACCESSORY_ID}>
+                          <View style={s.accessory}>
+                            <Button onPress={() => Keyboard.dismiss()} title="Done" />
+                          </View>
+                        </InputAccessoryView>
+                      )}
+                    </>
                   ) : (
                     <ScrollView keyboardShouldPersistTaps="handled">
                       <Text style={s.textRead}>{displayTxt}</Text>
@@ -403,9 +402,7 @@ const s = StyleSheet.create({
   image: { width: "100%", height: 360, borderRadius: 14, resizeMode: "contain", backgroundColor: "rgba(0,0,0,0.03)" },
 
   textBox: { borderRadius: 14, backgroundColor: "rgba(0,0,0,0.04)", padding: 12, maxHeight: 380 },
-  contentCheck: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.06)", alignSelf: "flex-start" },
-  contentCheckText: { fontWeight: "800", opacity: 0.8 },
-
+  
   textInput: { minHeight: 260, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", lineHeight: 20, fontSize: 14, padding: 0 },
   textRead: { fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", lineHeight: 20, fontSize: 14 },
 
@@ -423,4 +420,14 @@ const s = StyleSheet.create({
 
   saveBtn: { flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: "rgba(59,130,246,0.95)", alignItems: "center", justifyContent: "center" },
   saveText: { fontWeight: "900", color: "#fff" },
+
+  accessory: {
+    backgroundColor: "#f0f0f0",
+    borderTopWidth: 1,
+    borderTopColor: "#dcdcdc",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  }
 });

@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Keyboard } from "react-native";
 import SearchDropdown from "./SearchDropdown";
-import { getSearchResults } from "../../features/drive/services/searchService";
+import { fetchSearchItems } from "../../features/drive/services/searchService";
+// ✅ ייבוא המודל שמציג את הקבצים
+import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
 
 export default function SearchBar({ token }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // ✅ משתנים לניהול פתיחת הקובץ
+  const [selectedFileId, setSelectedFileId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -16,12 +22,23 @@ export default function SearchBar({ token }) {
     }
     const timer = setTimeout(async () => {
       setLoading(true);
-      const data = await getSearchResults(token, query);
+      const data = await fetchSearchItems(token, query);
       setResults(data || []);
       setLoading(false);
-    }, 200); // 200ms לטעינה מהירה במיוחד
+    }, 200); 
     return () => clearTimeout(timer);
   }, [query]);
+
+  const handleFileClick = (file) => {
+    // 1. סוגרים את המקלדת ומנקים את החיפוש
+    setQuery("");
+    Keyboard.dismiss();
+    setIsFocused(false);
+
+    // 2. פותחים את המודל עם הקובץ שנבחר
+    setSelectedFileId(file.id);
+    setModalOpen(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -44,13 +61,19 @@ export default function SearchBar({ token }) {
           results={results}
           loading={loading}
           query={query}
-          onResultPress={(file) => {
-            setQuery("");
-            Keyboard.dismiss();
-            console.log("Selected:", file.name);
-          }}
+          onResultPress={handleFileClick} // ✅ שימוש בפונקציה החדשה
         />
       )}
+
+      {/* ✅ רכיב המודל שיושב ברקע ונפתח רק כשצריך */}
+      <FilePreviewModal
+        open={modalOpen}
+        fileId={selectedFileId}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedFileId(null);
+        }}
+      />
     </View>
   );
 }

@@ -1,5 +1,3 @@
-// mobile-client/src/features/drive/components/DriveListItem.jsx
-
 import React, { useRef, useState, useMemo } from "react";
 import {
   View,
@@ -11,13 +9,14 @@ import {
   TextInput,
   Alert,
   Dimensions,
+  Animated
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { driveStyles } from "../styles/myDrive.styles";
 import { listItemStyles } from "../styles/driveListItem.styles";
 import { getFileIconMeta } from "../utils/fileIcon";
-
 import { BlurView } from "expo-blur";
+import { Swipeable } from "react-native-gesture-handler";
 
 import { useAuth } from "../../../app/providers/AuthContext";
 import { emitDriveRefresh } from "../services/driveEvents";
@@ -31,11 +30,12 @@ import {
 import { downloadAndShareBase64 } from "../utils/downloadFile";
 import ShareModal from "../modals/ShareModal";
 
-export default function DriveListItem({ item, onPress }) {
+export default function DriveListItem({ item, onPress, onDelete }) {
   const isFolder = item.type === "folder";
   const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
 
   const { token } = useAuth();
+  const swipeableRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -50,6 +50,44 @@ export default function DriveListItem({ item, onPress }) {
   const dotsRef = useRef(null);
 
   const closeMenu = () => setMenuOpen(false);
+
+  // ✅ תיקון החלקה: פונקציה יציבה יותר
+  const renderLeftActions = (progress, dragX) => {
+    // אנימציה: הכפתור לא זז, אלא רק מופיע (Fade In / Scale)
+    // זה מונע את הריצודים הוויזואליים
+    const scale = dragX.interpolate({
+      inputRange: [0, 80],
+      outputRange: [0.8, 1],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = dragX.interpolate({
+      inputRange: [0, 50],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <View style={styles.leftActionContainer}>
+        <Animated.View style={[styles.deleteActionAnim, { opacity, transform: [{ scale }] }]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.deleteButtonInner}
+            onPress={() => {
+              swipeableRef.current?.close();
+              // השהייה קטנה כדי לתת לאנימציית הסגירה לקרות
+              setTimeout(() => {
+                if (onDelete) onDelete(item);
+              }, 200);
+            }}
+          >
+            <Ionicons name="trash-outline" size={24} color="white" />
+            <Text style={styles.deleteText}>Delete</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  };
 
   const comingSoon = (label) => {
     closeMenu();
@@ -81,19 +119,19 @@ export default function DriveListItem({ item, onPress }) {
 
   const menuOptions = useMemo(() => {
     return [
-      { 
-        key: "share", 
-        icon: "share-social-outline", 
-        label: "SHARE", 
+      {
+        key: "share",
+        icon: "share-social-outline",
+        label: "SHARE",
         onPress: () => {
           closeMenu();
           setShareOpen(true);
         }
       },
-      { 
-        key: "manage", 
-        icon: "key-outline", 
-        label: "MANAGE ACCESS", 
+      {
+        key: "manage",
+        icon: "key-outline",
+        label: "MANAGE ACCESS",
         onPress: () => {
           closeMenu();
           setShareOpen(true);
@@ -143,8 +181,17 @@ export default function DriveListItem({ item, onPress }) {
           setRenameOpen(true);
         },
       },
+      {
+        key: "delete",
+        icon: "trash-outline",
+        label: "DELETE",
+        onPress: () => {
+          closeMenu();
+          if (onDelete) onDelete(item);
+        }
+      }
     ];
-  }, [token, item.id, item.name, isStarred, isImportant]);
+  }, [token, item.id, item.name, isStarred, isImportant, onDelete]);
 
   const openMenu = () => {
     if (!dotsRef.current) return setMenuOpen(true);
@@ -187,7 +234,12 @@ export default function DriveListItem({ item, onPress }) {
   };
 
   return (
-    <>
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={onDelete ? renderLeftActions : undefined}
+      overshootLeft={false}
+      friction={2}
+    >
       <Pressable
         style={driveStyles.fileCard}
         onPress={() => {
@@ -219,7 +271,6 @@ export default function DriveListItem({ item, onPress }) {
         </Pressable>
       </Pressable>
 
-      {/* Floating menu with blurred backdrop */}
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={listItemStyles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
@@ -227,7 +278,7 @@ export default function DriveListItem({ item, onPress }) {
 
           <Pressable
             style={[listItemStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
-            onPress={() => {}}
+            onPress={() => { }}
           >
             {menuOptions.map((opt) => (
               <StackOption key={opt.key} icon={opt.icon} label={opt.label} onPress={opt.onPress} />
@@ -236,10 +287,9 @@ export default function DriveListItem({ item, onPress }) {
         </Pressable>
       </Modal>
 
-      {/* Rename modal */}
       <Modal visible={renameOpen} transparent animationType="fade">
         <Pressable style={listItemStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
-          <Pressable style={listItemStyles.renameCard} onPress={() => {}}>
+          <Pressable style={listItemStyles.renameCard} onPress={() => { }}>
             <Text style={listItemStyles.renameTitle}>RENAME</Text>
 
             <TextInput
@@ -269,7 +319,7 @@ export default function DriveListItem({ item, onPress }) {
         item={item}
         onClose={() => setShareOpen(false)}
       />
-    </>
+    </Swipeable>
   );
 }
 
@@ -289,3 +339,62 @@ function StackOption({ icon, label, onPress }) {
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "transparent" },
+  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
+
+  stackMenu: { position: "absolute", width: 260, gap: 12 },
+  stackBtn: {
+    height: 54, flexDirection: "row", alignItems: "center", justifyContent: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.98)", paddingVertical: 12, paddingHorizontal: 18,
+    borderRadius: 30, elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18, shadowRadius: 5, minWidth: 260,
+  },
+  stackLabel: { flex: 1, textAlign: "left", fontSize: 12, color: "#333", letterSpacing: 1.2 },
+
+  renameBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
+  renameCard: { backgroundColor: "white", borderRadius: 18, padding: 18 },
+  renameTitle: { fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 12, letterSpacing: 1.5 },
+  renameInput: { backgroundColor: "#f8f9fa", borderWidth: 1, borderColor: "#e9ecef", borderRadius: 12, padding: 12, fontSize: 16 },
+  renameActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 14 },
+  renameBtnGhost: { paddingVertical: 10, paddingHorizontal: 14 },
+  renameGhostText: { color: "#6c757d", fontWeight: "700", letterSpacing: 1.5 },
+  renameBtnPrimary: { backgroundColor: "#0d6efd", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
+  renamePrimaryText: { color: "white", fontWeight: "700", letterSpacing: 1.5 },
+
+  // ✅ תיקון הגליץ' הגרפי: מיכל עם רוחב קבוע
+  leftActionContainer: {
+    width: 100, // רוחב קבוע לכל אזור המחיקה
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // הכפתור עצמו
+  deleteActionAnim: {
+    width: 70,
+    height: 60, // גובה קבוע
+    borderRadius: 18,
+    backgroundColor: "#ff3b30",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    // מיקום מדויק בתוך הקונטיינר
+    marginRight: 10
+  },
+
+  deleteButtonInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  deleteText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 11,
+    marginTop: 2
+  }
+});
