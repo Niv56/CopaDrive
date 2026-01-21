@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// ✅ Theme Imports
 import { getDriveStyles } from "../styles/myDrive.styles";
 import { useTheme } from "../../../app/providers/ThemeContext";
 
@@ -30,7 +29,6 @@ import {
   getFileById,
 } from "../services/fileService";
 
-// ✅ עדכון הייבוא לפונקציה החדשה
 import { downloadFile } from "../utils/downloadFile";
 import ShareModal from "../modals/ShareModal";
 
@@ -62,17 +60,17 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     return (
       <View style={localStyles.leftActionContainer}>
         <Animated.View style={[localStyles.deleteActionAnim, { backgroundColor: colors.danger, opacity, transform: [{ scale }] }]}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={localStyles.deleteButtonInner}
-              onPress={() => {
-                swipeableRef.current?.close();
-                setTimeout(() => { if (onDelete) onDelete(item); }, 200);
-              }}
-            >
-              <Ionicons name="trash-outline" size={24} color="white" />
-              <Text style={localStyles.deleteText}>Delete</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={localStyles.deleteButtonInner}
+            onPress={() => {
+              swipeableRef.current?.close();
+              setTimeout(() => { if (onDelete) onDelete(item); }, 200);
+            }}
+          >
+            <Ionicons name="trash-outline" size={24} color="white" />
+            <Text style={localStyles.deleteText}>Delete</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     );
@@ -80,7 +78,6 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
   const comingSoon = (label) => { closeMenu(); Alert.alert("CopaDrive", `${label} (Coming soon)`); };
 
-  // ✅ פונקציית ההורדה המתוקנת להמבורגר
   const handleDownload = async () => {
     closeMenu();
     if (!token) return Alert.alert("Not logged in", "No token found.");
@@ -88,43 +85,41 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
     try {
       const full = await getFileById(token, item.id);
-      
+
       if (!full || (!full.content && !full.url)) {
-          return Alert.alert("CopaDrive", "No content available to download.");
+        return Alert.alert("CopaDrive", "No content available to download.");
       }
 
-      // ✅ בדיקה חכמה: האם זה קובץ טקסט?
       const mime = full.mimeType || "";
-      const isTextFile = mime.startsWith('text/') || 
-                         mime.includes('json') || 
-                         mime.includes('xml') ||
-                         mime.includes('javascript') ||
-                         mime.includes('html');
+      const isTextFile = mime.startsWith('text/') ||
+        mime.includes('json') ||
+        mime.includes('xml') ||
+        mime.includes('javascript') ||
+        mime.includes('html');
 
-      // שליחה לפונקציה הגנרית עם הדגל המתאים
       await downloadFile({
         content: full.content,
         mimeType: mime || "application/octet-stream",
         fileName: full.name || item.name || "file",
-        isBase64: !isTextFile // אם זה טקסט -> אל תשתמש ב-Base64
+        isBase64: !isTextFile
       });
 
-    } catch (e) { 
-        console.error("Download failed inside DriveListItem:", e);
-        Alert.alert("Download Failed", "Could not save the file."); 
+    } catch (e) {
+      console.error("Download failed inside DriveListItem:", e);
+      Alert.alert("Download Failed", "Could not save the file.");
     }
   };
 
   const menuOptions = useMemo(() => {
     return [
-      { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
+      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } },
       {
         key: "star", icon: isStarred ? "star" : "star-outline", label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
-        onPress: async () => { if (!token) return; closeMenu(); try { await setStarred(token, item.id, !isStarred); emitDriveRefresh(); } catch (e) {} },
+        onPress: async () => { if (!token) return; closeMenu(); try { await setStarred(token, item.id, !isStarred); emitDriveRefresh(); } catch (e) { } },
       },
       {
         key: "important", icon: isImportant ? "alert-circle" : "alert-circle-outline", label: isImportant ? "REMOVE IMPORTANT" : "ADD TO IMPORTANT",
-        onPress: async () => { if (!token) return; closeMenu(); try { await setImportant(token, item.id, !isImportant); emitDriveRefresh(); } catch (e) {} },
+        onPress: async () => { if (!token) return; closeMenu(); try { await setImportant(token, item.id, !isImportant); emitDriveRefresh(); } catch (e) { } },
       },
       { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: handleDownload },
       {
@@ -161,30 +156,49 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const doRenameSubmit = async () => {
     const next = renameValue.trim();
     if (!next) return;
-    try { await renameItem(token, item.id, next); setRenameOpen(false); emitDriveRefresh(); } 
+    try { await renameItem(token, item.id, next); setRenameOpen(false); emitDriveRefresh(); }
     catch (e) { Alert.alert("Rename Failed", e?.message); }
   };
 
   const StackOption = ({ icon, label, onPress }) => (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[localStyles.stackBtn, { backgroundColor: colors.card }]}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.9}
+      style={[localStyles.stackBtn, { backgroundColor: colors.card }]}
+    >
       <Ionicons name={icon} size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
       <Text style={[localStyles.stackLabel, { color: colors.textPrimary }]}>{label}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <Swipeable ref={swipeableRef} renderLeftActions={onDelete ? renderLeftActions : undefined} overshootLeft={false} friction={2}>
-      <Pressable style={driveStyles.fileCard} onPress={() => onPress && onPress(item)}>
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={onDelete ? renderLeftActions : undefined}
+      overshootLeft={false}
+      friction={2}
+    >
+      <Pressable
+        style={driveStyles.fileCard}
+        onPress={() => onPress && onPress(item)}
+      >
         <View style={driveStyles.iconContainer}>
           <Ionicons name={icon} size={28} color={color} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={driveStyles.fileName} numberOfLines={1}>{item.name}</Text>
-          <Text style={driveStyles.fileInfo}>
+          <Text style={[driveStyles.fileName, { color: colors.textPrimary }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[driveStyles.fileInfo, { color: colors.textSecondary }]}>
             {isFolder ? "Folder" : "File"} • {item.displayDate || new Date(item.updatedAt).toLocaleDateString()}
           </Text>
         </View>
-        <Pressable ref={dotsRef} onPress={() => (menuOpen ? closeMenu() : openMenu())} hitSlop={14} style={{ padding: 6 }}>
+        <Pressable
+          ref={dotsRef}
+          onPress={() => (menuOpen ? closeMenu() : openMenu())}
+          hitSlop={14}
+          style={{ padding: 6 }}
+        >
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
         </Pressable>
       </Pressable>
@@ -192,28 +206,55 @@ export default function DriveListItem({ item, onPress, onDelete }) {
       <Modal visible={menuOpen} transparent animationType="none">
         <Pressable style={localStyles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-          <Pressable style={[localStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}>
+          <Pressable
+            style={[localStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             {menuOptions.map((opt) => (
               <StackOption key={opt.key} icon={opt.icon} label={opt.label} onPress={opt.onPress} />
             ))}
           </Pressable>
         </Pressable>
       </Modal>
-
       <Modal visible={renameOpen} transparent animationType="fade">
         <Pressable style={localStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
-          <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]}> 
+          <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
             <Text style={[localStyles.renameTitle, { color: colors.textPrimary }]}>RENAME</Text>
-            <TextInput value={renameValue} onChangeText={setRenameValue} style={[localStyles.renameInput, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]} placeholderTextColor={colors.textTertiary} autoFocus />
+
+            <TextInput
+              value={renameValue}
+              onChangeText={setRenameValue}
+              style={[localStyles.renameInput, {
+                backgroundColor: colors.surface,
+                color: colors.textPrimary,
+                borderColor: colors.border
+              }]}
+              placeholderTextColor={colors.textTertiary}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={doRenameSubmit}
+            />
+
             <View style={localStyles.renameActions}>
-              <TouchableOpacity onPress={() => setRenameOpen(false)} style={localStyles.renameBtnGhost}><Text style={localStyles.renameGhostText}>CANCEL</Text></TouchableOpacity>
-              <TouchableOpacity onPress={doRenameSubmit} style={[localStyles.renameBtnPrimary, { backgroundColor: colors.primary }]}><Text style={localStyles.renamePrimaryText}>SAVE</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setRenameOpen(false)} style={localStyles.renameBtnGhost}>
+                <Text style={localStyles.renameGhostText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={doRenameSubmit}
+                style={[localStyles.renameBtnPrimary, { backgroundColor: colors.primary }]}
+              >
+                <Text style={localStyles.renamePrimaryText}>SAVE</Text>
+              </TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
 
-      <ShareModal visible={shareOpen} item={item} onClose={() => setShareOpen(false)} />
+      <ShareModal
+        visible={shareOpen}
+        item={item}
+        onClose={() => setShareOpen(false)}
+      />
     </Swipeable>
   );
 }
