@@ -50,13 +50,13 @@ export default function StoragePage() {
     return unsubscribe;
   }, [loadFiles]);
 
+  // ✅ מיון לפי גודל (מהגדול לקטן) - מציגים רק קבצים
   const sortedFiles = useMemo(() => {
     return [...(files || [])]
       .filter((f) => f?.type === "file")
       .sort((a, b) => (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0));
   }, [files]);
 
-  // X always closes reliably
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -67,10 +67,8 @@ export default function StoragePage() {
 
   const openItem = useCallback((item) => {
     if (!item) return;
-
-    if (item.type === "folder") {
-      return;
-    }
+    // ב-Storage אנחנו מציגים רק קבצים, אז אין כניסה לתיקיות
+    if (item.type === "folder") return;
 
     setSelectedId(item.id || item._id);
     setPreviewOpen(true);
@@ -151,7 +149,7 @@ export default function StoragePage() {
 // ✅ רכיב פנימי מעודכן עם צבעים דינמיים
 function StorageListItem({ item, onPress, onDelete }) {
   const swipeableRef = useRef(null);
-  const { colors } = useTheme(); // שימוש ב-Theme גם כאן
+  const { colors } = useTheme(); 
   
   const isImage = item.mimeType?.startsWith("image");
   const iconName = isImage ? "image" : "document-text";

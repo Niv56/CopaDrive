@@ -66,6 +66,21 @@ export const getDriveStyles = (colors) => StyleSheet.create({
     navLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 4 },
     navLabelActive: { color: colors.primary, fontWeight: 'bold' },
 
+    fab: {
+        position: 'absolute',
+        right: 20,
+        bottom: 110,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -91,36 +106,40 @@ export const getDriveStyles = (colors) => StyleSheet.create({
         fontFamily: 'BrunoAceSC_400Regular'
     },
 
-    // Breadcrumb navigation styles
+    // ✅ הסטיילים החסרים ל-Breadcrumbs (הוספתי אותם כאן כדי למנוע קריסה)
     breadcrumbContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: "rgba(255,255,255,0.9)",
-        marginHorizontal: 16,
-        marginBottom: 8,
-        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        backgroundColor: colors.surface + 'CC', // רקע חצי שקוף
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        marginHorizontal: 15,
+        borderRadius: 10,
+        marginBottom: 10,
     },
     backButton: {
-        padding: 4,
+        padding: 5,
         marginRight: 8,
     },
     breadcrumbItem: {
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     breadcrumbText: {
         fontSize: 14,
-        color: "#0d6efd",
-        maxWidth: 100,
+        color: colors.textSecondary,
+        fontWeight: '500',
+        maxWidth: 100, // הגבלה שלא ישבור שורה
     },
     breadcrumbActive: {
-        fontWeight: "600",
-        color: "#333",
+        color: colors.primary,
+        fontWeight: '700',
     },
     breadcrumbSeparator: {
-        marginHorizontal: 6,
-        color: "#999",
+        fontSize: 14,
+        color: colors.textTertiary,
+        marginHorizontal: 5,
     },
 });

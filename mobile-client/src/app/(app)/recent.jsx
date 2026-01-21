@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
+  Pressable
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +38,11 @@ export default function RecentPage() {
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // ✅ משתני ניווט
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderPath, setFolderPath] = useState([]);
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
@@ -60,6 +66,14 @@ export default function RecentPage() {
     return unsubscribe;
   }, [loadRecent]);
 
+  // ✅ סינון פריטים (אם בתיקייה - מציג את תוכנה, אחרת מציג את כל האחרונים)
+  const displayItems = useMemo(() => {
+    if (currentFolderId) {
+        return items.filter(item => item.parentId === currentFolderId);
+    }
+    return items;
+  }, [items, currentFolderId]);
+
   const closeScreen = useCallback(() => {
     try {
       if (typeof router.canGoBack === "function" && router.canGoBack()) {
@@ -68,37 +82,52 @@ export default function RecentPage() {
     } catch { router.replace("/home"); }
   }, [router]);
 
-  const openItem = useCallback((i) => {
-    if (!i) return;
-    if (i.type === "folder") return;
-    setSelectedId(i.id);
+  const openItem = useCallback((item) => {
+    if (!item) return;
+    if (item.type === "folder") {
+      // ✅ כניסה לתיקייה
+      setCurrentFolderId(item.id);
+      setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
+      return;
+    }
+    setSelectedId(item.id);
     setPreviewOpen(true);
   }, []);
 
   const handleDeleteItem = useCallback(async (item) => {
-    Alert.alert(
-      "Move to Trash?",
-      `Are you sure you want to remove "${item.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await moveToTrash(token, item.id);
-              emitDriveRefresh();
-            } catch (err) {
-              Alert.alert("Error", "Could not delete item.");
-            }
-          }
+    Alert.alert("Move to Trash?", `Remove "${item.name}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive",
+        onPress: async () => {
+          try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
+          catch (err) { Alert.alert("Error", "Could not delete item."); }
         }
-      ]
-    );
+      }
+    ]);
   }, [token]);
 
+  // ✅ חזרה אחורה בתיקיות
+  const handleBack = useCallback(() => {
+    if (folderPath.length === 0) return;
+    const newPath = folderPath.slice(0, -1);
+    setFolderPath(newPath);
+    setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
+  }, [folderPath]);
+
+  // ✅ ניווט בפירורים
+  const navigateToBreadcrumb = useCallback((index) => {
+    if (index < 0) {
+      setFolderPath([]);
+      setCurrentFolderId(null);
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      setFolderPath(newPath);
+      setCurrentFolderId(newPath[newPath.length - 1].id);
+    }
+  }, [folderPath]);
+
   return (
-    // ✅ רקע דינמי
     <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <SafeAreaView style={{ flex: 1 }}>
@@ -120,11 +149,38 @@ export default function RecentPage() {
             <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Last accessed items</Text>
           </View>
 
+          {/* ✅ Breadcrumb Navigation */}
+          {folderPath.length > 0 && (
+            <View style={driveStyles.breadcrumbContainer}>
+            <Pressable onPress={handleBack} style={driveStyles.backButton}>
+                <Ionicons name="arrow-back" size={20} color={colors.primary} />
+            </Pressable>
+
+            <Pressable onPress={() => navigateToBreadcrumb(-1)}>
+                <Text style={driveStyles.breadcrumbText}>Recent</Text>
+            </Pressable>
+
+            {folderPath.map((folder, index) => (
+                <View key={folder.id} style={driveStyles.breadcrumbItem}>
+                <Text style={driveStyles.breadcrumbSeparator}>/</Text>
+                <Pressable onPress={() => navigateToBreadcrumb(index)}>
+                    <Text style={[
+                    driveStyles.breadcrumbText,
+                    index === folderPath.length - 1 && driveStyles.breadcrumbActive
+                    ]} numberOfLines={1}>
+                    {folder.name}
+                    </Text>
+                </Pressable>
+                </View>
+            ))}
+            </View>
+          )}
+
           {loading ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />
           ) : (
             <FlatList
-              data={items}
+              data={displayItems}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <DriveListItem
@@ -137,7 +193,9 @@ export default function RecentPage() {
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Ionicons name="time-outline" size={80} color={colors.textTertiary} />
-                  <Text style={[driveStyles.emptyText, { color: colors.textTertiary }]}>No recent files</Text>
+                  <Text style={[driveStyles.emptyText, { color: colors.textTertiary }]}>
+                      {currentFolderId ? "This folder is empty" : "No recent files"}
+                  </Text>
                 </View>
               }
               onRefresh={loadRecent}
