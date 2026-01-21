@@ -9,7 +9,6 @@ import { useAuth } from "../../../app/providers/AuthContext";
 import { moveToTrash } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 
-// ✅ ייבוא Theme
 import { useTheme } from "../../../app/providers/ThemeContext";
 
 export default function MainHomePage() {
@@ -57,27 +56,15 @@ export default function MainHomePage() {
           try { await moveToTrash(token, item.id); emitDriveRefresh(); } 
           catch (err) { Alert.alert("Error", "Could not delete item."); }
         }
-      }
-    ]);
-  }, [token]);
+    }, [folderPath]);
 
-  const handleBack = useCallback(() => {
-    if (folderPath.length === 0) return;
-    const newPath = folderPath.slice(0, -1);
-    setFolderPath(newPath);
-    setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
-  }, [folderPath]);
-
-  const navigateToBreadcrumb = useCallback((index) => {
-    if (index < 0) {
-      setFolderPath([]);
-      setCurrentFolderId(null);
-    } else {
-      const newPath = folderPath.slice(0, index + 1);
-      setFolderPath(newPath);
-      setCurrentFolderId(newPath[newPath.length - 1].id);
+    if (loading && (!items || items.length === 0)) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
     }
-  }, [folderPath]);
 
   if (loading && (!items || items.length === 0)) {
     return (
