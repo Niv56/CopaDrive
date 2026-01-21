@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Keyboard } from "react-native";
 import SearchDropdown from "./SearchDropdown";
 import { fetchSearchItems } from "../../features/drive/services/searchService";
-// ✅ ייבוא המודל שמציג את הקבצים
 import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
+import { emitNavigateToFolder } from "../../features/drive/services/driveEvents";
 
 export default function SearchBar({ token }) {
   const [query, setQuery] = useState("");
@@ -11,7 +11,6 @@ export default function SearchBar({ token }) {
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ✅ משתנים לניהול פתיחת הקובץ
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -30,12 +29,15 @@ export default function SearchBar({ token }) {
   }, [query]);
 
   const handleFileClick = (file) => {
-    // 1. סוגרים את המקלדת ומנקים את החיפוש
     setQuery("");
     Keyboard.dismiss();
     setIsFocused(false);
 
-    // 2. פותחים את המודל עם הקובץ שנבחר
+    if (file.type === "folder") {
+      emitNavigateToFolder(file.id, file.name);
+      return;
+    }
+
     setSelectedFileId(file.id);
     setModalOpen(true);
   };
