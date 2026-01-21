@@ -1,6 +1,5 @@
 import { StyleSheet } from "react-native";
 
-// ✅ הוספת פרמטר isDarkMode כדי לאפשר דיוק צבעים לפי ה-Edit Profile
 export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.create({
   backdrop: { 
     flex: 1 
@@ -11,8 +10,8 @@ export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.cr
     padding: 16 
   },
   card: { 
-    backgroundColor: isDarkMode ? "#1e1e1e" : (colors.card || "#fff"), // ✅ רקע זהה ל-EditProfile
-    borderRadius: 35, // ✅ רדיוס מוגדל ל-35
+    backgroundColor: isDarkMode ? "#1e1e1e" : (colors.card || "#fff"), 
+    borderRadius: 35, 
     maxHeight: "85%",
     overflow: "hidden",
     elevation: 20,
@@ -75,20 +74,20 @@ export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.cr
 
   // Form Elements
   label: { 
-    fontSize: 11, // ✅ הקטנה ל-11 לפי ה-EditProfile
+    fontSize: 11, 
     fontWeight: "800", 
     marginBottom: 8, 
     marginLeft: 15,
-    color: "#999", // צבע אפור נייטרלי ללייבלים
+    color: "#999", 
     letterSpacing: 0.5,
   },
   input: { 
-    borderRadius: 30, // ✅ רדיוס מוגדל ל-30
+    borderRadius: 30, 
     paddingHorizontal: 22, 
     height: 50,
     fontSize: 15, 
     marginBottom: 16,
-    backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", // ✅ רקע כהה/בהיר תואם
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", 
     color: colors.textPrimary,
     borderWidth: 0,
   },
@@ -98,7 +97,7 @@ export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.cr
     flexDirection: "row", 
     alignItems: "center", 
     gap: 10,
-    borderRadius: 30, // ✅ רדיוס מוגדל ל-30
+    borderRadius: 30, 
     paddingHorizontal: 20,
     height: 50,
     marginBottom: 8,
@@ -152,7 +151,7 @@ export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.cr
     alignItems: "center", 
     justifyContent: "center",
     gap: 6, 
-    height: 55, // ✅ הגבהה ל-55 לפי הכפתורים ב-EditProfile
+    height: 55, 
     borderRadius: 30, 
     backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
   },

@@ -87,7 +87,7 @@ export default function ShareModal({ visible, item, onClose }) {
                         try {
                             const permId = perm.id || perm._id;
                             await deletePermission(token, fileId, permId);
-                            await loadPermissions(); // רענון הרשימה
+                            await loadPermissions(); 
                         } catch (e) {
                             console.error("Delete permission error:", e);
                             Alert.alert("Error", "Failed to remove user");
@@ -103,7 +103,6 @@ export default function ShareModal({ visible, item, onClose }) {
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={styles.overlay}>
-                {/* רקע מטושטש דינמי לפי מצב לילה/יום */}
                 <BlurView intensity={20} tint={isDarkMode ? "dark" : "dark"} style={StyleSheet.absoluteFill} />
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
@@ -111,7 +110,6 @@ export default function ShareModal({ visible, item, onClose }) {
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     style={styles.container}
                 >
-                    {/* כרטיסיית הזכוכית - צבע הרקע (card) משתנה לפי ה-Theme */}
                     <BlurView intensity={95} tint={isDarkMode ? "dark" : "light"} style={[styles.glassCard, { backgroundColor: colors.card + 'F2' }]}>
                         <View style={styles.header}>
                             <Text style={[styles.title, { color: colors.textPrimary, fontFamily: 'BrunoAceSC_400Regular' }]}>

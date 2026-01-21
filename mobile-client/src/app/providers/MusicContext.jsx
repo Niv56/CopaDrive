@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { Audio } from "expo-av";
 
-// וודא שהנתיב לקובץ נכון לפי מה שכתבת
 import songFile from "../../assets/videos/Song.mp3"; 
 
 const MusicContext = createContext();
@@ -13,7 +12,6 @@ export const MusicProvider = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    // הגדרות סאונד (כדי שיפעל גם במצב שקט באייפון)
     async function configureAudio() {
       try {
         await Audio.setAudioModeAsync({
@@ -30,7 +28,6 @@ export const MusicProvider = ({ children }) => {
     configureAudio();
 
     return () => {
-      // ניקוי ביציאה מהאפליקציה לגמרי
       if (sound) {
         sound.unloadAsync();
       }
@@ -40,7 +37,7 @@ export const MusicProvider = ({ children }) => {
   async function loadSound() {
     const { sound: newSound } = await Audio.Sound.createAsync(
        songFile,
-       { isLooping: true } // שהשיר יחזור על עצמו
+       { isLooping: true } 
     );
     setSound(newSound);
   }

@@ -17,20 +17,19 @@ const isVideo = (mimeType = "") => mimeType.startsWith("video/");
 
 export default function UploadPreviewModal({
   visible,
-  fileData,        // { uri, fileName, mimeType }
-  folders,         // Array of available folders for destination selection
-  onConfirm,       // (finalFileName, destinationFolderId) => void
-  onDiscard,       // () => void - go back/cancel
-  onChangeFile,    // () => void - pick a different file
-  uploading,       // boolean - show loading state during upload
+  fileData,        
+  folders,         
+  onConfirm,      
+  onDiscard,       
+  onChangeFile,    
+  uploading,       
 }) {
   const { colors = {}, isDarkMode } = useTheme();
   
-  // ✅ מעבירים את isDarkMode לפונקציית הסטייל כדי לאפשר התאמה מלאה ל-EditProfile
   const styles = useMemo(() => getUploadPreviewStyles(colors, isDarkMode), [colors, isDarkMode]);
   
   const [title, setTitle] = useState(fileData?.fileName || "");
-  const [selectedFolderId, setSelectedFolderId] = useState(null); // null = root
+  const [selectedFolderId, setSelectedFolderId] = useState(null); 
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   // Reset title when fileData changes
@@ -82,13 +81,11 @@ export default function UploadPreviewModal({
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>Review Upload</Text>
                 <TouchableOpacity onPress={onDiscard} style={styles.closeBtn}>
-                  {/* ✅ שימוש בצבע הטקסט מה-theme לאייקון הסגירה */}
                   <Ionicons name="close" size={22} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-                {/* Preview */}
                 <View style={styles.previewContainer}>
                   {isImage(fileData.mimeType) ? (
                     <Image source={{ uri: fileData.uri }} style={styles.previewImage} resizeMode="contain" />
@@ -108,7 +105,6 @@ export default function UploadPreviewModal({
                     </View>
                   )}
                 </View>
-
                 {/* Title Input */}
                 <Text style={styles.label}>FILE NAME</Text>
                 <TextInput

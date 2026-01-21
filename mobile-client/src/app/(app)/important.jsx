@@ -17,7 +17,6 @@ import { useAuth } from "../providers/AuthContext";
 import { getImportantFiles, moveToTrash } from "../../features/drive/services/fileService";
 import DriveListItem from "../../features/drive/components/DriveListItem";
 
-// ✅ ייבוא Theme
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
 
@@ -28,14 +27,12 @@ export default function ImportantPage() {
   const router = useRouter();
   const { token } = useAuth();
   
-  // ✅ Theme
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ✅ משתני ניווט תיקיות
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
@@ -62,15 +59,11 @@ export default function ImportantPage() {
     return unsubscribe;
   }, [loadImportant]);
 
-  // ✅ סינון התצוגה: אם אנחנו בתיקייה, מציגים את התוכן שלה. אחרת, מציגים את רשימת החשובים.
   const displayItems = useMemo(() => {
     if (currentFolderId) {
-       // בתוך תיקייה - מציגים רק מה שבתוכה (מתוך רשימת החשובים)
-       // הערה: אם רוצים לראות את *כל* התוכן של התיקייה (גם לא חשובים), זה דורש קריאת API אחרת.
-       // כאן אני מניח שמציגים רק פריטים חשובים שנמצאים בתוך התיקייה הזו.
+      
        return items.filter(item => item.parentId === currentFolderId);
     }
-    // ברשימה הראשית - מציגים הכל
     return items;
   }, [items, currentFolderId]);
 
@@ -85,7 +78,6 @@ export default function ImportantPage() {
   const openItem = useCallback((item) => {
     if (!item) return;
     if (item.type === "folder") {
-      // ✅ כניסה לתיקייה
       setCurrentFolderId(item.id);
       setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
@@ -107,7 +99,6 @@ export default function ImportantPage() {
     ]);
   }, [token]);
 
-  // ✅ חזרה אחורה בתיקיות
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -115,7 +106,6 @@ export default function ImportantPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
-  // ✅ ניווט בפירורים
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -148,7 +138,6 @@ export default function ImportantPage() {
             <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Items marked with high priority</Text>
           </View>
 
-          {/* ✅ Breadcrumb Navigation */}
           {folderPath.length > 0 && (
             <View style={driveStyles.breadcrumbContainer}>
             <Pressable onPress={handleBack} style={driveStyles.backButton}>

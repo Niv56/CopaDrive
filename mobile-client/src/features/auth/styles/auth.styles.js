@@ -11,7 +11,7 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
   },
   dimOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // החשכה נעימה
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', 
     zIndex: 0,
   },
   keyboardView: {
@@ -24,7 +24,6 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
   cardContainer: {
     width: "100%",
     maxWidth: 400,
-    // כרטיס שחור כמעט מלא במצב לילה
     backgroundColor: isDarkMode ? "rgba(18, 18, 18, 0.95)" : "rgba(255, 255, 255, 0.92)",
     borderRadius: 24,
     paddingVertical: 30,
@@ -82,9 +81,8 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
     marginLeft: 4,
   },
   
-  // ✅ הכפתור הפעיל - כחול בוהק
   btnPrimary: {
-    backgroundColor: "#007bff", // כחול חזק תמיד
+    backgroundColor: "#007bff", 
     borderRadius: 50,
     height: 56,
     alignItems: "center",
@@ -97,14 +95,13 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
     elevation: 5,
   },
   
-  // ✅ הכפתור הכבוי (כשאין פרטים) - שחור/אפור כהה במצב לילה
   btnDisabled: {
-    backgroundColor: isDarkMode ? "#252525" : "#a0cfff", // שחור אפור במצב לילה
+    backgroundColor: isDarkMode ? "#252525" : "#a0cfff", 
     borderColor: isDarkMode ? "#333" : "#a0cfff",
     borderWidth: 1,
     elevation: 0,
     shadowOpacity: 0,
-    opacity: 1, // משאירים אטום כדי שיראה כמו כפתור
+    opacity: 1, 
   },
   
   btnSecondary: {
@@ -121,7 +118,6 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
   btnTextPrimary: {
     fontSize: 18,
     fontWeight: "700",
-    // טקסט אפור כהה כשהכפתור כבוי, ולבן כשהוא דולק
     color: "#fff", 
   },
   btnTextSecondary: {
@@ -150,7 +146,7 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
     textDecorationLine: "underline",
   },
   
-  // --- Gender & Date Styles ---
+  // Gender & Date Styles 
   genderContainer: { gap: 12, marginBottom: 10 },
   genderRow: { flexDirection: "row", gap: 10 },
   genderBtn: {

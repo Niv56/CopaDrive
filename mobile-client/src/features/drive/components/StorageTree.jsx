@@ -6,23 +6,16 @@ export default function StorageTree({ usedBytes = 0, quotaBytes = 15 * 1024 * 10
   const used = Math.max(0, Number(usedBytes) || 0);
   const quota = Math.max(1, Number(quotaBytes) || 1);
   
-  // חישוב האחוזים
   const percentage = Math.min(100, (used / quota) * 100);
 
   return (
     <View style={styles.container}>
-      {/* מיכל העץ */}
       <View style={styles.treeContainer}>
-        {/* שכבה 1: העץ האפור (רקע) */}
         <Text style={styles.treeIconBase}>🌴</Text>
-
-        {/* שכבה 2: העץ הצבעוני (מילוי) - נחתך לפי הגובה */}
         <View style={[styles.fillWrapper, { height: `${percentage}%` }]}>
           <Text style={styles.treeIconFill}>🌴</Text>
         </View>
       </View>
-
-      {/* טקסט למטה */}
       <Text style={styles.text}>
         {formatBytes(used)} of {formatBytes(quota)} used
       </Text>
@@ -35,7 +28,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 10,
-    marginTop: "auto", // דוחף את הרכיב לתחתית אם הוא בתוך Flex
+    marginTop: "auto", 
   },
   treeContainer: {
     width: 60,
@@ -50,24 +43,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: "center",
-    opacity: 0.3, // אפור/שקוף
+    opacity: 0.3, 
     color: "#5f6368",
-    filter: "grayscale(100%)", // הערה: ב-RN זה לא תמיד עובד, השקיפות מספיקה
+    filter: "grayscale(100%)", 
   },
   fillWrapper: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    overflow: "hidden", // זה הקסם שיוצר את החיתוך
-    justifyContent: "flex-end", // מצמיד את הטקסט הפנימי לתחתית
+    overflow: "hidden", 
+    justifyContent: "flex-end", 
   },
   treeIconFill: {
     fontSize: 50,
     textAlign: "center",
-    // חשוב: הגודל חייב להיות זהה לבסיס כדי שיתלבש בול
     height: 60, 
-    lineHeight: 60, // עוזר ליישור
+    lineHeight: 60, 
   },
   text: {
     fontSize: 12,

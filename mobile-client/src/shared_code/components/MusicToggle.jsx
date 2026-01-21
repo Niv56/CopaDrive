@@ -2,7 +2,6 @@ import React from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// ✅ תיקון נתיב: עולים שתי רמות (shared_code -> src) ואז נכנסים ל-app
 import { useMusic } from "../../app/providers/MusicContext";
 
 export default function MusicToggle({ style }) {

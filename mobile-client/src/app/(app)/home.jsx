@@ -69,7 +69,6 @@ export default function HomeManager() {
           <TopBar />
         </View>
 
-        {/* ✅ כרטיסייה דינמית - דקה וממורכזת עם הגנה מפני חיתוך טקסט */}
         <View style={[
             localStyles.titleCard, 
             { 
@@ -89,7 +88,6 @@ export default function HomeManager() {
           </Text>
         </View>
 
-        {/* תוכן העמוד */}
         <View style={{ flex: 1 }}>
           {activeTab === "home" && <MainHomePage />}
           {activeTab === "starred" && <StarredPage />}
@@ -128,7 +126,6 @@ const localStyles = StyleSheet.create({
     marginBottom: 5,      
     marginHorizontal: 20,
     
-    // ✅ שימוש ב-Padding במקום Height כדי להבטיח שהטקסט לא ייחתך
     paddingVertical: 3,    
     paddingHorizontal: 15,
     borderRadius: 10,
@@ -144,14 +141,13 @@ const localStyles = StyleSheet.create({
     elevation: 5,
   },
   customTitleText: {
-    // ✅ איפוס ריווחים שעלולים להגיע מ-styles.homeTitle
     marginLeft: 0, 
     marginTop: 0,
     marginBottom: 0,
     paddingVertical: 0,
 
     fontSize: 18, 
-    lineHeight: 22, // גובה שורה שמתאים לפונט 18 ומונע חיתוך
+    lineHeight: 22, 
     letterSpacing: 1.5,
     textAlign: 'center',
     textShadowOffset: { width: 0, height: 2 },

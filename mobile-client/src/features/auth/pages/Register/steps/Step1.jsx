@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// ✅ מקבלים את styles ו-colors מה-Props
 export default function Step1({ formData, setFormData, errors, styles, colors }) {
   return (
     <View>

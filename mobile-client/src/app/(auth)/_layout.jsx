@@ -6,13 +6,10 @@ export default function AuthLayoutWrapper() {
     <Stack
       screenOptions={{
         headerShown: false,
-        // אנימציית Fade נקייה
         animation: 'fade', 
         
-        // ✅ הופך את המעבר למהיר וקריספי (200 מילי-שניות)
         animationDuration: 200,
 
-        // מונע הבהובים
         contentStyle: { backgroundColor: 'transparent' }, 
       }}
     >
