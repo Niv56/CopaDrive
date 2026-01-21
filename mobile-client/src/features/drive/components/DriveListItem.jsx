@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { driveStyles } from "../styles/myDrive.styles";
+import { listItemStyles } from "../styles/driveListItem.styles";
 import { getFileIconMeta } from "../utils/fileIcon";
 
 import { BlurView } from "expo-blur";
@@ -28,6 +29,7 @@ import {
 } from "../services/fileService";
 
 import { downloadAndShareBase64 } from "../utils/downloadFile";
+import ShareModal from "../modals/ShareModal";
 
 export default function DriveListItem({ item, onPress }) {
   const isFolder = item.type === "folder";
@@ -40,6 +42,7 @@ export default function DriveListItem({ item, onPress }) {
 
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState(item.name || "");
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isStarred = !!item.starred;
   const isImportant = !!item.important;
@@ -78,8 +81,24 @@ export default function DriveListItem({ item, onPress }) {
 
   const menuOptions = useMemo(() => {
     return [
-      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => comingSoon("Share") },
-      { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
+      { 
+        key: "share", 
+        icon: "share-social-outline", 
+        label: "SHARE", 
+        onPress: () => {
+          closeMenu();
+          setShareOpen(true);
+        }
+      },
+      { 
+        key: "manage", 
+        icon: "key-outline", 
+        label: "MANAGE ACCESS", 
+        onPress: () => {
+          closeMenu();
+          setShareOpen(true);
+        }
+      },
 
       {
         key: "star",
@@ -202,12 +221,12 @@ export default function DriveListItem({ item, onPress }) {
 
       {/* Floating menu with blurred backdrop */}
       <Modal visible={menuOpen} transparent animationType="none">
-        <Pressable style={styles.backdrop} onPress={closeMenu}>
+        <Pressable style={listItemStyles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, styles.dim]} />
+          <View style={[StyleSheet.absoluteFill, listItemStyles.dim]} />
 
           <Pressable
-            style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
+            style={[listItemStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}
             onPress={() => {}}
           >
             {menuOptions.map((opt) => (
@@ -219,40 +238,47 @@ export default function DriveListItem({ item, onPress }) {
 
       {/* Rename modal */}
       <Modal visible={renameOpen} transparent animationType="fade">
-        <Pressable style={styles.renameBackdrop} onPress={() => setRenameOpen(false)}>
-          <Pressable style={styles.renameCard} onPress={() => {}}>
-            <Text style={styles.renameTitle}>RENAME</Text>
+        <Pressable style={listItemStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
+          <Pressable style={listItemStyles.renameCard} onPress={() => {}}>
+            <Text style={listItemStyles.renameTitle}>RENAME</Text>
 
             <TextInput
               value={renameValue}
               onChangeText={setRenameValue}
-              style={styles.renameInput}
+              style={listItemStyles.renameInput}
               placeholder="New name"
               autoFocus
             />
 
-            <View style={styles.renameActions}>
-              <TouchableOpacity onPress={() => setRenameOpen(false)} style={styles.renameBtnGhost}>
-                <Text style={styles.renameGhostText}>CANCEL</Text>
+            <View style={listItemStyles.renameActions}>
+              <TouchableOpacity onPress={() => setRenameOpen(false)} style={listItemStyles.renameBtnGhost}>
+                <Text style={listItemStyles.renameGhostText}>CANCEL</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={doRenameSubmit} style={styles.renameBtnPrimary}>
-                <Text style={styles.renamePrimaryText}>SAVE</Text>
+              <TouchableOpacity onPress={doRenameSubmit} style={listItemStyles.renameBtnPrimary}>
+                <Text style={listItemStyles.renamePrimaryText}>SAVE</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Share modal */}
+      <ShareModal
+        visible={shareOpen}
+        item={item}
+        onClose={() => setShareOpen(false)}
+      />
     </>
   );
 }
 
 function StackOption({ icon, label, onPress }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.stackBtn}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={listItemStyles.stackBtn}>
       <Ionicons name={icon} size={22} color="#444" style={{ marginRight: 12 }} />
       <Text
-        style={styles.stackLabel}
+        style={listItemStyles.stackLabel}
         numberOfLines={1}
         ellipsizeMode="clip"
         adjustsFontSizeToFit
@@ -263,94 +289,3 @@ function StackOption({ icon, label, onPress }) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "transparent" },
-  dim: { backgroundColor: "rgba(0,0,0,0.08)" },
-
-  stackMenu: {
-    position: "absolute",
-    width: 260,
-    gap: 12,
-  },
-
-  stackBtn: {
-    height: 54,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.98)",
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 30,
-
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-
-    minWidth: 260,
-  },
-
-  stackLabel: {
-    flex: 1,
-    textAlign: "left",
-    fontSize: 12,
-    color: "#333",
-    letterSpacing: 1.2,
-  },
-
-  renameBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  renameCard: {
-    backgroundColor: "white",
-    borderRadius: 18,
-    padding: 18,
-  },
-  renameTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 12,
-    letterSpacing: 1.5,
-  },
-  renameInput: {
-    backgroundColor: "#f8f9fa",
-    borderWidth: 1,
-    borderColor: "#e9ecef",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-  },
-  renameActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 14,
-  },
-  renameBtnGhost: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  renameGhostText: {
-    color: "#6c757d",
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
-  renameBtnPrimary: {
-    backgroundColor: "#0d6efd",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  renamePrimaryText: {
-    color: "white",
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
-});
