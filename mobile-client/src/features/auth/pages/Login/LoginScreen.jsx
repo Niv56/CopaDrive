@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../../app/providers/AuthContext";
 import AuthLayout from "../../components/AuthLayout";
 
-// ✅ ייבואים חדשים לניהול העיצוב
 import { useTheme } from "../../../../app/providers/ThemeContext";
 import { getAuthStyles } from "../../styles/auth.styles";
 
@@ -13,10 +12,8 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
 
-  // ✅ שליפת הצבעים והמצב הנוכחי
   const { colors, isDarkMode } = useTheme();
   
-  // ✅ יצירת הסטיילים באופן דינמי (כדי שיתעדכנו בלחיצת כפתור)
   const styles = useMemo(() => getAuthStyles(colors, isDarkMode), [colors, isDarkMode]);
 
   const [email, setEmail] = useState("");
@@ -44,7 +41,6 @@ export default function LoginScreen() {
   return (
     <AuthLayout subtitle="Sign in to continue">
       <View>
-        {/* ✅ שימוש ב-styles (המשתנה החדש) במקום authStyles */}
         <Text style={styles.label}>Email</Text>
         <View style={styles.inputWrapper}>
           <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
@@ -54,7 +50,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             placeholder="username@copa.com"
-            placeholderTextColor={colors.textTertiary} // צבע דינמי
+            placeholderTextColor={colors.textTertiary} 
             style={styles.input}
           />
         </View>

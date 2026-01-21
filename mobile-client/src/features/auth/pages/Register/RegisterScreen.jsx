@@ -104,8 +104,6 @@ export default function RegisterScreen() {
       <View style={{ minHeight: 300 }}>
         {step === 1 && <Step1 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 2 && <Step2 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
-        
-        {/* ✅ התיקון כאן: מעבירים את הסטיילים תחת השם authStyles עבור Step3 */}
         {step === 3 && (
           <Step3 
             formData={formData} 
@@ -115,7 +113,6 @@ export default function RegisterScreen() {
             colors={colors} 
           />
         )}
-        
         {step === 4 && <Step4 formData={formData} setFormData={setFormData} errors={errors} styles={styles} colors={colors} />}
         {step === 5 && <Step5 styles={styles} />}
       </View>

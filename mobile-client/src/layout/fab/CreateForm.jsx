@@ -4,7 +4,7 @@ import {
   StyleSheet, ScrollView, Platform, InputAccessoryView, Button, Keyboard, Dimensions
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../app/providers/ThemeContext"; // ✅ נתיב מתוקן (שתי דרגות למעלה)
+import { useTheme } from "../../app/providers/ThemeContext"; 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const ACCESSORY_ID = "fab_create_content_done";
@@ -17,7 +17,7 @@ export default function CreateForm({
   selectedFolderId, setSelectedFolderId,
   onSubmit, onBack, loading 
 }) {
-  const { colors, isDarkMode } = useTheme(); // ✅ שימוש ב-Theme
+  const { colors, isDarkMode } = useTheme(); 
   const isFolder = mode === "create_folder";
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
@@ -31,7 +31,7 @@ export default function CreateForm({
     <View style={styles.centerContainer}>
       <View style={[
         styles.modalCard, 
-        { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" } // ✅ התאמה ל-EditProfile
+        { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" } 
       ]}>
         <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
           {isFolder ? "CREATE NEW FOLDER" : "CREATE NEW FILE"}
@@ -80,7 +80,6 @@ export default function CreateForm({
           </ScrollView>
         )}
 
-        {/* Folder Picker */}
         <Text style={[styles.label, { color: isDarkMode ? "#999" : "#666" }]}>SAVE TO</Text>
         <TouchableOpacity 
           style={[

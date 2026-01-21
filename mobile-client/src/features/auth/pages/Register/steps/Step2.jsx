@@ -3,7 +3,6 @@ import { View, Text, TextInput, StyleSheet, Keyboard, Image, Pressable, Alert } 
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 
-// ✅ מקבלים את styles ו-colors
 export default function Step2({ formData, setFormData, errors, styles, colors }) {
 
   const pickImage = async () => {
@@ -85,7 +84,7 @@ const localStyles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(0,0,0,0.05)", // שקוף עדין כדי להתאים לכהה/בהיר
+    backgroundColor: "rgba(0,0,0,0.05)", 
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,

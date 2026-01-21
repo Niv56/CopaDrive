@@ -68,7 +68,6 @@ function extractOwnerId(item) {
 
 export default function FilePreviewModal({ open, fileId, onClose }) {
   const { token } = useAuth();
-  // ✅ שימוש ב-Theme
   const { colors, isDarkMode } = useTheme();
 
   const [item, setItem] = useState(null);
@@ -308,7 +307,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
         style={[
           s.iconBtn,
           disabled && { opacity: 0.45 },
-          // ✅ צבע כפתור דינמי
           { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)" }
         ]}
       >
@@ -320,7 +318,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.backdrop}>
-        {/* ✅ Blur דינמי */}
         <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
 
         <Pressable style={StyleSheet.absoluteFill} onPress={() => { Keyboard.dismiss(); onClose?.(); }} />
@@ -329,7 +326,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
           <Pressable
             style={[
               s.card,
-              // ✅ צבע כרטיס דינמי
               { backgroundColor: isDarkMode ? "#1e1e1e" : "rgba(255,255,255,0.94)" }
             ]}
             onPress={() => { }}

@@ -8,11 +8,9 @@ const THEME_KEY = "app_theme_mode";
 
 export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme(); 
-  // מתחילים ב-false כדי למנוע הבהוב עד שהטעינה מסתיימת, או לפי המערכת
   const [isDarkMode, setIsDarkMode] = useState(systemScheme === "dark");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // טעינת ההגדרה השמורה בעת עליית האפליקציה
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -20,7 +18,6 @@ export const ThemeProvider = ({ children }) => {
         if (savedTheme !== null) {
           setIsDarkMode(savedTheme === "dark");
         } else {
-            // אם אין הגדרה שמורה, הולכים לפי הגדרות הטלפון
             setIsDarkMode(systemScheme === "dark");
         }
       } catch (e) {
@@ -46,7 +43,6 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  // מונע ריצוד ראשוני של צבעים לא נכונים
   if (!isLoaded) return null;
 
   return (

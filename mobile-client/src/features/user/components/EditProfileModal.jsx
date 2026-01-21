@@ -142,7 +142,6 @@ export default function EditProfileModal({
                 <Text style={styles.changePhotoText}>Tap to change photo</Text>
               </View>
 
-              {/* מעוגלים Pills Fields */}
               <Field label="FIRST NAME" value={firstName} onChangeText={setFirstName} />
               <Field label="LAST NAME" value={lastName} onChangeText={setLastName} />
               <Field
@@ -156,7 +155,6 @@ export default function EditProfileModal({
 
               <Text style={styles.sectionTitle}>Security Settings</Text>
               <Field label="CURRENT PASSWORD" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
-              {/* שדה סיסמה ללא הודעה פנימית (Placeholder ריק) */}
               <Field label="NEW PASSWORD" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="" />
               <Field label="CONFIRM NEW PASSWORD" value={confirmNewPassword} onChangeText={setConfirmNewPassword} secureTextEntry />
 
@@ -191,7 +189,7 @@ const styles = StyleSheet.create({
   keyboardWrapper: { width: '90%', maxHeight: SCREEN_HEIGHT * 0.8 },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 35, // מעוגל יותר כפי שביקשת
+    borderRadius: 35, 
     padding: 24,
     width: '100%',
     elevation: 20,

@@ -7,7 +7,6 @@ export async function getFiles(token) {
   });
 }
 
-// הפונקציה הזו קריטית להורדה - היא מביאה את המידע המלא כולל ה-Content (Base64)
 export async function getFileById(token, fileId) {
   return request(`/api/files/${fileId}`, {
     method: "GET",
@@ -41,7 +40,6 @@ export async function createItem(
 }
 
 export async function createFile(token, fileData) {
-  // fileData: { name, content, mimeType, parentId? }
   return createItem(token, { ...fileData, type: "file" });
 }
 

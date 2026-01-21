@@ -33,7 +33,6 @@ export default function AuthLayout({ children, title = "CopaDrive", subtitle }) 
         style={authStyles.backgroundImage} 
         resizeMode="cover"
     >
-      {/* ✅ שכבת החשכה: מופיעה רק במצב לילה */}
       {isDarkMode && <View style={authStyles.dimOverlay} />}
       
       <View style={styles.topControls}>

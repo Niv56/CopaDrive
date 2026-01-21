@@ -118,7 +118,6 @@ export default function TrashPage() {
   }, [token]);
 
   return (
-    // ✅ רקע דינמי
     <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
       <SafeAreaView style={{ flex: 1 }}>
@@ -147,7 +146,6 @@ export default function TrashPage() {
           <View style={styles.textHeader}>
             <Text style={[driveStyles.homeTitle, { marginLeft: 0 }]}>TRASH</Text>
 
-            {/* ✅ באנר מידע מותאם צבעים */}
             <View style={[styles.infoBanner, { backgroundColor: colors.surface }]}>
               <Ionicons name="information-circle" size={16} color={colors.primary} />
               <Text style={[styles.infoText, { color: colors.primary }]}>Items are deleted forever after 30 days</Text>

@@ -132,7 +132,6 @@ export default function SharedPage() {
         <View style={styles.breadcrumbContainer}>
           <Pressable 
             onPress={() => setSelectedOwnerId(null)} 
-            // ✅ עיצוב כפתור חזור זהה לכרטיסיית הכותרת
             style={[
               styles.backButton, 
               { 
@@ -176,7 +175,6 @@ export default function SharedPage() {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <Pressable
-            // ✅ עיצוב הבלוק זהה בדיוק לעיצוב ה-titleCard מה-HomeManager
             style={[
               styles.userCard,
               { 
@@ -240,10 +238,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12, // ✅ רדיוס זהה ל-titleCard
+    borderRadius: 12, 
     marginBottom: 12,
     borderWidth: 1,
-    // ✅ צלליות זהות ל-titleCard
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,

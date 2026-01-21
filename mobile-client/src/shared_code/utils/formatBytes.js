@@ -9,7 +9,6 @@ export function formatBytes(bytes, decimals = 1) {
   const i = Math.min(Math.floor(Math.log(n) / Math.log(k)), sizes.length - 1);
 
   const value = n / Math.pow(k, i);
-  // אם המספר שלם, לא מציגים נקודה עשרונית
   const fixed = Number.isInteger(value) ? 0 : decimals;
   
   return `${value.toFixed(fixed)} ${sizes[i]}`;

@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useMyDrive } from "../hooks/useMyDrive";
 import DriveListItem from "../components/DriveListItem";
-// ❌ ScreenLayout הוסר מכאן
 
 import { useTheme } from "../../../app/providers/ThemeContext";
 import { useAuth } from "../../../app/providers/AuthContext";
@@ -23,7 +22,6 @@ export default function MyDrivePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  // ✅ האזנה לאירוע ניווט לתיקייה (מהחיפוש)
   useEffect(() => {
     const unsubscribe = subscribeNavigateToFolder(({ folderId, folderName }) => {
       if (folderId) {
@@ -34,7 +32,6 @@ export default function MyDrivePage() {
     return unsubscribe;
   }, []);
 
-  // ✅ סינון הפריטים לפי התיקייה הנוכחית
   const currentItems = useMemo(() => {
     if (!items) return [];
     return items.filter(item => {
@@ -160,7 +157,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 15,
         paddingHorizontal: 15,
-        marginTop: 10, // הוספתי קצת רווח מלמעלה
+        marginTop: 10, 
         gap: 5
     },
     backButton: {

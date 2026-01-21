@@ -7,7 +7,6 @@ import { MusicProvider } from "./providers/MusicContext";
 
 export default function RootLayout() {
   return (
-    // משתמשים ברקע שקוף/ניטרלי כדי למנוע הפרעות בעין
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
@@ -16,9 +15,7 @@ export default function RootLayout() {
             <Stack 
               screenOptions={{ 
                 headerShown: false,
-                // ✅ כל האפליקציה תעבוד עכשיו באנימציית Fade אחידה וחלקה
                 animation: 'fade',
-                // מונע אפשרות "לגרור" מסכים (Swipe back) ששובר את החוויה בלוגין
                 gestureEnabled: false,
                 contentStyle: { backgroundColor: 'transparent' }
               }}

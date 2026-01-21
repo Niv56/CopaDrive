@@ -9,7 +9,7 @@ export default function AppLayout() {
       <Drawer
         drawerContent={(props) => <SideBar {...props} />}
         screenOptions={{
-          headerShown: false, // מסתיר את הבר של המגירה (כי יש לנו TopBar משלנו)
+          headerShown: false, 
           drawerType: 'front',
           drawerStyle: {
             width: 280,
@@ -18,7 +18,6 @@ export default function AppLayout() {
           overlayColor: 'rgba(0,0,0,0.3)',
           swipeEnabled: true,
           
-          // ✅ משפר ביצועים במעבר
           lazy: true, 
         }}
       >

@@ -32,14 +32,12 @@ export default function RecentPage() {
   const router = useRouter();
   const { token } = useAuth();
   
-  // ✅ Theme Hooks
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ✅ משתני ניווט
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderPath, setFolderPath] = useState([]);
 
@@ -66,7 +64,6 @@ export default function RecentPage() {
     return unsubscribe;
   }, [loadRecent]);
 
-  // ✅ סינון פריטים (אם בתיקייה - מציג את תוכנה, אחרת מציג את כל האחרונים)
   const displayItems = useMemo(() => {
     if (currentFolderId) {
         return items.filter(item => item.parentId === currentFolderId);
@@ -85,7 +82,6 @@ export default function RecentPage() {
   const openItem = useCallback((item) => {
     if (!item) return;
     if (item.type === "folder") {
-      // ✅ כניסה לתיקייה
       setCurrentFolderId(item.id);
       setFolderPath((prev) => [...prev, { id: item.id, name: item.name }]);
       return;
@@ -107,7 +103,6 @@ export default function RecentPage() {
     ]);
   }, [token]);
 
-  // ✅ חזרה אחורה בתיקיות
   const handleBack = useCallback(() => {
     if (folderPath.length === 0) return;
     const newPath = folderPath.slice(0, -1);
@@ -115,7 +110,6 @@ export default function RecentPage() {
     setCurrentFolderId(newPath.length > 0 ? newPath[newPath.length - 1].id : null);
   }, [folderPath]);
 
-  // ✅ ניווט בפירורים
   const navigateToBreadcrumb = useCallback((index) => {
     if (index < 0) {
       setFolderPath([]);
@@ -149,7 +143,6 @@ export default function RecentPage() {
             <Text style={[styles.subTitle, { color: colors.textSecondary }]}>Last accessed items</Text>
           </View>
 
-          {/* ✅ Breadcrumb Navigation */}
           {folderPath.length > 0 && (
             <View style={driveStyles.breadcrumbContainer}>
             <Pressable onPress={handleBack} style={driveStyles.backButton}>
