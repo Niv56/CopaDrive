@@ -9,6 +9,8 @@ import { useAuth } from "../../../app/providers/AuthContext";
 import {
     getPermissions, addPermission, updatePermission, deletePermission, findUserByEmail,
 } from "../services/permissionService";
+import { useTheme } from "../../../app/providers/ThemeContext";
+import { getDriveStyles } from "../styles/myDrive.styles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -18,9 +20,11 @@ export default function ShareModal({ visible, item, onClose }) {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [adding, setAdding] = useState(false);
+    const { colors, isDarkMode } = useTheme();
 
     const fileId = item?.id || item?._id;
     const isOwner = String(item?.ownerId || item?.owner) === String(user?.id || user?._id);
+    const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
 
     const loadPermissions = useCallback(async () => {
         if (!fileId || !token) return;
@@ -99,69 +103,77 @@ export default function ShareModal({ visible, item, onClose }) {
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={styles.overlay}>
-                <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                {/* רקע מטושטש דינמי לפי מצב לילה/יום */}
+                <BlurView intensity={20} tint={isDarkMode ? "dark" : "dark"} style={StyleSheet.absoluteFill} />
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     style={styles.container}
                 >
-                    <BlurView intensity={95} tint="light" style={styles.glassCard}>
+                    {/* כרטיסיית הזכוכית - צבע הרקע (card) משתנה לפי ה-Theme */}
+                    <BlurView intensity={95} tint={isDarkMode ? "dark" : "light"} style={[styles.glassCard, { backgroundColor: colors.card + 'F2' }]}>
                         <View style={styles.header}>
-                            <Text style={styles.title}>SHARE FILE</Text>
+                            <Text style={[styles.title, { color: colors.textPrimary, fontFamily: 'BrunoAceSC_400Regular' }]}>
+                                SHARE FILE
+                            </Text>
                             <TouchableOpacity onPress={onClose} style={styles.closeIcon}>
-                                <Ionicons name="close" size={24} color="#333" />
+                                <Ionicons name="close" size={24} color={colors.textPrimary} />
                             </TouchableOpacity>
                         </View>
 
                         {isOwner && (
                             <View style={styles.addSection}>
-                                <View style={styles.inputWrapper}>
+                                <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { color: colors.textPrimary }]}
                                         placeholder="Enter email..."
-                                        placeholderTextColor="#888"
+                                        placeholderTextColor={colors.textTertiary}
                                         value={email}
                                         onChangeText={setEmail}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                     />
                                     <TouchableOpacity
-                                        style={styles.addBtn}
+                                        style={[styles.addBtn, { backgroundColor: colors.primary }]}
                                         onPress={handleShare}
                                         disabled={adding}
                                     >
-                                        {adding ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="person-add" size={20} color="#fff" />}
+                                        {adding ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Ionicons name="person-add" size={20} color="#fff" />
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             </View>
                         )}
 
                         <View style={styles.listContainer}>
-                            <Text style={styles.sectionLabel}>PEOPLE WITH ACCESS</Text>
+                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>PEOPLE WITH ACCESS</Text>
                             {loading ? (
-                                <ActivityIndicator style={{ marginVertical: 20 }} />
+                                <ActivityIndicator style={{ marginVertical: 20 }} color={colors.primary} />
                             ) : (
                                 <FlatList
                                     data={permissions}
                                     keyExtractor={(p) => p.id || p.userId || Math.random().toString()}
                                     renderItem={({ item: perm }) => (
-                                        <View style={styles.permItem}>
+                                        <View style={[styles.permItem, { borderBottomColor: colors.border }]}>
                                             <View style={styles.avatarWrapper}>
                                                 {perm.image ? (
                                                     <Image source={{ uri: perm.image }} style={styles.avatar} />
                                                 ) : (
-                                                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                                        <Ionicons name="person" size={18} color="#0d6efd" />
+                                                    <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '26' }]}>
+                                                        <Ionicons name="person" size={18} color={colors.primary} />
                                                     </View>
                                                 )}
                                             </View>
 
                                             <View style={styles.userInfo}>
-                                                <Text style={styles.userName} numberOfLines={1}>
+                                                <Text style={[styles.userName, { color: colors.textPrimary }]} numberOfLines={1}>
                                                     {perm.firstName} {perm.lastName}
                                                 </Text>
-                                                <Text style={styles.userEmail} numberOfLines={1}>
+                                                <Text style={[styles.userEmail, { color: colors.textSecondary }]} numberOfLines={1}>
                                                     {perm.email}
                                                 </Text>
                                             </View>
@@ -170,29 +182,31 @@ export default function ShareModal({ visible, item, onClose }) {
                                                 {isOwner ? (
                                                     <>
                                                         <TouchableOpacity
-                                                            style={styles.roleBadgeActive}
+                                                            style={[styles.roleBadgeActive, { backgroundColor: colors.primary + '26', borderColor: colors.primary + '33' }]}
                                                             onPress={() => handleToggleRole(perm)}
                                                         >
-                                                            <Text style={styles.roleTextActive}>{perm.role?.toUpperCase()}</Text>
-                                                            <Ionicons name="chevron-down" size={12} color="#0d6efd" style={{ marginLeft: 4 }} />
+                                                            <Text style={[styles.roleTextActive, { color: colors.primary }]}>{perm.role?.toUpperCase()}</Text>
+                                                            <Ionicons name="chevron-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
                                                         </TouchableOpacity>
 
                                                         <TouchableOpacity
-                                                            style={styles.deleteBtn}
+                                                            style={[styles.deleteBtn, { backgroundColor: colors.danger + '1A' }]}
                                                             onPress={() => handleRemove(perm)}
                                                         >
-                                                            <Ionicons name="trash-outline" size={18} color="#dc3545" />
+                                                            <Ionicons name="trash-outline" size={18} color={colors.danger} />
                                                         </TouchableOpacity>
                                                     </>
                                                 ) : (
-                                                    <View style={styles.roleBadgeReadOnly}>
-                                                        <Text style={styles.roleTextReadOnly}>{perm.role?.toUpperCase()}</Text>
+                                                    <View style={[styles.roleBadgeReadOnly, { backgroundColor: colors.surface }]}>
+                                                        <Text style={[styles.roleTextReadOnly, { color: colors.textSecondary }]}>{perm.role?.toUpperCase()}</Text>
                                                     </View>
                                                 )}
                                             </View>
                                         </View>
                                     )}
-                                    ListEmptyComponent={<Text style={styles.emptyText}>No shared users found.</Text>}
+                                    ListEmptyComponent={
+                                        <Text style={[styles.emptyText, { color: colors.textTertiary }]}>No shared users found.</Text>
+                                    }
                                 />
                             )}
                         </View>

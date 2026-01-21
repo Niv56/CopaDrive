@@ -38,7 +38,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const { icon, color } = getFileIconMeta(item.name, item.mimeType, isFolder);
 
   const { token } = useAuth();
-  
+
   // ✅ Theme Hooks
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
@@ -63,17 +63,17 @@ export default function DriveListItem({ item, onPress, onDelete }) {
     return (
       <View style={localStyles.leftActionContainer}>
         <Animated.View style={[localStyles.deleteActionAnim, { backgroundColor: colors.danger, opacity, transform: [{ scale }] }]}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={localStyles.deleteButtonInner}
-              onPress={() => {
-                swipeableRef.current?.close();
-                setTimeout(() => { if (onDelete) onDelete(item); }, 200);
-              }}
-            >
-              <Ionicons name="trash-outline" size={24} color="white" />
-              <Text style={localStyles.deleteText}>Delete</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={localStyles.deleteButtonInner}
+            onPress={() => {
+              swipeableRef.current?.close();
+              setTimeout(() => { if (onDelete) onDelete(item); }, 200);
+            }}
+          >
+            <Ionicons name="trash-outline" size={24} color="white" />
+            <Text style={localStyles.deleteText}>Delete</Text>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     );
@@ -100,15 +100,14 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
   const menuOptions = useMemo(() => {
     return [
-      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => comingSoon("Share") },
-      { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
+      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } },
       {
         key: "star", icon: isStarred ? "star" : "star-outline", label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
-        onPress: async () => { if (!token) return; closeMenu(); try { await setStarred(token, item.id, !isStarred); emitDriveRefresh(); } catch (e) {} },
+        onPress: async () => { if (!token) return; closeMenu(); try { await setStarred(token, item.id, !isStarred); emitDriveRefresh(); } catch (e) { } },
       },
       {
         key: "important", icon: isImportant ? "alert-circle" : "alert-circle-outline", label: isImportant ? "REMOVE IMPORTANT" : "ADD TO IMPORTANT",
-        onPress: async () => { if (!token) return; closeMenu(); try { await setImportant(token, item.id, !isImportant); emitDriveRefresh(); } catch (e) {} },
+        onPress: async () => { if (!token) return; closeMenu(); try { await setImportant(token, item.id, !isImportant); emitDriveRefresh(); } catch (e) { } },
       },
       { key: "download", icon: "download-outline", label: "DOWNLOAD", onPress: handleDownload },
       {
@@ -145,16 +144,16 @@ export default function DriveListItem({ item, onPress, onDelete }) {
   const doRenameSubmit = async () => {
     const next = renameValue.trim();
     if (!next) return;
-    try { await renameItem(token, item.id, next); setRenameOpen(false); emitDriveRefresh(); } 
+    try { await renameItem(token, item.id, next); setRenameOpen(false); emitDriveRefresh(); }
     catch (e) { Alert.alert("Rename Failed", e?.message); }
   };
 
   // רכיב פנימי לתפריט (כדי להשתמש בצבעים)
   const StackOption = ({ icon, label, onPress }) => (
-    <TouchableOpacity 
-        onPress={onPress} 
-        activeOpacity={0.9} 
-        style={[localStyles.stackBtn, { backgroundColor: colors.card }]} // ✅ רקע דינמי
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.9}
+      style={[localStyles.stackBtn, { backgroundColor: colors.card }]} // ✅ רקע דינמי
     >
       <Ionicons name={icon} size={22} color={colors.textPrimary} style={{ marginRight: 12 }} />
       <Text style={[localStyles.stackLabel, { color: colors.textPrimary }]}>{label}</Text>
@@ -163,10 +162,10 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
   return (
     <Swipeable
-        ref={swipeableRef}
-        renderLeftActions={onDelete ? renderLeftActions : undefined}
-        overshootLeft={false}
-        friction={2}
+      ref={swipeableRef}
+      renderLeftActions={onDelete ? renderLeftActions : undefined}
+      overshootLeft={false}
+      friction={2}
     >
       <Pressable
         style={driveStyles.fileCard} // ✅ שימוש בסטיילים הדינמיים
@@ -208,15 +207,15 @@ export default function DriveListItem({ item, onPress, onDelete }) {
       {/* מודל שינוי שם */}
       <Modal visible={renameOpen} transparent animationType="fade">
         <Pressable style={localStyles.renameBackdrop} onPress={() => setRenameOpen(false)}>
-          <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]}> 
+          <Pressable style={[localStyles.renameCard, { backgroundColor: colors.card }]}>
             <Text style={[localStyles.renameTitle, { color: colors.textPrimary }]}>RENAME</Text>
             <TextInput
               value={renameValue}
               onChangeText={setRenameValue}
-              style={[localStyles.renameInput, { 
-                  backgroundColor: colors.surface, 
-                  color: colors.textPrimary,
-                  borderColor: colors.border
+              style={[localStyles.renameInput, {
+                backgroundColor: colors.surface,
+                color: colors.textPrimary,
+                borderColor: colors.border
               }]}
               placeholderTextColor={colors.textTertiary}
               autoFocus
@@ -248,12 +247,12 @@ const localStyles = StyleSheet.create({
   stackMenu: { position: "absolute", width: 260, gap: 12 },
   stackBtn: {
     height: 54, flexDirection: "row", alignItems: "center", justifyContent: "flex-start",
-    paddingVertical: 12, paddingHorizontal: 18, borderRadius: 30, 
+    paddingVertical: 12, paddingHorizontal: 18, borderRadius: 30,
     elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18, shadowRadius: 5, minWidth: 260,
   },
   stackLabel: { flex: 1, textAlign: "left", fontSize: 12, letterSpacing: 1.2 },
-  
+
   renameBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
   renameCard: { borderRadius: 18, padding: 18 },
   renameTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12, letterSpacing: 1.5 },
@@ -266,8 +265,8 @@ const localStyles = StyleSheet.create({
 
   leftActionContainer: { width: 100, justifyContent: 'center', alignItems: 'center' },
   deleteActionAnim: {
-    width: 70, height: 60, borderRadius: 18, elevation: 2, 
-    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, marginRight: 10 
+    width: 70, height: 60, borderRadius: 18, elevation: 2,
+    shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 3, marginRight: 10
   },
   deleteButtonInner: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   deleteText: { color: "white", fontWeight: "700", fontSize: 11, marginTop: 2 }
