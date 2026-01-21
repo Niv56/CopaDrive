@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+// שינינו ל-AsyncStorage כי זה מה שהתקנו בטלפון
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { useRouter, useSegments } from "expo-router";
 
@@ -130,9 +131,44 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // Refresh user data from server (call after profile update)
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
+    try {
+      const userId = getUserIdFromToken(token);
+      if (!userId) return;
+      const userData = await getUserProfile(token, userId);
+      if (userData) {
+        setUser(userData);
+        await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
+      }
+    } catch (e) {
+      console.error("Failed to refresh user", e);
+    }
+  }, [token]);
+
+  // Update user data locally (used after profile edit)
+  const updateUserData = useCallback(async (nextUser) => {
+    console.log("[AuthContext] updateUserData called", nextUser);
+    if (!nextUser) return;
+    setUser(nextUser);
+    try {
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    } catch (e) {
+      console.error("Failed to persist user data", e);
+    }
+  }, []);
+
   const value = useMemo(() => ({
-    token, user, isAuthenticated: !!token, isHydrating, login, logout
-  }), [token, user, isHydrating]);
+    token,
+    user,
+    isAuthenticated: !!token,
+    isHydrating,
+    login,
+    logout,
+    refreshUser,
+    updateUserData
+  }), [token, user, isHydrating, refreshUser, updateUserData]);
 
   // ✅ התיקון הקריטי: לא מציגים את האפליקציה עד שסיימנו לטעון את הטוקן
   // זה מונע את הקפיצה למסך הלוגין כשיש משתמש מחובר
