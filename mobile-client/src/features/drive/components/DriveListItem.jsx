@@ -100,7 +100,7 @@ export default function DriveListItem({ item, onPress, onDelete }) {
 
   const menuOptions = useMemo(() => {
     return [
-      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => comingSoon("Share") },
+      { key: "share", icon: "share-social-outline", label: "SHARE", onPress: () => { closeMenu(); setShareOpen(true); } }, // תוקן לפתיחת ShareModal
       { key: "manage", icon: "key-outline", label: "MANAGE ACCESS", onPress: () => comingSoon("Manage access") },
       {
         key: "star", icon: isStarred ? "star" : "star-outline", label: isStarred ? "REMOVE STAR" : "ADD TO STAR",
@@ -198,8 +198,14 @@ export default function DriveListItem({ item, onPress, onDelete }) {
         <Pressable style={localStyles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={[localStyles.stackMenu, { top: menuPos.top, left: menuPos.left }]}>
+            {/* ✅ התיקון: העברה מפורשת של props במקום spread */}
             {menuOptions.map((opt) => (
-              <StackOption key={opt.key} {...opt} />
+              <StackOption 
+                key={opt.key} 
+                icon={opt.icon} 
+                label={opt.label} 
+                onPress={opt.onPress} 
+              />
             ))}
           </Pressable>
         </Pressable>
