@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Platform, InputAccessoryView, Button, Keyboard
+  StyleSheet, ScrollView, Platform, InputAccessoryView, Button, Keyboard, Dimensions
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../app/providers/ThemeContext"; // ✅ נתיב מתוקן (שתי דרגות למעלה)
 
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const ACCESSORY_ID = "fab_create_content_done";
 
 export default function CreateForm({ 
@@ -15,6 +17,7 @@ export default function CreateForm({
   selectedFolderId, setSelectedFolderId,
   onSubmit, onBack, loading 
 }) {
+  const { colors, isDarkMode } = useTheme(); // ✅ שימוש ב-Theme
   const isFolder = mode === "create_folder";
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
@@ -26,14 +29,26 @@ export default function CreateForm({
 
   return (
     <View style={styles.centerContainer}>
-      <View style={styles.modalCard}>
-        <Text style={styles.modalTitle}>
+      <View style={[
+        styles.modalCard, 
+        { backgroundColor: isDarkMode ? "#1e1e1e" : "#fff" } // ✅ התאמה ל-EditProfile
+      ]}>
+        <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
           {isFolder ? "CREATE NEW FOLDER" : "CREATE NEW FILE"}
         </Text>
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            { 
+              backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", 
+              color: colors.textPrimary,
+              borderColor: isDarkMode ? "transparent" : "#e9ecef",
+              borderWidth: isDarkMode ? 0 : 1
+            }
+          ]}
           placeholder={isFolder ? "Folder Name" : "File Name"}
+          placeholderTextColor={colors.textTertiary}
           value={name}
           onChangeText={setName}
           autoFocus
@@ -42,10 +57,21 @@ export default function CreateForm({
         />
 
         {!isFolder && (
-          <ScrollView style={{ width: "100%" }} keyboardShouldPersistTaps="handled">
+          <ScrollView style={{ width: "100%", maxHeight: 150 }} keyboardShouldPersistTaps="handled">
             <TextInput
-              style={[styles.input, { height: 120, textAlignVertical: "top" }]}
+              style={[
+                styles.input, 
+                { 
+                  height: 120, 
+                  textAlignVertical: "top",
+                  backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4",
+                  color: colors.textPrimary,
+                  borderRadius: 20,
+                  borderWidth: isDarkMode ? 0 : 1
+                }
+              ]}
               placeholder="Content..."
+              placeholderTextColor={colors.textTertiary}
               value={content}
               onChangeText={setContent}
               multiline
@@ -55,35 +81,44 @@ export default function CreateForm({
         )}
 
         {/* Folder Picker */}
-        <Text style={styles.label}>Save to</Text>
+        <Text style={[styles.label, { color: isDarkMode ? "#999" : "#666" }]}>SAVE TO</Text>
         <TouchableOpacity 
-          style={styles.folderPicker} 
+          style={[
+            styles.folderPicker, 
+            { 
+              backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#f8f9fa", 
+              borderColor: colors.border 
+            }
+          ]} 
           onPress={() => setShowFolderPicker(!showFolderPicker)}
         >
-          <Ionicons name="folder-outline" size={20} color="#666" />
-          <Text style={styles.folderPickerText}>{selectedFolderName}</Text>
+          <Ionicons name="folder-outline" size={20} color={colors.primary} />
+          <Text style={[styles.folderPickerText, { color: colors.textPrimary }]}>{selectedFolderName}</Text>
           <Ionicons 
             name={showFolderPicker ? "chevron-up" : "chevron-down"} 
             size={18} 
-            color="#666" 
+            color={colors.textTertiary} 
           />
         </TouchableOpacity>
 
         {showFolderPicker && (
-          <View style={styles.folderList}>
+          <View style={[
+            styles.folderList, 
+            { backgroundColor: isDarkMode ? "#252525" : "#f8f9fa", borderColor: colors.border }
+          ]}>
             <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
               <TouchableOpacity
                 style={[
                   styles.folderItem, 
-                  !selectedFolderId && styles.folderItemActive
+                  !selectedFolderId && { backgroundColor: isDarkMode ? "rgba(0,123,255,0.2)" : "#e0f2fe" }
                 ]}
                 onPress={() => { 
                   setSelectedFolderId(null); 
                   setShowFolderPicker(false); 
                 }}
               >
-                <Ionicons name="home-outline" size={18} color="#666" />
-                <Text style={styles.folderItemText}>My Drive (Root)</Text>
+                <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
+                <Text style={[styles.folderItemText, { color: colors.textPrimary }]}>My Drive (Root)</Text>
               </TouchableOpacity>
               
               {folders?.filter(f => f.type === "folder").map(folder => (
@@ -91,7 +126,7 @@ export default function CreateForm({
                   key={folder.id}
                   style={[
                     styles.folderItem, 
-                    selectedFolderId === folder.id && styles.folderItemActive
+                    selectedFolderId === folder.id && { backgroundColor: isDarkMode ? "rgba(0,123,255,0.2)" : "#e0f2fe" }
                   ]}
                   onPress={() => { 
                     setSelectedFolderId(folder.id); 
@@ -99,7 +134,7 @@ export default function CreateForm({
                   }}
                 >
                   <Ionicons name="folder" size={18} color="#f59e0b" />
-                  <Text style={styles.folderItemText}>{folder.name}</Text>
+                  <Text style={[styles.folderItemText, { color: colors.textPrimary }]}>{folder.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -108,19 +143,23 @@ export default function CreateForm({
 
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={ACCESSORY_ID}>
-            <View style={styles.accessory}>
+            <View style={[styles.accessory, { backgroundColor: isDarkMode ? "#2c2c2e" : "#f0f0f0" }]}>
               <Button onPress={() => Keyboard.dismiss()} title="Done" />
             </View>
           </InputAccessoryView>
         )}
 
         <View style={styles.modalButtons}>
-          <TouchableOpacity onPress={onBack} disabled={loading}>
-            <Text style={styles.cancelText}>BACK</Text>
+          <TouchableOpacity 
+            style={[styles.btnAction, { backgroundColor: isDarkMode ? "#333" : "#f1f3f4" }]} 
+            onPress={onBack} 
+            disabled={loading}
+          >
+            <Text style={[styles.cancelText, { color: colors.textPrimary }]}>BACK</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.createBtn, loading && { opacity: 0.7 }]}
+            style={[styles.createBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }]}
             onPress={onSubmit}
             disabled={loading}
           >
@@ -137,38 +176,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 30
+    padding: 20
   },
   modalCard: {
-    backgroundColor: "white",
-    borderRadius: 24,
+    borderRadius: 35,
     padding: 24,
     width: '100%',
     maxWidth: 400,
     alignItems: "center",
-    elevation: 10,
+    elevation: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
-  modalTitle: { fontSize: 18, marginBottom: 20, color: "#333", textAlign: "center", fontWeight: '700' },
+  modalTitle: { fontSize: 18, marginBottom: 20, textAlign: "center", fontWeight: '700' },
   input: {
     width: "100%",
-    backgroundColor: "#f8f9fa",
-    borderWidth: 1,
-    borderColor: "#e9ecef",
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 30,
+    paddingHorizontal: 22,
+    height: 50,
     fontSize: 16,
     marginBottom: 15,
   },
   label: {
     alignSelf: "flex-start",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "800",
     marginBottom: 8,
-    color: "#333",
+    marginLeft: 15,
+    letterSpacing: 0.5,
   },
   folderPicker: {
     flexDirection: "row",
@@ -176,57 +213,56 @@ const styles = StyleSheet.create({
     gap: 10,
     width: "100%",
     borderWidth: 1,
-    borderColor: "#e9ecef",
-    borderRadius: 12,
+    borderRadius: 30,
     padding: 15,
     marginBottom: 8,
-    backgroundColor: "#f8f9fa",
   },
   folderPickerText: {
     flex: 1,
     fontSize: 15,
-    color: "#333",
+    fontWeight: '500',
   },
   folderList: {
     width: "100%",
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
+    borderRadius: 20,
     marginBottom: 15,
-    maxHeight: 150,
+    maxHeight: 120,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
   folderItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-  },
-  folderItemActive: {
-    backgroundColor: "#e0f2fe",
   },
   folderItemText: {
     fontSize: 14,
-    color: "#333",
+    fontWeight: '500',
   },
   modalButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
     width: "100%",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 10,
   },
-  cancelText: { color: "#6c757d", fontSize: 14, padding: 10, fontWeight: '600' },
+  btnAction: {
+    flex: 1,
+    height: 55,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelText: { fontSize: 14, fontWeight: '700' },
   createBtn: {
-    backgroundColor: "#0d6efd",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 12,
+    flex: 1,
+    height: 55,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  confirmText: { color: "white", fontSize: 14, fontWeight: '700' },
+  confirmText: { color: "white", fontSize: 14, fontWeight: '800' },
 
   accessory: {
     width: "100%",
@@ -234,7 +270,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingVertical: 2,   
     paddingHorizontal: 10,
-    backgroundColor: "#f0f0f0",
     borderTopWidth: 1,
     borderTopColor: "#dcdcdc"
   }

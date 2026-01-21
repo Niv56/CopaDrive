@@ -8,7 +8,7 @@ export const theme = {
     textTertiary: "#9aa0a6",
     border: "#e9ecef",
     divider: "#f0f0f0",
-    primary: "#007bff", // כחול בוהק
+    primary: "#007bff", // כחול בוהק במצב יום
     danger: "#dc3545",
     iconColor: "#5f6368",
     activeItem: "rgba(13, 110, 253, 0.12)"
@@ -22,9 +22,10 @@ export const theme = {
     textTertiary: "#606770",
     border: "#2c2c2e",
     divider: "#2c2c2e",
-    primary: "#007bff", // ✅ נשאר אותו כחול בוהק גם בלילה (במקום התכלת שהיה קודם)
+    // ✅ שונה לסגול כהה ויפה עבור ה-FAB והבועה
+    primary: "#7B61FF", 
     danger: "#ff453a",
     iconColor: "#e4e6eb",
-    activeItem: "rgba(0, 123, 255, 0.2)"
+    activeItem: "rgba(123, 97, 255, 0.2)" // מותאם לסגול החדש
   }
 };

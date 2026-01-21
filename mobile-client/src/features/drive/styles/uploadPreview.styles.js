@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
-// Dynamic styles that accept theme colors
-export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
+// ✅ הוספת פרמטר isDarkMode כדי לאפשר דיוק צבעים לפי ה-Edit Profile
+export const getUploadPreviewStyles = (colors = {}, isDarkMode) => StyleSheet.create({
   backdrop: { 
     flex: 1 
   },
@@ -11,10 +11,15 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     padding: 16 
   },
   card: { 
-    backgroundColor: colors.card || "#fff", 
-    borderRadius: 20, 
+    backgroundColor: isDarkMode ? "#1e1e1e" : (colors.card || "#fff"), // ✅ רקע זהה ל-EditProfile
+    borderRadius: 35, // ✅ רדיוס מוגדל ל-35
     maxHeight: "85%",
     overflow: "hidden",
+    elevation: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
 
   // Header
@@ -22,7 +27,7 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     flexDirection: "row", 
     justifyContent: "space-between", 
     alignItems: "center",
-    padding: 16, 
+    padding: 20, 
     borderBottomWidth: 1, 
     borderBottomColor: colors.border || "#eee",
   },
@@ -30,6 +35,7 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     fontSize: 18, 
     fontWeight: "700",
     color: colors.textPrimary || "#333",
+    letterSpacing: 0.5,
   },
   closeBtn: { 
     padding: 4 
@@ -37,14 +43,14 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
 
   // Body
   body: { 
-    padding: 16 
+    padding: 20 
   },
 
   // Preview
   previewContainer: { 
-    height: 200, 
-    backgroundColor: colors.surface || "#f5f5f5", 
-    borderRadius: 12, 
+    height: 180, 
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : (colors.surface || "#f5f5f5"), 
+    borderRadius: 20, 
     marginBottom: 20, 
     overflow: "hidden", 
     justifyContent: "center", 
@@ -69,20 +75,22 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
 
   // Form Elements
   label: { 
-    fontSize: 14, 
-    fontWeight: "600", 
+    fontSize: 11, // ✅ הקטנה ל-11 לפי ה-EditProfile
+    fontWeight: "800", 
     marginBottom: 8, 
-    color: colors.textPrimary || "#333",
+    marginLeft: 15,
+    color: "#999", // צבע אפור נייטרלי ללייבלים
+    letterSpacing: 0.5,
   },
   input: { 
-    borderWidth: 1, 
-    borderColor: colors.border || "#ddd", 
-    borderRadius: 10, 
-    padding: 12, 
+    borderRadius: 30, // ✅ רדיוס מוגדל ל-30
+    paddingHorizontal: 22, 
+    height: 50,
     fontSize: 15, 
     marginBottom: 16,
-    backgroundColor: colors.surface || "#fff",
-    color: colors.textPrimary || "#333",
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "#f1f3f4", // ✅ רקע כהה/בהיר תואם
+    color: colors.textPrimary,
+    borderWidth: 0,
   },
 
   // Folder Picker
@@ -90,26 +98,28 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     flexDirection: "row", 
     alignItems: "center", 
     gap: 10,
-    borderWidth: 1, 
-    borderColor: colors.border || "#ddd", 
-    borderRadius: 10, 
-    padding: 12, 
+    borderRadius: 30, // ✅ רדיוס מוגדל ל-30
+    paddingHorizontal: 20,
+    height: 50,
     marginBottom: 8,
-    backgroundColor: colors.surface || "#fff",
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#f8f9fa",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   folderPickerText: { 
     flex: 1, 
     fontSize: 15, 
-    color: colors.textPrimary || "#333",
+    color: colors.textPrimary,
+    fontWeight: '500',
   },
   folderList: { 
-    backgroundColor: colors.surface || "#f9f9f9", 
-    borderRadius: 10, 
+    backgroundColor: isDarkMode ? "#252525" : "#f9f9f9", 
+    borderRadius: 20, 
     marginBottom: 16, 
-    maxHeight: 150, 
+    maxHeight: 120, 
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border || "#eee",
+    borderColor: colors.border,
   },
   folderItem: { 
     flexDirection: "row", 
@@ -117,23 +127,24 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     gap: 10, 
     padding: 12, 
     borderBottomWidth: 1, 
-    borderBottomColor: colors.border || "#eee",
+    borderBottomColor: colors.border,
   },
   folderItemActive: { 
-    backgroundColor: (colors.primary || "#2563eb") + "20",
+    backgroundColor: isDarkMode ? "rgba(0,123,255,0.2)" : "rgba(13, 110, 253, 0.12)",
   },
   folderItemText: { 
     fontSize: 14, 
-    color: colors.textPrimary || "#333",
+    color: colors.textPrimary,
+    fontWeight: '500',
   },
 
   // Footer
   footer: { 
     flexDirection: "row", 
     gap: 10, 
-    padding: 16, 
+    padding: 20, 
     borderTopWidth: 1, 
-    borderTopColor: colors.border || "#eee",
+    borderTopColor: colors.border,
   },
   secondaryBtn: { 
     flex: 1, 
@@ -141,13 +152,13 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     alignItems: "center", 
     justifyContent: "center",
     gap: 6, 
-    padding: 12, 
-    borderRadius: 10, 
-    backgroundColor: colors.surface || "#f0f0f0",
+    height: 55, // ✅ הגבהה ל-55 לפי הכפתורים ב-EditProfile
+    borderRadius: 30, 
+    backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
   },
   secondaryBtnText: { 
-    fontWeight: "600", 
-    color: colors.textPrimary || "#333",
+    fontWeight: "700", 
+    color: colors.textPrimary,
   },
   discardBtn: { 
     flex: 1, 
@@ -155,12 +166,12 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     alignItems: "center", 
     justifyContent: "center",
     gap: 6, 
-    padding: 12, 
-    borderRadius: 10, 
-    backgroundColor: "#fef2f2",
+    height: 55, 
+    borderRadius: 30, 
+    backgroundColor: isDarkMode ? "rgba(220,38,38,0.15)" : "#fef2f2",
   },
   discardBtnText: { 
-    fontWeight: "600", 
+    fontWeight: "700", 
     color: "#dc2626",
   },
   confirmBtn: { 
@@ -169,15 +180,16 @@ export const getUploadPreviewStyles = (colors = {}) => StyleSheet.create({
     alignItems: "center", 
     justifyContent: "center",
     gap: 6, 
-    padding: 12, 
-    borderRadius: 10, 
-    backgroundColor: colors.primary || "#2563eb",
+    height: 55, 
+    borderRadius: 30, 
+    backgroundColor: colors.primary,
   },
   confirmBtnDisabled: { 
     opacity: 0.6 
   },
   confirmBtnText: { 
-    fontWeight: "600", 
+    fontWeight: "800", 
     color: "#fff",
+    fontSize: 16,
   },
 });
