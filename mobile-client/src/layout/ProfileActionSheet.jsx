@@ -5,7 +5,7 @@ import { useNavigation } from "expo-router";
 import { DrawerActions } from "@react-navigation/native";
 import { useAuth } from "../app/providers/AuthContext";
 import SearchBar from "./SearchBar/SearchBar";
-import EditProfileModal from "../features/auth/components/EditProfileModal";
+import EditProfileModal from "../features/user/components/EditProfileModal";
 
 import { getDriveStyles } from "../features/drive/styles/myDrive.styles";
 import { useTheme } from "../app/providers/ThemeContext";
