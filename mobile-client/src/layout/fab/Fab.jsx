@@ -47,23 +47,28 @@ export default function Fab({ onRefresh }) {
   } = useDriveUploads(token, onRefresh, closeAll);
 
   // Fetch folders for destination selection
+  const fetchFolders = async () => {
+    if (!token) return;
+    try {
+      const files = await getFiles(token);
+      const foldersList = (files || []).filter(f => f.type === "folder");
+      setFolders(foldersList);
+    } catch (err) {
+      // Silently fail - folders will just be empty
+    }
+  };
+
   useEffect(() => {
-    const fetchFolders = async () => {
-      if (!token) return;
-      try {
-        const files = await getFiles(token);
-        const foldersList = (files || []).filter(f => f.type === "folder");
-        setFolders(foldersList);
-      } catch (err) {
-        // Silently fail - folders will just be empty
-      }
-    };
     fetchFolders();
   }, [token]);
 
   const switchTo = (view) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveView(view);
+    // Refresh folders when opening create form to ensure we have all folders
+    if (view === "create_folder" || view === "create_file") {
+      fetchFolders();
+    }
   };
 
   const handleMenuAction = (action) => {
