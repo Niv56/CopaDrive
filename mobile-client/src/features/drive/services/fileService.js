@@ -57,6 +57,12 @@ export async function getImportantFiles(token) {
   return request("/api/files/important", { method: "GET", token });
 }
 
+
+export async function recordAccess(token, fileId) {
+  if (!fileId) return null;
+  return request(`/api/files/${fileId}/access`, { method: "PATCH", token });
+}
+
 // Trash management logic
 export async function getTrashFiles(token) {
   return request("/api/files/trash", { method: "GET", token });

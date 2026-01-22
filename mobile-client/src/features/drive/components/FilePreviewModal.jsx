@@ -9,7 +9,7 @@ import { Video, ResizeMode, Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 
 import { useAuth } from "../../../app/providers/AuthContext";
-import { getFileById, updateItem, setStarred, setImportant } from "../services/fileService";
+import { getFileById, updateItem, setStarred, setImportant, recordAccess } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 import { downloadFile } from "../utils/downloadFile";
 import { getPermissions } from "../services/permissionService";
@@ -204,6 +204,12 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
       setIsPlaying(false);
 
       const data = await getFileById(token, fileId);
+
+        try {
+        await recordAccess(token, fileId);
+      } catch (e) {
+        console.warn("Failed to record access:", e?.message);
+      }
 
       let myRole = null;
       try {
