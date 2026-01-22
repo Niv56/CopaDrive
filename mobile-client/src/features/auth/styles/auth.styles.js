@@ -163,6 +163,16 @@ export const getAuthStyles = (colors, isDarkMode) => StyleSheet.create({
     backgroundColor: "#007bff",
     borderColor: "#007bff",
   },
+  genderBtnFull: {
+    width: "100%",
+    height: 50,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: isDarkMode ? "rgba(255,255,255,0.15)" : "#e1e1e1",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "#fff",
+  },
   genderText: {
     color: colors.textPrimary,
     fontWeight: "600",
