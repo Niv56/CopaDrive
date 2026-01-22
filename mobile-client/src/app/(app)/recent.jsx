@@ -33,10 +33,20 @@ import FilePreviewModal from "../../features/drive/components/FilePreviewModal";
  */
 export default function RecentPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const { colors, isDarkMode } = useTheme();
   const driveStyles = useMemo(() => getDriveStyles(colors), [colors]);
+
+  // Helper to extract lastAccessed date for the current user from lastAccessedBy map
+  const getLastAccessedForUser = useCallback((item) => {
+    if (!user) return null;
+    const userId = user.id || user._id;
+    if (!userId || !item.lastAccessedBy) return null;
+    
+    // lastAccessedBy is serialized as an object { "userId": "date" }
+    return item.lastAccessedBy[userId] || item.lastAccessedBy[String(userId)] || null;
+  }, [user]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,7 +202,7 @@ export default function RecentPage() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <DriveListItem
-                  item={{ ...item, displayDate: formatLastAccessed(item.lastAccessed) }}
+                  item={{ ...item, displayDate: formatLastAccessed(getLastAccessedForUser(item)) }}
                   onPress={openItem}
                   onDelete={handleDeleteItem}
                 />
