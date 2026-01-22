@@ -3,14 +3,9 @@ import { View, Text, Pressable, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
-/**
- * Registration Step 3: Personal Information
- * Handles Date of Birth selection and Gender identity.
- */
 export default function Step3({ formData, setFormData, errors, authStyles, colors }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  /** Determines the initial date displayed by the picker (defaults to 18 years ago) */
   const getDateValue = () => {
     if (formData.dateOfBirth) {
       const parsed = new Date(formData.dateOfBirth);
@@ -21,7 +16,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
     return defaultDate;
   };
 
-  /** Formats the selected date into a YYYY-MM-DD string for the database */
   const handleDateChange = (event, selectedDate) => {
     if (Platform.OS === "android") {
       setShowDatePicker(false);
@@ -34,7 +28,6 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
     }
   };
 
-  /** Formats the DOB string for a user-friendly display in the UI */
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return "Select your birthday";
     const date = new Date(dateStr);
@@ -76,13 +69,12 @@ export default function Step3({ formData, setFormData, errors, authStyles, color
           onChange={handleDateChange}
           maximumDate={new Date()}
           minimumDate={new Date(1900, 0, 1)}
-          themeVariant={isDarkMode ? "dark" : "light"}
+          themeVariant={colors.background === "#121212" ? "dark" : "light"}
         />
       )}
 
       <Text style={[authStyles.label, { marginTop: 10 }]}>Gender</Text>
 
-      {/* Gender Selection Grid */}
       <View style={authStyles.genderContainer}>
         <View style={authStyles.genderRow}>
           {[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }].map((g) => (
