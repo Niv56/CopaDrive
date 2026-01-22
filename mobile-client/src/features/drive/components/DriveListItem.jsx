@@ -8,6 +8,8 @@ import {
   Alert,
   Animated,
   StyleSheet,
+  ScrollView,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -206,7 +208,42 @@ export default function DriveListItem({
 
     dotsRef.current.measureInWindow((x, y, w, h) => {
       const MENU_W = 260;
-      setMenuPos({ top: (y + h / 2) - 100, left: (x + w / 2) - MENU_W - 12 });
+      const screenHeight = Dimensions.get('window').height;
+      const screenWidth = Dimensions.get('window').width;
+      const menuItemHeight = 54 + 12; // button height + gap (marginBottom)
+      const menuPadding = 8; // padding inside scrollMenuContent
+      const estimatedMenuHeight = Math.min(
+        menuOptions.length * menuItemHeight + menuPadding * 2,
+        screenHeight * 0.7
+      );
+      const padding = 20; // padding from screen edges
+
+      // Calculate top position, ensuring menu doesn't go off screen
+      let topPos = (y + h / 2) - 100;
+      const maxTop = screenHeight - estimatedMenuHeight - padding;
+      const minTop = padding;
+
+      // Adjust if menu would go off bottom
+      if (topPos + estimatedMenuHeight > screenHeight - padding) {
+        topPos = Math.max(minTop, screenHeight - estimatedMenuHeight - padding);
+      }
+      // Ensure it doesn't go off top
+      if (topPos < padding) {
+        topPos = padding;
+      }
+
+      // Calculate left position, ensuring menu doesn't go off screen
+      let leftPos = (x + w / 2) - MENU_W - 12;
+      // If menu would go off right edge, position it to the left of the button
+      if (leftPos + MENU_W > screenWidth - padding) {
+        leftPos = x - MENU_W - 12;
+      }
+      // Ensure it doesn't go off left
+      if (leftPos < padding) {
+        leftPos = padding;
+      }
+
+      setMenuPos({ top: topPos, left: leftPos });
       setMenuOpen(true);
     });
   };
@@ -242,12 +279,28 @@ export default function DriveListItem({
         <Pressable style={styles.backdrop} onPress={closeMenu}>
           <BlurView intensity={22} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={[styles.stackMenu, { top: menuPos.top, left: menuPos.left }]} onPress={(e) => e.stopPropagation()}>
-            {menuOptions.map((opt) => (
-              <TouchableOpacity key={opt.key} onPress={opt.onPress} activeOpacity={0.9} style={styles.stackBtn}>
-                <Ionicons name={opt.icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
-                <Text style={styles.stackLabel}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView
+              style={styles.scrollMenu}
+              contentContainerStyle={styles.scrollMenuContent}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              nestedScrollEnabled={true}
+            >
+              {menuOptions.map((opt, index) => (
+                <TouchableOpacity
+                  key={opt.key}
+                  onPress={opt.onPress}
+                  activeOpacity={0.9}
+                  style={[
+                    styles.stackBtn,
+                    index === menuOptions.length - 1 && { marginBottom: 0 }
+                  ]}
+                >
+                  <Ionicons name={opt.icon} size={22} color={colors.textPrimary} style={styles.iconMargin} />
+                  <Text style={styles.stackLabel}>{opt.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
