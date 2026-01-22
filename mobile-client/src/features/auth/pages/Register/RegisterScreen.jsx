@@ -157,15 +157,15 @@ export default function RegisterScreen() {
       </View>
 
       {/* Progress Indicators (Pagination Dots) */}
-      {step <= TOTAL_STEPS && (
+     {step <= TOTAL_STEPS && (
         <View style={localStyles.dots}>
           {[1, 2, 3, 4].map((i) => (
-            <View
-              key={i}
+            <View 
+              key={i} 
               style={[
-                localStyles.dot,
-                i === step ? { backgroundColor: colors.primary, width: 20 } : { backgroundColor: colors.textTertiary }
-              ]}
+                localStyles.dot, 
+                i === step && { backgroundColor: colors.primary, width: 20 }
+              ]} 
             />
           ))}
         </View>
