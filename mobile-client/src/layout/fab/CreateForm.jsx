@@ -105,7 +105,11 @@ export default function CreateForm({
             styles.folderList,
             { backgroundColor: isDarkMode ? "#252525" : "#f8f9fa", borderColor: colors.border }
           ]}>
-            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            <ScrollView
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
+            >
               <TouchableOpacity
                 style={[
                   styles.folderItem,
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 20,
     marginBottom: 15,
-    maxHeight: 120,
+    maxHeight: 200,
     overflow: "hidden",
     borderWidth: 1,
   },
