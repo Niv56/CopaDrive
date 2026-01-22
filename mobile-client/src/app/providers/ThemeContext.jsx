@@ -27,7 +27,6 @@ export const ThemeProvider = ({ children }) => {
           setIsDarkMode(systemScheme === "dark");
         }
       } catch (e) {
-        console.log("Failed to load theme", e);
       } finally {
         setIsLoaded(true);
       }

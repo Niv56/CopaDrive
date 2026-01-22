@@ -37,7 +37,6 @@ export default function HomeManager() {
 
 
   const handleRefresh = () => {
-    console.log("Global refresh triggered via FAB");
   };
 
   if (!fontsLoaded) return null;
