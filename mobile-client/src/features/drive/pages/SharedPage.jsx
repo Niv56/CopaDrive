@@ -93,7 +93,6 @@ export default function SharedPage() {
       ownersCacheRef.current = { ...ownersCacheRef.current, ...next };
       setOwnersData({ ...ownersCacheRef.current });
     } catch (e) {
-      console.error("loadOwners error:", e);
     } finally {
       setOwnersLoading(false);
     }

@@ -28,7 +28,6 @@ export const MusicProvider = ({ children }) => {
         });
         await loadSound();
       } catch (e) {
-        console.error("Audio setup failed", e);
       }
     }
     configureAudio();

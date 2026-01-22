@@ -15,7 +15,6 @@ export const authenticateUser = async (email, password) => {
 
     return { success: true, token: data.token, error: null };
   } catch (error) {
-    console.error("Login error:", error);
     return { success: false, error: error.message || "Login failed" };
   }
 };
@@ -32,7 +31,6 @@ export const registerUser = async (userData) => {
 
     return { success: true, data };
   } catch (error) {
-    console.error("Registration error:", error);
     return { success: false, error: error.message || "Registration failed" };
   }
 };

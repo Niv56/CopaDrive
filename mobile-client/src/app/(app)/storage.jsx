@@ -51,7 +51,6 @@ export default function StoragePage() {
       const data = await getFiles(token);
       setFiles(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load files for storage view", err);
     } finally {
       setLoading(false);
     }

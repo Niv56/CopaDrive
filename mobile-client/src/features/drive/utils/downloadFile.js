@@ -82,7 +82,6 @@ export async function downloadFile({ content, mimeType, fileName, isBase64 = tru
     return uri;
 
   } catch (error) {
-    console.error("DownloadFile Error:", error);
     throw error;
   }
 }

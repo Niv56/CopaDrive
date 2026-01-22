@@ -8,8 +8,6 @@ export async function getPermissions(token, fileId) {
             token,
         });
 
-        console.log("=== PERMISSIONS SERVICE DEBUG ===");
-        console.log("Raw response:", JSON.stringify(response, null, 2));
 
         // Server might return: { myRole: "owner", permissions: [...] }
         // OR just an array [...]
@@ -19,21 +17,16 @@ export async function getPermissions(token, fileId) {
         if (Array.isArray(response)) {
             // Direct array response
             permissionsList = response;
-            console.log("Response is direct array");
         } else if (response && Array.isArray(response.permissions)) {
             // Nested in permissions property
             permissionsList = response.permissions;
-            console.log("Response has permissions property");
         } else {
-            console.log("Unexpected response format");
             return [];
         }
 
-        console.log("Permissions list:", JSON.stringify(permissionsList, null, 2));
 
         // Map the fields to match what ShareModal expects
         const mapped = permissionsList.map(perm => {
-            console.log("Mapping permission:", JSON.stringify(perm, null, 2));
 
             return {
                 id: perm.id || perm._id,
@@ -46,12 +39,8 @@ export async function getPermissions(token, fileId) {
             };
         });
 
-        console.log("Mapped permissions:", JSON.stringify(mapped, null, 2));
-        console.log("=================================");
-
         return mapped;
     } catch (error) {
-        console.error("getPermissions error:", error);
         throw error;
     }
 }
