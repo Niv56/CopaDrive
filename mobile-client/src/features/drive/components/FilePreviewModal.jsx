@@ -9,7 +9,7 @@ import { Video, ResizeMode, Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 
 import { useAuth } from "../../../app/providers/AuthContext";
-import { getFileById, updateItem, setStarred, setImportant, recordAccess } from "../services/fileService";
+import { getFileById, updateItem, setStarred, setImportant } from "../services/fileService";
 import { emitDriveRefresh } from "../services/driveEvents";
 import { downloadFile } from "../utils/downloadFile";
 import { getPermissions } from "../services/permissionService";
@@ -101,7 +101,7 @@ function extractOwnerId(item) {
 /* ---------------- Component ---------------- */
 
 export default function FilePreviewModal({ open, fileId, onClose }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { colors, isDarkMode } = useTheme();
 
   const [item, setItem] = useState(null);
@@ -118,17 +118,29 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
   const videoRef = useRef(null);
 
   const myUserId = useMemo(() => {
+    // Use user object first (same as DriveListItem), fallback to JWT if needed
+    if (user?.id || user?._id) {
+      return user?.id || user?._id;
+    }
     const payload = decodeJwtSafe(token);
     return payload?.userId || payload?.id || payload?._id || null;
-  }, [token]);
+  }, [token, user]);
 
   const ownerId = useMemo(() => extractOwnerId(item), [item]);
 
+  const isOwner = useMemo(() => {
+    if (!myUserId || !ownerId) return false;
+    return String(ownerId) === String(myUserId);
+  }, [myUserId, ownerId]);
+
   const effectiveRole = useMemo(() => {
+    // Check if user is owner first (same logic as DriveListItem)
+    if (isOwner) return "owner";
+
+    // Then check item role
     if (item?.role) return normalizeRole(item.role);
 
-    if (myUserId && ownerId && String(myUserId) === String(ownerId)) return "owner";
-
+    // Then check permissions
     if (Array.isArray(item?.permissions) && myUserId) {
       const myPerm = item.permissions.find(
         (p) => String(pickUserIdFromPerm(p)) === String(myUserId)
@@ -137,7 +149,7 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
     }
 
     return "viewer";
-  }, [item, myUserId, ownerId]);
+  }, [item, myUserId, isOwner]);
 
   const canEdit = effectiveRole === "owner" || effectiveRole === "editor";
 
@@ -205,26 +217,31 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
 
       const data = await getFileById(token, fileId);
 
-        try {
-        await recordAccess(token, fileId);
-      } catch (e) {
-        console.warn("Failed to record access:", e?.message);
-      }
+      // Check if user is owner first (before checking permissions)
+      const currentOwnerId = extractOwnerId(data);
+      const isCurrentOwner = myUserId && currentOwnerId && String(currentOwnerId) === String(myUserId);
 
       let myRole = null;
-      try {
-        const perms = await getPermissions(token, fileId);
-        const myPerm = Array.isArray(perms)
-          ? perms.find((p) => String(pickUserIdFromPerm(p)) === String(myUserId))
-          : null;
+      if (!isCurrentOwner) {
+        // Only fetch permissions if user is not the owner
+        try {
+          const perms = await getPermissions(token, fileId);
+          const myPerm = Array.isArray(perms)
+            ? perms.find((p) => String(pickUserIdFromPerm(p)) === String(myUserId))
+            : null;
 
-        myRole = myPerm?.role ? normalizeRole(myPerm.role) : null;
-        data.permissions = perms;
-      } catch (e) {
-        console.warn("Failed to load permissions for role:", e?.message);
+          myRole = myPerm?.role ? normalizeRole(myPerm.role) : null;
+          data.permissions = perms;
+        } catch (e) {
+          console.warn("Failed to load permissions for role:", e?.message);
+        }
+      } else {
+        // User is owner, set role explicitly
+        myRole = "owner";
       }
 
-      data.role = myRole || normalizeRole(data.role || data.myRole || data.permissionRole);
+      // Set role: owner takes precedence, then myRole from permissions, then item role
+      data.role = isCurrentOwner ? "owner" : (myRole || normalizeRole(data.role || data.myRole || data.permissionRole));
 
       setItem(data);
       setNameDraft(data?.name || "");
