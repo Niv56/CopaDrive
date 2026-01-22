@@ -82,7 +82,6 @@ export function AuthProvider({ children }) {
           }
         }
       } catch (e) {
-        console.error("Hydration error", e);
       } finally {
         if (isMounted) setIsHydrating(false);
       }
@@ -151,7 +150,6 @@ export function AuthProvider({ children }) {
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(userData));
       }
     } catch (e) {
-      console.error("Failed to refresh user", e);
     }
   }, [token]);
 
@@ -162,7 +160,6 @@ export function AuthProvider({ children }) {
     try {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     } catch (e) {
-      console.error("Failed to persist user data", e);
     }
   }, []);
 

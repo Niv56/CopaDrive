@@ -52,7 +52,6 @@ export default function ImportantPage() {
       const data = await getImportantFiles(token);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load important files:", err);
     } finally {
       setLoading(false);
     }

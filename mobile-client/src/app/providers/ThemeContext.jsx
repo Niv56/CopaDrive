@@ -46,7 +46,6 @@ export const ThemeProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem(THEME_KEY, newMode ? "dark" : "light");
     } catch (e) {
-      console.error("Failed to save theme", e);
     }
   };
 

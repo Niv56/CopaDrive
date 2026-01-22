@@ -19,7 +19,6 @@ export async function fetchSearchItems(token, query) {
         // Ensure returned data is iterable for the UI components
         return Array.isArray(data) ? data : [];
     } catch (error) {
-        console.error("Search failed:", error.message);
         return [];
     }
 }

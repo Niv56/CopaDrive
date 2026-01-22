@@ -75,7 +75,6 @@ export default function ShareModal({ visible, item, onClose }) {
             await updatePermission(token, fileId, permId, newRole);
             await loadPermissions();
         } catch (e) {
-            console.error("Update role error:", e);
             Alert.alert("Error", "Failed to update role");
         }
     };
@@ -96,7 +95,6 @@ export default function ShareModal({ visible, item, onClose }) {
                             await deletePermission(token, fileId, permId);
                             await loadPermissions();
                         } catch (e) {
-                            console.error("Delete permission error:", e);
                             Alert.alert("Error", "Failed to remove user");
                         }
                     },

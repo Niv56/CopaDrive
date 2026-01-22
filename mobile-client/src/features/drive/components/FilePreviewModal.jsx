@@ -182,7 +182,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
           playThroughEarpieceAndroid: false,
         });
       } catch (e) {
-        console.warn("Failed to configure audio mode", e);
       }
     };
     if (open) configureAudio();
@@ -200,7 +199,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
       await FileSystem.writeAsStringAsync(uri, content, { encoding: "base64" });
       setLocalMediaUri(uri);
     } catch (e) {
-      console.error("Failed to prepare media:", e);
       Alert.alert("Error", "Could not load media for playback");
     } finally {
       setMediaLoading(false);
@@ -233,7 +231,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
           myRole = myPerm?.role ? normalizeRole(myPerm.role) : null;
           data.permissions = perms;
         } catch (e) {
-          console.warn("Failed to load permissions for role:", e?.message);
         }
       } else {
         // User is owner, set role explicitly
@@ -485,7 +482,6 @@ export default function FilePreviewModal({ open, fileId, onClose }) {
                         volume={1.0}
                         isMuted={false}
                         onPlaybackStatusUpdate={onPlaybackStatusUpdate}
-                        onError={(e) => console.log("Video Error:", e)}
                       />
                     </>
                   ) : (

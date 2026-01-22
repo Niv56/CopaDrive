@@ -43,7 +43,7 @@ export default function RecentPage() {
     if (!user) return null;
     const userId = user.id || user._id;
     if (!userId || !item.lastAccessedBy) return null;
-    
+
     // lastAccessedBy is serialized as an object { "userId": "date" }
     return item.lastAccessedBy[userId] || item.lastAccessedBy[String(userId)] || null;
   }, [user]);
@@ -66,7 +66,6 @@ export default function RecentPage() {
       const data = await getRecentFiles(token);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to load recent files:", err);
     } finally {
       setLoading(false);
     }
