@@ -24,8 +24,6 @@ const getBaseUrl = () => {
 
 const API_BASE_URL = getBaseUrl();
 
-console.log("🔧 Dynamic API_BASE_URL:", API_BASE_URL);
-
 /**
  * Core network request utility wrapper around the Fetch API.
  * Handles header injection, JWT authorization, and standardized error parsing.
@@ -36,8 +34,6 @@ export async function request(path, options = {}) {
   // Normalize path to ensure it starts with a leading slash
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
-
-  console.log("📡 Request:", options.method || "GET", url);
 
   try {
     const isFormData = options.body instanceof FormData;
@@ -69,7 +65,6 @@ export async function request(path, options = {}) {
       data = text;
     }
 
-    console.log("📥 Response data:", data);
 
     // Standardized error handling for non-2xx responses
     if (!res.ok) {
@@ -82,7 +77,6 @@ export async function request(path, options = {}) {
 
     return data;
   } catch (error) {
-    console.error("Request Error:", error?.message || error);
     throw error;
   }
 }

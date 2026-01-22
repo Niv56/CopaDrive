@@ -143,9 +143,7 @@ export default function EditProfileModal({
     setSaving(true);
     try {
       const patch = { firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phoneNumber.trim(), image };
-      console.log("[EditProfileModal] saving profile", { userId, patch });
       const updatedUser = await updateUserProfile(token, userId, patch);
-      console.log("[EditProfileModal] update response", updatedUser);
 
       if (currentPassword && newPassword) {
         await changeUserPassword(token, userId, currentPassword, newPassword);
