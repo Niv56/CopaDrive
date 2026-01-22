@@ -1,26 +1,5 @@
 ## Architecture
 
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    React Native Mobile App                   │
-│                      (Expo / JavaScript)                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   NodeJS REST API Server                     │
-│            (Express / JWT Authentication)                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      MongoDB Database                        │
-│              (Users, Files, Permissions)                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ### Tech Stack
 
 **Mobile Client**
@@ -82,16 +61,8 @@ CopaDrive/
 │   └── babel.config.js
 │
 ├── web-server/                    # NodeJS Backend
-│   ├── src/
-│   │   ├── routes/
-│   │   ├── models/
-│   │   ├── middleware/
-│   │   └── index.js
-│   ├── .env.example
-│   └── package.json
-│
-├── docker-compose.yml             # Docker orchestration
 ├── wiki/                          # Documentation
+├── docker-compose.yml             # Docker orchestration
 └── README.md
 ```
 

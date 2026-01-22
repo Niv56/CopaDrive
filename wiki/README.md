@@ -25,7 +25,7 @@ Our UI email field supports addresses in the format "**xxx @copa.com**", matchin
   - Take photos directly from camera
 
 - **Navigation & Views**
-  - Home, My Drive, Starred, Shared, Recent, Important, Storage
+  - Home, My Drive, Starred, Shared, Recent, Important, Trash, Storage
 
 - **Search**
   - Real-time search by file/folder name
