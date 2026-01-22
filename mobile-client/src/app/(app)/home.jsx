@@ -14,15 +14,13 @@ import MyDrivePage from "../../features/drive/pages/MyDrivePage";
 
 import { getDriveStyles } from "../../features/drive/styles/myDrive.styles";
 import { useTheme } from "../providers/ThemeContext";
+
 import { subscribeNavigateToFolder } from "../../features/drive/services/driveEvents";
 
+// Images
 const lightBg = require("../../assets/images/light.png");
 const nightBg = require("../../assets/images/night.png");
 
-/**
- * Manages the main landing navigation, tab switching, 
- * and global layout (Background, TopBar, FAB, BottomBar).
- */
 export default function HomeManager() {
   const [activeTab, setActiveTab] = useState("home");
   const [fontsLoaded] = useFonts({ BrunoAceSC_400Regular });
@@ -31,12 +29,12 @@ export default function HomeManager() {
   const styles = useMemo(() => getDriveStyles(colors), [colors]);
 
   useEffect(() => {
-    // Listen for external navigation events (e.g., from search results)
     const unsubscribe = subscribeNavigateToFolder(() => {
       setActiveTab("mydrive");
     });
     return unsubscribe;
   }, []);
+
 
   const handleRefresh = () => {
     console.log("Global refresh triggered via FAB");
@@ -66,12 +64,11 @@ export default function HomeManager() {
 
       <SafeAreaView style={localStyles.safeArea}>
 
-        {/* Header Section */}
+        {/* TopBar */}
         <View style={{ zIndex: 100 }}>
           <TopBar />
         </View>
 
-        {/* Dynamic Title Card */}
         <View style={[
           localStyles.titleCard,
           {
@@ -91,7 +88,6 @@ export default function HomeManager() {
           </Text>
         </View>
 
-        {/* Main Content Area */}
         <View style={{ flex: 1 }}>
           {activeTab === "home" && <MainHomePage />}
           {activeTab === "starred" && <StarredPage />}
@@ -101,12 +97,12 @@ export default function HomeManager() {
 
       </SafeAreaView>
 
-      {/* Global Actions */}
+      {/* FAB */}
       <View style={localStyles.fabWrapper} pointerEvents="box-none">
         <Fab onRefresh={handleRefresh} />
       </View>
 
-      {/* Navigation Bar */}
+      {/* BottomBar */}
       <View style={localStyles.bottomBarWrapper}>
         <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />
       </View>
@@ -129,6 +125,7 @@ const localStyles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 5,
     marginHorizontal: 20,
+
     paddingVertical: 3,
     paddingHorizontal: 15,
     borderRadius: 10,
@@ -136,17 +133,19 @@ const localStyles = StyleSheet.create({
     alignSelf: 'flex-start',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3.84,
+    elevation: 5,
   },
   customTitleText: {
     marginLeft: 0,
     marginTop: 0,
     marginBottom: 0,
     paddingVertical: 0,
+
     fontSize: 18,
     lineHeight: 22,
     letterSpacing: 1.5,
@@ -160,7 +159,7 @@ const localStyles = StyleSheet.create({
     right: 0,
     left: 0,
     top: 0,
-    zIndex: 90,
+    zIndex: 110,
   },
   bottomBarWrapper: {
     position: 'absolute',

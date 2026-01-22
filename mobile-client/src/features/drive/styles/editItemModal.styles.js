@@ -100,10 +100,10 @@ export const getEditItemModalStyles = (colors = {}) => StyleSheet.create({
     gap: 10,
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    borderBottomColor: colors.border || "#e9ecef",
   },
   folderItemActive: {
-    backgroundColor: "#e0f2fe",
+    backgroundColor: colors.activeItem || "rgba(13, 110, 253, 0.12)",
   },
   folderItemText: {
     fontSize: 14,
@@ -116,14 +116,14 @@ export const getEditItemModalStyles = (colors = {}) => StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e9ecef",
+    borderTopColor: colors.border || "#e9ecef",
   },
   cancelBtn: {
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   cancelBtnText: {
-    color: "#6c757d",
+    color: colors.textSecondary || "#6c757d",
     fontWeight: "700",
     letterSpacing: 1,
   },

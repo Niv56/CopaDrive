@@ -9,10 +9,6 @@ import { useTheme } from "../../app/providers/ThemeContext";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const ACCESSORY_ID = "fab_create_content_done";
 
-/**
- * Universal Form for creating Files or Folders.
- * Supports dynamic theme switching and nested folder selection.
- */
 export default function CreateForm({
   mode, // 'create_folder' or 'create_file'
   name, setName,
@@ -25,7 +21,6 @@ export default function CreateForm({
   const isFolder = mode === "create_folder";
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
-  /** Resolves the name of the parent folder selected as the destination */
   const selectedFolderName = useMemo(() => {
     if (!selectedFolderId) return "My Drive (Root)";
     const folder = folders?.find(f => f.id === selectedFolderId);
@@ -42,7 +37,6 @@ export default function CreateForm({
           {isFolder ? "CREATE NEW FOLDER" : "CREATE NEW FILE"}
         </Text>
 
-        {/* Name Input Field */}
         <TextInput
           style={[
             styles.input,
@@ -62,7 +56,6 @@ export default function CreateForm({
           onSubmitEditing={() => Keyboard.dismiss()}
         />
 
-        {/* Content Area (Files only) */}
         {!isFolder && (
           <ScrollView style={{ width: "100%", maxHeight: 150 }} keyboardShouldPersistTaps="handled">
             <TextInput
@@ -107,7 +100,6 @@ export default function CreateForm({
           />
         </TouchableOpacity>
 
-        {/* Destination Folder Selector */}
         {showFolderPicker && (
           <View style={[
             styles.folderList,
@@ -148,10 +140,15 @@ export default function CreateForm({
           </View>
         )}
 
-        {/* iOS Keyboard Toolbar */}
         {Platform.OS === "ios" && (
           <InputAccessoryView nativeID={ACCESSORY_ID}>
-            <View style={[styles.accessory, { backgroundColor: isDarkMode ? "#2c2c2e" : "#f0f0f0" }]}>
+            <View style={[
+              styles.accessory,
+              {
+                backgroundColor: isDarkMode ? "#2c2c2e" : "#f0f0f0",
+                borderTopColor: isDarkMode ? "#3c3c3e" : "#dcdcdc"
+              }
+            ]}>
               <Button onPress={() => Keyboard.dismiss()} title="Done" />
             </View>
           </InputAccessoryView>
@@ -279,6 +276,5 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 10,
     borderTopWidth: 1,
-    borderTopColor: "#dcdcdc"
   }
 });

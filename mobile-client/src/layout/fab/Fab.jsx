@@ -19,16 +19,11 @@ import { useTheme } from "../../app/providers/ThemeContext";
 
 const NEWLINE = "_@NL@_";
 
-/**
- * Main Floating Action Button (FAB)
- * Manages the transition between the Action Menu, File/Folder creation forms, 
- * and Media upload previews.
- */
 export default function Fab({ onRefresh }) {
   const { token } = useAuth();
+
   const { isDarkMode, colors } = useTheme();
 
-  // Component State: 'closed', 'menu', 'create_folder', or 'create_file'
   const [activeView, setActiveView] = useState("closed");
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
@@ -36,18 +31,12 @@ export default function Fab({ onRefresh }) {
   const [folders, setFolders] = useState([]);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
 
-  /** Resets all form states and closes the modal */
   const closeAll = () => {
     setActiveView("closed");
-    setTimeout(() => {
-      setName("");
-      setContent("");
-      setSelectedFolderId(null);
-    }, 300);
+    setTimeout(() => { setName(""); setContent(""); setSelectedFolderId(null); }, 300);
     Keyboard.dismiss();
   };
 
-  // Logic for picking and previewing documents/images
   const {
     loading: uploadLoading,
     pickDocument,
@@ -57,7 +46,7 @@ export default function Fab({ onRefresh }) {
     discardPending,
   } = useDriveUploads(token, onRefresh, closeAll);
 
-  /** Fetches folder hierarchy for destination selection in forms */
+  // Fetch folders for destination selection
   useEffect(() => {
     const fetchFolders = async () => {
       if (!token) return;
@@ -66,19 +55,17 @@ export default function Fab({ onRefresh }) {
         const foldersList = (files || []).filter(f => f.type === "folder");
         setFolders(foldersList);
       } catch (err) {
-        // Silently fail: picker will remain empty
+        // Silently fail - folders will just be empty
       }
     };
     fetchFolders();
   }, [token]);
 
-  /** Animates state transitions for smoother UI feel */
   const switchTo = (view) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveView(view);
   };
 
-  /** Handles actions dispatched from the ActionMenu component */
   const handleMenuAction = (action) => {
     switch (action) {
       case "create_folder": switchTo("create_folder"); break;
@@ -89,7 +76,6 @@ export default function Fab({ onRefresh }) {
     }
   };
 
-  /** Processes the creation of new text files or empty folders */
   const handleSubmitCreate = async () => {
     if (!name.trim()) return;
     if (!token) return Alert.alert("Error", "Not logged in");
@@ -97,7 +83,6 @@ export default function Fab({ onRefresh }) {
     setCreateLoading(true);
     try {
       const isFolder = activeView === "create_folder";
-      // Ensure text files have the correct extension
       const finalName = isFolder ? name.trim() : (name.trim().endsWith(".txt") ? name.trim() : `${name.trim()}.txt`);
 
       await createItem(token, {
@@ -122,15 +107,19 @@ export default function Fab({ onRefresh }) {
   const isMenu = activeView === "menu";
   const isCreate = activeView === "create_file" || activeView === "create_folder";
   const isPreview = !!pendingFile;
+
+  // Modal is open if menu/create view is active OR if there's a pending file to preview
   const isOpen = activeView !== "closed" || isPreview;
 
   return (
     <>
-      {/* Global Activity Overlay */}
       {loading && (
-        <View style={styles.loaderOverlay}>
+        <View style={[
+          styles.loaderOverlay,
+          { backgroundColor: isDarkMode ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)" }
+        ]}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loaderText}>WORKING...</Text>
+          <Text style={[styles.loaderText, { color: colors.textPrimary }]}>WORKING...</Text>
         </View>
       )}
 
@@ -139,12 +128,10 @@ export default function Fab({ onRefresh }) {
           <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <Pressable style={StyleSheet.absoluteFill} onPress={isPreview ? discardPending : closeAll} />
 
-          {/* View: Primary Action Selection */}
           {isMenu && !isPreview && (
             <ActionMenu onAction={handleMenuAction} disabled={loading} />
           )}
 
-          {/* View: Text File/Folder Input Form */}
           {isCreate && !isPreview && (
             <CreateForm
               mode={activeView}
@@ -159,7 +146,6 @@ export default function Fab({ onRefresh }) {
             />
           )}
 
-          {/* View: File Upload Preview (Media/Documents) */}
           {isPreview && (
             <UploadPreviewContent
               fileData={pendingFile}
@@ -169,6 +155,7 @@ export default function Fab({ onRefresh }) {
               onDiscard={discardPending}
               onChangeFile={() => {
                 discardPending();
+                // Reopen the menu so user can pick another file
                 switchTo("menu");
               }}
             />
@@ -176,7 +163,6 @@ export default function Fab({ onRefresh }) {
         </View>
       </Modal>
 
-      {/* Main Trigger Button */}
       {!isOpen && (
         <View style={styles.fabPosition}>
           <TouchableOpacity
@@ -206,7 +192,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   loaderOverlay: {
     position: "absolute", top: 0, bottom: 0, left: 0, right: 0,
-    backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", zIndex: 10000,
+    justifyContent: "center", alignItems: "center", zIndex: 10000,
   },
-  loaderText: { marginTop: 15, color: "white", fontSize: 16, letterSpacing: 2, fontWeight: 'bold' },
+  loaderText: { marginTop: 15, fontSize: 16, letterSpacing: 2, fontWeight: "bold" },
 });
